@@ -23,10 +23,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [student, setStudent] = useState<Student | null>(() => {
-    const saved = localStorage.getItem("student");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [student, setStudent] = useState<Student | null>(null);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -36,29 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.USER_CHECK, {
-        method: "GET",
-        credentials: "include", // Important for cookies/sessions
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.authenticated) {
-          // Fetch user details
-          await fetchUserDetails();
-        }
-      }
-    } catch (error) {
-      console.error("Auth check failed:", error);
-      // Silently fail - user might not be logged in
-    }
-  };
-
-  const fetchUserDetails = async () => {
-    try {
       const response = await fetch(API_CONFIG.ENDPOINTS.USER_ME, {
         method: "GET",
-        credentials: "include",
+        credentials: "include", // Important for cookies/sessions
       });
 
       if (response.ok) {
@@ -73,14 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           phone: userData.phone,
         };
         setStudent(studentData);
-        localStorage.setItem("student", JSON.stringify(studentData));
-      } else if (response.status === 404) {
-        // Student not found in database
+      } else if (response.status === 401 || response.status === 404) {
+        // Not authenticated or student not found
         setStudent(null);
-        localStorage.removeItem("student");
       }
     } catch (error) {
-      console.error("Failed to fetch user details:", error);
+      console.error("Auth check failed:", error);
+      // Silently fail - user might not be logged in
+      setStudent(null);
     }
   };
 
@@ -99,7 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout request failed:", error);
     } finally {
       setStudent(null);
-      localStorage.removeItem("student");
     }
   };
 

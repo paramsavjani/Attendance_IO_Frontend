@@ -10,7 +10,6 @@ export const API_CONFIG = {
   ENDPOINTS: {
     OAUTH_GOOGLE: `${API_BASE_URL}/oauth2/authorization/google`,
     USER_ME: `${API_BASE_URL}/api/user/me`,
-    USER_CHECK: `${API_BASE_URL}/api/user/check`,
     USER_LOGOUT: `${API_BASE_URL}/api/user/logout`,
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,
     SEARCH_STUDENTS: `${API_BASE_URL}/api/search/students`,
