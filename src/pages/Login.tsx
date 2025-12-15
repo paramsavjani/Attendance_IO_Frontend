@@ -58,7 +58,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
             <GraduationCap className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-gradient mb-2">AttendTrack</h1>
+          <h1 className="text-3xl font-bold text-gradient mb-2">Attendance IO</h1>
           <p className="text-muted-foreground">Track your attendance with confidence</p>
         </div>
 
