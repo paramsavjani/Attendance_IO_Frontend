@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { AttendanceStatus } from "@/types/attendance";
-import { getTodaySchedule, officialLastDate, defaultTimetable, subjects, timeSlots } from "@/data/mockData";
-import { Button } from "@/components/ui/button";
+import { officialLastDate, defaultTimetable, subjects, timeSlots } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { format, isAfter, parseISO, subDays, addDays, isSameDay } from "date-fns";
 import { Check, X, ChevronLeft, ChevronRight, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { useAttendance } from "@/contexts/AttendanceContext";
 
 export default function DailyAttendance() {
+  const { todayAttendance, markAttendance } = useAttendance();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const today = new Date();
   const isLocked = !isAfter(selectedDate, parseISO(officialLastDate));
   const dayOfWeek = selectedDate.getDay();
   const adjustedDay = dayOfWeek === 0 || dayOfWeek === 6 ? -1 : dayOfWeek - 1;
+  const dateKey = format(selectedDate, "yyyy-MM-dd");
 
   const getScheduleForDate = () => {
     if (adjustedDay === -1) return [];
@@ -21,32 +21,15 @@ export default function DailyAttendance() {
     return daySlots.map((slot) => ({
       time: timeSlots[slot.timeSlot],
       subject: slot.subjectId ? subjects.find((s) => s.id === slot.subjectId) || null : null,
+      subjectId: slot.subjectId,
     }));
   };
 
   const schedule = getScheduleForDate();
 
-  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus | null>>({});
-
-  const handleMark = (slotKey: string, status: AttendanceStatus) => {
-    setAttendance((prev) => ({
-      ...prev,
-      [slotKey]: prev[slotKey] === status ? null : status,
-    }));
-  };
-
-  const handleSave = () => {
-    const dateKey = format(selectedDate, "yyyy-MM-dd");
-    const marked = Object.keys(attendance).filter(
-      (key) => key.startsWith(dateKey) && attendance[key] !== null
-    ).length;
-
-    if (marked === 0) {
-      toast.error("Mark at least one class");
-      return;
-    }
-
-    toast.success(`Saved for ${format(selectedDate, "MMM d")}`);
+  const handleMark = (index: number, subjectId: string, status: 'present' | 'absent') => {
+    const slotKey = `${dateKey}-${index}`;
+    markAttendance(subjectId, slotKey, status);
   };
 
   const navigateDate = (direction: "prev" | "next") => {
@@ -71,7 +54,10 @@ export default function DailyAttendance() {
           </button>
           <div className="text-center">
             <p className="font-semibold">{format(selectedDate, "EEEE")}</p>
-            <p className="text-sm text-muted-foreground">{format(selectedDate, "MMM d, yyyy")}</p>
+            <p className="text-sm text-muted-foreground">
+              {format(selectedDate, "MMM d, yyyy")}
+              {isToday && <span className="ml-1 text-primary">(Today)</span>}
+            </p>
           </div>
           <button
             onClick={() => navigateDate("next")}
@@ -100,73 +86,79 @@ export default function DailyAttendance() {
           </div>
         )}
 
-        {/* Schedule */}
+        {/* Schedule - One-click save */}
         {adjustedDay !== -1 && (
           <div className="space-y-2">
             {schedule.map((slot, index) => {
               if (!slot.subject) return null;
-              const slotKey = `${format(selectedDate, "yyyy-MM-dd")}-${index}`;
-              const currentStatus = attendance[slotKey];
+              const slotKey = `${dateKey}-${index}`;
+              const currentStatus = todayAttendance[slotKey];
 
               return (
                 <div
                   key={index}
-                  className="bg-card rounded-xl p-4 border border-border"
+                  className="bg-card rounded-2xl border border-border overflow-hidden"
                 >
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-stretch">
+                    {/* Color bar */}
                     <div
-                      className="w-1.5 h-8 rounded-full"
+                      className="w-1.5"
                       style={{ backgroundColor: `hsl(${slot.subject.color})` }}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{slot.subject.name}</p>
+                    
+                    {/* Content */}
+                    <div className="flex-1 p-3">
+                      <p className="font-medium text-sm">{slot.subject.name}</p>
                       <p className="text-xs text-muted-foreground">{slot.time}</p>
                     </div>
-                  </div>
 
-                  {!isLocked ? (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleMark(slotKey, "present")}
-                        className={cn(
-                          "flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95",
-                          currentStatus === "present"
-                            ? "bg-success text-success-foreground"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        <Check className="w-4 h-4" />
-                        Present
-                      </button>
-                      <button
-                        onClick={() => handleMark(slotKey, "absent")}
-                        className={cn(
-                          "flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95",
-                          currentStatus === "absent"
-                            ? "bg-destructive text-destructive-foreground"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        <X className="w-4 h-4" />
-                        Absent
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-2 text-sm text-muted-foreground">
-                      Locked by official data
-                    </div>
-                  )}
+                    {/* Action buttons - one click auto-save */}
+                    {!isLocked && (
+                      <div className="flex items-stretch border-l border-border">
+                        <button
+                          onClick={() => handleMark(index, slot.subjectId!, "present")}
+                          className={cn(
+                            "w-16 flex items-center justify-center gap-1 transition-all text-sm font-medium",
+                            currentStatus === "present"
+                              ? "bg-success text-success-foreground"
+                              : "hover:bg-success/10 text-success"
+                          )}
+                        >
+                          <Check className="w-4 h-4" />
+                          {currentStatus === "present" && <span className="text-xs">P</span>}
+                        </button>
+                        <button
+                          onClick={() => handleMark(index, slot.subjectId!, "absent")}
+                          className={cn(
+                            "w-16 flex items-center justify-center gap-1 transition-all text-sm font-medium border-l border-border",
+                            currentStatus === "absent"
+                              ? "bg-destructive text-destructive-foreground"
+                              : "hover:bg-destructive/10 text-destructive"
+                          )}
+                        >
+                          <X className="w-4 h-4" />
+                          {currentStatus === "absent" && <span className="text-xs">A</span>}
+                        </button>
+                      </div>
+                    )}
+
+                    {isLocked && (
+                      <div className="flex items-center px-4 text-muted-foreground">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* Save Button */}
+        {/* No Save Button needed - auto save on click */}
         {adjustedDay !== -1 && !isLocked && (
-          <Button onClick={handleSave} className="w-full py-6 text-base rounded-xl">
-            Save Attendance
-          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Tap to mark attendance • Auto-saved
+          </p>
         )}
       </div>
     </AppLayout>
