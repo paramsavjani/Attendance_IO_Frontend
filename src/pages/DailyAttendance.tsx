@@ -1,173 +1,173 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { StatusBadge } from "@/components/attendance/StatusBadge";
 import { AttendanceStatus } from "@/types/attendance";
-import { getTodaySchedule, officialLastDate } from "@/data/mockData";
+import { getTodaySchedule, officialLastDate, defaultTimetable, subjects, timeSlots } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { format, isAfter, parseISO } from "date-fns";
-import { Check, X, Calendar, AlertTriangle, Lock, Save, CalendarDays } from "lucide-react";
+import { format, isAfter, parseISO, subDays, addDays, isSameDay } from "date-fns";
+import { Check, X, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DailyAttendance() {
-  const schedule = getTodaySchedule();
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const today = new Date();
-  const isLocked = !isAfter(today, parseISO(officialLastDate));
+  const isLocked = !isAfter(selectedDate, parseISO(officialLastDate));
+  const dayOfWeek = selectedDate.getDay();
+  const adjustedDay = dayOfWeek === 0 || dayOfWeek === 6 ? -1 : dayOfWeek - 1;
 
-  const [attendance, setAttendance] = useState<Record<number, AttendanceStatus | null>>(
-    schedule.slots.reduce((acc, _, index) => ({ ...acc, [index]: null }), {})
-  );
+  const getScheduleForDate = () => {
+    if (adjustedDay === -1) return [];
+    const daySlots = defaultTimetable.filter((slot) => slot.day === adjustedDay);
+    return daySlots.map((slot) => ({
+      time: timeSlots[slot.timeSlot],
+      subject: slot.subjectId ? subjects.find((s) => s.id === slot.subjectId) || null : null,
+    }));
+  };
 
-  const handleMark = (slotIndex: number, status: AttendanceStatus) => {
-    if (!schedule.slots[slotIndex].subject) return;
+  const schedule = getScheduleForDate();
+
+  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus | null>>({});
+
+  const handleMark = (slotKey: string, status: AttendanceStatus) => {
     setAttendance((prev) => ({
       ...prev,
-      [slotIndex]: prev[slotIndex] === status ? null : status,
+      [slotKey]: prev[slotKey] === status ? null : status,
     }));
   };
 
   const handleSave = () => {
-    const marked = Object.values(attendance).filter((v) => v !== null).length;
-    const total = schedule.slots.filter((s) => s.subject !== null).length;
-    
+    const dateKey = format(selectedDate, "yyyy-MM-dd");
+    const marked = Object.keys(attendance).filter(
+      (key) => key.startsWith(dateKey) && attendance[key] !== null
+    ).length;
+
     if (marked === 0) {
-      toast.error("Please mark attendance for at least one class");
+      toast.error("Mark at least one class");
       return;
     }
-    
-    toast.success(`Attendance saved for ${marked} of ${total} classes`);
+
+    toast.success(`Saved for ${format(selectedDate, "MMM d")}`);
   };
+
+  const navigateDate = (direction: "prev" | "next") => {
+    setSelectedDate((prev) => 
+      direction === "prev" ? subDays(prev, 1) : addDays(prev, 1)
+    );
+  };
+
+  const isToday = isSameDay(selectedDate, today);
+  const isFuture = isAfter(selectedDate, today);
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold mb-2">Daily Tracking</h1>
-            <p className="text-muted-foreground flex items-center gap-2">
-              <CalendarDays className="w-4 h-4" />
-              {format(today, "EEEE, MMMM d, yyyy")}
-            </p>
+      <div className="space-y-4">
+        {/* Date Picker */}
+        <div className="flex items-center justify-between bg-card rounded-2xl p-3 border border-border">
+          <button
+            onClick={() => navigateDate("prev")}
+            className="p-2 hover:bg-muted rounded-xl transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="text-center">
+            <p className="font-semibold">{format(selectedDate, "EEEE")}</p>
+            <p className="text-sm text-muted-foreground">{format(selectedDate, "MMM d, yyyy")}</p>
           </div>
-          <Button onClick={handleSave} className="gap-2">
-            <Save className="w-4 h-4" />
-            Save Attendance
-          </Button>
+          <button
+            onClick={() => navigateDate("next")}
+            disabled={isFuture}
+            className={cn(
+              "p-2 hover:bg-muted rounded-xl transition-colors",
+              isFuture && "opacity-30"
+            )}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Lock Notice */}
         {isLocked && (
-          <div className="glass-card rounded-xl p-4 border-warning/30 bg-warning/5 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">
-                Today's date is before the official attendance cutoff
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Attendance before {format(parseISO(officialLastDate), "MMMM d, yyyy")} is
-                finalized by the institute. You can only track attendance after this date.
-              </p>
-            </div>
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-warning/10 text-warning text-sm">
+            <Lock className="w-4 h-4" />
+            <span>Official data till {format(parseISO(officialLastDate), "MMM d")}</span>
           </div>
         )}
 
-        {/* Schedule Cards */}
-        <div className="space-y-3">
-          {schedule.slots.map((slot, index) => {
-            const currentAttendance = attendance[index];
-            const hasSubject = slot.subject !== null;
+        {/* Weekend Notice */}
+        {adjustedDay === -1 && (
+          <div className="text-center py-10 text-muted-foreground">
+            No classes on weekends
+          </div>
+        )}
 
-            return (
-              <div
-                key={index}
-                className={cn(
-                  "glass-card rounded-xl p-5 transition-all duration-300 animate-slide-up",
-                  !hasSubject && "opacity-50"
-                )}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  {/* Time & Subject */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm text-muted-foreground font-mono">
-                        {slot.time}
-                      </span>
-                      {isLocked && (
-                        <Lock className="w-4 h-4 text-muted-foreground" />
-                      )}
+        {/* Schedule */}
+        {adjustedDay !== -1 && (
+          <div className="space-y-2">
+            {schedule.map((slot, index) => {
+              if (!slot.subject) return null;
+              const slotKey = `${format(selectedDate, "yyyy-MM-dd")}-${index}`;
+              const currentStatus = attendance[slotKey];
+
+              return (
+                <div
+                  key={index}
+                  className="bg-card rounded-xl p-4 border border-border"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="w-1.5 h-8 rounded-full"
+                      style={{ backgroundColor: `hsl(${slot.subject.color})` }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{slot.subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{slot.time}</p>
                     </div>
-                    {slot.subject ? (
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: `hsl(${slot.subject.color})` }}
-                        />
-                        <span className="font-medium">{slot.subject.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          ({slot.subject.code})
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground italic">No class scheduled</span>
-                    )}
                   </div>
 
-                  {/* Status Badge (if marked) */}
-                  {currentAttendance && (
-                    <StatusBadge status={currentAttendance} size="md" />
-                  )}
-
-                  {/* Action Buttons */}
-                  {hasSubject && !isLocked && (
+                  {!isLocked ? (
                     <div className="flex gap-2">
-                      <Button
-                        variant={currentAttendance === "present" ? "default" : "outline"}
-                        size="sm"
+                      <button
+                        onClick={() => handleMark(slotKey, "present")}
                         className={cn(
-                          "gap-1.5",
-                          currentAttendance === "present" &&
-                            "bg-success hover:bg-success/90 border-success"
+                          "flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95",
+                          currentStatus === "present"
+                            ? "bg-success text-success-foreground"
+                            : "bg-muted text-muted-foreground"
                         )}
-                        onClick={() => handleMark(index, "present")}
                       >
                         <Check className="w-4 h-4" />
-                        <span className="hidden sm:inline">Present</span>
-                      </Button>
-                      <Button
-                        variant={currentAttendance === "absent" ? "default" : "outline"}
-                        size="sm"
+                        Present
+                      </button>
+                      <button
+                        onClick={() => handleMark(slotKey, "absent")}
                         className={cn(
-                          "gap-1.5",
-                          currentAttendance === "absent" &&
-                            "bg-destructive hover:bg-destructive/90 border-destructive"
+                          "flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95",
+                          currentStatus === "absent"
+                            ? "bg-destructive text-destructive-foreground"
+                            : "bg-muted text-muted-foreground"
                         )}
-                        onClick={() => handleMark(index, "absent")}
                       >
                         <X className="w-4 h-4" />
-                        <span className="hidden sm:inline">Absent</span>
-                      </Button>
-                      <Button
-                        variant={currentAttendance === "leave" ? "default" : "outline"}
-                        size="sm"
-                        className={cn(
-                          "gap-1.5",
-                          currentAttendance === "leave" &&
-                            "bg-warning hover:bg-warning/90 border-warning text-warning-foreground"
-                        )}
-                        onClick={() => handleMark(index, "leave")}
-                      >
-                        <Calendar className="w-4 h-4" />
-                        <span className="hidden sm:inline">Leave</span>
-                      </Button>
+                        Absent
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-2 text-sm text-muted-foreground">
+                      Locked by official data
                     </div>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Save Button */}
+        {adjustedDay !== -1 && !isLocked && (
+          <Button onClick={handleSave} className="w-full py-6 text-base rounded-xl">
+            Save Attendance
+          </Button>
+        )}
       </div>
     </AppLayout>
   );

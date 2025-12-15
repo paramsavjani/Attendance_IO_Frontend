@@ -5,27 +5,19 @@ import { TimetableSlot } from "@/types/attendance";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { RefreshCw, Table2, Plus, X } from "lucide-react";
+import { RefreshCw, X, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function Timetable() {
+  const navigate = useNavigate();
   const [timetable, setTimetable] = useState<TimetableSlot[]>(defaultTimetable);
-  const [selectedSlot, setSelectedSlot] = useState<{ day: number; timeSlot: number } | null>(
-    null
-  );
+  const [selectedSlot, setSelectedSlot] = useState<{ day: number; timeSlot: number } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const getSlotSubject = (day: number, timeSlot: number) => {
@@ -58,150 +50,103 @@ export default function Timetable() {
 
   const handleRegenerate = () => {
     setTimetable(defaultTimetable);
-    toast.success("Timetable reset to default");
+    toast.success("Timetable reset");
   };
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold mb-2">Timetable</h1>
-            <p className="text-muted-foreground">
-              Manage your weekly class schedule
-            </p>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold">Timetable</h1>
           </div>
-          <Button variant="outline" onClick={handleRegenerate} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleRegenerate} className="gap-1.5">
             <RefreshCw className="w-4 h-4" />
-            Reset to Default
+            Reset
           </Button>
         </div>
 
-        {/* Subject Legend */}
-        <div className="glass-card rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Table2 className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Subject Colors</span>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {subjects.map((subject) => (
-              <div key={subject.id} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: `hsl(${subject.color})` }}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {subject.code}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Timetable Grid */}
-        <div className="glass-card rounded-xl p-4 overflow-x-auto">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr>
-                <th className="p-3 text-left text-sm font-medium text-muted-foreground">
-                  Time
-                </th>
-                {days.map((day) => (
-                  <th
-                    key={day}
-                    className="p-3 text-center text-sm font-medium text-muted-foreground"
-                  >
-                    {day}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {timeSlots.map((time, timeIndex) => (
-                <tr key={time} className="border-t border-border/50">
-                  <td className="p-3 text-sm text-muted-foreground font-mono whitespace-nowrap">
-                    {time}
-                  </td>
-                  {days.map((_, dayIndex) => {
-                    const subject = getSlotSubject(dayIndex, timeIndex);
-                    return (
-                      <td key={dayIndex} className="p-2">
-                        <button
-                          onClick={() => handleSlotClick(dayIndex, timeIndex)}
-                          className={cn(
-                            "w-full h-16 rounded-lg transition-all duration-200 flex items-center justify-center text-xs font-medium",
-                            subject
-                              ? "hover:opacity-80"
-                              : "bg-muted/30 hover:bg-muted/50 border border-dashed border-border text-muted-foreground"
-                          )}
-                          style={
-                            subject
-                              ? {
-                                  backgroundColor: `hsl(${subject.color} / 0.2)`,
-                                  borderColor: `hsl(${subject.color} / 0.3)`,
-                                  borderWidth: "1px",
-                                  borderStyle: "solid",
-                                  color: `hsl(${subject.color})`,
-                                }
-                              : undefined
+        {/* Days as tabs */}
+        {days.map((day, dayIndex) => (
+          <div key={day} className="space-y-2">
+            <h3 className="font-semibold text-sm text-muted-foreground">{day}</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {timeSlots.slice(0, 6).map((time, timeIndex) => {
+                const subject = getSlotSubject(dayIndex, timeIndex);
+                return (
+                  <button
+                    key={timeIndex}
+                    onClick={() => handleSlotClick(dayIndex, timeIndex)}
+                    className={cn(
+                      "p-3 rounded-xl text-left transition-all",
+                      subject
+                        ? "border"
+                        : "bg-muted/30 border border-dashed border-border"
+                    )}
+                    style={
+                      subject
+                        ? {
+                            backgroundColor: `hsl(${subject.color} / 0.15)`,
+                            borderColor: `hsl(${subject.color} / 0.3)`,
                           }
-                        >
-                          {subject ? (
-                            <div className="text-center px-2">
-                              <div className="font-semibold truncate">{subject.code}</div>
-                            </div>
-                          ) : (
-                            <Plus className="w-4 h-4" />
-                          )}
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        : undefined
+                    }
+                  >
+                    <p className="text-[10px] text-muted-foreground mb-1">
+                      {time.split(" - ")[0]}
+                    </p>
+                    <p className={cn(
+                      "text-xs font-medium truncate",
+                      subject ? "" : "text-muted-foreground"
+                    )}
+                    style={subject ? { color: `hsl(${subject.color})` } : undefined}
+                    >
+                      {subject?.code || "—"}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
         {/* Assignment Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-w-sm mx-4">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base">
                 {selectedSlot
-                  ? `${days[selectedSlot.day]} - ${timeSlots[selectedSlot.timeSlot]}`
+                  ? `${days[selectedSlot.day]} • ${timeSlots[selectedSlot.timeSlot].split(" - ")[0]}`
                   : "Assign Subject"}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4 pt-4">
-              <div className="grid grid-cols-1 gap-2">
-                {subjects.map((subject) => (
-                  <button
-                    key={subject.id}
-                    onClick={() => handleAssignSubject(subject.id)}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
-                  >
-                    <div
-                      className="w-4 h-4 rounded-full shrink-0"
-                      style={{ backgroundColor: `hsl(${subject.color})` }}
-                    />
-                    <div>
-                      <div className="font-medium text-sm">{subject.name}</div>
-                      <div className="text-xs text-muted-foreground">{subject.code}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-2 pt-2">
+              {subjects.map((subject) => (
+                <button
+                  key={subject.id}
+                  onClick={() => handleAssignSubject(subject.id)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border active:scale-98 transition-all text-left"
+                >
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: `hsl(${subject.color})` }}
+                  />
+                  <span className="text-sm font-medium">{subject.name}</span>
+                </button>
+              ))}
 
               <Button
-                variant="outline"
-                className="w-full gap-2 text-destructive hover:text-destructive"
+                variant="ghost"
+                className="w-full gap-2 text-destructive"
                 onClick={() => handleAssignSubject(null)}
               >
                 <X className="w-4 h-4" />
-                Clear Slot
+                Clear
               </Button>
             </div>
           </DialogContent>
