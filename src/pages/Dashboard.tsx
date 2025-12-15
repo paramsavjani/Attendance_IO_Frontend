@@ -4,7 +4,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { getTodaySchedule, subjects } from "@/data/mockData";
 import { format } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { TodayClassCard } from "@/components/dashboard/TodayClassCard";
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { student } = useAuth();
@@ -32,7 +33,7 @@ export default function Dashboard() {
           </h1>
         </div>
 
-        {/* Today's Schedule - Improved UI */}
+        {/* Today's Classes */}
         <div>
           <h3 className="font-semibold text-sm mb-3">Today's Classes</h3>
           <div className="space-y-2">
@@ -45,15 +46,62 @@ export default function Dashboard() {
               const status = todayAttendance[slotKey] || null;
 
               return (
-                <TodayClassCard
+                <div
                   key={index}
-                  index={index}
-                  time={slot.time}
-                  subject={slot.subject}
-                  isCurrent={isCurrent}
-                  status={status}
-                  onMark={(s) => handleMarkAttendance(index, slot.subject!.id, s)}
-                />
+                  className={cn(
+                    "bg-card rounded-2xl border overflow-hidden",
+                    isCurrent ? "border-primary ring-1 ring-primary/20" : "border-border"
+                  )}
+                >
+                  <div className="flex items-stretch">
+                    {/* Color bar */}
+                    <div
+                      className="w-1.5"
+                      style={{ backgroundColor: `hsl(${slot.subject.color})` }}
+                    />
+                    
+                    {/* Content */}
+                    <div className="flex-1 p-3">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">{slot.subject.name}</p>
+                        {isCurrent && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                            NOW
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{slot.time}</p>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-stretch border-l border-border">
+                      <button
+                        onClick={() => handleMarkAttendance(index, slot.subject!.id, "present")}
+                        className={cn(
+                          "w-14 flex items-center justify-center gap-1 transition-all text-sm font-medium",
+                          status === "present"
+                            ? "bg-success text-success-foreground"
+                            : "hover:bg-success/10 text-success"
+                        )}
+                      >
+                        <Check className="w-4 h-4" />
+                        {status === "present" && <span className="text-xs">P</span>}
+                      </button>
+                      <button
+                        onClick={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
+                        className={cn(
+                          "w-14 flex items-center justify-center gap-1 transition-all text-sm font-medium border-l border-border",
+                          status === "absent"
+                            ? "bg-destructive text-destructive-foreground"
+                            : "hover:bg-destructive/10 text-destructive"
+                        )}
+                      >
+                        <X className="w-4 h-4" />
+                        {status === "absent" && <span className="text-xs">A</span>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
