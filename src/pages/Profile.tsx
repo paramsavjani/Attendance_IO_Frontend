@@ -44,10 +44,6 @@ export default function Profile() {
               <p className="text-sm text-muted-foreground">Current Term</p>
               <p className="font-semibold">{currentSemester.year} {currentSemester.term}</p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Semester</p>
-              <p className="font-bold text-lg">{currentSemester.semester}</p>
-            </div>
           </div>
         </div>
 
