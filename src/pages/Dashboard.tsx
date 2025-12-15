@@ -6,9 +6,12 @@ import { subjects, timeSlots, defaultTimetable } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { AttendanceMarker } from "@/components/attendance/AttendanceMarker";
-import { ChevronLeft, ChevronRight, Lock, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, Calendar, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const { student } = useAuth();
@@ -16,6 +19,7 @@ export default function Dashboard() {
   
   const now = new Date();
   const currentHour = now.getHours();
+  const [calendarOpen, setCalendarOpen] = useState(false);
   
   // Determine initial date - if all classes are done today, show tomorrow
   const getInitialDate = () => {
@@ -82,6 +86,13 @@ export default function Dashboard() {
     setSelectedDate(now);
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setCalendarOpen(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-5">
@@ -128,16 +139,41 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Quick "Go to Today" button if not viewing today */}
-            {!isSelectedToday && (
-              <button
-                onClick={goToToday}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors"
-              >
-                <Calendar className="w-4 h-4" />
-                Go to Today
-              </button>
-            )}
+            {/* Find Specific Date Button */}
+            <div className="flex gap-2">
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1 justify-start gap-2 rounded-xl border-border bg-card"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="text-sm">Find specific date</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-popover border-border z-50" align="center">
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Quick "Go to Today" button if not viewing today */}
+              {!isSelectedToday && (
+                <Button
+                  onClick={goToToday}
+                  variant="default"
+                  className="gap-2 rounded-xl"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Today
+                </Button>
+              )}
+            </div>
 
             {/* Status Messages */}
             {isFutureDate && (
