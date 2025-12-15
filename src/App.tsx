@@ -12,6 +12,7 @@ import DailyAttendance from "./pages/DailyAttendance";
 import Timetable from "./pages/Timetable";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Search />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
           </ProtectedRoute>
         }
       />

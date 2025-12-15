@@ -1,13 +1,11 @@
 import { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { 
   LayoutDashboard, 
-  CalendarCheck, 
   Calendar, 
-  Table2, 
-  User, 
-  Search
+  Search,
+  BarChart3,
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +17,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
   { icon: Calendar, label: "Track", path: "/daily" },
   { icon: Search, label: "Search", path: "/search" },
-  { icon: CalendarCheck, label: "Stats", path: "/attendance" },
+  { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
