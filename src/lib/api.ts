@@ -15,6 +15,7 @@ export const API_CONFIG = {
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,
     SEARCH_STUDENTS: `${API_BASE_URL}/api/search/students`,
     STUDENT_ATTENDANCE: (studentId: string) => `${API_BASE_URL}/api/search/student/${studentId}/attendance`,
+    SUBJECTS_CURRENT: `${API_BASE_URL}/api/subjects/current`,
   },
 } as const;
 
