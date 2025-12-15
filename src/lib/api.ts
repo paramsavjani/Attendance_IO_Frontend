@@ -13,6 +13,8 @@ export const API_CONFIG = {
     USER_CHECK: `${API_BASE_URL}/api/user/check`,
     USER_LOGOUT: `${API_BASE_URL}/api/user/logout`,
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,
+    SEARCH_STUDENTS: `${API_BASE_URL}/api/search/students`,
+    STUDENT_ATTENDANCE: (studentId: string) => `${API_BASE_URL}/api/search/student/${studentId}/attendance`,
   },
 } as const;
 
