@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Capacitor
+android
+ios
+.capacitor
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
