@@ -3,11 +3,19 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
 import { Users, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
-import { YearSelector } from "@/components/filters/YearSelector";
+import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
 
-// Mock analytics data with year association
-const allYearData = {
-  2025: {
+// Mock analytics data with semester association
+const allSemesterData: Record<string, {
+  totalStudents: number;
+  totalSubjects: number;
+  averageAttendance: number;
+  above70: number;
+  below60: number;
+  distribution: { name: string; value: number; color: string }[];
+  ranges: { range: string; count: number }[];
+}> = {
+  "2025 Winter": {
     totalStudents: 749,
     totalSubjects: 28,
     averageAttendance: 77.66,
@@ -28,7 +36,28 @@ const allYearData = {
       { range: "90-100%", count: 124 },
     ],
   },
-  2024: {
+  "2025 Summer": {
+    totalStudents: 720,
+    totalSubjects: 26,
+    averageAttendance: 72.34,
+    above70: 520,
+    below60: 100,
+    distribution: [
+      { name: "Above 70%", value: 55, color: "hsl(var(--success))" },
+      { name: "60-75%", value: 25, color: "hsl(var(--warning))" },
+      { name: "Below 60%", value: 20, color: "hsl(var(--destructive))" },
+    ],
+    ranges: [
+      { range: "0-20%", count: 25 },
+      { range: "20-40%", count: 45 },
+      { range: "40-60%", count: 50 },
+      { range: "60-70%", count: 130 },
+      { range: "70-80%", count: 190 },
+      { range: "80-90%", count: 180 },
+      { range: "90-100%", count: 100 },
+    ],
+  },
+  "2024 Winter": {
     totalStudents: 744,
     totalSubjects: 26,
     averageAttendance: 62.46,
@@ -49,7 +78,7 @@ const allYearData = {
       { range: "90-100%", count: 74 },
     ],
   },
-  2023: {
+  "2024 Summer": {
     totalStudents: 428,
     totalSubjects: 24,
     averageAttendance: 59.82,
@@ -70,7 +99,7 @@ const allYearData = {
       { range: "90-100%", count: 28 },
     ],
   },
-  2022: {
+  "2023 Winter": {
     totalStudents: 383,
     totalSubjects: 22,
     averageAttendance: 32.87,
@@ -93,21 +122,22 @@ const allYearData = {
   },
 };
 
-const yearWiseData = [
-  { year: "First Year", id: 2025, percentage: 77.66, students: 749, color: "hsl(var(--success))" },
-  { year: "Second Year", id: 2024, percentage: 62.46, students: 744, color: "hsl(var(--warning))" },
-  { year: "Third Year", id: 2023, percentage: 59.82, students: 428, color: "hsl(var(--warning))" },
-  { year: "Fourth Year", id: 2022, percentage: 32.87, students: 383, color: "hsl(var(--destructive))" },
+const semesterWiseData = [
+  { semester: "2025 Winter", percentage: 77.66, students: 749, color: "hsl(var(--success))" },
+  { semester: "2025 Summer", percentage: 72.34, students: 720, color: "hsl(var(--success))" },
+  { semester: "2024 Winter", percentage: 62.46, students: 744, color: "hsl(var(--warning))" },
+  { semester: "2024 Summer", percentage: 59.82, students: 428, color: "hsl(var(--warning))" },
+  { semester: "2023 Winter", percentage: 32.87, students: 383, color: "hsl(var(--destructive))" },
 ];
 
 export default function Analytics() {
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
 
-  // Get aggregated stats or specific year stats
+  // Get aggregated stats or specific semester stats
   const stats = useMemo(() => {
-    if (!selectedYear) {
-      // Aggregate all years
-      const allStats = Object.values(allYearData);
+    if (!selectedSemester) {
+      // Aggregate all semesters
+      const allStats = Object.values(allSemesterData);
       const totalStudents = allStats.reduce((sum, s) => sum + s.totalStudents, 0);
       const totalSubjects = allStats.reduce((sum, s) => sum + s.totalSubjects, 0);
       const avgAttendance = allStats.reduce((sum, s) => sum + s.averageAttendance * s.totalStudents, 0) / totalStudents;
@@ -136,25 +166,24 @@ export default function Analytics() {
         ],
       };
     }
-    return allYearData[selectedYear as keyof typeof allYearData] || allYearData[2025];
-  }, [selectedYear]);
+    return allSemesterData[selectedSemester.label] || allSemesterData["2025 Winter"];
+  }, [selectedSemester]);
 
   return (
     <AppLayout>
       <div className="space-y-5">
-        {/* Header with Year Selector */}
+        {/* Header with Semester Selector */}
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold">Analytics</h1>
             <p className="text-sm text-muted-foreground">
-              {selectedYear ? `${selectedYear} statistics` : "Overall attendance statistics"}
+              {selectedSemester ? `${selectedSemester.label} statistics` : "Overall attendance statistics"}
             </p>
           </div>
-          <YearSelector
-            selectedYear={selectedYear}
-            onYearChange={setSelectedYear}
-            startYear={2022}
-            endYear={2025}
+          <SemesterSelector
+            selectedSemester={selectedSemester}
+            onSemesterChange={setSelectedSemester}
+            semesters={availableSemesters}
           />
         </div>
 
@@ -216,22 +245,24 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Year-wise Stats - Only show when viewing all years */}
-        {!selectedYear && (
+        {/* Semester-wise Stats - Only show when viewing all semesters */}
+        {!selectedSemester && (
           <div className="bg-card rounded-xl p-4 border border-border">
-            <h3 className="font-semibold mb-1">Average Attendance by Year</h3>
-            <p className="text-xs text-muted-foreground mb-4">Percentage for each academic year</p>
+            <h3 className="font-semibold mb-1">Attendance by Semester</h3>
+            <p className="text-xs text-muted-foreground mb-4">Percentage for each term</p>
             
             <div className="grid grid-cols-2 gap-3">
-              {yearWiseData.map((item) => (
+              {semesterWiseData.map((item) => (
                 <button
-                  key={item.id}
-                  onClick={() => setSelectedYear(item.id)}
+                  key={item.semester}
+                  onClick={() => {
+                    const sem = availableSemesters.find(s => s.label === item.semester);
+                    if (sem) setSelectedSemester(sem);
+                  }}
                   className="bg-background rounded-lg p-3 border border-border text-left hover:border-primary/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">{item.year}</span>
-                    <span className="text-xs text-muted-foreground">{item.id}</span>
+                    <span className="text-xs text-muted-foreground font-medium">{item.semester}</span>
                   </div>
                   <p className={cn(
                     "text-xl font-bold",

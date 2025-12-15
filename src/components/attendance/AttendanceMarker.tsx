@@ -10,6 +10,7 @@ interface AttendanceMarkerProps {
   status: 'present' | 'absent' | null;
   onMarkPresent: () => void;
   onMarkAbsent: () => void;
+  disabled?: boolean;
 }
 
 export function AttendanceMarker({
@@ -21,12 +22,14 @@ export function AttendanceMarker({
   status,
   onMarkPresent,
   onMarkAbsent,
+  disabled = false,
 }: AttendanceMarkerProps) {
   return (
     <div
       className={cn(
-        "bg-card rounded-xl border overflow-hidden",
-        isCurrent ? "border-primary/50" : "border-border"
+        "bg-card rounded-xl border overflow-hidden transition-opacity",
+        isCurrent ? "border-primary/50" : "border-border",
+        disabled && "opacity-60"
       )}
     >
       <div className="flex items-center">
@@ -41,7 +44,7 @@ export function AttendanceMarker({
           <div className="flex items-center gap-2">
             <p className="font-medium text-sm">{subjectName}</p>
             {isCurrent && (
-              <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium uppercase">
+              <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-medium uppercase">
                 now
               </span>
             )}
@@ -55,8 +58,10 @@ export function AttendanceMarker({
         <div className="flex items-center gap-4 pr-4">
           <button
             onClick={onMarkPresent}
+            disabled={disabled}
             className={cn(
               "w-6 h-6 flex items-center justify-center transition-all",
+              disabled && "pointer-events-none",
               status === "present"
                 ? "text-success"
                 : "text-muted-foreground/40 hover:text-success"
@@ -66,8 +71,10 @@ export function AttendanceMarker({
           </button>
           <button
             onClick={onMarkAbsent}
+            disabled={disabled}
             className={cn(
               "w-6 h-6 flex items-center justify-center transition-all",
+              disabled && "pointer-events-none",
               status === "absent"
                 ? "text-destructive"
                 : "text-muted-foreground/40 hover:text-destructive"
