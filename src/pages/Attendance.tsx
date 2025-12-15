@@ -1,71 +1,89 @@
+import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { subjectAttendance, officialLastDate } from "@/data/mockData";
-import { cn } from "@/lib/utils";
+import { useAttendance } from "@/contexts/AttendanceContext";
+import { getTodaySchedule, subjects, officialLastDate } from "@/data/mockData";
 import { format } from "date-fns";
+import { AttendanceMarker } from "@/components/attendance/AttendanceMarker";
+import { SubjectCard } from "@/components/attendance/SubjectCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Attendance() {
+  const { subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin } = useAttendance();
+  const schedule = getTodaySchedule();
+  const now = new Date();
+  const currentHour = now.getHours();
+  const todayKey = format(now, "yyyy-MM-dd");
+
+  const handleMarkAttendance = (index: number, subjectId: string, status: 'present' | 'absent') => {
+    const slotKey = `${todayKey}-${index}`;
+    markAttendance(subjectId, slotKey, status);
+  };
+
   return (
     <AppLayout>
       <div className="space-y-4">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-bold">Attendance Stats</h1>
+          <h1 className="text-xl font-bold">Track Attendance</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Official till {format(new Date(officialLastDate), "MMM d")}
           </p>
         </div>
 
-        {/* Subject Cards */}
-        <div className="space-y-3">
-          {subjectAttendance.map((data) => {
-            const totalPresent = data.officialPresent + data.estimatedPresent;
-            const totalClasses = data.officialTotal + data.estimatedTotal;
-            const percentage = Math.round((totalPresent / totalClasses) * 100);
+        <Tabs defaultValue="today" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+            <TabsTrigger value="today">Today</TabsTrigger>
+            <TabsTrigger value="subjects">Subjects</TabsTrigger>
+          </TabsList>
 
-            return (
-              <div
-                key={data.subject.id}
-                className="bg-card rounded-xl p-4 border border-border"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-2 h-8 rounded-full"
-                      style={{ backgroundColor: `hsl(${data.subject.color})` }}
-                    />
-                    <div>
-                      <p className="font-medium text-sm">{data.subject.name}</p>
-                      <p className="text-xs text-muted-foreground">{data.subject.code}</p>
-                    </div>
-                  </div>
-                  <span className={cn(
-                    "text-xl font-bold",
-                    percentage >= 75 ? "text-success" : 
-                    percentage >= 60 ? "text-warning" : "text-destructive"
-                  )}>
-                    {percentage}%
-                  </span>
-                </div>
+          <TabsContent value="today" className="mt-4 space-y-2">
+            {schedule.slots.map((slot, index) => {
+              if (!slot.subject) return null;
+              
+              const startHour = parseInt(slot.time.split(":")[0]);
+              const isCurrent = startHour === currentHour;
+              const slotKey = `${todayKey}-${index}`;
+              const status = todayAttendance[slotKey] || null;
 
-                {/* Progress Bar */}
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all",
-                      percentage >= 75 ? "bg-success" : 
-                      percentage >= 60 ? "bg-warning" : "bg-destructive"
-                    )}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
+              return (
+                <AttendanceMarker
+                  key={index}
+                  subjectName={slot.subject.name}
+                  subjectCode={slot.subject.code}
+                  time={slot.time}
+                  color={slot.subject.color}
+                  isCurrent={isCurrent}
+                  status={status}
+                  onMarkPresent={() => handleMarkAttendance(index, slot.subject!.id, "present")}
+                  onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
+                />
+              );
+            })}
+          </TabsContent>
 
-                <p className="text-xs text-muted-foreground mt-2">
-                  {totalPresent} / {totalClasses} classes
-                </p>
-              </div>
-            );
-          })}
-        </div>
+          <TabsContent value="subjects" className="mt-4 space-y-2">
+            {subjects.map((subject) => {
+              const stats = subjectStats[subject.id];
+              if (!stats) return null;
+              
+              const minRequired = subjectMinAttendance[subject.id] || 75;
+
+              return (
+                <SubjectCard
+                  key={subject.id}
+                  name={subject.name}
+                  code={subject.code}
+                  color={subject.color}
+                  present={stats.present}
+                  absent={stats.absent}
+                  total={stats.total}
+                  minRequired={minRequired}
+                  onMinChange={(val) => setSubjectMin(subject.id, val)}
+                />
+              );
+            })}
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

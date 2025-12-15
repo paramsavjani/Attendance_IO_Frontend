@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { semesterHistory, currentSemester } from "@/data/semesterHistory";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+import { YearSelector } from "@/components/filters/YearSelector";
 
 // Mock student data with detailed subject attendance
 const mockStudents = [
@@ -94,6 +94,7 @@ type Student = typeof mockStudents[0];
 export default function Search() {
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   
   const filteredStudents = query.length > 0
     ? mockStudents.filter(
@@ -102,6 +103,18 @@ export default function Search() {
           s.rollNumber.toLowerCase().includes(query.toLowerCase())
       )
     : [];
+
+  // Filter semester history by selected year
+  const filteredHistory = useMemo(() => {
+    if (!selectedYear) return semesterHistory;
+    return semesterHistory.filter((sem) => sem.year === selectedYear);
+  }, [selectedYear]);
+
+  // Get unique years from semester history
+  const availableYears = useMemo(() => {
+    const years = new Set(semesterHistory.map((sem) => sem.year));
+    return Array.from(years).sort((a, b) => b - a);
+  }, []);
 
   if (selectedStudent) {
     return (
@@ -144,11 +157,24 @@ export default function Search() {
             </div>
           </div>
 
-          {/* Previous Semesters */}
+          {/* Previous Semesters with Year Filter */}
           <div>
-            <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-sm">Previous Semesters</h3>
+              <YearSelector
+                selectedYear={selectedYear}
+                onYearChange={setSelectedYear}
+                startYear={Math.min(...availableYears)}
+                endYear={Math.max(...availableYears)}
+              />
+            </div>
             <div className="space-y-2">
-              {semesterHistory.map((sem) => (
+              {filteredHistory.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No data for {selectedYear}
+                </p>
+              )}
+              {filteredHistory.map((sem) => (
                 <Collapsible key={`${sem.year}-${sem.term}`}>
                   <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
                     <div>
