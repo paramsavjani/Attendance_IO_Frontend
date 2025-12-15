@@ -5,6 +5,7 @@ export interface Subject {
   name: string;
   code: string;
   color: string;
+  minimumCriteria?: number | null;
 }
 
 export interface AttendanceRecord {
