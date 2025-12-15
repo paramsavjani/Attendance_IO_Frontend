@@ -185,55 +185,6 @@ export default function Analytics() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Previous Semester Attendance */}
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <h3 className="font-semibold mb-1">Previous Semester Records</h3>
-          <p className="text-xs text-muted-foreground mb-4">Your attendance history</p>
-          
-          <div className="space-y-2">
-            {semesterHistory.map((sem) => {
-              const avgPercentage = Math.round(
-                sem.subjects.reduce((acc, s) => acc + (s.present / s.total) * 100, 0) / sem.subjects.length
-              );
-              
-              return (
-                <Collapsible key={`${sem.year}-${sem.term}`}>
-                  <CollapsibleTrigger className="w-full bg-background rounded-xl p-3 border border-border flex items-center justify-between text-left">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">Semester {sem.semester}</p>
-                        <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded font-medium",
-                          avgPercentage >= 75 ? "bg-success/10 text-success" :
-                          avgPercentage >= 60 ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"
-                        )}>
-                          {avgPercentage}%
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{sem.term} {sem.year}</p>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2 space-y-2">
-                    {sem.subjects.map((subject, idx) => (
-                      <SubjectCard
-                        key={idx}
-                        name={subject.name}
-                        code={subject.code}
-                        color={subject.color}
-                        present={subject.present}
-                        absent={subject.absent}
-                        total={subject.total}
-                        minRequired={75}
-                      />
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </AppLayout>
   );
