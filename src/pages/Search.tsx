@@ -1,117 +1,209 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { semesterHistory, currentSemester } from "@/data/semesterHistory";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
+import { API_CONFIG } from "@/lib/api";
+import { toast } from "sonner";
 
-// Mock student data with detailed subject attendance
-const mockStudents = [
-  { 
-    id: "1", 
-    name: "Rahul Sharma", 
-    rollNumber: "CS2021001", 
-    semester: 5,
-    subjects: [
-      { name: "Data Structures", code: "CS301", color: "234 89% 64%", present: 18, absent: 4, total: 22 },
-      { name: "Database Systems", code: "CS302", color: "142 72% 45%", present: 20, absent: 2, total: 22 },
-      { name: "Operating Systems", code: "CS303", color: "43 96% 56%", present: 15, absent: 7, total: 22 },
-      { name: "Computer Networks", code: "CS304", color: "0 72% 51%", present: 19, absent: 3, total: 22 },
-      { name: "Software Engineering", code: "CS305", color: "280 72% 55%", present: 17, absent: 5, total: 22 },
-    ]
-  },
-  { 
-    id: "2", 
-    name: "Priya Patel", 
-    rollNumber: "CS2021002", 
-    semester: 5,
-    subjects: [
-      { name: "Data Structures", code: "CS301", color: "234 89% 64%", present: 21, absent: 1, total: 22 },
-      { name: "Database Systems", code: "CS302", color: "142 72% 45%", present: 20, absent: 2, total: 22 },
-      { name: "Operating Systems", code: "CS303", color: "43 96% 56%", present: 19, absent: 3, total: 22 },
-      { name: "Computer Networks", code: "CS304", color: "0 72% 51%", present: 20, absent: 2, total: 22 },
-      { name: "Software Engineering", code: "CS305", color: "280 72% 55%", present: 18, absent: 4, total: 22 },
-    ]
-  },
-  { 
-    id: "3", 
-    name: "Amit Kumar", 
-    rollNumber: "CS2021003", 
-    semester: 5,
-    subjects: [
-      { name: "Data Structures", code: "CS301", color: "234 89% 64%", present: 12, absent: 10, total: 22 },
-      { name: "Database Systems", code: "CS302", color: "142 72% 45%", present: 14, absent: 8, total: 22 },
-      { name: "Operating Systems", code: "CS303", color: "43 96% 56%", present: 16, absent: 6, total: 22 },
-      { name: "Computer Networks", code: "CS304", color: "0 72% 51%", present: 13, absent: 9, total: 22 },
-      { name: "Software Engineering", code: "CS305", color: "280 72% 55%", present: 15, absent: 7, total: 22 },
-    ]
-  },
-  { 
-    id: "4", 
-    name: "Sneha Singh", 
-    rollNumber: "CS2021004", 
-    semester: 5,
-    subjects: [
-      { name: "Data Structures", code: "CS301", color: "234 89% 64%", present: 17, absent: 5, total: 22 },
-      { name: "Database Systems", code: "CS302", color: "142 72% 45%", present: 18, absent: 4, total: 22 },
-      { name: "Operating Systems", code: "CS303", color: "43 96% 56%", present: 16, absent: 6, total: 22 },
-      { name: "Computer Networks", code: "CS304", color: "0 72% 51%", present: 19, absent: 3, total: 22 },
-      { name: "Software Engineering", code: "CS305", color: "280 72% 55%", present: 15, absent: 7, total: 22 },
-    ]
-  },
-  { 
-    id: "5", 
-    name: "Vikram Mehta", 
-    rollNumber: "CS2021005", 
-    semester: 5,
-    subjects: [
-      { name: "Data Structures", code: "CS301", color: "234 89% 64%", present: 20, absent: 2, total: 22 },
-      { name: "Database Systems", code: "CS302", color: "142 72% 45%", present: 19, absent: 3, total: 22 },
-      { name: "Operating Systems", code: "CS303", color: "43 96% 56%", present: 18, absent: 4, total: 22 },
-      { name: "Computer Networks", code: "CS304", color: "0 72% 51%", present: 17, absent: 5, total: 22 },
-      { name: "Software Engineering", code: "CS305", color: "280 72% 55%", present: 21, absent: 1, total: 22 },
-    ]
-  },
-  { 
-    id: "6", 
-    name: "Anjali Gupta", 
-    rollNumber: "CS2021006", 
-    semester: 5,
-    subjects: [
-      { name: "Data Structures", code: "CS301", color: "234 89% 64%", present: 15, absent: 7, total: 22 },
-      { name: "Database Systems", code: "CS302", color: "142 72% 45%", present: 16, absent: 6, total: 22 },
-      { name: "Operating Systems", code: "CS303", color: "43 96% 56%", present: 14, absent: 8, total: 22 },
-      { name: "Computer Networks", code: "CS304", color: "0 72% 51%", present: 17, absent: 5, total: 22 },
-      { name: "Software Engineering", code: "CS305", color: "280 72% 55%", present: 18, absent: 4, total: 22 },
-    ]
-  },
-];
+interface Student {
+  id: string;
+  name: string;
+  rollNumber: string;
+  email?: string;
+  pictureUrl?: string;
+}
 
-type Student = typeof mockStudents[0];
+interface SubjectAttendance {
+  subjectId: string;
+  subjectCode: string;
+  subjectName: string;
+  present: number;
+  absent: number;
+  leave: number;
+  total: number;
+  color: string;
+}
+
+interface SemesterData {
+  semester: {
+    id: string;
+    year: number;
+    type: string;
+  };
+  subjects: SubjectAttendance[];
+}
+
+interface StudentAttendanceData {
+  studentId: string;
+  studentName: string;
+  rollNumber: string;
+  semester?: {
+    id: string;
+    year: number;
+    type: string;
+  };
+  subjects?: SubjectAttendance[];
+  semesters?: SemesterData[];
+}
+
+// Generate a consistent color for a subject based on its code
+function generateSubjectColor(code: string): string {
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) {
+    hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  const saturation = 70 + (Math.abs(hash) % 20); // 70-90%
+  const lightness = 45 + (Math.abs(hash >> 8) % 15); // 45-60%
+  return `${hue} ${saturation}% ${lightness}%`;
+}
 
 export default function Search() {
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
-  
-  const filteredStudents = query.length > 0
-    ? mockStudents.filter(
-        (s) =>
-          s.name.toLowerCase().includes(query.toLowerCase()) ||
-          s.rollNumber.toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [attendanceData, setAttendanceData] = useState<StudentAttendanceData | null>(null);
+  const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+  const [currentSemester, setCurrentSemester] = useState<{ year: number; type: string } | null>(null);
 
-  // Filter semester history by selected semester
-  const filteredHistory = useMemo(() => {
-    if (!selectedSemester) return semesterHistory;
-    return semesterHistory.filter((sem) => 
-      sem.year === selectedSemester.year && 
-      sem.term.toLowerCase() === selectedSemester.term.toLowerCase()
+  // Fetch current semester on mount
+  useEffect(() => {
+    const fetchCurrentSemester = async () => {
+      try {
+        const response = await fetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentSemester(data);
+        }
+      } catch (error) {
+        console.error('Error fetching current semester:', error);
+      }
+    };
+    fetchCurrentSemester();
+  }, []);
+
+  // Search students when query changes
+  useEffect(() => {
+    const searchStudents = async () => {
+      if (query.trim().length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      if (query.trim().length < 2) {
+        return; // Don't search for very short queries
+      }
+
+      setIsSearching(true);
+      try {
+        const response = await fetch(
+          `${API_CONFIG.ENDPOINTS.SEARCH_STUDENTS}?query=${encodeURIComponent(query)}`,
+          { credentials: 'include' }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setStudents(data);
+        } else {
+          console.error('Failed to search students');
+          toast.error('Failed to search students');
+        }
+      } catch (error) {
+        console.error('Error searching students:', error);
+        toast.error('Error searching students');
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchStudents, 300); // Debounce
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  // Fetch attendance when student is selected
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      if (!selectedStudent) {
+        setAttendanceData(null);
+        return;
+      }
+
+      setIsLoadingAttendance(true);
+      try {
+        let url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
+        
+        // If a semester is selected, find its ID from available semesters
+        if (selectedSemester) {
+          // We need to get semester ID from backend, but for now we'll fetch all and filter
+          // In a real implementation, you'd need an endpoint to get semester ID by year/type
+          url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
+        }
+
+        const response = await fetch(url, { credentials: 'include' });
+        
+        if (response.ok) {
+          const data: StudentAttendanceData = await response.json();
+          
+          // Add colors to subjects
+          if (data.subjects) {
+            data.subjects = data.subjects.map(subj => ({
+              ...subj,
+              color: generateSubjectColor(subj.subjectCode)
+            }));
+          }
+          
+          if (data.semesters) {
+            data.semesters = data.semesters.map(sem => ({
+              ...sem,
+              subjects: sem.subjects.map(subj => ({
+                ...subj,
+                color: generateSubjectColor(subj.subjectCode)
+              }))
+            }));
+          }
+          
+          setAttendanceData(data);
+        } else {
+          console.error('Failed to fetch attendance');
+          toast.error('Failed to load attendance data');
+        }
+      } catch (error) {
+        console.error('Error fetching attendance:', error);
+        toast.error('Error loading attendance data');
+      } finally {
+        setIsLoadingAttendance(false);
+      }
+    };
+
+    fetchAttendance();
+  }, [selectedStudent, selectedSemester]);
+
+  // Filter semesters based on selected semester
+  const filteredSemesters = useMemo(() => {
+    if (!attendanceData?.semesters || !selectedSemester) {
+      return attendanceData?.semesters || [];
+    }
+    return attendanceData.semesters.filter(sem => 
+      sem.semester.year === selectedSemester.year &&
+      sem.semester.type.toLowerCase() === selectedSemester.term.toLowerCase()
     );
-  }, [selectedSemester]);
+  }, [attendanceData, selectedSemester]);
+
+  // Find current semester data
+  const currentSemesterData = useMemo(() => {
+    if (!attendanceData?.semesters || !currentSemester) return null;
+    return attendanceData.semesters.find(sem => 
+      sem.semester.year === currentSemester.year &&
+      sem.semester.type.toLowerCase() === currentSemester.type.toLowerCase()
+    );
+  }, [attendanceData, currentSemester]);
 
   if (selectedStudent) {
     return (
@@ -119,7 +211,10 @@ export default function Search() {
         <div className="space-y-4">
           {/* Back button */}
           <button
-            onClick={() => setSelectedStudent(null)}
+            onClick={() => {
+              setSelectedStudent(null);
+              setSelectedSemester(null);
+            }}
             className="flex items-center gap-2 text-muted-foreground text-sm"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -137,94 +232,125 @@ export default function Search() {
             )}
           </div>
 
-          {/* Current Semester - Only if no filter applied */}
-          {!selectedSemester && (
-            <div>
-              <h3 className="font-semibold text-sm mb-2">
-                Current Semester ({currentSemester.term} {currentSemester.year})
-              </h3>
-              <div className="space-y-2">
-                {selectedStudent.subjects.map((subject, index) => (
-                  <SubjectCard
-                    key={index}
-                    name={subject.name}
-                    code={subject.code}
-                    color={subject.color}
-                    present={subject.present}
-                    absent={subject.absent}
-                    total={subject.total}
-                    minRequired={70}
-                    defaultExpanded={true}
-                  />
-                ))}
-              </div>
+          {isLoadingAttendance ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">Loading attendance data...</p>
             </div>
-          )}
-
-          {/* Filtered Semester Data */}
-          {selectedSemester && (
-            <div>
-              <h3 className="font-semibold text-sm mb-2">
-                {selectedSemester.label} Attendance
-              </h3>
-              <div className="space-y-2">
-                {filteredHistory.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No data for {selectedSemester.label}
-                  </p>
-                )}
-                {filteredHistory.map((sem) => (
-                  <div key={`${sem.year}-${sem.term}`} className="space-y-2">
-                    {sem.subjects.map((subject, idx) => (
-                      <SubjectCard
-                        key={idx}
-                        name={subject.name}
-                        code={subject.code}
-                        color={subject.color}
-                        present={subject.present}
-                        absent={subject.absent}
-                        total={subject.total}
-                        minRequired={75}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Previous Semesters - Collapsed view without filter */}
-          {!selectedSemester && (
-            <div>
-              <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
-              <div className="space-y-2">
-                {semesterHistory.map((sem) => (
-                  <Collapsible key={`${sem.year}-${sem.term}`}>
-                    <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
-                      <div>
-                        <p className="font-medium text-sm">Semester {sem.semester}</p>
-                        <p className="text-xs text-muted-foreground">{sem.term} {sem.year}</p>
-                      </div>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pt-2 space-y-2">
-                      {sem.subjects.map((subject, idx) => (
+          ) : (
+            <>
+              {/* Current Semester - Only if no filter applied */}
+              {!selectedSemester && currentSemesterData && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">
+                    Current Semester ({currentSemesterData.semester.type} {currentSemesterData.semester.year})
+                  </h3>
+                  <div className="space-y-2">
+                    {currentSemesterData.subjects.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No attendance data for current semester
+                      </p>
+                    ) : (
+                      currentSemesterData.subjects.map((subject) => (
                         <SubjectCard
-                          key={idx}
-                          name={subject.name}
-                          code={subject.code}
+                          key={subject.subjectId}
+                          name={subject.subjectName}
+                          code={subject.subjectCode}
                           color={subject.color}
                           present={subject.present}
                           absent={subject.absent}
                           total={subject.total}
-                          minRequired={75}
+                          minRequired={70}
+                          defaultExpanded={true}
                         />
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Filtered Semester Data */}
+              {selectedSemester && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">
+                    {selectedSemester.label} Attendance
+                  </h3>
+                  <div className="space-y-2">
+                    {filteredSemesters.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No data for {selectedSemester.label}
+                      </p>
+                    ) : (
+                      filteredSemesters.map((sem) => (
+                        <div key={`${sem.semester.year}-${sem.semester.type}`} className="space-y-2">
+                          {sem.subjects.map((subject) => (
+                            <SubjectCard
+                              key={subject.subjectId}
+                              name={subject.subjectName}
+                              code={subject.subjectCode}
+                              color={subject.color}
+                              present={subject.present}
+                              absent={subject.absent}
+                              total={subject.total}
+                              minRequired={75}
+                            />
+                          ))}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Previous Semesters - Collapsed view without filter */}
+              {!selectedSemester && attendanceData?.semesters && (
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
+                  <div className="space-y-2">
+                    {attendanceData.semesters
+                      .filter(sem => 
+                        !currentSemester || 
+                        sem.semester.year !== currentSemester.year ||
+                        sem.semester.type.toLowerCase() !== currentSemester.type.toLowerCase()
+                      )
+                      .map((sem) => (
+                        <Collapsible key={`${sem.semester.year}-${sem.semester.type}`}>
+                          <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
+                            <div>
+                              <p className="font-medium text-sm">
+                                {sem.semester.type} {sem.semester.year}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {sem.subjects.length} subject{sem.subjects.length !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="pt-2 space-y-2">
+                            {sem.subjects.map((subject) => (
+                              <SubjectCard
+                                key={subject.subjectId}
+                                name={subject.subjectName}
+                                code={subject.subjectCode}
+                                color={subject.color}
+                                present={subject.present}
+                                absent={subject.absent}
+                                total={subject.total}
+                                minRequired={75}
+                              />
+                            ))}
+                          </CollapsibleContent>
+                        </Collapsible>
                       ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </div>
-            </div>
+                  </div>
+                </div>
+              )}
+
+              {!attendanceData?.semesters && !attendanceData?.subjects && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">No attendance data available</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </AppLayout>
@@ -266,22 +392,36 @@ export default function Search() {
           </div>
         )}
 
-        {query.length > 0 && filteredStudents.length === 0 && (
+        {isSearching && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">Searching...</p>
+          </div>
+        )}
+
+        {!isSearching && query.length >= 2 && students.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <p className="text-sm">No students found</p>
           </div>
         )}
 
-        {filteredStudents.length > 0 && (
+        {!isSearching && students.length > 0 && (
           <div className="space-y-2">
-            {filteredStudents.map((student) => (
+            {students.map((student) => (
               <button
                 key={student.id}
                 onClick={() => setSelectedStudent(student)}
                 className="bg-card rounded-xl p-4 border border-border flex items-center gap-3 text-left w-full active:scale-98 transition-transform"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5 text-primary" />
+                  {student.pictureUrl ? (
+                    <img 
+                      src={student.pictureUrl} 
+                      alt={student.name}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-primary" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{student.name}</p>
