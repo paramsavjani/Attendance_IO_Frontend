@@ -49,55 +49,53 @@ export default function Dashboard() {
                 <div
                   key={index}
                   className={cn(
-                    "bg-card rounded-2xl border overflow-hidden",
-                    isCurrent ? "border-primary ring-1 ring-primary/20" : "border-border"
+                    "bg-card rounded-xl border overflow-hidden",
+                    isCurrent ? "border-primary/50" : "border-border"
                   )}
                 >
-                  <div className="flex items-stretch">
+                  <div className="flex items-center">
                     {/* Color bar */}
                     <div
-                      className="w-1.5"
+                      className="w-1 self-stretch"
                       style={{ backgroundColor: `hsl(${slot.subject.color})` }}
                     />
                     
                     {/* Content */}
-                    <div className="flex-1 p-3">
+                    <div className="flex-1 py-3 px-4">
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-sm">{slot.subject.name}</p>
                         {isCurrent && (
-                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
-                            NOW
+                          <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium uppercase">
+                            now
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">{slot.time}</p>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex items-stretch border-l border-border">
+                    {/* Action buttons - just icons */}
+                    <div className="flex items-center gap-4 pr-4">
                       <button
                         onClick={() => handleMarkAttendance(index, slot.subject!.id, "present")}
                         className={cn(
-                          "w-14 flex items-center justify-center gap-1 transition-all text-sm font-medium",
+                          "w-6 h-6 flex items-center justify-center transition-all",
                           status === "present"
-                            ? "bg-success text-success-foreground"
-                            : "hover:bg-success/10 text-success"
+                            ? "text-success"
+                            : "text-muted-foreground/40 hover:text-success"
                         )}
                       >
-                        <Check className="w-4 h-4" />
-                        {status === "present" && <span className="text-xs">P</span>}
+                        <Check className="w-5 h-5" strokeWidth={status === "present" ? 3 : 2} />
                       </button>
                       <button
                         onClick={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
                         className={cn(
-                          "w-14 flex items-center justify-center gap-1 transition-all text-sm font-medium border-l border-border",
+                          "w-6 h-6 flex items-center justify-center transition-all",
                           status === "absent"
-                            ? "bg-destructive text-destructive-foreground"
-                            : "hover:bg-destructive/10 text-destructive"
+                            ? "text-destructive"
+                            : "text-muted-foreground/40 hover:text-destructive"
                         )}
                       >
-                        <X className="w-4 h-4" />
-                        {status === "absent" && <span className="text-xs">A</span>}
+                        <X className="w-5 h-5" strokeWidth={status === "absent" ? 3 : 2} />
                       </button>
                     </div>
                   </div>
