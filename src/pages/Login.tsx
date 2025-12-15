@@ -69,6 +69,23 @@ export default function Login() {
           </div>
           
           <div className="space-y-4">
+            {/* Domain Restriction Notice */}
+            <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-2">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    Domain Restriction
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Only <span className="font-semibold text-primary">@dau.ac.in</span> Gmail accounts are allowed to sign in.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <Button
               type="button"
               onClick={handleGoogleSignIn}
