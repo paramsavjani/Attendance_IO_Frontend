@@ -3,8 +3,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { getTodaySchedule, subjectAttendance, officialLastDate } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Play, Clock } from "lucide-react";
+import { Play, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { student } = useAuth();
@@ -13,18 +14,20 @@ export default function Dashboard() {
   const now = new Date();
   const currentHour = now.getHours();
 
+  // Mock attendance status for today's classes
+  const [todayAttendance, setTodayAttendance] = useState<Record<number, 'present' | 'absent' | null>>({});
+
   const getCurrentClass = () => {
     for (const slot of schedule.slots) {
       const startHour = parseInt(slot.time.split(":")[0]);
       if (startHour === currentHour && slot.subject) {
-        return { slot, status: "current" as const };
+        return { slot, status: "current" as const, index: schedule.slots.indexOf(slot) };
       }
     }
-    // Find next class
     for (const slot of schedule.slots) {
       const startHour = parseInt(slot.time.split(":")[0]);
       if (startHour > currentHour && slot.subject) {
-        return { slot, status: "next" as const };
+        return { slot, status: "next" as const, index: schedule.slots.indexOf(slot) };
       }
     }
     return null;
@@ -57,25 +60,18 @@ export default function Dashboard() {
           </h1>
         </div>
 
-        {/* Current/Next Class Card */}
+        {/* Current/Next Class Card - Black theme */}
         {currentClass ? (
-          <div 
-            className={cn(
-              "rounded-2xl p-5 transition-all",
-              currentClass.status === "current" 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-card border border-border"
-            )}
-          >
+          <div className="rounded-2xl p-5 bg-card border border-border">
             <div className="flex items-center gap-2 mb-3">
               {currentClass.status === "current" ? (
                 <>
-                  <div className="w-2 h-2 rounded-full bg-primary-foreground animate-pulse" />
-                  <span className="text-sm font-medium opacity-90">Live Now</span>
+                  <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                  <span className="text-sm font-medium text-success">Live Now</span>
                 </>
               ) : (
                 <>
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Up Next</span>
                 </>
               )}
@@ -83,10 +79,7 @@ export default function Dashboard() {
             <h2 className="text-lg font-bold mb-1">
               {currentClass.slot.subject?.name}
             </h2>
-            <p className={cn(
-              "text-sm",
-              currentClass.status === "current" ? "opacity-80" : "text-muted-foreground"
-            )}>
+            <p className="text-sm text-muted-foreground">
               {currentClass.slot.time}
             </p>
           </div>
@@ -118,13 +111,13 @@ export default function Dashboard() {
         {/* Track Button */}
         <button
           onClick={() => navigate("/daily")}
-          className="w-full bg-primary/10 text-primary font-medium py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-98 transition-transform"
+          className="w-full bg-card border border-border text-foreground font-medium py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-98 transition-transform"
         >
-          <Play className="w-5 h-5" />
+          <Play className="w-5 h-5 text-primary" />
           Mark Today's Attendance
         </button>
 
-        {/* Today's Schedule */}
+        {/* Today's Schedule with attendance status */}
         <div>
           <h3 className="font-semibold mb-3">Today's Classes</h3>
           <div className="space-y-2">
@@ -132,6 +125,7 @@ export default function Dashboard() {
               const startHour = parseInt(slot.time.split(":")[0]);
               const isPast = startHour < currentHour;
               const isCurrent = startHour === currentHour;
+              const status = todayAttendance[index];
 
               if (!slot.subject) return null;
 
@@ -139,10 +133,9 @@ export default function Dashboard() {
                 <div
                   key={index}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-xl transition-all",
-                    isCurrent && "bg-primary/10 border border-primary/30",
-                    isPast && "opacity-50",
-                    !isCurrent && !isPast && "bg-card border border-border"
+                    "flex items-center gap-3 p-3 rounded-xl bg-card border border-border transition-all",
+                    isCurrent && "border-success/50",
+                    isPast && "opacity-60"
                   )}
                 >
                   <div
@@ -153,11 +146,28 @@ export default function Dashboard() {
                     <p className="font-medium text-sm truncate">{slot.subject.name}</p>
                     <p className="text-xs text-muted-foreground">{slot.time}</p>
                   </div>
-                  {isCurrent && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                      Now
-                    </span>
-                  )}
+                  
+                  {/* Attendance status indicator */}
+                  <div className="flex items-center gap-2">
+                    {isCurrent && (
+                      <span className="text-xs bg-success/20 text-success px-2 py-1 rounded-full">
+                        Now
+                      </span>
+                    )}
+                    {status === 'present' && (
+                      <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-success" />
+                      </div>
+                    )}
+                    {status === 'absent' && (
+                      <div className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center">
+                        <X className="w-3 h-3 text-destructive" />
+                      </div>
+                    )}
+                    {!status && isPast && (
+                      <span className="text-xs text-muted-foreground">Not marked</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
