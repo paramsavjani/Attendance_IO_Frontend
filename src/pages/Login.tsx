@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,11 +8,26 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { handleGoogleLogin, isAuthenticated, checkAuth } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Check if user is already authenticated (e.g., returning from OAuth)
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Handle error from OAuth callback
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      toast.error(decodeURIComponent(error));
+      // Remove error from URL
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete("error");
+        return newParams;
+      });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Redirect if authenticated
   useEffect(() => {
