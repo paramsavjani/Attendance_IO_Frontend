@@ -98,12 +98,6 @@ export default function Dashboard() {
     }
   };
 
-  const getGreeting = () => {
-    if (currentHour < 12) return "Good morning";
-    if (currentHour < 17) return "Good afternoon";
-    return "Good evening";
-  };
-
   return (
     <AppLayout>
       <div className="space-y-3 pb-4">
@@ -114,7 +108,7 @@ export default function Dashboard() {
               {format(now, "EEEE, MMM d")}
             </p>
             <h1 className="text-lg font-bold">
-              {getGreeting()}, {student?.name?.split(" ")[0]}
+              Hi, {student?.name?.split(" ")[0]} {student?.name?.split(" ")[1]}
             </h1>
           </div>
           <div className="flex items-center gap-1.5">
