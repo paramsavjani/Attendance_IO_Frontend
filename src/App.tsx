@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { AttendanceProvider } from "@/contexts/AttendanceContext";
+import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -14,27 +14,41 @@ import Timetable from "./pages/Timetable";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 import Analytics from "./pages/Analytics";
+import SubjectOnboarding from "./pages/SubjectOnboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
+  const { hasCompletedOnboarding } = useAttendance();
 
   return (
     <Routes>
       <Route
         path="/"
         element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+          isAuthenticated 
+            ? hasCompletedOnboarding 
+              ? <Navigate to="/dashboard" replace /> 
+              : <Navigate to="/onboarding" replace />
+            : <Navigate to="/login" replace />
         }
       />
       <Route path="/login" element={<Login />} />
       <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <SubjectOnboarding />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            {hasCompletedOnboarding ? <Dashboard /> : <Navigate to="/onboarding" replace />}
           </ProtectedRoute>
         }
       />
