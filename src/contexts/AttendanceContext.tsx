@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
-import { subjectAttendance as initialSubjectAttendance, subjects } from "@/data/mockData";
-import { Subject } from "@/types/attendance";
+import { subjectAttendance as initialSubjectAttendance, subjects, defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
+import { Subject, TimetableSlot } from "@/types/attendance";
 
 const DEFAULT_MIN = 75;
 
@@ -16,11 +16,14 @@ interface AttendanceContextType {
   subjectMinAttendance: Record<string, number>;
   todayAttendance: Record<string, 'present' | 'absent' | null>;
   enrolledSubjects: Subject[];
+  timetable: TimetableSlot[];
   hasCompletedOnboarding: boolean;
   markAttendance: (subjectId: string, slotKey: string, status: 'present' | 'absent') => void;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
   setEnrolledSubjects: (subjects: Subject[]) => void;
+  setTimetable: (timetable: TimetableSlot[]) => void;
+  completeOnboarding: () => void;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
@@ -32,7 +35,23 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const hasCompletedOnboarding = enrolledSubjects.length > 0;
+  // Timetable
+  const [timetable, setTimetableState] = useState<TimetableSlot[]>(() => {
+    const saved = localStorage.getItem('userTimetable');
+    return saved ? JSON.parse(saved) : initialDefaultTimetable;
+  });
+
+  // Onboarding completion flag
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('onboardingCompleted') === 'true';
+  });
+
+  const hasCompletedOnboarding = onboardingCompleted && enrolledSubjects.length > 0;
+
+  const completeOnboarding = useCallback(() => {
+    setOnboardingCompleted(true);
+    localStorage.setItem('onboardingCompleted', 'true');
+  }, []);
 
   const setEnrolledSubjects = useCallback((subjects: Subject[]) => {
     setEnrolledSubjectsState(subjects);
@@ -49,6 +68,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('subjectStats', JSON.stringify(updated));
       return updated;
     });
+  }, []);
+
+  const setTimetable = useCallback((newTimetable: TimetableSlot[]) => {
+    setTimetableState(newTimetable);
+    localStorage.setItem('userTimetable', JSON.stringify(newTimetable));
   }, []);
 
   // Initialize subject stats from mock data
@@ -173,11 +197,14 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         subjectMinAttendance,
         todayAttendance,
         enrolledSubjects,
+        timetable,
         hasCompletedOnboarding,
         markAttendance,
         setSubjectMin,
         getSubjectStats,
         setEnrolledSubjects,
+        setTimetable,
+        completeOnboarding,
       }}
     >
       {children}
