@@ -1,0 +1,213 @@
+import { cn } from "@/lib/utils";
+import { ChevronDown, Settings, AlertCircle, CheckCircle } from "lucide-react";
+import { useState } from "react";
+
+interface SubjectCardProps {
+  name: string;
+  code: string;
+  color: string;
+  present: number;
+  absent: number;
+  total: number;
+  minRequired: number;
+  onMinChange?: (value: number) => void;
+  defaultExpanded?: boolean;
+}
+
+export function SubjectCard({
+  name,
+  code,
+  present,
+  absent,
+  total,
+  color,
+  minRequired,
+  onMinChange,
+  defaultExpanded = false,
+}: SubjectCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const percentage = total > 0 ? (present / total) * 100 : 0;
+  const isSafe = percentage >= minRequired;
+  const isWarning = percentage >= minRequired - 10 && percentage < minRequired;
+
+  // Calculate classes needed to reach minRequired
+  const calculateClassesNeeded = () => {
+    if (percentage >= minRequired) return 0;
+    let needed = 0;
+    let newPresent = present;
+    let newTotal = total;
+    while ((newPresent / newTotal) * 100 < minRequired && needed < 100) {
+      newPresent++;
+      newTotal++;
+      needed++;
+    }
+    return needed;
+  };
+
+  // Calculate classes that can be bunked
+  const calculateBunkable = () => {
+    if (percentage < minRequired) return 0;
+    let bunkable = 0;
+    let newTotal = total;
+    while ((present / (newTotal + 1)) * 100 >= minRequired && bunkable < 100) {
+      newTotal++;
+      bunkable++;
+    }
+    return bunkable;
+  };
+
+  const classesNeeded = calculateClassesNeeded();
+  const bunkable = calculateBunkable();
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Header - always visible */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full p-3 flex items-center justify-between"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-1 h-8 rounded-full"
+            style={{ backgroundColor: `hsl(${color})` }}
+          />
+          <div className="text-left">
+            <p className="text-sm font-medium">{code}</p>
+            <p className="text-xs text-muted-foreground">{present}/{total}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <p className={cn(
+            "text-xl font-bold",
+            isSafe && "text-success",
+            isWarning && "text-warning",
+            !isSafe && !isWarning && "text-destructive"
+          )}>
+            {percentage.toFixed(0)}%
+          </p>
+          <ChevronDown className={cn(
+            "w-4 h-4 text-muted-foreground transition-transform",
+            isExpanded && "rotate-180"
+          )} />
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="px-3 pb-3 space-y-3 animate-fade-in">
+          {/* Subject name */}
+          <div className="flex items-center justify-between">
+            <p className="font-semibold text-sm">{name}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSettings(!showSettings);
+              }}
+              className="p-1.5 rounded-lg hover:bg-muted"
+            >
+              <Settings className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+
+          {/* Settings panel */}
+          {showSettings && onMinChange && (
+            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+              <span className="text-xs text-muted-foreground">Min:</span>
+              {[60, 70, 75, 80, 85].map((val) => (
+                <button
+                  key={val}
+                  onClick={() => onMinChange(val)}
+                  className={cn(
+                    "px-2 py-1 rounded text-xs font-medium transition-all",
+                    minRequired === val
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-muted-foreground"
+                  )}
+                >
+                  {val}%
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground">Present</p>
+              <p className="text-lg font-bold text-success">{present}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Absent</p>
+              <p className="text-lg font-bold text-destructive">{absent}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-lg font-bold text-foreground">{total}</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-muted-foreground">Your Attendance</span>
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-sm font-bold",
+                  isSafe ? "text-success" : "text-destructive"
+                )}>
+                  {percentage.toFixed(2)}%
+                </span>
+                {!isSafe && (
+                  <span className="text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">
+                    Below {minRequired}%
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  isSafe ? "bg-success" : isWarning ? "bg-warning" : "bg-destructive"
+                )}
+                style={{ width: `${Math.min(percentage, 100)}%` }}
+              />
+              {/* Threshold marker */}
+              <div
+                className="absolute top-0 w-0.5 h-full bg-foreground/50"
+                style={{ left: `${minRequired}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Analysis message */}
+          <div className={cn(
+            "flex items-center gap-2 p-2 rounded-lg text-sm",
+            isSafe ? "bg-success/10" : "bg-muted"
+          )}>
+            {isSafe ? (
+              <>
+                <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  Above {minRequired}% threshold - <span className="text-success font-medium">Safe</span>
+                  {bunkable > 0 && (
+                    <span className="text-muted-foreground"> (Can bunk {bunkable} classes)</span>
+                  )}
+                </span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  Attend <span className="text-warning font-medium">{classesNeeded}</span> more classes to reach {minRequired}%
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
