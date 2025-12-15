@@ -137,20 +137,12 @@ export default function Search() {
 
       setIsLoadingAttendance(true);
       try {
-        let url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
-        
-        // If a semester is selected, find its ID from available semesters
-        if (selectedSemester) {
-          // We need to get semester ID from backend, but for now we'll fetch all and filter
-          // In a real implementation, you'd need an endpoint to get semester ID by year/type
-          url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
-        }
-
+        const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
         const response = await fetch(url, { credentials: 'include' });
         
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
-          
+
           // Add colors to subjects
           if (data.subjects) {
             data.subjects = data.subjects.map(subj => ({
@@ -238,74 +230,74 @@ export default function Search() {
             </div>
           ) : (
             <>
-              {/* Current Semester - Only if no filter applied */}
+          {/* Current Semester - Only if no filter applied */}
               {!selectedSemester && currentSemesterData && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">
+            <div>
+              <h3 className="font-semibold text-sm mb-2">
                     Current Semester ({currentSemesterData.semester.type} {currentSemesterData.semester.year})
-                  </h3>
-                  <div className="space-y-2">
+              </h3>
+              <div className="space-y-2">
                     {currentSemesterData.subjects.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
                         No attendance data for current semester
                       </p>
                     ) : (
                       currentSemesterData.subjects.map((subject) => (
-                        <SubjectCard
+                  <SubjectCard
                           key={subject.subjectId}
                           name={subject.subjectName}
                           code={subject.subjectCode}
-                          color={subject.color}
-                          present={subject.present}
-                          absent={subject.absent}
-                          total={subject.total}
-                          minRequired={70}
-                          defaultExpanded={true}
-                        />
+                    color={subject.color}
+                    present={subject.present}
+                    absent={subject.absent}
+                    total={subject.total}
+                    minRequired={70}
+                    defaultExpanded={true}
+                  />
                       ))
                     )}
-                  </div>
-                </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {/* Filtered Semester Data */}
-              {selectedSemester && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">
-                    {selectedSemester.label} Attendance
-                  </h3>
-                  <div className="space-y-2">
+          {/* Filtered Semester Data */}
+          {selectedSemester && (
+            <div>
+              <h3 className="font-semibold text-sm mb-2">
+                {selectedSemester.label} Attendance
+              </h3>
+              <div className="space-y-2">
                     {filteredSemesters.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No data for {selectedSemester.label}
-                      </p>
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No data for {selectedSemester.label}
+                  </p>
                     ) : (
                       filteredSemesters.map((sem) => (
                         <div key={`${sem.semester.year}-${sem.semester.type}`} className="space-y-2">
                           {sem.subjects.map((subject) => (
-                            <SubjectCard
+                      <SubjectCard
                               key={subject.subjectId}
                               name={subject.subjectName}
                               code={subject.subjectCode}
-                              color={subject.color}
-                              present={subject.present}
-                              absent={subject.absent}
-                              total={subject.total}
-                              minRequired={75}
-                            />
-                          ))}
-                        </div>
+                        color={subject.color}
+                        present={subject.present}
+                        absent={subject.absent}
+                        total={subject.total}
+                        minRequired={75}
+                      />
+                    ))}
+                  </div>
                       ))
                     )}
-                  </div>
-                </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {/* Previous Semesters - Collapsed view without filter */}
+          {/* Previous Semesters - Collapsed view without filter */}
               {!selectedSemester && attendanceData?.semesters && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
-                  <div className="space-y-2">
+            <div>
+              <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
+              <div className="space-y-2">
                     {attendanceData.semesters
                       .filter(sem => 
                         !currentSemester || 
@@ -314,35 +306,35 @@ export default function Search() {
                       )
                       .map((sem) => (
                         <Collapsible key={`${sem.semester.year}-${sem.semester.type}`}>
-                          <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
-                            <div>
+                    <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
+                      <div>
                               <p className="font-medium text-sm">
                                 {sem.semester.type} {sem.semester.year}
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 {sem.subjects.length} subject{sem.subjects.length !== 1 ? 's' : ''}
                               </p>
-                            </div>
-                            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="pt-2 space-y-2">
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-2">
                             {sem.subjects.map((subject) => (
-                              <SubjectCard
+                        <SubjectCard
                                 key={subject.subjectId}
                                 name={subject.subjectName}
                                 code={subject.subjectCode}
-                                color={subject.color}
-                                present={subject.present}
-                                absent={subject.absent}
-                                total={subject.total}
-                                minRequired={75}
-                              />
-                            ))}
-                          </CollapsibleContent>
-                        </Collapsible>
+                          color={subject.color}
+                          present={subject.present}
+                          absent={subject.absent}
+                          total={subject.total}
+                          minRequired={75}
+                        />
                       ))}
-                  </div>
-                </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
+            </div>
               )}
 
               {!attendanceData?.semesters && !attendanceData?.subjects && (
@@ -420,7 +412,7 @@ export default function Search() {
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
-                    <User className="w-5 h-5 text-primary" />
+                  <User className="w-5 h-5 text-primary" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
