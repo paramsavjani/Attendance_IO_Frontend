@@ -106,148 +106,127 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 pb-4">
-        {/* Header */}
-        <div className="pt-3">
-          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-            {format(now, "EEEE, MMM d")}
-          </p>
-          <h1 className="text-xl font-bold mt-1">
-            {getGreeting()}, {student?.name?.split(" ")[0]}
-          </h1>
+      <div className="space-y-3 pb-4">
+        {/* Compact Header with Date */}
+        <div className="flex items-center justify-between pt-2">
+          <div>
+            <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">
+              {format(now, "EEEE, MMM d")}
+            </p>
+            <h1 className="text-lg font-bold">
+              {getGreeting()}, {student?.name?.split(" ")[0]}
+            </h1>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <button className="w-9 h-9 rounded-lg bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors">
+                  <CalendarSearch className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-popover border-border z-50" align="end">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            {!isSelectedToday && (
+              <button
+                onClick={goToToday}
+                className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center gap-1.5 transition-colors"
+              >
+                <Sun className="w-3.5 h-3.5" />
+                Today
+              </button>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="schedule" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-1 rounded-2xl h-12">
+          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-0.5 rounded-xl h-9">
             <TabsTrigger 
               value="schedule" 
-              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+              className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
             >
-              <CalendarDays className="w-4 h-4 mr-2" />
+              <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
               Schedule
             </TabsTrigger>
             <TabsTrigger 
               value="subjects"
-              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+              className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
             >
               Subjects
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="schedule" className="mt-5 space-y-4">
-            {/* Date Navigation Card */}
-            <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => navigateDate("prev")}
-                  className="w-10 h-10 rounded-xl bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors active:scale-95"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    {isSelectedToday && <Sun className="w-4 h-4 text-warning" />}
-                    {isSelectedTomorrow && <Sunrise className="w-4 h-4 text-primary" />}
-                    <p className="font-bold text-base">
-                      {isSelectedToday ? "Today" : isSelectedTomorrow ? "Tomorrow" : format(selectedDate, "EEEE")}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {format(selectedDate, "MMMM d, yyyy")}
-                  </p>
-                </div>
-                
-                <button
-                  onClick={() => navigateDate("next")}
-                  className="w-10 h-10 rounded-xl bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors active:scale-95"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+          <TabsContent value="schedule" className="mt-3 space-y-3">
+            {/* Inline Date Navigation */}
+            <div className="flex items-center justify-between bg-card/50 rounded-xl px-2 py-1.5 border border-border/30">
+              <button
+                onClick={() => navigateDate("prev")}
+                className="w-8 h-8 rounded-lg hover:bg-secondary/50 flex items-center justify-center transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              
+              <div className="text-center flex items-center gap-2">
+                {isSelectedToday && <Sun className="w-3.5 h-3.5 text-warning" />}
+                {isSelectedTomorrow && <Sunrise className="w-3.5 h-3.5 text-primary" />}
+                <span className="font-semibold text-sm">
+                  {isSelectedToday ? "Today" : isSelectedTomorrow ? "Tomorrow" : format(selectedDate, "EEE, MMM d")}
+                </span>
               </div>
+              
+              <button
+                onClick={() => navigateDate("next")}
+                className="w-8 h-8 rounded-lg hover:bg-secondary/50 flex items-center justify-center transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex gap-2">
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex-1 justify-center gap-2 rounded-xl border-border/50 bg-card h-11"
-                  >
-                    <CalendarSearch className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Find date</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-popover border-border z-50" align="center">
-                  <CalendarComponent
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateSelect}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-
-              {!isSelectedToday && (
-                <Button
-                  onClick={goToToday}
-                  className="gap-2 rounded-xl h-11 px-5"
-                >
-                  <Sun className="w-4 h-4" />
-                  Today
-                </Button>
-              )}
-            </div>
-
-            {/* Tomorrow's Schedule Notice */}
+            {/* Compact Notice */}
             {isSelectedTomorrow && showingTomorrowByDefault && (
-              <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/20">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Sunrise className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Tomorrow's Schedule</p>
-                  <p className="text-xs text-muted-foreground">
-                    Today's classes are complete. Showing tomorrow's timetable.
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/20">
+                <Sunrise className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Today's done — showing tomorrow's schedule
+                </p>
               </div>
             )}
 
-            {/* Status Messages */}
             {isFutureDate && !isSelectedTomorrow && (
-              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-border/50">
-                <Lock className="w-5 h-5 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Attendance marking will be available on this day
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
+                <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Attendance available on this day
                 </p>
               </div>
             )}
 
             {!isSelectedToday && !isFutureDate && (
-              <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-border/50">
-                <Lock className="w-5 h-5 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Past date — View only mode
-                </p>
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
+                <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">Past date — View only</p>
               </div>
             )}
 
-            {/* Weekend */}
             {schedule.length === 0 && (
-              <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                  <CalendarDays className="w-8 h-8 text-muted-foreground/50" />
+              <div className="text-center py-12">
+                <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                  <CalendarDays className="w-6 h-6 text-muted-foreground/50" />
                 </div>
-                <p className="font-semibold text-muted-foreground">No classes</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">Enjoy your day off!</p>
+                <p className="font-medium text-sm text-muted-foreground">No classes</p>
+                <p className="text-xs text-muted-foreground/70 mt-0.5">Enjoy your day off!</p>
               </div>
             )}
 
             {/* Schedule List */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               {schedule.map((slot, index) => {
                 if (!slot.subject) return null;
                 
@@ -276,15 +255,14 @@ export default function Dashboard() {
               })}
             </div>
 
-            {/* Auto-save indicator */}
             {canMarkAttendance && schedule.filter(s => s.subject).length > 0 && (
-              <p className="text-center text-xs text-muted-foreground pt-2">
-                Tap to mark attendance • Auto-saved
+              <p className="text-center text-[10px] text-muted-foreground pt-1">
+                Tap to mark • Auto-saved
               </p>
             )}
           </TabsContent>
 
-          <TabsContent value="subjects" className="mt-5 space-y-3">
+          <TabsContent value="subjects" className="mt-3 space-y-2">
             {subjects.map((subject) => {
               const stats = subjectStats[subject.id];
               if (!stats) return null;
