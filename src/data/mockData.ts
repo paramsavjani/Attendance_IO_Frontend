@@ -92,12 +92,11 @@ export const defaultTimetable: TimetableSlot[] = [
 ];
 
 export const timeSlots = [
-  "8:00 - 9:00",
-  "9:00 - 10:00",
-  "10:00 - 11:00",
-  "11:00 - 12:00",
-  "12:00 - 1:00",
-  "1:00 - 2:00",
+  "8:00 - 8:50",
+  "9:00 - 9:50",
+  "10:00 - 10:50",
+  "11:00 - 11:50",
+  "12:00 - 12:50"
 ];
 
 export const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
