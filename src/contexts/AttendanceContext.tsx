@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
-import { subjectAttendance as initialSubjectAttendance, subjects, defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
+import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG } from "@/lib/api";
 import { useAuth } from "./AuthContext";
@@ -20,12 +20,14 @@ interface AttendanceContextType {
   enrolledSubjects: Subject[];
   timetable: TimetableSlot[];
   hasCompletedOnboarding: boolean;
+  isLoadingEnrolledSubjects: boolean;
   markAttendance: (subjectId: string, slotKey: string, status: 'present' | 'absent') => void;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
   setEnrolledSubjects: (subjects: Subject[]) => void;
   setTimetable: (timetable: TimetableSlot[]) => void;
   completeOnboarding: () => void;
+  refreshEnrolledSubjects: () => Promise<void>;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
@@ -37,53 +39,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const [enrolledSubjects, setEnrolledSubjectsState] = useState<Subject[]>([]);
   const [isLoadingEnrolledSubjects, setIsLoadingEnrolledSubjects] = useState(true);
 
-  // Fetch enrolled subjects from backend
-  useEffect(() => {
-    const fetchEnrolledSubjects = async () => {
-      if (!student) {
-        setIsLoadingEnrolledSubjects(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Convert backend response to Subject format
-          const subjects: Subject[] = data.subjects.map((s: any) => ({
-            id: s.subjectId,
-            code: s.subjectCode,
-            name: s.subjectName,
-            color: generateSubjectColor(s.subjectCode),
-          }));
-          setEnrolledSubjectsState(subjects);
-          // Also save to localStorage as backup
-          localStorage.setItem('enrolledSubjects', JSON.stringify(subjects));
-        } else {
-          // Fallback to localStorage if backend fails
-          const saved = localStorage.getItem('enrolledSubjects');
-          if (saved) {
-            setEnrolledSubjectsState(JSON.parse(saved));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching enrolled subjects:', error);
-        // Fallback to localStorage
-        const saved = localStorage.getItem('enrolledSubjects');
-        if (saved) {
-          setEnrolledSubjectsState(JSON.parse(saved));
-        }
-      } finally {
-        setIsLoadingEnrolledSubjects(false);
-      }
-    };
-
-    fetchEnrolledSubjects();
-  }, [student]);
-
   // Generate a consistent color for a subject based on its code
   function generateSubjectColor(code: string): string {
     let hash = 0;
@@ -94,29 +49,80 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     return `${hue} 72% 50%`;
   }
 
-  // Timetable
-  const [timetable, setTimetableState] = useState<TimetableSlot[]>(() => {
-    const saved = localStorage.getItem('userTimetable');
-    return saved ? JSON.parse(saved) : initialDefaultTimetable;
-  });
+  // Fetch enrolled subjects from backend - no localStorage fallback
+  const fetchEnrolledSubjects = useCallback(async () => {
+    if (!student) {
+      setIsLoadingEnrolledSubjects(false);
+      return;
+    }
 
-  // Onboarding completion flag
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(() => {
-    return localStorage.getItem('onboardingCompleted') === 'true';
-  });
+    try {
+      setIsLoadingEnrolledSubjects(true);
+      const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
+        credentials: 'include',
+      });
 
-  const hasCompletedOnboarding = onboardingCompleted && enrolledSubjects.length > 0;
+      if (response.ok) {
+        const data = await response.json();
+        // Convert backend response to Subject format
+        const subjects: Subject[] = data.subjects.map((s: any) => ({
+          id: s.subjectId,
+          code: s.subjectCode,
+          name: s.subjectName,
+          color: generateSubjectColor(s.subjectCode),
+        }));
+        setEnrolledSubjectsState(subjects);
+      } else {
+        // No fallback - just set empty array if backend fails
+        setEnrolledSubjectsState([]);
+      }
+    } catch (error) {
+      console.error('Error fetching enrolled subjects:', error);
+      // No fallback - just set empty array on error
+      setEnrolledSubjectsState([]);
+    } finally {
+      setIsLoadingEnrolledSubjects(false);
+    }
+  }, [student]);
+
+  useEffect(() => {
+    fetchEnrolledSubjects();
+  }, [fetchEnrolledSubjects]);
+
+  // Expose refresh function for manual refresh
+  const refreshEnrolledSubjects = useCallback(async () => {
+    await fetchEnrolledSubjects();
+  }, [fetchEnrolledSubjects]);
+
+  // Timetable - no localStorage, use default initially
+  const [timetable, setTimetableState] = useState<TimetableSlot[]>(initialDefaultTimetable);
+
+  // Initialize subject stats - no localStorage, start with empty
+  // Stats should come from backend attendance API in the future
+  const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStats>>({});
+
+  // Subject min attendance - no localStorage, use defaults
+  const [subjectMinAttendance, setSubjectMinAttendance] = useState<Record<string, number>>({});
+
+  // Today's attendance - no localStorage, in-memory only
+  const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | null>>({});
+
+  // Onboarding completion is based solely on backend data
+  // If enrolledSubjects.length === 0, show onboarding
+  // If enrolledSubjects.length > 0, onboarding is complete
+  const hasCompletedOnboarding = enrolledSubjects.length > 0;
 
   const completeOnboarding = useCallback(() => {
-    setOnboardingCompleted(true);
-    localStorage.setItem('onboardingCompleted', 'true');
+    // Onboarding is considered complete when user has enrolled subjects
+    // No localStorage needed - the enrolledSubjects state is the source of truth
   }, []);
 
   const setEnrolledSubjects = useCallback((subjects: Subject[]) => {
+    // This is only used for temporary state during onboarding
+    // The actual enrolled subjects come from backend via fetchEnrolledSubjects
     setEnrolledSubjectsState(subjects);
-    localStorage.setItem('enrolledSubjects', JSON.stringify(subjects));
     
-    // Initialize stats for new subjects
+    // Initialize stats for new subjects (no localStorage)
     setSubjectStats(prev => {
       const updated = { ...prev };
       subjects.forEach(s => {
@@ -124,46 +130,14 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           updated[s.id] = { subjectId: s.id, present: 0, absent: 0, total: 0 };
         }
       });
-      localStorage.setItem('subjectStats', JSON.stringify(updated));
       return updated;
     });
   }, []);
 
   const setTimetable = useCallback((newTimetable: TimetableSlot[]) => {
+    // No localStorage - timetable is managed in memory only
     setTimetableState(newTimetable);
-    localStorage.setItem('userTimetable', JSON.stringify(newTimetable));
   }, []);
-
-  // Initialize subject stats from mock data
-  const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStats>>(() => {
-    const saved = localStorage.getItem('subjectStats');
-    if (saved) return JSON.parse(saved);
-    
-    const stats: Record<string, SubjectStats> = {};
-    initialSubjectAttendance.forEach(sa => {
-      stats[sa.subject.id] = {
-        subjectId: sa.subject.id,
-        present: sa.officialPresent + sa.estimatedPresent,
-        absent: (sa.officialTotal + sa.estimatedTotal) - (sa.officialPresent + sa.estimatedPresent),
-        total: sa.officialTotal + sa.estimatedTotal,
-      };
-    });
-    return stats;
-  });
-
-  const [subjectMinAttendance, setSubjectMinAttendance] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('subjectMinAttendance');
-    if (saved) return JSON.parse(saved);
-    const defaults: Record<string, number> = {};
-    subjects.forEach(s => { defaults[s.id] = DEFAULT_MIN; });
-    return defaults;
-  });
-
-  const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | null>>(() => {
-    const saved = localStorage.getItem('todayAttendance');
-    if (saved) return JSON.parse(saved);
-    return {};
-  });
 
   const markAttendance = useCallback((subjectId: string, slotKey: string, status: 'present' | 'absent') => {
     const previousStatus = todayAttendance[slotKey];
@@ -171,17 +145,15 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     // Toggle off if same status
     if (previousStatus === status) {
       setTodayAttendance(prev => {
-        const updated = { ...prev, [slotKey]: null };
-        localStorage.setItem('todayAttendance', JSON.stringify(updated));
-        return updated;
+        return { ...prev, [slotKey]: null };
       });
       
-      // Revert stats
+      // Revert stats (no localStorage)
       setSubjectStats(prev => {
         const current = prev[subjectId];
         if (!current) return prev;
         
-        const updated = {
+        return {
           ...prev,
           [subjectId]: {
             ...current,
@@ -190,21 +162,17 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
             total: current.total - 1,
           }
         };
-        localStorage.setItem('subjectStats', JSON.stringify(updated));
-        return updated;
       });
       
       return;
     }
 
-    // Update today's attendance
+    // Update today's attendance (no localStorage)
     setTodayAttendance(prev => {
-      const updated = { ...prev, [slotKey]: status };
-      localStorage.setItem('todayAttendance', JSON.stringify(updated));
-      return updated;
+      return { ...prev, [slotKey]: status };
     });
 
-    // Update subject stats
+    // Update subject stats (no localStorage)
     setSubjectStats(prev => {
       const current = prev[subjectId];
       if (!current) return prev;
@@ -223,7 +191,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       if (status === 'absent') newAbsent++;
       newTotal++;
 
-      const updated = {
+      return {
         ...prev,
         [subjectId]: {
           ...current,
@@ -232,16 +200,12 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           total: newTotal,
         }
       };
-      localStorage.setItem('subjectStats', JSON.stringify(updated));
-      return updated;
     });
   }, [todayAttendance]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {
-      const updated = { ...prev, [subjectId]: value };
-      localStorage.setItem('subjectMinAttendance', JSON.stringify(updated));
-      return updated;
+      return { ...prev, [subjectId]: value };
     });
   }, []);
 
@@ -258,12 +222,14 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         enrolledSubjects,
         timetable,
         hasCompletedOnboarding,
+        isLoadingEnrolledSubjects,
         markAttendance,
         setSubjectMin,
         getSubjectStats,
         setEnrolledSubjects,
         setTimetable,
         completeOnboarding,
+        refreshEnrolledSubjects,
       }}
     >
       {children}

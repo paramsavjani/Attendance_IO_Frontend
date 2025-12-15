@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
@@ -12,24 +12,51 @@ type OnboardingStep = "subjects" | "timetable";
 export default function SubjectOnboarding() {
   const navigate = useNavigate();
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable, completeOnboarding } = useAttendance();
+  const { enrolledSubjects, timetable, setTimetable, completeOnboarding, refreshEnrolledSubjects } = useAttendance();
   const [step, setStep] = useState<OnboardingStep>("subjects");
   const [tempSubjects, setTempSubjects] = useState<Subject[]>(enrolledSubjects);
+  const hasMovedToTimetable = useRef(false);
+  const stepRef = useRef<OnboardingStep>("subjects");
 
-  const handleSubjectsSave = (subjects: Subject[]) => {
+  // Keep stepRef in sync with step state
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
+  // Update tempSubjects only on initial load, not when enrolledSubjects changes during onboarding
+  useEffect(() => {
+    // Only update if we're still on subjects step, haven't moved to timetable, and have enrolled subjects
+    if (stepRef.current === "subjects" && !hasMovedToTimetable.current && enrolledSubjects.length > 0) {
+      setTempSubjects(enrolledSubjects);
+    }
+  }, [enrolledSubjects.length]); // Only depend on length, not step
+
+  const handleSubjectsSave = async (subjects: Subject[]) => {
     setTempSubjects(subjects);
-    setEnrolledSubjects(subjects);
-    setStep("timetable");
+    // Mark that we've moved to timetable to prevent useEffect from interfering
+    hasMovedToTimetable.current = true;
+    // Move to timetable step immediately - use functional update to ensure it happens
+    setStep(prevStep => {
+      if (prevStep === "subjects") {
+        return "timetable";
+      }
+      return prevStep; // Don't change if already on timetable
+    });
+    // Don't refresh during onboarding - wait until after timetable is saved
+    // This prevents the refresh from interfering with step transition
   };
 
-  const handleTimetableSave = (newTimetable: TimetableSlot[]) => {
+  const handleTimetableSave = async (newTimetable: TimetableSlot[]) => {
     setTimetable(newTimetable);
     completeOnboarding();
+    // Refresh enrolled subjects to ensure latest data before navigating
+    await refreshEnrolledSubjects();
     toast.success("Setup complete! Welcome to your dashboard");
     navigate("/dashboard", { replace: true });
   };
 
   const handleBack = () => {
+    hasMovedToTimetable.current = false;
     setStep("subjects");
   };
 
