@@ -4,7 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Calendar, BookOpen, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { LogOut, User, GraduationCap, Calendar, BookOpen, Edit, Target, Save, X, ChevronDown } from "lucide-react";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { TimetableSelector } from "@/components/timetable/TimetableSelector";
 import { Subject, TimetableSlot } from "@/types/attendance";
@@ -16,6 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface CurrentSemester {
   year: number;
@@ -24,12 +30,15 @@ interface CurrentSemester {
 
 export default function Profile() {
   const { student, logout } = useAuth();
-  const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable } = useAttendance();
+  const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable, refreshEnrolledSubjects } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
   const [showTimetableEditor, setShowTimetableEditor] = useState(false);
   const [currentSemester, setCurrentSemester] = useState<CurrentSemester | null>(null);
   const [isLoadingSemester, setIsLoadingSemester] = useState(true);
+  const [editingCriteria, setEditingCriteria] = useState<Record<string, string>>({});
+  const [isSavingCriteria, setIsSavingCriteria] = useState<Record<string, boolean>>({});
+  const [isCriteriaOpen, setIsCriteriaOpen] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -74,6 +83,70 @@ export default function Profile() {
     setTimetable(newTimetable);
     setShowTimetableEditor(false);
     toast.success("Timetable updated");
+  };
+
+  const handleEditCriteria = (subjectId: string, currentValue: number | null | undefined) => {
+    // Use 70 as default if value is null/undefined
+    const defaultValue = currentValue ?? 70;
+    setEditingCriteria(prev => ({
+      ...prev,
+      [subjectId]: defaultValue.toString()
+    }));
+  };
+
+  const handleCancelEdit = (subjectId: string) => {
+    setEditingCriteria(prev => {
+      const updated = { ...prev };
+      delete updated[subjectId];
+      return updated;
+    });
+  };
+
+  const handleSaveCriteria = async (subjectId: string) => {
+    const valueStr = editingCriteria[subjectId]?.trim();
+    const value = valueStr === "" ? null : parseInt(valueStr, 10);
+
+    // Validate value
+    if (valueStr !== "" && (isNaN(value!) || value! < 0 || value! > 100)) {
+      toast.error("Minimum criteria must be between 0 and 100");
+      return;
+    }
+
+    setIsSavingCriteria(prev => ({ ...prev, [subjectId]: true }));
+
+    try {
+      const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_MINIMUM_CRITERIA, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subjectId,
+          minimumCriteria: value,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update minimum criteria');
+      }
+
+      toast.success("Minimum criteria updated successfully");
+      handleCancelEdit(subjectId);
+      
+      // Refresh enrolled subjects to get updated data
+      await refreshEnrolledSubjects();
+    } catch (error: any) {
+      console.error('Error updating minimum criteria:', error);
+      toast.error(error.message || 'Failed to update minimum criteria');
+    } finally {
+      setIsSavingCriteria(prev => {
+        const updated = { ...prev };
+        delete updated[subjectId];
+        return updated;
+      });
+    }
   };
 
   return (
@@ -147,6 +220,106 @@ export default function Profile() {
             <Edit className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
+
+        {/* Minimum Criteria Management */}
+        {enrolledSubjects.length > 0 && (
+          <Collapsible open={isCriteriaOpen} onOpenChange={setIsCriteriaOpen}>
+            <div className="bg-card rounded-xl border border-border">
+              <CollapsibleTrigger className="w-full p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Target className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium">Minimum Criteria</p>
+                    <p className="text-sm text-muted-foreground">Set attendance targets by subject</p>
+                  </div>
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isCriteriaOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-3">
+              {enrolledSubjects.map((subject) => {
+                const isEditing = editingCriteria.hasOwnProperty(subject.id);
+                const isSaving = isSavingCriteria[subject.id] || false;
+                const currentValue = subject.minimumCriteria;
+
+                return (
+                  <div
+                    key={subject.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30"
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: subject.color }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{subject.code}</p>
+                    </div>
+                    {isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={editingCriteria[subject.id]}
+                          onChange={(e) =>
+                            setEditingCriteria(prev => ({
+                              ...prev,
+                              [subject.id]: e.target.value
+                            }))
+                          }
+                          placeholder="70"
+                          className="w-20 h-8 text-sm"
+                          disabled={isSaving}
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleSaveCriteria(subject.id)}
+                          disabled={isSaving}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleCancelEdit(subject.id)}
+                          disabled={isSaving}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {currentValue !== null && currentValue !== undefined
+                            ? `${currentValue}%`
+                            : "70%"}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditCriteria(subject.id, currentValue)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+        )}
 
         {/* Logout */}
         <Button
