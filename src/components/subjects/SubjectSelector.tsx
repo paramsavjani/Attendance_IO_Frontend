@@ -173,12 +173,12 @@ export function SubjectSelector({
 
       {/* Search */}
       <div className="relative mb-2 sm:mb-3 flex-shrink-0">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
         <Input
           placeholder="Search subjects..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 h-9 sm:h-10 rounded-xl bg-muted/50 border-border text-sm"
+          className="pl-9 h-9 sm:h-10 rounded-xl bg-muted/50 border-2 border-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 text-sm"
         />
       </div>
 
