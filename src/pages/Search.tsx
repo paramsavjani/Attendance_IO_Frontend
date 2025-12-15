@@ -130,56 +130,51 @@ export default function Search() {
           <div className="pb-2 border-b border-border">
             <h1 className="text-lg font-bold">{selectedStudent.name}</h1>
             <p className="text-sm text-muted-foreground">{selectedStudent.rollNumber}</p>
+            {selectedSemester && (
+              <p className="text-xs text-primary mt-1">
+                Showing data for {selectedSemester.label}
+              </p>
+            )}
           </div>
 
-          {/* Current Semester */}
-          <div>
-            <h3 className="font-semibold text-sm mb-2">
-              Current Semester ({currentSemester.term} {currentSemester.year})
-            </h3>
-            <div className="space-y-2">
-              {selectedStudent.subjects.map((subject, index) => (
-                <SubjectCard
-                  key={index}
-                  name={subject.name}
-                  code={subject.code}
-                  color={subject.color}
-                  present={subject.present}
-                  absent={subject.absent}
-                  total={subject.total}
-                  minRequired={70}
-                  defaultExpanded={true}
-                />
-              ))}
+          {/* Current Semester - Only if no filter applied */}
+          {!selectedSemester && (
+            <div>
+              <h3 className="font-semibold text-sm mb-2">
+                Current Semester ({currentSemester.term} {currentSemester.year})
+              </h3>
+              <div className="space-y-2">
+                {selectedStudent.subjects.map((subject, index) => (
+                  <SubjectCard
+                    key={index}
+                    name={subject.name}
+                    code={subject.code}
+                    color={subject.color}
+                    present={subject.present}
+                    absent={subject.absent}
+                    total={subject.total}
+                    minRequired={70}
+                    defaultExpanded={true}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Previous Semesters with Semester Filter */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm">Previous Semesters</h3>
-              <SemesterSelector
-                selectedSemester={selectedSemester}
-                onSemesterChange={setSelectedSemester}
-                semesters={availableSemesters}
-              />
-            </div>
-            <div className="space-y-2">
-              {filteredHistory.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No data for {selectedSemester?.label}
-                </p>
-              )}
-              {filteredHistory.map((sem) => (
-                <Collapsible key={`${sem.year}-${sem.term}`}>
-                  <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
-                    <div>
-                      <p className="font-medium text-sm">Semester {sem.semester}</p>
-                      <p className="text-xs text-muted-foreground">{sem.term} {sem.year}</p>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2 space-y-2">
+          {/* Filtered Semester Data */}
+          {selectedSemester && (
+            <div>
+              <h3 className="font-semibold text-sm mb-2">
+                {selectedSemester.label} Attendance
+              </h3>
+              <div className="space-y-2">
+                {filteredHistory.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No data for {selectedSemester.label}
+                  </p>
+                )}
+                {filteredHistory.map((sem) => (
+                  <div key={`${sem.year}-${sem.term}`} className="space-y-2">
                     {sem.subjects.map((subject, idx) => (
                       <SubjectCard
                         key={idx}
@@ -192,11 +187,45 @@ export default function Search() {
                         minRequired={75}
                       />
                     ))}
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Previous Semesters - Collapsed view without filter */}
+          {!selectedSemester && (
+            <div>
+              <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
+              <div className="space-y-2">
+                {semesterHistory.map((sem) => (
+                  <Collapsible key={`${sem.year}-${sem.term}`}>
+                    <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
+                      <div>
+                        <p className="font-medium text-sm">Semester {sem.semester}</p>
+                        <p className="text-xs text-muted-foreground">{sem.term} {sem.year}</p>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-2">
+                      {sem.subjects.map((subject, idx) => (
+                        <SubjectCard
+                          key={idx}
+                          name={subject.name}
+                          code={subject.code}
+                          color={subject.color}
+                          present={subject.present}
+                          absent={subject.absent}
+                          total={subject.total}
+                          minRequired={75}
+                        />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </AppLayout>
     );
@@ -205,6 +234,16 @@ export default function Search() {
   return (
     <AppLayout>
       <div className="space-y-4">
+        {/* Semester Filter at Top */}
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm">Search Students</h2>
+          <SemesterSelector
+            selectedSemester={selectedSemester}
+            onSemesterChange={setSelectedSemester}
+            semesters={availableSemesters}
+          />
+        </div>
+
         {/* Search Input */}
         <div className="relative">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -221,6 +260,9 @@ export default function Search() {
           <div className="text-center py-16 text-muted-foreground">
             <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
             <p className="text-sm">Search for any student</p>
+            {selectedSemester && (
+              <p className="text-xs mt-1">Filtering by {selectedSemester.label}</p>
+            )}
           </div>
         )}
 

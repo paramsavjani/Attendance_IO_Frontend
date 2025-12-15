@@ -4,13 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Calendar, ChevronRight, History, BookOpen, Edit } from "lucide-react";
-import { currentSemester, semesterHistory } from "@/data/semesterHistory";
-import { SubjectCard } from "@/components/attendance/SubjectCard";
+import { LogOut, User, GraduationCap, Calendar, BookOpen, Edit } from "lucide-react";
+import { currentSemester } from "@/data/semesterHistory";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { TimetableSelector } from "@/components/timetable/TimetableSelector";
 import { Subject, TimetableSlot } from "@/types/attendance";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -23,7 +21,6 @@ export default function Profile() {
   const { student, logout } = useAuth();
   const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable } = useAttendance();
   const navigate = useNavigate();
-  const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
   const [showTimetableEditor, setShowTimetableEditor] = useState(false);
 
@@ -43,10 +40,6 @@ export default function Profile() {
     setShowTimetableEditor(false);
     toast.success("Timetable updated");
   };
-
-  const selectedSemData = selectedSemester !== null 
-    ? semesterHistory.find(s => s.semester === selectedSemester)
-    : null;
 
   return (
     <AppLayout>
@@ -116,53 +109,6 @@ export default function Profile() {
             </div>
             <Edit className="w-4 h-4 text-muted-foreground" />
           </button>
-        </div>
-
-        {/* Previous Semesters */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <History className="w-4 h-4 text-muted-foreground" />
-            <h3 className="font-semibold text-sm">Previous Semesters</h3>
-          </div>
-          
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {semesterHistory.map((sem) => (
-              <button
-                key={sem.semester}
-                onClick={() => setSelectedSemester(selectedSemester === sem.semester ? null : sem.semester)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border",
-                  selectedSemester === sem.semester
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border hover:bg-muted"
-                )}
-              >
-                Sem {sem.semester} • {sem.term} {sem.year}
-              </button>
-            ))}
-          </div>
-
-          {/* Selected Semester Details */}
-          {selectedSemData && (
-            <div className="mt-3 space-y-2 animate-fade-in">
-              <div className="flex items-center justify-between text-sm text-muted-foreground px-1">
-                <span>Semester {selectedSemData.semester} Attendance</span>
-                <span>{selectedSemData.year} {selectedSemData.term}</span>
-              </div>
-              {selectedSemData.subjects.map((subject) => (
-                <SubjectCard
-                  key={subject.id}
-                  name={subject.name}
-                  code={subject.code}
-                  color={subject.color}
-                  present={subject.present}
-                  absent={subject.absent}
-                  total={subject.total}
-                  minRequired={75}
-                />
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Logout */}
