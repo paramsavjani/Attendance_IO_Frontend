@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 import { subjectAttendance as initialSubjectAttendance, subjects } from "@/data/mockData";
+import { Subject } from "@/types/attendance";
 
 const DEFAULT_MIN = 75;
 
@@ -14,14 +15,42 @@ interface AttendanceContextType {
   subjectStats: Record<string, SubjectStats>;
   subjectMinAttendance: Record<string, number>;
   todayAttendance: Record<string, 'present' | 'absent' | null>;
+  enrolledSubjects: Subject[];
+  hasCompletedOnboarding: boolean;
   markAttendance: (subjectId: string, slotKey: string, status: 'present' | 'absent') => void;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
+  setEnrolledSubjects: (subjects: Subject[]) => void;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
 
 export function AttendanceProvider({ children }: { children: ReactNode }) {
+  // Enrolled subjects
+  const [enrolledSubjects, setEnrolledSubjectsState] = useState<Subject[]>(() => {
+    const saved = localStorage.getItem('enrolledSubjects');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const hasCompletedOnboarding = enrolledSubjects.length > 0;
+
+  const setEnrolledSubjects = useCallback((subjects: Subject[]) => {
+    setEnrolledSubjectsState(subjects);
+    localStorage.setItem('enrolledSubjects', JSON.stringify(subjects));
+    
+    // Initialize stats for new subjects
+    setSubjectStats(prev => {
+      const updated = { ...prev };
+      subjects.forEach(s => {
+        if (!updated[s.id]) {
+          updated[s.id] = { subjectId: s.id, present: 0, absent: 0, total: 0 };
+        }
+      });
+      localStorage.setItem('subjectStats', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   // Initialize subject stats from mock data
   const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStats>>(() => {
     const saved = localStorage.getItem('subjectStats');
@@ -143,9 +172,12 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         subjectStats,
         subjectMinAttendance,
         todayAttendance,
+        enrolledSubjects,
+        hasCompletedOnboarding,
         markAttendance,
         setSubjectMin,
         getSubjectStats,
+        setEnrolledSubjects,
       }}
     >
       {children}
