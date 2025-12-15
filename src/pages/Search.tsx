@@ -5,7 +5,7 @@ import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-rea
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { semesterHistory, currentSemester } from "@/data/semesterHistory";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { YearSelector } from "@/components/filters/YearSelector";
+import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
 
 // Mock student data with detailed subject attendance
 const mockStudents = [
@@ -94,7 +94,7 @@ type Student = typeof mockStudents[0];
 export default function Search() {
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
   
   const filteredStudents = query.length > 0
     ? mockStudents.filter(
@@ -104,17 +104,14 @@ export default function Search() {
       )
     : [];
 
-  // Filter semester history by selected year
+  // Filter semester history by selected semester
   const filteredHistory = useMemo(() => {
-    if (!selectedYear) return semesterHistory;
-    return semesterHistory.filter((sem) => sem.year === selectedYear);
-  }, [selectedYear]);
-
-  // Get unique years from semester history
-  const availableYears = useMemo(() => {
-    const years = new Set(semesterHistory.map((sem) => sem.year));
-    return Array.from(years).sort((a, b) => b - a);
-  }, []);
+    if (!selectedSemester) return semesterHistory;
+    return semesterHistory.filter((sem) => 
+      sem.year === selectedSemester.year && 
+      sem.term.toLowerCase() === selectedSemester.term.toLowerCase()
+    );
+  }, [selectedSemester]);
 
   if (selectedStudent) {
     return (
@@ -157,21 +154,20 @@ export default function Search() {
             </div>
           </div>
 
-          {/* Previous Semesters with Year Filter */}
+          {/* Previous Semesters with Semester Filter */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-sm">Previous Semesters</h3>
-              <YearSelector
-                selectedYear={selectedYear}
-                onYearChange={setSelectedYear}
-                startYear={Math.min(...availableYears)}
-                endYear={Math.max(...availableYears)}
+              <SemesterSelector
+                selectedSemester={selectedSemester}
+                onSemesterChange={setSelectedSemester}
+                semesters={availableSemesters}
               />
             </div>
             <div className="space-y-2">
               {filteredHistory.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No data for {selectedYear}
+                  No data for {selectedSemester?.label}
                 </p>
               )}
               {filteredHistory.map((sem) => (
