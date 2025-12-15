@@ -3,7 +3,7 @@ import { Search, Check, X, BookOpen, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Subject } from "@/types/attendance";
-import { cn } from "@/lib/utils";
+import { cn, hexToHsl } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -12,16 +12,6 @@ interface SubjectSelectorProps {
   onSave: (subjects: Subject[]) => void;
   onCancel?: () => void;
   isOnboarding?: boolean;
-}
-
-// Generate a consistent color for a subject based on its code
-function generateSubjectColor(code: string): string {
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) {
-    hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-  return `${hue} 72% 50%`;
 }
 
 export function SubjectSelector({ 
@@ -55,7 +45,7 @@ export function SubjectSelector({
           id: subject.id,
           code: subject.code,
           name: subject.name,
-          color: generateSubjectColor(subject.code),
+          color: hexToHsl(subject.color || "#3B82F6"),
         }));
         
         setSubjects(formattedSubjects);
