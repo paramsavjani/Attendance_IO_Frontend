@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
+import { hexToHsl } from "@/lib/utils";
 
 interface Student {
   id: string;
@@ -49,17 +50,6 @@ interface StudentAttendanceData {
   semesters?: SemesterData[];
 }
 
-// Generate a consistent color for a subject based on its code
-function generateSubjectColor(code: string): string {
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) {
-    hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-  const saturation = 70 + (Math.abs(hash) % 20); // 70-90%
-  const lightness = 45 + (Math.abs(hash >> 8) % 15); // 45-60%
-  return `${hue} ${saturation}% ${lightness}%`;
-}
 
 export default function Search() {
   const [query, setQuery] = useState("");
@@ -143,11 +133,11 @@ export default function Search() {
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
 
-          // Add colors to subjects
+          // Convert hex colors to HSL format for subjects
           if (data.subjects) {
             data.subjects = data.subjects.map(subj => ({
               ...subj,
-              color: generateSubjectColor(subj.subjectCode)
+              color: hexToHsl(subj.color || "#3B82F6")
             }));
           }
           
@@ -156,7 +146,7 @@ export default function Search() {
               ...sem,
               subjects: sem.subjects.map(subj => ({
                 ...subj,
-                color: generateSubjectColor(subj.subjectCode)
+                color: hexToHsl(subj.color || "#3B82F6")
               }))
             }));
           }
