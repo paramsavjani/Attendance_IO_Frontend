@@ -8,8 +8,6 @@ import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Attendance from "./pages/Attendance";
-import DailyAttendance from "./pages/DailyAttendance";
 import Timetable from "./pages/Timetable";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
@@ -49,22 +47,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             {hasCompletedOnboarding ? <Dashboard /> : <Navigate to="/onboarding" replace />}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/attendance"
-        element={
-          <ProtectedRoute>
-            <Attendance />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/daily"
-        element={
-          <ProtectedRoute>
-            <DailyAttendance />
           </ProtectedRoute>
         }
       />
