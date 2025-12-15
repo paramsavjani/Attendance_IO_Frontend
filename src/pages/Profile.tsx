@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, GraduationCap, Calendar, BookOpen, Edit } from "lucide-react";
-import { currentSemester } from "@/data/semesterHistory";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { TimetableSelector } from "@/components/timetable/TimetableSelector";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { toast } from "sonner";
+import { API_CONFIG } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -17,12 +17,47 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface CurrentSemester {
+  year: number;
+  type: string;
+}
+
 export default function Profile() {
   const { student, logout } = useAuth();
   const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
   const [showTimetableEditor, setShowTimetableEditor] = useState(false);
+  const [currentSemester, setCurrentSemester] = useState<CurrentSemester | null>(null);
+  const [isLoadingSemester, setIsLoadingSemester] = useState(true);
+
+  useEffect(() => {
+    const fetchCurrentSemester = async () => {
+      try {
+        const response = await fetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentSemester(data);
+        } else if (response.status === 404) {
+          // No active semester is a valid state, not an error
+          setCurrentSemester(null);
+        } else {
+          console.error('Failed to fetch current semester:', response.status);
+          toast.error('Failed to load current semester');
+        }
+      } catch (error) {
+        console.error('Error fetching current semester:', error);
+        toast.error('Error loading current semester');
+      } finally {
+        setIsLoadingSemester(false);
+      }
+    };
+
+    fetchCurrentSemester();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -61,7 +96,15 @@ export default function Profile() {
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Current Term</p>
-              <p className="font-semibold">{currentSemester.year} {currentSemester.term}</p>
+              {isLoadingSemester ? (
+                <p className="font-semibold">Loading...</p>
+              ) : currentSemester ? (
+                <p className="font-semibold">
+                  {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
+                </p>
+              ) : (
+                <p className="font-semibold text-muted-foreground">No active semester</p>
+              )}
             </div>
           </div>
         </div>
