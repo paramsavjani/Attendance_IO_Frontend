@@ -3,6 +3,7 @@ import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG } from "@/lib/api";
 import { useAuth } from "./AuthContext";
+import { hexToHsl } from "@/lib/utils";
 
 const DEFAULT_MIN = 75;
 
@@ -39,16 +40,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const [enrolledSubjects, setEnrolledSubjectsState] = useState<Subject[]>([]);
   const [isLoadingEnrolledSubjects, setIsLoadingEnrolledSubjects] = useState(true);
 
-  // Generate a consistent color for a subject based on its code
-  function generateSubjectColor(code: string): string {
-    let hash = 0;
-    for (let i = 0; i < code.length; i++) {
-      hash = code.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const hue = Math.abs(hash % 360);
-    return `${hue} 72% 50%`;
-  }
-
   // Fetch enrolled subjects from backend - no localStorage fallback
   const fetchEnrolledSubjects = useCallback(async () => {
     if (!student) {
@@ -69,7 +60,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           id: s.subjectId,
           code: s.subjectCode,
           name: s.subjectName,
-          color: generateSubjectColor(s.subjectCode),
+          color: hexToHsl(s.color || "#3B82F6"),
         }));
         setEnrolledSubjectsState(subjects);
       } else {
