@@ -133,16 +133,16 @@ export function SubjectSelector({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="text-center mb-4 px-2">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-          <BookOpen className="w-6 h-6 text-primary" />
+      <div className="text-center mb-3 sm:mb-4 px-2 flex-shrink-0">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
+          <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
         </div>
-        <h2 className="text-lg font-bold mb-1">
+        <h2 className="text-base sm:text-lg font-bold mb-1">
           {isOnboarding ? "Select Your Subjects" : "Update Subjects"}
         </h2>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[10px] sm:text-xs text-muted-foreground px-2">
           {isOnboarding 
             ? "Choose the subjects you're enrolled in"
             : "Add or remove subjects from your list"
@@ -151,20 +151,20 @@ export function SubjectSelector({
       </div>
 
       {/* Search */}
-      <div className="relative mb-3">
+      <div className="relative mb-2 sm:mb-3 flex-shrink-0">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search subjects..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 h-10 rounded-xl bg-muted/50 border-border text-sm"
+          className="pl-9 h-9 sm:h-10 rounded-xl bg-muted/50 border-border text-sm"
         />
       </div>
 
       {/* Selected count */}
-      <div className="flex items-center justify-between mb-2 px-1">
+      <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0">
         <span className={cn(
-          "text-xs",
+          "text-[10px] sm:text-xs",
           selected.length >= MAX_SUBJECTS ? "text-destructive font-medium" : "text-muted-foreground"
         )}>
           {selected.length} / {MAX_SUBJECTS} subject{selected.length !== 1 ? "s" : ""} selected
@@ -172,15 +172,15 @@ export function SubjectSelector({
         {selected.length > 0 && (
           <button
             onClick={() => setSelected([])}
-            className="text-[10px] text-destructive hover:underline"
+            className="text-[10px] text-destructive hover:underline px-1"
           >
             Clear all
           </button>
         )}
       </div>
 
-      {/* Subject List */}
-      <div className="flex-1 overflow-y-auto space-y-1.5 mb-3 max-h-[45vh] pr-1">
+      {/* Subject List - Flexible height for mobile */}
+      <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 sm:mb-3 min-h-0 pr-1">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -194,29 +194,29 @@ export function SubjectSelector({
                   key={subject.id}
                   onClick={() => toggleSubject(subject)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 p-2.5 rounded-xl border transition-all text-left",
+                    "w-full flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-lg sm:rounded-xl border transition-all text-left",
                     checked
                       ? "bg-primary/10 border-primary/30"
                       : "bg-card border-border hover:bg-muted/50 active:scale-[0.98]"
                   )}
                 >
                   <div
-                    className="w-2 h-8 rounded-full flex-shrink-0"
+                    className="w-1.5 sm:w-2 h-7 sm:h-8 rounded-full flex-shrink-0"
                     style={{ backgroundColor: `hsl(${subject.color})` }}
                   />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{subject.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{subject.code}</p>
+                  <div className="flex-1 min-w-0 pr-1">
+                    <p className="font-medium text-xs sm:text-sm truncate leading-tight">{subject.name}</p>
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">{subject.code}</p>
                   </div>
                   <div
                     className={cn(
-                      "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                      "w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                       checked
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted"
                     )}
                   >
-                    {checked && <Check className="w-3 h-3" />}
+                    {checked && <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
                   </div>
                 </button>
               );
@@ -234,23 +234,23 @@ export function SubjectSelector({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 pt-2 border-t border-border">
+      <div className="flex gap-2 pt-2 border-t border-border flex-shrink-0">
         {onCancel && (
           <Button
             variant="outline"
             onClick={onCancel}
-            className="flex-1 h-10 rounded-xl text-sm"
+            className="flex-1 h-9 sm:h-10 rounded-lg sm:rounded-xl text-xs sm:text-sm"
           >
-            <X className="w-4 h-4 mr-1.5" />
+            <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
             Cancel
           </Button>
         )}
         <Button
           onClick={handleSave}
           disabled={selected.length === 0 || selected.length > MAX_SUBJECTS}
-          className="flex-1 h-10 rounded-xl text-sm"
+          className="flex-1 h-9 sm:h-10 rounded-lg sm:rounded-xl text-xs sm:text-sm"
         >
-          <Check className="w-4 h-4 mr-1.5" />
+          <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
           {isOnboarding ? "Continue" : "Save"}
         </Button>
       </div>

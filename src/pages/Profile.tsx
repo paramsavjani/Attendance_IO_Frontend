@@ -152,15 +152,17 @@ export default function Profile() {
 
         {/* Subject Editor Dialog */}
         <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
-          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-hidden p-4">
-            <DialogHeader>
-              <DialogTitle className="sr-only">Edit Subjects</DialogTitle>
+          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[95vh] sm:max-h-[85vh] h-[95vh] sm:h-auto overflow-hidden p-3 sm:p-4 flex flex-col top-[2.5vh] sm:top-[50%] translate-y-0 sm:translate-y-[-50%]">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Edit Subjects</DialogTitle>
             </DialogHeader>
-            <SubjectSelector
-              selectedSubjects={enrolledSubjects}
-              onSave={handleSaveSubjects}
-              onCancel={() => setShowSubjectEditor(false)}
-            />
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <SubjectSelector
+                selectedSubjects={enrolledSubjects}
+                onSave={handleSaveSubjects}
+                onCancel={() => setShowSubjectEditor(false)}
+              />
+            </div>
           </DialogContent>
         </Dialog>
 
