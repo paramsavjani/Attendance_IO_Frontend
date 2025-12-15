@@ -1,89 +1,166 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { OverviewCard } from "@/components/attendance/OverviewCard";
-import { TodaySchedule } from "@/components/attendance/TodaySchedule";
-import { AttendanceCard } from "@/components/attendance/AttendanceCard";
-import { getOverallAttendance, subjectAttendance, officialLastDate } from "@/data/mockData";
-import { TrendingUp, Calendar, AlertCircle } from "lucide-react";
+import { getTodaySchedule, subjectAttendance, officialLastDate } from "@/data/mockData";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Play, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const overall = getOverallAttendance();
+  const schedule = getTodaySchedule();
+  const navigate = useNavigate();
+  const now = new Date();
+  const currentHour = now.getHours();
 
-  const getAttendanceVariant = (percentage: number) => {
-    if (percentage >= 75) return "success";
-    if (percentage >= 60) return "warning";
-    return "destructive";
+  const getCurrentClass = () => {
+    for (const slot of schedule.slots) {
+      const startHour = parseInt(slot.time.split(":")[0]);
+      if (startHour === currentHour && slot.subject) {
+        return { slot, status: "current" as const };
+      }
+    }
+    // Find next class
+    for (const slot of schedule.slots) {
+      const startHour = parseInt(slot.time.split(":")[0]);
+      if (startHour > currentHour && slot.subject) {
+        return { slot, status: "next" as const };
+      }
+    }
+    return null;
   };
+
+  const currentClass = getCurrentClass();
+
+  const getOverallPercentage = () => {
+    let totalPresent = 0;
+    let totalClasses = 0;
+    subjectAttendance.forEach((s) => {
+      totalPresent += s.officialPresent + s.estimatedPresent;
+      totalClasses += s.officialTotal + s.estimatedTotal;
+    });
+    return Math.round((totalPresent / totalClasses) * 100);
+  };
+
+  const percentage = getOverallPercentage();
 
   return (
     <AppLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold mb-2">
-            Welcome back, {student?.name?.split(" ")[0]}
-          </h1>
-          <p className="text-muted-foreground">
-            Semester {student?.semester} • {student?.rollNumber}
+      <div className="space-y-5">
+        {/* Greeting */}
+        <div className="pt-2">
+          <p className="text-muted-foreground text-sm">
+            {format(now, "EEEE, MMM d")}
           </p>
+          <h1 className="text-xl font-bold mt-1">
+            Hi, {student?.name?.split(" ")[0]} 👋
+          </h1>
         </div>
 
-        {/* Official Attendance Notice */}
-        <div className="glass-card rounded-xl p-4 border-primary/30 bg-primary/5 flex items-start gap-3 animate-fade-in">
-          <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm">
-              <span className="font-medium">Official attendance updated till:</span>{" "}
-              {format(new Date(officialLastDate), "MMMM d, yyyy")}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Attendance after this date is your self-tracked estimate
-            </p>
-          </div>
-        </div>
-
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <OverviewCard
-            title="Official Attendance"
-            value={`${overall.official}%`}
-            subtitle="From institute records"
-            icon={<Calendar className="w-5 h-5 text-primary" />}
-            variant={getAttendanceVariant(overall.official)}
-            tooltip="This is your official attendance from the institute, calculated up to the last updated date."
-          />
-          <OverviewCard
-            title="Estimated Attendance"
-            value={`${overall.estimated}%`}
-            subtitle="Including self-tracked"
-            icon={<TrendingUp className="w-5 h-5 text-primary" />}
-            variant={getAttendanceVariant(overall.estimated)}
-            tooltip="This includes your official attendance plus your self-tracked entries after the official date."
-          />
-          <OverviewCard
-            title="Current Semester"
-            value={`Sem ${student?.semester}`}
-            subtitle={`${subjectAttendance.length} subjects`}
-          />
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Today's Schedule */}
-          <div className="lg:col-span-1">
-            <TodaySchedule />
-          </div>
-
-          {/* Quick Attendance Overview */}
-          <div className="lg:col-span-2">
-            <h3 className="font-semibold mb-4">Subject Overview</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {subjectAttendance.slice(0, 4).map((data) => (
-                <AttendanceCard key={data.subject.id} data={data} showDetails={false} />
-              ))}
+        {/* Current/Next Class Card */}
+        {currentClass ? (
+          <div 
+            className={cn(
+              "rounded-2xl p-5 transition-all",
+              currentClass.status === "current" 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-card border border-border"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              {currentClass.status === "current" ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-primary-foreground animate-pulse" />
+                  <span className="text-sm font-medium opacity-90">Live Now</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Up Next</span>
+                </>
+              )}
             </div>
+            <h2 className="text-lg font-bold mb-1">
+              {currentClass.slot.subject?.name}
+            </h2>
+            <p className={cn(
+              "text-sm",
+              currentClass.status === "current" ? "opacity-80" : "text-muted-foreground"
+            )}>
+              {currentClass.slot.time}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl p-5 bg-card border border-border text-center">
+            <p className="text-muted-foreground">No more classes today</p>
+          </div>
+        )}
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-card rounded-2xl p-4 border border-border">
+            <p className="text-xs text-muted-foreground mb-1">Overall</p>
+            <p className={cn(
+              "text-2xl font-bold",
+              percentage >= 75 ? "text-success" : percentage >= 60 ? "text-warning" : "text-destructive"
+            )}>
+              {percentage}%
+            </p>
+          </div>
+          <div className="bg-card rounded-2xl p-4 border border-border">
+            <p className="text-xs text-muted-foreground mb-1">Official till</p>
+            <p className="text-sm font-medium">
+              {format(new Date(officialLastDate), "MMM d")}
+            </p>
+          </div>
+        </div>
+
+        {/* Track Button */}
+        <button
+          onClick={() => navigate("/daily")}
+          className="w-full bg-primary/10 text-primary font-medium py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-98 transition-transform"
+        >
+          <Play className="w-5 h-5" />
+          Mark Today's Attendance
+        </button>
+
+        {/* Today's Schedule */}
+        <div>
+          <h3 className="font-semibold mb-3">Today's Classes</h3>
+          <div className="space-y-2">
+            {schedule.slots.map((slot, index) => {
+              const startHour = parseInt(slot.time.split(":")[0]);
+              const isPast = startHour < currentHour;
+              const isCurrent = startHour === currentHour;
+
+              if (!slot.subject) return null;
+
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl transition-all",
+                    isCurrent && "bg-primary/10 border border-primary/30",
+                    isPast && "opacity-50",
+                    !isCurrent && !isPast && "bg-card border border-border"
+                  )}
+                >
+                  <div
+                    className="w-1 h-10 rounded-full"
+                    style={{ backgroundColor: `hsl(${slot.subject.color})` }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{slot.subject.name}</p>
+                    <p className="text-xs text-muted-foreground">{slot.time}</p>
+                  </div>
+                  {isCurrent && (
+                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                      Now
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

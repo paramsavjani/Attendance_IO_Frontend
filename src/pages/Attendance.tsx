@@ -1,80 +1,70 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { AttendanceCard } from "@/components/attendance/AttendanceCard";
 import { subjectAttendance, officialLastDate } from "@/data/mockData";
-import { AlertCircle, BookOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 export default function Attendance() {
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold mb-2">Attendance</h1>
-          <p className="text-muted-foreground">
-            View your subject-wise attendance breakdown
+          <h1 className="text-xl font-bold">Attendance Stats</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Official till {format(new Date(officialLastDate), "MMM d")}
           </p>
         </div>
 
-        {/* Legend & Notice */}
-        <div className="glass-card rounded-xl p-5">
-          <div className="flex items-start gap-3 mb-4">
-            <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">Understanding Your Attendance</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Official attendance from the institute is available till{" "}
-                <span className="text-foreground font-medium">
-                  {format(new Date(officialLastDate), "MMMM d, yyyy")}
-                </span>
-                . Any attendance after this date is your self-tracked estimate and will be
-                replaced once official data is released.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4 pt-3 border-t border-border">
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-primary" />
-              <span className="text-xs text-muted-foreground">Official (Institute)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Estimated (Self-tracked)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-success" />
-              <span className="text-xs text-muted-foreground">≥75% (Safe)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-warning" />
-              <span className="text-xs text-muted-foreground">60-74% (Warning)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-destructive" />
-              <span className="text-xs text-muted-foreground">&lt;60% (Critical)</span>
-            </div>
-          </div>
-        </div>
-
         {/* Subject Cards */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold">Subject-wise Attendance</h2>
-          </div>
+        <div className="space-y-3">
+          {subjectAttendance.map((data) => {
+            const totalPresent = data.officialPresent + data.estimatedPresent;
+            const totalClasses = data.officialTotal + data.estimatedTotal;
+            const percentage = Math.round((totalPresent / totalClasses) * 100);
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {subjectAttendance.map((data, index) => (
+            return (
               <div
                 key={data.subject.id}
-                style={{ animationDelay: `${index * 100}ms` }}
-                className="animate-slide-up"
+                className="bg-card rounded-xl p-4 border border-border"
               >
-                <AttendanceCard data={data} showDetails={true} />
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-2 h-8 rounded-full"
+                      style={{ backgroundColor: `hsl(${data.subject.color})` }}
+                    />
+                    <div>
+                      <p className="font-medium text-sm">{data.subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{data.subject.code}</p>
+                    </div>
+                  </div>
+                  <span className={cn(
+                    "text-xl font-bold",
+                    percentage >= 75 ? "text-success" : 
+                    percentage >= 60 ? "text-warning" : "text-destructive"
+                  )}>
+                    {percentage}%
+                  </span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      percentage >= 75 ? "bg-success" : 
+                      percentage >= 60 ? "bg-warning" : "bg-destructive"
+                    )}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  {totalPresent} / {totalClasses} classes
+                </p>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </AppLayout>
