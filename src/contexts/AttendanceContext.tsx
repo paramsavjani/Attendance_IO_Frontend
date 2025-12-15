@@ -61,6 +61,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           code: s.subjectCode,
           name: s.subjectName,
           color: hexToHsl(s.color || "#3B82F6"),
+          minimumCriteria: s.minimumCriteria ?? null,
         }));
         setEnrolledSubjectsState(subjects);
       } else {
