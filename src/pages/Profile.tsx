@@ -1,21 +1,39 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, GraduationCap, Calendar, Settings, ChevronRight, History } from "lucide-react";
+import { LogOut, User, GraduationCap, Calendar, Settings, ChevronRight, History, BookOpen, Edit } from "lucide-react";
 import { currentSemester, semesterHistory } from "@/data/semesterHistory";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
+import { SubjectSelector } from "@/components/subjects/SubjectSelector";
+import { Subject } from "@/types/attendance";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Profile() {
   const { student, logout } = useAuth();
+  const { enrolledSubjects, setEnrolledSubjects } = useAttendance();
   const navigate = useNavigate();
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
+  const [showSubjectEditor, setShowSubjectEditor] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const handleSaveSubjects = (subjects: Subject[]) => {
+    setEnrolledSubjects(subjects);
+    setShowSubjectEditor(false);
+    toast.success(`Updated to ${subjects.length} subjects`);
   };
 
   const selectedSemData = selectedSemester !== null 
@@ -62,6 +80,20 @@ export default function Profile() {
               <p className="font-medium">{currentSemester.term}</p>
             </div>
           </div>
+
+          <button 
+            onClick={() => setShowSubjectEditor(true)}
+            className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium">My Subjects</p>
+              <p className="text-sm text-muted-foreground">{enrolledSubjects.length} subjects enrolled</p>
+            </div>
+            <Edit className="w-4 h-4 text-muted-foreground" />
+          </button>
 
           <button 
             onClick={() => navigate("/timetable")}
@@ -134,6 +166,20 @@ export default function Profile() {
           <LogOut className="w-5 h-5 mr-2" />
           Logout
         </Button>
+
+        {/* Subject Editor Dialog */}
+        <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="sr-only">Edit Subjects</DialogTitle>
+            </DialogHeader>
+            <SubjectSelector
+              selectedSubjects={enrolledSubjects}
+              onSave={handleSaveSubjects}
+              onCancel={() => setShowSubjectEditor(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
