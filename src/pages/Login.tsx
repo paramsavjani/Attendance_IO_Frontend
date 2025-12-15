@@ -62,9 +62,9 @@ export default function Login() {
         {/* Login Card - Mobile optimized padding */}
         <div className="glass-card rounded-2xl sm:rounded-3xl p-6 sm:p-10 animate-slide-up shadow-2xl border border-border/50 backdrop-blur-sm bg-background/80">
           <div className="text-center mb-6 sm:mb-8">
-            <h2 className="text-xl sm:text-2xl font-semibold mb-1 sm:mb-2">Welcome back</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold mb-1 sm:mb-2">Welcome</h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Sign in to continue to your dashboard
+              Sign in or sign up with your Google account
             </p>
           </div>
           
@@ -72,7 +72,7 @@ export default function Login() {
             {/* Domain Restriction Notice - Simplified */}
             <div className="bg-primary/10 border border-primary/20 rounded-lg sm:rounded-xl p-3 sm:p-3">
               <p className="text-xs sm:text-sm text-muted-foreground text-center leading-relaxed">
-                Only <span className="font-semibold text-primary">@dau.ac.in</span> Gmail accounts are allowed to sign in.
+                All signup and login is done through Google. Only <span className="font-semibold text-primary">@dau.ac.in</span> Gmail accounts are allowed.
               </p>
             </div>
 
@@ -112,7 +112,7 @@ export default function Login() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  <span className="font-medium">Sign in with Google</span>
+                  <span className="font-medium">Continue with Google</span>
                 </div>
               )}
             </Button>
