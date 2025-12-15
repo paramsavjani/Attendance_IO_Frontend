@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
 import { subjectAttendance as initialSubjectAttendance, subjects, defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
+import { API_CONFIG } from "@/lib/api";
+import { useAuth } from "./AuthContext";
 
 const DEFAULT_MIN = 75;
 
@@ -29,11 +31,68 @@ interface AttendanceContextType {
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
 
 export function AttendanceProvider({ children }: { children: ReactNode }) {
+  const { student } = useAuth();
+  
   // Enrolled subjects
-  const [enrolledSubjects, setEnrolledSubjectsState] = useState<Subject[]>(() => {
-    const saved = localStorage.getItem('enrolledSubjects');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [enrolledSubjects, setEnrolledSubjectsState] = useState<Subject[]>([]);
+  const [isLoadingEnrolledSubjects, setIsLoadingEnrolledSubjects] = useState(true);
+
+  // Fetch enrolled subjects from backend
+  useEffect(() => {
+    const fetchEnrolledSubjects = async () => {
+      if (!student) {
+        setIsLoadingEnrolledSubjects(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Convert backend response to Subject format
+          const subjects: Subject[] = data.subjects.map((s: any) => ({
+            id: s.subjectId,
+            code: s.subjectCode,
+            name: s.subjectName,
+            color: generateSubjectColor(s.subjectCode),
+          }));
+          setEnrolledSubjectsState(subjects);
+          // Also save to localStorage as backup
+          localStorage.setItem('enrolledSubjects', JSON.stringify(subjects));
+        } else {
+          // Fallback to localStorage if backend fails
+          const saved = localStorage.getItem('enrolledSubjects');
+          if (saved) {
+            setEnrolledSubjectsState(JSON.parse(saved));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching enrolled subjects:', error);
+        // Fallback to localStorage
+        const saved = localStorage.getItem('enrolledSubjects');
+        if (saved) {
+          setEnrolledSubjectsState(JSON.parse(saved));
+        }
+      } finally {
+        setIsLoadingEnrolledSubjects(false);
+      }
+    };
+
+    fetchEnrolledSubjects();
+  }, [student]);
+
+  // Generate a consistent color for a subject based on its code
+  function generateSubjectColor(code: string): string {
+    let hash = 0;
+    for (let i = 0; i < code.length; i++) {
+      hash = code.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash % 360);
+    return `${hue} 72% 50%`;
+  }
 
   // Timetable
   const [timetable, setTimetableState] = useState<TimetableSlot[]>(() => {
