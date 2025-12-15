@@ -71,14 +71,29 @@ export function SubjectSelector({
   }, []);
 
   const filteredSubjects = useMemo(() => {
-    if (!searchQuery.trim()) return subjects;
-    const query = searchQuery.toLowerCase();
-    return subjects.filter(
-      (s) =>
-        s.name.toLowerCase().includes(query) ||
-        s.code.toLowerCase().includes(query)
-    );
-  }, [searchQuery, subjects]);
+    let filtered = subjects;
+    
+    // Filter by search query if present
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = subjects.filter(
+        (s) =>
+          s.name.toLowerCase().includes(query) ||
+          s.code.toLowerCase().includes(query)
+      );
+    }
+    
+    // Sort: selected subjects first, then unselected
+    const selectedIds = new Set(selected.map(s => s.id));
+    return filtered.sort((a, b) => {
+      const aSelected = selectedIds.has(a.id);
+      const bSelected = selectedIds.has(b.id);
+      
+      if (aSelected && !bSelected) return -1; // a comes first
+      if (!aSelected && bSelected) return 1;  // b comes first
+      return 0; // keep original order for same selection status
+    });
+  }, [searchQuery, subjects, selected]);
 
   const MAX_SUBJECTS = 7;
 
