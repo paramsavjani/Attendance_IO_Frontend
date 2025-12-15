@@ -85,22 +85,24 @@ export default function SubjectOnboarding() {
         </div>
 
         {/* Selector Card */}
-        <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-4 border border-border shadow-xl animate-slide-up max-h-[80vh] overflow-hidden">
-          {step === "subjects" ? (
-            <SubjectSelector
-              selectedSubjects={tempSubjects}
-              onSave={handleSubjectsSave}
-              isOnboarding={true}
-            />
-          ) : (
-            <TimetableSelector
-              timetable={timetable}
-              enrolledSubjects={tempSubjects}
-              onSave={handleTimetableSave}
-              onBack={handleBack}
-              isOnboarding={true}
-            />
-          )}
+        <div className="bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-xl animate-slide-up max-h-[85vh] sm:max-h-[80vh] h-[85vh] sm:h-auto overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {step === "subjects" ? (
+              <SubjectSelector
+                selectedSubjects={tempSubjects}
+                onSave={handleSubjectsSave}
+                isOnboarding={true}
+              />
+            ) : (
+              <TimetableSelector
+                timetable={timetable}
+                enrolledSubjects={tempSubjects}
+                onSave={handleTimetableSave}
+                onBack={handleBack}
+                isOnboarding={true}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
