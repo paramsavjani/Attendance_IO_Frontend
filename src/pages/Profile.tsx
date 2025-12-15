@@ -81,8 +81,16 @@ export default function Profile() {
       <div className="space-y-5">
         {/* Profile Header */}
         <div className="flex flex-col items-center text-center pt-4">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <User className="w-10 h-10 text-primary" />
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 overflow-hidden">
+            {student?.pictureUrl ? (
+              <img 
+                src={student.pictureUrl} 
+                alt={student.name || "Profile"} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-10 h-10 text-primary" />
+            )}
           </div>
           <h1 className="text-xl font-bold">{student?.name}</h1>
           <p className="text-muted-foreground">{student?.rollNumber}</p>
