@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  Calendar, 
   Search,
   BarChart3,
   User
@@ -15,7 +14,6 @@ interface AppLayoutProps {
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
-  { icon: Calendar, label: "Track", path: "/daily" },
   { icon: Search, label: "Search", path: "/search" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: User, label: "Profile", path: "/profile" },
