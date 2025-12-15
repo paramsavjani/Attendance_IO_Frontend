@@ -34,6 +34,7 @@ export function SubjectSelector({
   const [selected, setSelected] = useState<Subject[]>(selectedSubjects);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -121,7 +122,10 @@ export function SubjectSelector({
       return;
     }
 
+    if (isSaving) return; // Prevent multiple saves
+
     try {
+      setIsSaving(true);
       // Save to backend
       const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
         method: 'POST',
@@ -144,6 +148,8 @@ export function SubjectSelector({
     } catch (error: any) {
       console.error('Error saving subjects:', error);
       toast.error(error.message || 'Failed to save subjects');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -154,10 +160,10 @@ export function SubjectSelector({
         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
           <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
         </div>
-        <h2 className="text-base sm:text-lg font-bold mb-1">
+        <h2 className="text-lg sm:text-xl font-bold mb-1">
           {isOnboarding ? "Select Your Subjects" : "Update Subjects"}
         </h2>
-        <p className="text-[10px] sm:text-xs text-muted-foreground px-2">
+        <p className="text-xs sm:text-sm text-muted-foreground px-2">
           {isOnboarding 
             ? "Choose the subjects you're enrolled in"
             : "Add or remove subjects from your list"
@@ -179,7 +185,7 @@ export function SubjectSelector({
       {/* Selected count */}
       <div className="flex items-center justify-between mb-2 px-1 flex-shrink-0">
         <span className={cn(
-          "text-[10px] sm:text-xs",
+          "text-xs sm:text-sm",
           selected.length >= MAX_SUBJECTS ? "text-destructive font-medium" : "text-muted-foreground"
         )}>
           {selected.length} / {MAX_SUBJECTS} subject{selected.length !== 1 ? "s" : ""} selected
@@ -187,7 +193,7 @@ export function SubjectSelector({
         {selected.length > 0 && (
           <button
             onClick={() => setSelected([])}
-            className="text-[10px] text-destructive hover:underline px-1"
+            className="text-xs text-destructive hover:underline px-1"
           >
             Clear all
           </button>
@@ -220,8 +226,8 @@ export function SubjectSelector({
                     style={{ backgroundColor: `hsl(${subject.color})` }}
                   />
                   <div className="flex-1 min-w-0 pr-1">
-                    <p className="font-medium text-xs sm:text-sm truncate leading-tight">{subject.name}</p>
-                    <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">{subject.code}</p>
+                    <p className="font-medium text-sm sm:text-base truncate leading-tight">{subject.name}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{subject.code}</p>
                   </div>
                   <div
                     className={cn(
@@ -262,11 +268,20 @@ export function SubjectSelector({
         )}
         <Button
           onClick={handleSave}
-          disabled={selected.length === 0 || selected.length > MAX_SUBJECTS}
-          className="flex-1 h-9 sm:h-10 rounded-lg sm:rounded-xl text-xs sm:text-sm"
+          disabled={selected.length === 0 || selected.length > MAX_SUBJECTS || isSaving}
+          className="flex-1 h-9 sm:h-10 rounded-lg sm:rounded-xl text-sm sm:text-base"
         >
-          <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
-          {isOnboarding ? "Continue" : "Save"}
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Check className="w-4 h-4 mr-1.5" />
+              {isOnboarding ? "Continue" : "Save"}
+            </>
+          )}
         </Button>
       </div>
     </div>
