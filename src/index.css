@@ -7,6 +7,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe area for mobile */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Active scale for touch */
+.active\:scale-98:active {
+  transform: scale(0.98);
+}
+
+.active\:scale-95:active {
+  transform: scale(0.95);
+}
+
 @layer base {
   :root {
     --background: 0 0% 4%;
