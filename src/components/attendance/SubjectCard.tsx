@@ -74,7 +74,7 @@ export function SubjectCard({
             style={{ backgroundColor: `hsl(${color})` }}
           />
           <div className="text-left">
-            <p className="text-sm font-medium">{code}</p>
+            <p className="text-sm font-medium">{name}</p>
             <p className="text-xs text-muted-foreground">{present}/{total}</p>
           </div>
         </div>
@@ -99,7 +99,7 @@ export function SubjectCard({
         <div className="px-3 pb-3 space-y-3 animate-fade-in">
           {/* Subject name */}
           <div className="flex items-center justify-between">
-            <p className="font-semibold text-sm">{name}</p>
+            <p className="font-semibold text-sm">{code}</p>
             <button
               onClick={(e) => {
                 e.stopPropagation();
