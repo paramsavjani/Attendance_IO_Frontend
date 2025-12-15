@@ -32,9 +32,16 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Set up environment variables.
+# Create a .env file in the root directory with:
+# VITE_API_BASE_URL=http://localhost:8080
+# (Update the URL to match your backend server)
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
+<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
+read_lints
 
 **Edit a file directly in GitHub**
 
