@@ -3,19 +3,28 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { getTodaySchedule, subjectAttendance, officialLastDate } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Play, Check, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { Check, X, Settings } from "lucide-react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+
+const DEFAULT_MIN_ATTENDANCE = 75;
 
 export default function Dashboard() {
   const { student } = useAuth();
   const schedule = getTodaySchedule();
-  const navigate = useNavigate();
   const now = new Date();
   const currentHour = now.getHours();
 
-  // Mock attendance status for today's classes
   const [todayAttendance, setTodayAttendance] = useState<Record<number, 'present' | 'absent' | null>>({});
+  const [minAttendance, setMinAttendance] = useState<number>(() => {
+    const saved = localStorage.getItem('minAttendance');
+    return saved ? parseInt(saved) : DEFAULT_MIN_ATTENDANCE;
+  });
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('minAttendance', minAttendance.toString());
+  }, [minAttendance]);
 
   const getCurrentClass = () => {
     for (const slot of schedule.slots) {
@@ -35,91 +44,141 @@ export default function Dashboard() {
 
   const currentClass = getCurrentClass();
 
-  const getOverallPercentage = () => {
-    let totalPresent = 0;
-    let totalClasses = 0;
-    subjectAttendance.forEach((s) => {
-      totalPresent += s.officialPresent + s.estimatedPresent;
-      totalClasses += s.officialTotal + s.estimatedTotal;
-    });
-    return Math.round((totalPresent / totalClasses) * 100);
+  const handleMarkAttendance = (index: number, status: 'present' | 'absent') => {
+    setTodayAttendance(prev => ({
+      ...prev,
+      [index]: prev[index] === status ? null : status
+    }));
+    toast.success(status === 'present' ? 'Marked Present' : 'Marked Absent');
   };
 
-  const percentage = getOverallPercentage();
+  const getSubjectStatus = (percentage: number) => {
+    if (percentage >= minAttendance) return 'safe';
+    if (percentage >= minAttendance - 10) return 'warning';
+    return 'danger';
+  };
 
   return (
     <AppLayout>
-      <div className="space-y-5">
-        {/* Greeting */}
-        <div className="pt-2">
-          <p className="text-muted-foreground text-sm">
-            {format(now, "EEEE, MMM d")}
-          </p>
-          <h1 className="text-xl font-bold mt-1">
-            Hi, {student?.name?.split(" ")[0]} 👋
-          </h1>
+      <div className="space-y-4">
+        {/* Header with greeting and settings */}
+        <div className="flex items-center justify-between pt-2">
+          <div>
+            <p className="text-muted-foreground text-xs">
+              {format(now, "EEEE, MMM d")}
+            </p>
+            <h1 className="text-lg font-bold">
+              Hi, {student?.name?.split(" ")[0]}
+            </h1>
+          </div>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 rounded-xl bg-card border border-border"
+          >
+            <Settings className="w-5 h-5 text-muted-foreground" />
+          </button>
         </div>
 
-        {/* Current/Next Class Card - Black theme */}
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+            <p className="text-sm font-medium">Minimum Attendance Required</p>
+            <div className="flex items-center gap-3">
+              {[60, 70, 75, 80].map((val) => (
+                <button
+                  key={val}
+                  onClick={() => setMinAttendance(val)}
+                  className={cn(
+                    "px-3 py-2 rounded-xl text-sm font-medium transition-all",
+                    minAttendance === val
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {val}%
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Current/Next Class Card */}
         {currentClass ? (
-          <div className="rounded-2xl p-5 bg-card border border-border">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="rounded-2xl p-4 bg-card border border-border">
+            <div className="flex items-center gap-2 mb-2">
               {currentClass.status === "current" ? (
                 <>
                   <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  <span className="text-sm font-medium text-success">Live Now</span>
+                  <span className="text-xs font-medium text-success">Live Now</span>
                 </>
               ) : (
                 <>
                   <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Up Next</span>
+                  <span className="text-xs text-muted-foreground">Up Next</span>
                 </>
               )}
             </div>
-            <h2 className="text-lg font-bold mb-1">
+            <h2 className="text-base font-bold mb-1">
               {currentClass.slot.subject?.name}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {currentClass.slot.time}
             </p>
           </div>
         ) : (
-          <div className="rounded-2xl p-5 bg-card border border-border text-center">
-            <p className="text-muted-foreground">No more classes today</p>
+          <div className="rounded-2xl p-4 bg-card border border-border text-center">
+            <p className="text-muted-foreground text-sm">No more classes today</p>
           </div>
         )}
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card rounded-2xl p-4 border border-border">
-            <p className="text-xs text-muted-foreground mb-1">Overall</p>
-            <p className={cn(
-              "text-2xl font-bold",
-              percentage >= 75 ? "text-success" : percentage >= 60 ? "text-warning" : "text-destructive"
-            )}>
-              {percentage}%
-            </p>
+        {/* Subject-wise Attendance Status */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm">Subject Status</h3>
+            <span className="text-xs text-muted-foreground">Min: {minAttendance}%</span>
           </div>
-          <div className="bg-card rounded-2xl p-4 border border-border">
-            <p className="text-xs text-muted-foreground mb-1">Official till</p>
-            <p className="text-sm font-medium">
-              {format(new Date(officialLastDate), "MMM d")}
-            </p>
+          <div className="grid grid-cols-2 gap-2">
+            {subjectAttendance.map((sa) => {
+              const total = sa.officialTotal + sa.estimatedTotal;
+              const present = sa.officialPresent + sa.estimatedPresent;
+              const percentage = Math.round((present / total) * 100);
+              const status = getSubjectStatus(percentage);
+
+              return (
+                <div
+                  key={sa.subject.id}
+                  className="bg-card border border-border rounded-xl p-3"
+                >
+                  <p className="text-xs text-muted-foreground truncate mb-1">
+                    {sa.subject.code}
+                  </p>
+                  <p className={cn(
+                    "text-xl font-bold",
+                    status === 'safe' && "text-success",
+                    status === 'warning' && "text-warning",
+                    status === 'danger' && "text-destructive"
+                  )}>
+                    {percentage}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {present}/{total}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Track Button */}
-        <button
-          onClick={() => navigate("/daily")}
-          className="w-full bg-card border border-border text-foreground font-medium py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-98 transition-transform"
-        >
-          <Play className="w-5 h-5 text-primary" />
-          Mark Today's Attendance
-        </button>
+        {/* Official Date Notice */}
+        <div className="bg-muted/50 rounded-xl p-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            Official till {format(new Date(officialLastDate), "MMM d, yyyy")}
+          </p>
+        </div>
 
-        {/* Today's Schedule with attendance status */}
+        {/* Today's Schedule - Tap to Mark */}
         <div>
-          <h3 className="font-semibold mb-3">Today's Classes</h3>
+          <h3 className="font-semibold text-sm mb-3">Today's Classes</h3>
           <div className="space-y-2">
             {schedule.slots.map((slot, index) => {
               const startHour = parseInt(slot.time.split(":")[0]);
@@ -134,12 +193,11 @@ export default function Dashboard() {
                   key={index}
                   className={cn(
                     "flex items-center gap-3 p-3 rounded-xl bg-card border border-border transition-all",
-                    isCurrent && "border-success/50",
-                    isPast && "opacity-60"
+                    isCurrent && "border-success/50"
                   )}
                 >
                   <div
-                    className="w-1 h-10 rounded-full"
+                    className="w-1 h-10 rounded-full flex-shrink-0"
                     style={{ backgroundColor: `hsl(${slot.subject.color})` }}
                   />
                   <div className="flex-1 min-w-0">
@@ -147,26 +205,35 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground">{slot.time}</p>
                   </div>
                   
-                  {/* Attendance status indicator */}
-                  <div className="flex items-center gap-2">
+                  {/* Attendance marking buttons */}
+                  <div className="flex items-center gap-1">
                     {isCurrent && (
-                      <span className="text-xs bg-success/20 text-success px-2 py-1 rounded-full">
+                      <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full mr-1">
                         Now
                       </span>
                     )}
-                    {status === 'present' && (
-                      <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-success" />
-                      </div>
-                    )}
-                    {status === 'absent' && (
-                      <div className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center">
-                        <X className="w-3 h-3 text-destructive" />
-                      </div>
-                    )}
-                    {!status && isPast && (
-                      <span className="text-xs text-muted-foreground">Not marked</span>
-                    )}
+                    <button
+                      onClick={() => handleMarkAttendance(index, 'present')}
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95",
+                        status === 'present'
+                          ? "bg-success text-background"
+                          : "bg-success/20 text-success"
+                      )}
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleMarkAttendance(index, 'absent')}
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95",
+                        status === 'absent'
+                          ? "bg-destructive text-background"
+                          : "bg-destructive/20 text-destructive"
+                      )}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               );
