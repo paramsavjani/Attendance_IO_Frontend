@@ -29,7 +29,7 @@ export default function Dashboard() {
             {format(now, "EEEE, MMM d")}
           </p>
           <h1 className="text-lg font-bold">
-            Hi, {student?.name?.split(" ")[0]}
+            Hi, {student?.name?.split(" ")[0]} {student?.name?.split(" ")[1]}
           </h1>
         </div>
 
