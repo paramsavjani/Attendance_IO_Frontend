@@ -19,7 +19,17 @@ const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
-  const { hasCompletedOnboarding } = useAttendance();
+  const { hasCompletedOnboarding, isLoadingEnrolledSubjects } = useAttendance();
+
+  // Wait for enrolled subjects to load before making routing decisions
+  // Only show loading if authenticated (unauthenticated users should see login)
+  if (isAuthenticated && isLoadingEnrolledSubjects) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#000', color: '#fff' }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
