@@ -80,11 +80,18 @@ export function SubjectSelector({
     );
   }, [searchQuery, subjects]);
 
+  const MAX_SUBJECTS = 7;
+
   const toggleSubject = (subject: Subject) => {
     setSelected((prev) => {
       const exists = prev.find((s) => s.id === subject.id);
       if (exists) {
         return prev.filter((s) => s.id !== subject.id);
+      }
+      // Check max subjects constraint
+      if (prev.length >= MAX_SUBJECTS) {
+        toast.error(`Maximum ${MAX_SUBJECTS} subjects allowed`);
+        return prev;
       }
       return [...prev, subject];
     });
@@ -92,8 +99,37 @@ export function SubjectSelector({
 
   const isSelected = (id: string) => selected.some((s) => s.id === id);
 
-  const handleSave = () => {
-    onSave(selected);
+  const handleSave = async () => {
+    // Validate max subjects
+    if (selected.length > MAX_SUBJECTS) {
+      toast.error(`Maximum ${MAX_SUBJECTS} subjects allowed`);
+      return;
+    }
+
+    try {
+      // Save to backend
+      const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subjectIds: selected.map(s => s.id),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save subjects');
+      }
+
+      toast.success(`Successfully enrolled in ${selected.length} subject${selected.length !== 1 ? 's' : ''}`);
+      onSave(selected);
+    } catch (error: any) {
+      console.error('Error saving subjects:', error);
+      toast.error(error.message || 'Failed to save subjects');
+    }
   };
 
   return (
@@ -127,8 +163,11 @@ export function SubjectSelector({
 
       {/* Selected count */}
       <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-xs text-muted-foreground">
-          {selected.length} subject{selected.length !== 1 ? "s" : ""} selected
+        <span className={cn(
+          "text-xs",
+          selected.length >= MAX_SUBJECTS ? "text-destructive font-medium" : "text-muted-foreground"
+        )}>
+          {selected.length} / {MAX_SUBJECTS} subject{selected.length !== 1 ? "s" : ""} selected
         </span>
         {selected.length > 0 && (
           <button
@@ -208,7 +247,7 @@ export function SubjectSelector({
         )}
         <Button
           onClick={handleSave}
-          disabled={selected.length === 0}
+          disabled={selected.length === 0 || selected.length > MAX_SUBJECTS}
           className="flex-1 h-10 rounded-xl text-sm"
         >
           <Check className="w-4 h-4 mr-1.5" />
