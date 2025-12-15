@@ -68,20 +68,6 @@ export default function Profile() {
 
         {/* Info Cards */}
         <div className="space-y-2">
-          <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Year</p>
-              <p className="font-medium">{currentSemester.year}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Term</p>
-              <p className="font-medium">{currentSemester.term}</p>
-            </div>
-          </div>
-
           <button 
             onClick={() => setShowSubjectEditor(true)}
             className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
