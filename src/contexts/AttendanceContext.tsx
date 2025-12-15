@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 import { subjectAttendance as initialSubjectAttendance, subjects } from "@/data/mockData";
-import { toast } from "sonner";
 
 const DEFAULT_MIN = 75;
 
@@ -83,7 +82,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         return updated;
       });
       
-      toast.success('Attendance cleared');
       return;
     }
 
@@ -125,8 +123,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('subjectStats', JSON.stringify(updated));
       return updated;
     });
-
-    toast.success(status === 'present' ? 'Marked Present' : 'Marked Absent');
   }, [todayAttendance]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {

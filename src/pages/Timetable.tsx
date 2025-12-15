@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RefreshCw, X, ChevronLeft } from "lucide-react";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 export default function Timetable() {
@@ -45,12 +44,10 @@ export default function Timetable() {
     );
 
     setDialogOpen(false);
-    toast.success(subjectId ? "Subject assigned" : "Slot cleared");
   };
 
   const handleRegenerate = () => {
     setTimetable(defaultTimetable);
-    toast.success("Timetable reset");
   };
 
   return (
