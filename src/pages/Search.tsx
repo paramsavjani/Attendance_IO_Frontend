@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, User, ChevronLeft } from "lucide-react";
+import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
+import { semesterHistory, currentSemester } from "@/data/semesterHistory";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 // Mock student data with detailed subject attendance
 const mockStudents = [
@@ -119,21 +122,58 @@ export default function Search() {
             <p className="text-sm text-muted-foreground">{selectedStudent.rollNumber}</p>
           </div>
 
-          {/* Subject Cards */}
-          <div className="space-y-2">
-            {selectedStudent.subjects.map((subject, index) => (
-              <SubjectCard
-                key={index}
-                name={subject.name}
-                code={subject.code}
-                color={subject.color}
-                present={subject.present}
-                absent={subject.absent}
-                total={subject.total}
-                minRequired={70}
-                defaultExpanded={true}
-              />
-            ))}
+          {/* Current Semester */}
+          <div>
+            <h3 className="font-semibold text-sm mb-2">
+              Current Semester ({currentSemester.term} {currentSemester.year})
+            </h3>
+            <div className="space-y-2">
+              {selectedStudent.subjects.map((subject, index) => (
+                <SubjectCard
+                  key={index}
+                  name={subject.name}
+                  code={subject.code}
+                  color={subject.color}
+                  present={subject.present}
+                  absent={subject.absent}
+                  total={subject.total}
+                  minRequired={70}
+                  defaultExpanded={true}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Previous Semesters */}
+          <div>
+            <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
+            <div className="space-y-2">
+              {semesterHistory.map((sem) => (
+                <Collapsible key={`${sem.year}-${sem.term}`}>
+                  <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
+                    <div>
+                      <p className="font-medium text-sm">Semester {sem.semester}</p>
+                      <p className="text-xs text-muted-foreground">{sem.term} {sem.year}</p>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2 space-y-2">
+                    {sem.subjects.map((subject, idx) => (
+                      <SubjectCard
+                        key={idx}
+                        name={subject.name}
+                        code={subject.code}
+                        color={subject.color}
+                        present={subject.present}
+                        absent={subject.absent}
+                        total={subject.total}
+                        minRequired={75}
+                      />
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
           </div>
         </div>
       </AppLayout>
