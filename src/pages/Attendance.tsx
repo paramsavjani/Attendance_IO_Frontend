@@ -15,8 +15,7 @@ export default function Attendance() {
   const todayKey = format(now, "yyyy-MM-dd");
 
   const handleMarkAttendance = (index: number, subjectId: string, status: 'present' | 'absent') => {
-    const slotKey = `${todayKey}-${index}`;
-    markAttendance(subjectId, slotKey, status);
+    markAttendance(subjectId, todayKey, status);
   };
 
   return (
@@ -42,7 +41,7 @@ export default function Attendance() {
               
               const startHour = parseInt(slot.time.split(":")[0]);
               const isCurrent = startHour === currentHour;
-              const slotKey = `${todayKey}-${index}`;
+              const slotKey = `${todayKey}-${slot.subject!.id}`;
               const status = todayAttendance[slotKey] || null;
 
               return (
