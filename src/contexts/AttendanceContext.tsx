@@ -32,6 +32,7 @@ interface AttendanceContextType {
   completeOnboarding: () => void;
   refreshEnrolledSubjects: () => Promise<void>;
   refreshTimetable: () => Promise<void>;
+  fetchAttendanceForDate: (date?: string) => Promise<void>;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
@@ -124,15 +125,69 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     fetchTimetable();
   }, [fetchTimetable]);
 
-  // Initialize subject stats - no localStorage, start with empty
-  // Stats should come from backend attendance API in the future
+  // Initialize subject stats - fetch from backend
   const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStats>>({});
 
   // Subject min attendance - no localStorage, use defaults
   const [subjectMinAttendance, setSubjectMinAttendance] = useState<Record<string, number>>({});
 
-  // Today's attendance - no localStorage, in-memory only
+  // Today's attendance - fetch from backend
   const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | null>>({});
+
+  // Fetch attendance data from backend for a specific date (defaults to today)
+  const fetchAttendanceData = useCallback(async (date?: string) => {
+    if (!student) {
+      setSubjectStats({});
+      setTodayAttendance({});
+      return;
+    }
+
+    try {
+      const url = date 
+        ? `${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`
+        : API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE;
+      
+      const response = await fetch(url, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Convert subject stats to the format expected by the frontend
+        const statsMap: Record<string, SubjectStats> = {};
+        data.subjectStats?.forEach((stat: any) => {
+          statsMap[stat.subjectId] = {
+            subjectId: stat.subjectId,
+            present: stat.present,
+            absent: stat.absent,
+            total: stat.total,
+          };
+        });
+        setSubjectStats(statsMap);
+        
+        // Convert attendance records to the format expected by the frontend
+        const attendanceMap: Record<string, 'present' | 'absent' | null> = {};
+        data.todayAttendance?.forEach((record: any) => {
+          const slotKey = `${record.lectureDate}-${record.subjectId}`;
+          attendanceMap[slotKey] = record.status as 'present' | 'absent';
+        });
+        setTodayAttendance(attendanceMap);
+      } else {
+        setSubjectStats({});
+        setTodayAttendance({});
+      }
+    } catch (error) {
+      console.error('Error fetching attendance data:', error);
+      setSubjectStats({});
+      setTodayAttendance({});
+    }
+  }, [student]);
+
+  // Fetch attendance data when student is available (defaults to today)
+  useEffect(() => {
+    fetchAttendanceData();
+  }, [fetchAttendanceData]);
 
   // Onboarding completion is based solely on backend data
   // If enrolledSubjects.length === 0, show onboarding
@@ -190,30 +245,15 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
-      // TODO: Need to track attendance IDs to delete - for now just update local state
+      // Mark as null (cleared) and refresh from backend
       setTodayAttendance(prev => {
         const updated = { ...prev };
         delete updated[slotKey];
         return updated;
       });
       
-      // Revert stats
-      setSubjectStats(prev => {
-        const current = prev[subjectId];
-        if (!current) return prev;
-        
-        return {
-          ...prev,
-          [subjectId]: {
-            ...current,
-            present: current.present - (status === 'present' ? 1 : 0),
-            absent: current.absent - (status === 'absent' ? 1 : 0),
-            total: current.total - 1,
-          }
-        };
-      });
-      
-      // TODO: Call delete endpoint when we have attendance ID tracking
+      // Refresh from backend to get updated stats for this date
+      await fetchAttendanceData(date);
       return;
     }
 
@@ -239,47 +279,21 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
       const result = await response.json();
       
-      // Update local state on success
+      // Update local state immediately for better UX
       setTodayAttendance(prev => {
         return { ...prev, [slotKey]: status };
       });
-
-      // Update subject stats
-      setSubjectStats(prev => {
-        const current = prev[subjectId] || { subjectId, present: 0, absent: 0, total: 0 };
-
-        let newPresent = current.present;
-        let newAbsent = current.absent;
-        let newTotal = current.total;
-
-        // If changing from one status to another
-        if (previousStatus === 'present') newPresent--;
-        if (previousStatus === 'absent') newAbsent--;
-        if (previousStatus) newTotal--;
-
-        // Add new status
-        if (status === 'present') newPresent++;
-        if (status === 'absent') newAbsent++;
-        newTotal++;
-
-        return {
-          ...prev,
-          [subjectId]: {
-            ...current,
-            present: newPresent,
-            absent: newAbsent,
-            total: newTotal,
-          }
-        };
-      });
       
       toast.success(`Marked ${status} successfully`);
+      
+      // Refresh attendance data from backend to get updated stats and attendance for the date
+      await fetchAttendanceData(date);
     } catch (error: any) {
       console.error('Error marking attendance:', error);
       toast.error(error.message || 'Failed to mark attendance');
       // Don't update local state on error
     }
-  }, [todayAttendance]);
+  }, [todayAttendance, fetchAttendanceData]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {
@@ -307,9 +321,10 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setEnrolledSubjects,
       setTimetable,
       completeOnboarding,
-      refreshEnrolledSubjects,
-      refreshTimetable,
-      isLoadingTimetable,
+        refreshEnrolledSubjects,
+        refreshTimetable,
+        isLoadingTimetable,
+        fetchAttendanceForDate: fetchAttendanceData,
       }}
     >
       {children}

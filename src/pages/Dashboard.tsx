@@ -13,10 +13,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { API_CONFIG } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin } = useAttendance();
+  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate } = useAttendance();
   
   const now = new Date();
   const currentHour = now.getHours();
@@ -61,7 +71,8 @@ export default function Dashboard() {
   const isSelectedToday = isToday(selectedDate);
   const isSelectedTomorrow = isTomorrow(selectedDate);
   const isFutureDate = isBefore(startOfDay(now), startOfDay(selectedDate));
-  const canMarkAttendance = isSelectedToday;
+  const isPastDate = isBefore(startOfDay(selectedDate), startOfDay(now));
+  const canMarkAttendance = true; // Allow marking for any date
 
   // Calculate if a subject needs attention (below minimum requirement)
   const getSubjectAttendanceInfo = (subjectId: string) => {
@@ -84,9 +95,32 @@ export default function Dashboard() {
     );
   };
 
-  const handleMarkAttendance = (index: number, subjectId: string, status: 'present' | 'absent') => {
-    if (!canMarkAttendance) return;
-    markAttendance(subjectId, dateKey, status);
+  const [showPastDateWarning, setShowPastDateWarning] = useState(false);
+  const [pendingAttendance, setPendingAttendance] = useState<{subjectId: string; status: 'present' | 'absent'} | null>(null);
+
+  // Fetch attendance when date changes
+  useEffect(() => {
+    fetchAttendanceForDate(dateKey);
+  }, [dateKey, fetchAttendanceForDate]);
+
+  const handleMarkAttendance = async (index: number, subjectId: string, status: 'present' | 'absent') => {
+    // Show warning for past dates
+    if (isPastDate) {
+      setPendingAttendance({ subjectId, status });
+      setShowPastDateWarning(true);
+      return;
+    }
+    
+    // For today or future dates, mark directly
+    await markAttendance(subjectId, dateKey, status);
+  };
+
+  const confirmPastDateAttendance = async () => {
+    if (pendingAttendance) {
+      await markAttendance(pendingAttendance.subjectId, dateKey, pendingAttendance.status);
+      setPendingAttendance(null);
+    }
+    setShowPastDateWarning(false);
   };
 
   const goToToday = () => setSelectedDate(now);
@@ -290,6 +324,27 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Past Date Warning Dialog */}
+      <AlertDialog open={showPastDateWarning} onOpenChange={setShowPastDateWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Past Date Attendance?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to update attendance for a past date ({format(selectedDate, "MMM d, yyyy")}). 
+              This will modify historical records. Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingAttendance(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPastDateAttendance}>
+              Yes, Update
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
