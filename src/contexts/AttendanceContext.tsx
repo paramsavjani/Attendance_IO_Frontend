@@ -24,6 +24,8 @@ interface AttendanceContextType {
   hasCompletedOnboarding: boolean;
   isLoadingEnrolledSubjects: boolean;
   isLoadingTimetable: boolean;
+  isLoadingAttendance: boolean;
+  savingSubjectId: string | null; // Currently saving attendance for this subject
   markAttendance: (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => Promise<void>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
@@ -133,14 +135,21 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
   // Today's attendance - fetch from backend
   const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | 'cancelled' | null>>({});
+  
+  // Loading states
+  const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
+  const [savingSubjectId, setSavingSubjectId] = useState<string | null>(null);
 
   // Fetch attendance data from backend for a specific date (defaults to today)
   const fetchAttendanceData = useCallback(async (date?: string) => {
     if (!student) {
       setSubjectStats({});
       setTodayAttendance({});
+      setIsLoadingAttendance(false);
       return;
     }
+
+    setIsLoadingAttendance(true);
 
     try {
       const url = date 
@@ -181,6 +190,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching attendance data:', error);
       setSubjectStats({});
       setTodayAttendance({});
+    } finally {
+      setIsLoadingAttendance(false);
     }
   }, [student]);
 
@@ -243,6 +254,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     const slotKey = `${date}-${subjectId}`;
     const previousStatus = todayAttendance[slotKey];
     
+    setSavingSubjectId(subjectId);
+    
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
       // Mark as null (cleared) and refresh from backend
@@ -254,6 +267,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       
       // Refresh from backend to get updated stats for this date
       await fetchAttendanceData(date);
+      setSavingSubjectId(null);
       return;
     }
 
@@ -292,6 +306,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       console.error('Error marking attendance:', error);
       toast.error(error.message || 'Failed to mark attendance');
       // Don't update local state on error
+    } finally {
+      setSavingSubjectId(null);
     }
   }, [todayAttendance, fetchAttendanceData]);
 
@@ -315,15 +331,17 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         timetable,
         hasCompletedOnboarding,
         isLoadingEnrolledSubjects,
+        isLoadingTimetable,
+        isLoadingAttendance,
+        savingSubjectId,
         markAttendance,
         setSubjectMin,
         getSubjectStats,
         setEnrolledSubjects,
-      setTimetable,
-      completeOnboarding,
+        setTimetable,
+        completeOnboarding,
         refreshEnrolledSubjects,
         refreshTimetable,
-        isLoadingTimetable,
         fetchAttendanceForDate: fetchAttendanceData,
       }}
     >
