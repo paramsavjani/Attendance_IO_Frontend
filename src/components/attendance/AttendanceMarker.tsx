@@ -201,17 +201,17 @@ function ActionButton({
   
   const variantStyles = {
     present: {
-      active: "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30",
+      active: "bg-emerald-500 text-black",
       inactive: "bg-emerald-500/10 text-emerald-500/70 hover:bg-emerald-500/20 hover:text-emerald-400 border border-emerald-500/20",
       saving: "bg-emerald-500/30 border-2 border-emerald-500",
     },
     absent: {
-      active: "bg-red-500 text-white shadow-lg shadow-red-500/30",
+      active: "bg-red-500 text-white",
       inactive: "bg-red-500/10 text-red-500/70 hover:bg-red-500/20 hover:text-red-400 border border-red-500/20",
       saving: "bg-red-500/30 border-2 border-red-500",
     },
     cancelled: {
-      active: "bg-yellow-500 text-black shadow-lg shadow-yellow-500/30",
+      active: "bg-yellow-500 text-black",
       inactive: "bg-yellow-500/10 text-yellow-500/70 hover:bg-yellow-500/20 hover:text-yellow-400 border border-yellow-500/20",
       saving: "bg-yellow-500/30 border-2 border-yellow-500",
     },
