@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { AttendanceMarker } from "@/components/attendance/AttendanceMarker";
+import { AttendanceMarker, AttendanceMarkerSkeleton } from "@/components/attendance/AttendanceMarker";
 import { ChevronLeft, ChevronRight, Lock, CalendarSearch, CalendarDays, Sun, Sunrise, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +26,7 @@ import {
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate } = useAttendance();
+  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingSubjectId } = useAttendance();
   
   const now = new Date();
   const currentHour = now.getHours();
@@ -255,36 +255,44 @@ export default function Dashboard() {
 
             {/* Schedule List */}
             <div className="space-y-2">
-              {schedule.map((slot, index) => {
-                if (!slot.subject) return null;
-                
-                const startHour = parseInt(slot.time.split(":")[0]);
-                const isCurrent = isSelectedToday && startHour === currentHour;
-                const slotKey = `${dateKey}-${slot.subject.id}`;
-                const status = todayAttendance[slotKey] || null;
-                const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
+              {isLoadingAttendance && schedule.filter(s => s.subject).length > 0 ? (
+                // Show skeleton loaders while loading attendance data
+                schedule.filter(s => s.subject).map((_, index) => (
+                  <AttendanceMarkerSkeleton key={index} />
+                ))
+              ) : (
+                schedule.map((slot, index) => {
+                  if (!slot.subject) return null;
+                  
+                  const startHour = parseInt(slot.time.split(":")[0]);
+                  const isCurrent = isSelectedToday && startHour === currentHour;
+                  const slotKey = `${dateKey}-${slot.subject.id}`;
+                  const status = todayAttendance[slotKey] || null;
+                  const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
 
-                return (
-                  <AttendanceMarker
-                    key={index}
-                    subjectName={slot.subject.name}
-                    subjectCode={slot.subject.code}
-                    time={slot.time}
-                    color={slot.subject.color}
-                    isCurrent={isCurrent}
-                    status={status}
-                    onMarkPresent={() => handleMarkAttendance(index, slot.subject!.id, "present")}
-                    onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
-                    onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
-                    disabled={!canMarkAttendance}
-                    needsAttention={isFutureDate && needsAttention}
-                    attendancePercent={isFutureDate ? percent : undefined}
-                  />
-                );
-              })}
+                  return (
+                    <AttendanceMarker
+                      key={index}
+                      subjectName={slot.subject.name}
+                      subjectCode={slot.subject.code}
+                      time={slot.time}
+                      color={slot.subject.color}
+                      isCurrent={isCurrent}
+                      status={status}
+                      onMarkPresent={() => handleMarkAttendance(index, slot.subject!.id, "present")}
+                      onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
+                      onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
+                      disabled={!canMarkAttendance}
+                      needsAttention={isFutureDate && needsAttention}
+                      attendancePercent={isFutureDate ? percent : undefined}
+                      isSaving={savingSubjectId === slot.subject.id}
+                    />
+                  );
+                })
+              )}
             </div>
 
-            {canMarkAttendance && schedule.filter(s => s.subject).length > 0 && (
+            {canMarkAttendance && schedule.filter(s => s.subject).length > 0 && !isLoadingAttendance && (
               <p className="text-center text-[10px] text-muted-foreground pt-1">
                 Tap to mark • Auto-saved
               </p>
