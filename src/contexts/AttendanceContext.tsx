@@ -66,6 +66,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           id: s.subjectId,
           code: s.subjectCode,
           name: s.subjectName,
+          lecturePlace: s.lecturePlace ?? null,
           color: hexToHsl(s.color || "#3B82F6"),
           minimumCriteria: s.minimumCriteria ?? null,
         }));
