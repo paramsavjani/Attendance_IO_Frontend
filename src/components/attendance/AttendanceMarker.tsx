@@ -16,7 +16,7 @@ interface AttendanceMarkerProps {
   needsAttention?: boolean;
   attendancePercent?: number;
   isLoading?: boolean; // Loading attendance data
-  isSaving?: boolean; // Saving attendance
+  savingAction?: "present" | "absent" | "cancelled" | null; // Which action is being saved
 }
 
 export function AttendanceMarker({
@@ -33,8 +33,9 @@ export function AttendanceMarker({
   needsAttention = false,
   attendancePercent,
   isLoading = false,
-  isSaving = false,
+  savingAction = null,
 }: AttendanceMarkerProps) {
+  const isSaving = savingAction !== null;
   const isInteractionDisabled = disabled || isSaving;
 
   return (
@@ -44,8 +45,7 @@ export function AttendanceMarker({
         "bg-neutral-900 border border-white/5",
         "transition-all duration-200",
         isCurrent && "ring-1 ring-primary/40 bg-primary/5",
-        needsAttention && !isCurrent && "ring-1 ring-warning/40",
-        isSaving && "opacity-80"
+        needsAttention && !isCurrent && "ring-1 ring-warning/40"
       )}
     >
       {/* Left color indicator */}
@@ -113,13 +113,6 @@ export function AttendanceMarker({
             </span>
           )}
 
-          {/* Saving indicator */}
-          {isSaving && (
-            <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/50 rounded-2xl z-10">
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
-            </div>
-          )}
-
           {/* Loading skeleton for buttons */}
           {isLoading ? (
             <div className="flex items-center gap-1.5">
@@ -134,18 +127,21 @@ export function AttendanceMarker({
                 onClick={onMarkPresent}
                 disabled={isInteractionDisabled}
                 variant="present"
+                isSaving={savingAction === "present"}
               />
               <ActionButton
                 active={status === "absent"}
                 onClick={onMarkAbsent}
                 disabled={isInteractionDisabled}
                 variant="absent"
+                isSaving={savingAction === "absent"}
               />
               <ActionButton
                 active={status === "cancelled"}
                 onClick={onMarkCancelled}
                 disabled={isInteractionDisabled}
                 variant="cancelled"
+                isSaving={savingAction === "cancelled"}
               />
             </div>
           )}
@@ -191,29 +187,40 @@ function ActionButton({
   onClick,
   disabled,
   variant,
+  isSaving = false,
 }: {
   active: boolean;
   onClick: () => void;
   disabled?: boolean;
   variant: "present" | "absent" | "cancelled";
+  isSaving?: boolean;
 }) {
   const Icon = variant === "present" ? Check : variant === "absent" ? X : Ban;
 
-  const baseStyles = "h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95";
+  const baseStyles = "h-10 w-10 lg:h-12 lg:w-12 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
   
   const variantStyles = {
     present: {
       active: "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30",
       inactive: "bg-emerald-500/10 text-emerald-500/70 hover:bg-emerald-500/20 hover:text-emerald-400 border border-emerald-500/20",
+      saving: "bg-emerald-500/30 border-2 border-emerald-500",
     },
     absent: {
       active: "bg-red-500 text-white shadow-lg shadow-red-500/30",
       inactive: "bg-red-500/10 text-red-500/70 hover:bg-red-500/20 hover:text-red-400 border border-red-500/20",
+      saving: "bg-red-500/30 border-2 border-red-500",
     },
     cancelled: {
       active: "bg-yellow-500 text-black shadow-lg shadow-yellow-500/30",
       inactive: "bg-yellow-500/10 text-yellow-500/70 hover:bg-yellow-500/20 hover:text-yellow-400 border border-yellow-500/20",
+      saving: "bg-yellow-500/30 border-2 border-yellow-500",
     },
+  };
+
+  const getButtonStyle = () => {
+    if (isSaving) return variantStyles[variant].saving;
+    if (active) return variantStyles[variant].active;
+    return variantStyles[variant].inactive;
   };
 
   return (
@@ -222,8 +229,8 @@ function ActionButton({
       disabled={disabled}
       className={cn(
         baseStyles,
-        active ? variantStyles[variant].active : variantStyles[variant].inactive,
-        disabled && "pointer-events-none opacity-50"
+        getButtonStyle(),
+        disabled && !isSaving && "pointer-events-none opacity-50"
       )}
       title={
         variant === "cancelled"
@@ -233,7 +240,11 @@ function ActionButton({
           : "Absent"
       }
     >
-      <Icon className="w-4 h-4" strokeWidth={active ? 3 : 2} />
+      {isSaving ? (
+        <Loader2 className="w-4 h-4 lg:w-5 lg:h-5 animate-spin" />
+      ) : (
+        <Icon className="w-4 h-4 lg:w-5 lg:h-5" strokeWidth={active ? 3 : 2} />
+      )}
     </button>
   );
 }
