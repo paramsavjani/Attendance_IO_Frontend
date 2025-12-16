@@ -4,6 +4,7 @@ import { useState } from "react";
 
 interface SubjectCardProps {
   name: string;
+  code?: string;
   lecturePlace?: string | null;
   color: string;
   present: number;
@@ -14,8 +15,11 @@ interface SubjectCardProps {
   defaultExpanded?: boolean;
 }
 
+export type { SubjectCardProps };
+
 export function SubjectCard({
   name,
+  code,
   lecturePlace,
   present,
   absent,
@@ -75,7 +79,9 @@ export function SubjectCard({
           />
           <div className="text-left">
             <p className="text-sm font-medium">{name}</p>
-            <p className="text-xs text-muted-foreground">{present}/{total}</p>
+            <p className="text-xs text-muted-foreground">
+              {code && <span>{code} • </span>}{present}/{total}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
