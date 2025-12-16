@@ -14,7 +14,7 @@ export default function Attendance() {
   const currentHour = now.getHours();
   const todayKey = format(now, "yyyy-MM-dd");
 
-  const handleMarkAttendance = (index: number, subjectId: string, status: 'present' | 'absent') => {
+  const handleMarkAttendance = (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
     markAttendance(subjectId, todayKey, status);
   };
 
@@ -55,6 +55,7 @@ export default function Attendance() {
                   status={status}
                   onMarkPresent={() => handleMarkAttendance(index, slot.subject!.id, "present")}
                   onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
+                  onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
                 />
               );
             })}
