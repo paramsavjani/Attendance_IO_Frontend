@@ -49,6 +49,7 @@ export default function Attendance() {
                   key={index}
                   subjectName={slot.subject.name}
                   subjectCode={slot.subject.code}
+                  lecturePlace={slot.subject.lecturePlace}
                   time={slot.time}
                   color={slot.subject.color}
                   isCurrent={isCurrent}
