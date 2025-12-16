@@ -26,7 +26,7 @@ import {
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingSubjectId } = useAttendance();
+  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState } = useAttendance();
   
   const now = new Date();
   const currentHour = now.getHours();
@@ -285,7 +285,7 @@ export default function Dashboard() {
                       disabled={!canMarkAttendance}
                       needsAttention={isFutureDate && needsAttention}
                       attendancePercent={isFutureDate ? percent : undefined}
-                      isSaving={savingSubjectId === slot.subject.id}
+                      savingAction={savingState?.subjectId === slot.subject.id ? savingState.action : null}
                     />
                   );
                 })
