@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface AttendanceMarkerProps {
   subjectName: string;
+  subjectCode?: string;
   lecturePlace?: string | null;
   time?: string;
   color: string; // hsl value
@@ -15,12 +16,13 @@ interface AttendanceMarkerProps {
   disabled?: boolean;
   needsAttention?: boolean;
   attendancePercent?: number;
-  isLoading?: boolean; // Loading attendance data
-  savingAction?: "present" | "absent" | "cancelled" | null; // Which action is being saved
+  isLoading?: boolean;
+  savingAction?: "present" | "absent" | "cancelled" | null;
 }
 
 export function AttendanceMarker({
   subjectName,
+  subjectCode,
   lecturePlace,
   time,
   color,
@@ -41,7 +43,7 @@ export function AttendanceMarker({
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-2xl overflow-hidden",
+        "relative flex items-center rounded-xl overflow-hidden",
         "bg-neutral-900 border border-white/5",
         "transition-all duration-200",
         isCurrent && "ring-1 ring-primary/40 bg-primary/5",
@@ -49,52 +51,51 @@ export function AttendanceMarker({
       )}
     >
       {/* Left color indicator */}
-      <div className="flex items-center pl-3">
+      <div className="flex items-center pl-2.5">
         <div
-          className="w-1 rounded-full h-10"
+          className="w-1 rounded-full h-8"
           style={{ backgroundColor: `hsl(${color})` }}
         />
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 items-center justify-between px-4 py-3 min-w-0">
+      <div className="flex flex-1 items-center justify-between px-2.5 py-2 min-w-0">
         {/* Text section */}
-        <div className="min-w-0 flex-1 pr-3">
-          <p
-            className={cn(
-              "text-sm font-semibold line-clamp-2",
-              isCurrent ? "text-primary" : "text-white"
-            )}
-          >
-            {subjectName}
-          </p>
-
-          <div className="flex items-center gap-2 mt-0.5">
-            {lecturePlace && (
-              <span className="text-xs text-neutral-400">
-                {lecturePlace}
-              </span>
-            )}
-
+        <div className="min-w-0 flex-1 pr-2">
+          <div className="flex items-center gap-2">
+            <p
+              className={cn(
+                "text-sm font-semibold line-clamp-1",
+                isCurrent ? "text-primary" : "text-white"
+              )}
+            >
+              {subjectName}
+            </p>
             {isCurrent && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold tracking-wide">
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold tracking-wide flex-shrink-0">
                 LIVE
-              </span>
-            )}
-
-            {needsAttention && !isCurrent && (
-              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-warning/20 text-warning font-semibold">
-                <AlertTriangle className="w-3 h-3" />
-                Must attend
               </span>
             )}
           </div>
 
-          {time && (
-            <p className="text-[11px] text-neutral-500 mt-0.5">
-              {time}
-            </p>
-          )}
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {subjectCode && (
+              <span className="text-[11px] text-neutral-400 font-medium">
+                {subjectCode}
+              </span>
+            )}
+            {time && (
+              <span className="text-[11px] text-neutral-500">
+                • {time}
+              </span>
+            )}
+            {needsAttention && !isCurrent && (
+              <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-semibold ml-1">
+                <AlertTriangle className="w-2.5 h-2.5" />
+                Low
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Actions */}
@@ -155,25 +156,19 @@ export function AttendanceMarker({
 
 export function AttendanceMarkerSkeleton() {
   return (
-    <div className="relative flex items-center rounded-2xl overflow-hidden bg-neutral-900 border border-white/5">
-      {/* Left color indicator skeleton */}
-      <div className="flex items-center pl-3">
-        <Skeleton className="w-1 h-10 rounded-full bg-neutral-700" />
+    <div className="relative flex items-center rounded-xl overflow-hidden bg-neutral-900 border border-white/5">
+      <div className="flex items-center pl-2.5">
+        <Skeleton className="w-1 h-8 rounded-full bg-neutral-700" />
       </div>
-
-      {/* Content skeleton */}
-      <div className="flex flex-1 items-center justify-between px-4 py-3">
-        <div className="flex-1 pr-3 space-y-2">
-          <Skeleton className="h-4 w-32 bg-neutral-800" />
-          <Skeleton className="h-3 w-20 bg-neutral-800" />
+      <div className="flex flex-1 items-center justify-between px-2.5 py-2">
+        <div className="flex-1 pr-2 space-y-1.5">
+          <Skeleton className="h-4 w-36 bg-neutral-800" />
           <Skeleton className="h-3 w-24 bg-neutral-800" />
         </div>
-
-        {/* Action buttons skeleton */}
         <div className="flex items-center gap-1.5">
-          <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
-          <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
-          <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
+          <Skeleton className="h-9 w-9 rounded-xl bg-neutral-800" />
+          <Skeleton className="h-9 w-9 rounded-xl bg-neutral-800" />
+          <Skeleton className="h-9 w-9 rounded-xl bg-neutral-800" />
         </div>
       </div>
     </div>
@@ -197,7 +192,7 @@ function ActionButton({
 }) {
   const Icon = variant === "present" ? Check : variant === "absent" ? X : Ban;
 
-  const baseStyles = "h-10 w-10 lg:h-12 lg:w-12 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
+  const baseStyles = "h-9 w-9 lg:h-10 lg:w-10 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
   
   const variantStyles = {
     present: {
