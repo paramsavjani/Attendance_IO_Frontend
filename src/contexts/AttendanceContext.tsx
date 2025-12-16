@@ -18,13 +18,13 @@ interface SubjectStats {
 interface AttendanceContextType {
   subjectStats: Record<string, SubjectStats>;
   subjectMinAttendance: Record<string, number>;
-  todayAttendance: Record<string, 'present' | 'absent' | null>;
+  todayAttendance: Record<string, 'present' | 'absent' | 'cancelled' | null>;
   enrolledSubjects: Subject[];
   timetable: TimetableSlot[];
   hasCompletedOnboarding: boolean;
   isLoadingEnrolledSubjects: boolean;
   isLoadingTimetable: boolean;
-  markAttendance: (subjectId: string, date: string, status: 'present' | 'absent') => Promise<void>;
+  markAttendance: (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => Promise<void>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
   setEnrolledSubjects: (subjects: Subject[]) => void;
@@ -132,7 +132,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const [subjectMinAttendance, setSubjectMinAttendance] = useState<Record<string, number>>({});
 
   // Today's attendance - fetch from backend
-  const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | null>>({});
+  const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | 'cancelled' | null>>({});
 
   // Fetch attendance data from backend for a specific date (defaults to today)
   const fetchAttendanceData = useCallback(async (date?: string) => {
@@ -167,10 +167,10 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setSubjectStats(statsMap);
         
         // Convert attendance records to the format expected by the frontend
-        const attendanceMap: Record<string, 'present' | 'absent' | null> = {};
+        const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
         data.todayAttendance?.forEach((record: any) => {
           const slotKey = `${record.lectureDate}-${record.subjectId}`;
-          attendanceMap[slotKey] = record.status as 'present' | 'absent';
+          attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
         });
         setTodayAttendance(attendanceMap);
       } else {
@@ -239,7 +239,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     await fetchTimetable();
   }, [fetchTimetable]);
 
-  const markAttendance = useCallback(async (subjectId: string, date: string, status: 'present' | 'absent') => {
+  const markAttendance = useCallback(async (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => {
     const slotKey = `${date}-${subjectId}`;
     const previousStatus = todayAttendance[slotKey];
     
