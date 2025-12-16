@@ -18,6 +18,8 @@ export const API_CONFIG = {
     ENROLLED_SUBJECTS: `${API_BASE_URL}/api/student/enrollment/subjects`,
     UPDATE_MINIMUM_CRITERIA: `${API_BASE_URL}/api/student/enrollment/minimum-criteria`,
     TIMETABLE: `${API_BASE_URL}/api/timetable`,
+    MARK_ATTENDANCE: `${API_BASE_URL}/api/attendance`,
+    DELETE_ATTENDANCE: (attendanceId: string) => `${API_BASE_URL}/api/attendance/${attendanceId}`,
   },
 } as const;
 

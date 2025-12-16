@@ -86,8 +86,7 @@ export default function Dashboard() {
 
   const handleMarkAttendance = (index: number, subjectId: string, status: 'present' | 'absent') => {
     if (!canMarkAttendance) return;
-    const slotKey = `${dateKey}-${index}`;
-    markAttendance(subjectId, slotKey, status);
+    markAttendance(subjectId, dateKey, status);
   };
 
   const goToToday = () => setSelectedDate(now);
@@ -227,7 +226,7 @@ export default function Dashboard() {
                 
                 const startHour = parseInt(slot.time.split(":")[0]);
                 const isCurrent = isSelectedToday && startHour === currentHour;
-                const slotKey = `${dateKey}-${index}`;
+                const slotKey = `${dateKey}-${slot.subject.id}`;
                 const status = todayAttendance[slotKey] || null;
                 const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
 
