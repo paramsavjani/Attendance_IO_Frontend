@@ -1,4 +1,4 @@
-import { Check, X, Ban } from "lucide-react";
+import { Check, X, Ban, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AttendanceMarkerProps {
@@ -54,12 +54,12 @@ export function AttendanceMarker({
 
 
       {/* Content */}
-      <div className="flex flex-1 items-center justify-between px-4 py-3">
+      <div className="flex flex-1 items-center justify-between px-4 py-3 min-w-0">
         {/* Text section */}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1 pr-3">
           <p
             className={cn(
-              "text-sm font-semibold truncate",
+              "text-sm font-semibold line-clamp-2",
               isCurrent ? "text-primary" : "text-white"
             )}
           >
@@ -94,8 +94,8 @@ export function AttendanceMarker({
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1 ml-3">
+        {/* Actions - Fixed position on the right */}
+        <div className="flex items-center gap-1 flex-shrink-0">
           {attendancePercent !== undefined && disabled && (
             <span
               className={cn(
@@ -155,8 +155,7 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "rounded-xl flex items-center justify-center gap-1",
-        variant === "cancelled" ? "h-9 px-3" : "h-9 w-9", // Wider button for cancelled to fit text
+        "h-9 w-9 rounded-xl flex items-center justify-center",
         "transition-none", // ❌ no hover animation
         active &&
           (variant === "present"
