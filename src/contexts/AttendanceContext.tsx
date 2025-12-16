@@ -304,8 +304,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         return { ...prev, [slotKey]: status };
       });
       
-      toast.success(`Marked ${status} successfully`);
-      
       // Refresh attendance data from backend to get updated stats (silent - no loading UI)
       await fetchAttendanceData(date, true);
     } catch (error: any) {
