@@ -21,6 +21,7 @@ interface SubjectAttendance {
   subjectId: string;
   subjectCode: string;
   subjectName: string;
+  lecturePlace?: string | null;
   present: number;
   absent: number;
   leave: number;
@@ -312,7 +313,7 @@ export default function Search() {
                         <SubjectCard
                                 key={subject.subjectId}
                                 name={subject.subjectName}
-                                code={subject.subjectCode}
+                                lecturePlace={subject.lecturePlace}
                           color={subject.color}
                           present={subject.present}
                           absent={subject.absent}

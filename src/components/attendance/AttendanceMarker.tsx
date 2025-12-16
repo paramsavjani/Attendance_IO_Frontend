@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface AttendanceMarkerProps {
   subjectName: string;
-  subjectCode?: string;
+  lecturePlace?: string | null;
   time?: string;
   color: string; // hsl value
   isCurrent?: boolean;
@@ -21,7 +21,7 @@ interface AttendanceMarkerProps {
 
 export function AttendanceMarker({
   subjectName,
-  subjectCode,
+  lecturePlace,
   time,
   color,
   isCurrent = false,
@@ -70,9 +70,9 @@ export function AttendanceMarker({
           </p>
 
           <div className="flex items-center gap-2 mt-0.5">
-            {subjectCode && (
+            {lecturePlace && (
               <span className="text-xs text-neutral-400">
-                {subjectCode}
+                {lecturePlace}
               </span>
             )}
 
