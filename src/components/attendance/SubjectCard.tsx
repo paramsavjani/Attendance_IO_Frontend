@@ -4,7 +4,7 @@ import { useState } from "react";
 
 interface SubjectCardProps {
   name: string;
-  code: string;
+  lecturePlace?: string | null;
   color: string;
   present: number;
   absent: number;
@@ -16,7 +16,7 @@ interface SubjectCardProps {
 
 export function SubjectCard({
   name,
-  code,
+  lecturePlace,
   present,
   absent,
   total,
@@ -97,9 +97,11 @@ export function SubjectCard({
       {/* Expanded content */}
       {isExpanded && (
         <div className="px-3 pb-3 space-y-3 animate-fade-in">
-          {/* Subject name */}
-          <div className="flex items-center justify-between">
-            <p className="font-semibold text-sm">{code}</p>
+          {/* Lecture place */}
+          <div className={cn("flex items-center", lecturePlace ? "justify-between" : "justify-end")}>
+            {lecturePlace && (
+              <p className="font-semibold text-sm">{lecturePlace}</p>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();

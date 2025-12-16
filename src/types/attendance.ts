@@ -4,6 +4,7 @@ export interface Subject {
   id: string;
   name: string;
   code: string;
+  lecturePlace?: string | null;
   color: string;
   minimumCriteria?: number | null;
 }
