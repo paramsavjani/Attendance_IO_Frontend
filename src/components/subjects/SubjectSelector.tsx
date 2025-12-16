@@ -45,6 +45,7 @@ export function SubjectSelector({
           id: subject.id,
           code: subject.code,
           name: subject.name,
+          lecturePlace: subject.lecturePlace ?? null,
           color: hexToHsl(subject.color || "#3B82F6"),
         }));
         
