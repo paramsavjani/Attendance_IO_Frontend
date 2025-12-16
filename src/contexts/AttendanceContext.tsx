@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
 import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG } from "@/lib/api";
@@ -140,16 +140,42 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   // Loading states
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
   const [savingState, setSavingState] = useState<{ subjectId: string; action: 'present' | 'absent' | 'cancelled' } | null>(null);
+  
+  // Track if we've successfully loaded data to prevent clearing on race conditions
+  const hasLoadedDataRef = useRef(false);
+  const lastStudentIdRef = useRef<string | null>(null);
 
   // Fetch attendance data from backend for a specific date (defaults to today)
   // silent = true skips showing loading state (used for background refresh after marking)
   const fetchAttendanceData = useCallback(async (date?: string, silent: boolean = false) => {
     if (!student) {
-      setSubjectStats({});
-      setTodayAttendance({});
-      setIsLoadingAttendance(false);
+      // Only clear data if we had a different student before (actual logout)
+      // Don't clear if student is just temporarily null during auth check
+      if (lastStudentIdRef.current !== null) {
+        // User was logged in before, now logged out - clear data
+        setSubjectStats({});
+        setTodayAttendance({});
+        hasLoadedDataRef.current = false;
+        lastStudentIdRef.current = null;
+      }
+      if (!silent) {
+        setIsLoadingAttendance(false);
+      }
       return;
     }
+
+    // Track student ID to detect actual logout vs temporary null
+    const currentStudentId = student.id;
+    const isDifferentStudent = lastStudentIdRef.current !== null && lastStudentIdRef.current !== currentStudentId;
+    
+    if (isDifferentStudent) {
+      // Different student logged in - clear previous data
+      setSubjectStats({});
+      setTodayAttendance({});
+      hasLoadedDataRef.current = false;
+    }
+    
+    lastStudentIdRef.current = currentStudentId;
 
     if (!silent) {
       setIsLoadingAttendance(true);
@@ -186,14 +212,23 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
         });
         setTodayAttendance(attendanceMap);
+        hasLoadedDataRef.current = true;
       } else {
-        setSubjectStats({});
-        setTodayAttendance({});
+        // Only clear on error if we haven't loaded data yet, or if it's a 401 (unauthorized)
+        if (!hasLoadedDataRef.current || response.status === 401) {
+          setSubjectStats({});
+          setTodayAttendance({});
+          hasLoadedDataRef.current = false;
+        }
       }
     } catch (error) {
       console.error('Error fetching attendance data:', error);
-      setSubjectStats({});
-      setTodayAttendance({});
+      // Only clear on error if we haven't successfully loaded data before
+      // This prevents clearing data during network hiccups
+      if (!hasLoadedDataRef.current) {
+        setSubjectStats({});
+        setTodayAttendance({});
+      }
     } finally {
       if (!silent) {
         setIsLoadingAttendance(false);
@@ -202,9 +237,14 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [student]);
 
   // Fetch attendance data when student is available (defaults to today)
+  // Only fetch when student ID actually changes, not when object reference changes
   useEffect(() => {
-    fetchAttendanceData();
-  }, [fetchAttendanceData]);
+    const currentStudentId = student?.id;
+    // Only fetch if we have a student and it's different from last time
+    if (currentStudentId && lastStudentIdRef.current !== currentStudentId) {
+      fetchAttendanceData();
+    }
+  }, [student?.id, fetchAttendanceData]);
 
   // Onboarding completion is based solely on backend data
   // If enrolledSubjects.length === 0, show onboarding
