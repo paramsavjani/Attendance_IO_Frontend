@@ -274,7 +274,7 @@ export default function Dashboard() {
                     <AttendanceMarker
                       key={index}
                       subjectName={slot.subject.name}
-                      subjectCode={slot.subject.code}
+                      lecturePlace={slot.subject.lecturePlace}
                       time={slot.time}
                       color={slot.subject.color}
                       isCurrent={isCurrent}
@@ -319,7 +319,7 @@ export default function Dashboard() {
                   <SubjectCard
                     key={subject.id}
                     name={subject.name}
-                    code={subject.code}
+                    lecturePlace={subject.lecturePlace}
                     color={subject.color}
                     present={stats.present}
                     absent={stats.absent}
