@@ -141,7 +141,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const [savingSubjectId, setSavingSubjectId] = useState<string | null>(null);
 
   // Fetch attendance data from backend for a specific date (defaults to today)
-  const fetchAttendanceData = useCallback(async (date?: string) => {
+  // silent = true skips showing loading state (used for background refresh after marking)
+  const fetchAttendanceData = useCallback(async (date?: string, silent: boolean = false) => {
     if (!student) {
       setSubjectStats({});
       setTodayAttendance({});
@@ -149,7 +150,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setIsLoadingAttendance(true);
+    if (!silent) {
+      setIsLoadingAttendance(true);
+    }
 
     try {
       const url = date 
@@ -191,7 +194,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setSubjectStats({});
       setTodayAttendance({});
     } finally {
-      setIsLoadingAttendance(false);
+      if (!silent) {
+        setIsLoadingAttendance(false);
+      }
     }
   }, [student]);
 
@@ -265,8 +270,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         return updated;
       });
       
-      // Refresh from backend to get updated stats for this date
-      await fetchAttendanceData(date);
+      // Refresh from backend to get updated stats for this date (silent - no loading UI)
+      await fetchAttendanceData(date, true);
       setSavingSubjectId(null);
       return;
     }
@@ -300,8 +305,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       
       toast.success(`Marked ${status} successfully`);
       
-      // Refresh attendance data from backend to get updated stats and attendance for the date
-      await fetchAttendanceData(date);
+      // Refresh attendance data from backend to get updated stats (silent - no loading UI)
+      await fetchAttendanceData(date, true);
     } catch (error: any) {
       console.error('Error marking attendance:', error);
       toast.error(error.message || 'Failed to mark attendance');
