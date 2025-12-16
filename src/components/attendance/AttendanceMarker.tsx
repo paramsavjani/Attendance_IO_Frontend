@@ -51,17 +51,17 @@ export function AttendanceMarker({
       )}
     >
       {/* Left color indicator */}
-      <div className="flex items-center pl-2.5">
+      <div className="flex items-center pl-3">
         <div
-          className="w-1 rounded-full h-8"
+          className="w-1 rounded-full h-10"
           style={{ backgroundColor: `hsl(${color})` }}
         />
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 items-center justify-between px-2.5 py-2 min-w-0">
+      <div className="flex flex-1 items-center justify-between px-3 py-2.5 min-w-0">
         {/* Text section */}
-        <div className="min-w-0 flex-1 pr-2">
+        <div className="min-w-0 flex-1 pr-3">
           <div className="flex items-center gap-2">
             <p
               className={cn(
@@ -162,18 +162,18 @@ export function AttendanceMarker({
 export function AttendanceMarkerSkeleton() {
   return (
     <div className="relative flex items-center rounded-xl overflow-hidden bg-neutral-900 border border-white/5">
-      <div className="flex items-center pl-2.5">
-        <Skeleton className="w-1 h-8 rounded-full bg-neutral-700" />
+      <div className="flex items-center pl-3">
+        <Skeleton className="w-1 h-10 rounded-full bg-neutral-700" />
       </div>
-      <div className="flex flex-1 items-center justify-between px-2.5 py-2">
-        <div className="flex-1 pr-2 space-y-1.5">
+      <div className="flex flex-1 items-center justify-between px-3 py-2.5">
+        <div className="flex-1 pr-3 space-y-1.5">
           <Skeleton className="h-4 w-36 bg-neutral-800" />
-          <Skeleton className="h-3 w-24 bg-neutral-800" />
+          <Skeleton className="h-3 w-28 bg-neutral-800" />
         </div>
         <div className="flex items-center gap-1.5">
-          <Skeleton className="h-9 w-9 rounded-xl bg-neutral-800" />
-          <Skeleton className="h-9 w-9 rounded-xl bg-neutral-800" />
-          <Skeleton className="h-9 w-9 rounded-xl bg-neutral-800" />
+          <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
+          <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
+          <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
         </div>
       </div>
     </div>
@@ -197,7 +197,7 @@ function ActionButton({
 }) {
   const Icon = variant === "present" ? Check : variant === "absent" ? X : Ban;
 
-  const baseStyles = "h-9 w-9 lg:h-10 lg:w-10 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
+  const baseStyles = "h-10 w-10 lg:h-11 lg:w-11 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
   
   const variantStyles = {
     present: {
