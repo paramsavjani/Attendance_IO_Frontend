@@ -78,10 +78,15 @@ export function AttendanceMarker({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             {subjectCode && (
               <span className="text-[11px] text-neutral-400 font-medium">
                 {subjectCode}
+              </span>
+            )}
+            {lecturePlace && (
+              <span className="text-[11px] text-neutral-500">
+                • {lecturePlace}
               </span>
             )}
             {time && (
