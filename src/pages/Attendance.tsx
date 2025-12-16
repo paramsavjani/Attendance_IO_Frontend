@@ -72,7 +72,7 @@ export default function Attendance() {
                 <SubjectCard
                   key={subject.id}
                   name={subject.name}
-                  code={subject.code}
+                  lecturePlace={subject.lecturePlace}
                   color={subject.color}
                   present={stats.present}
                   absent={stats.absent}
