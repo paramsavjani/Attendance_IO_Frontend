@@ -1,4 +1,4 @@
-import { Check, X, AlertTriangle } from "lucide-react";
+import { Check, X, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AttendanceMarkerProps {
@@ -148,14 +148,15 @@ function ActionButton({
   disabled?: boolean;
   variant: "present" | "absent" | "cancelled";
 }) {
-  const Icon = variant === "present" ? Check : variant === "absent" ? X : AlertTriangle;
+  const Icon = variant === "present" ? Check : variant === "absent" ? X : Ban;
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "h-9 w-9 rounded-xl flex items-center justify-center",
+        "rounded-xl flex items-center justify-center gap-1",
+        variant === "cancelled" ? "h-9 px-3" : "h-9 w-9", // Wider button for cancelled to fit text
         "transition-none", // ❌ no hover animation
         active &&
           (variant === "present"
@@ -167,6 +168,7 @@ function ActionButton({
         !active && variant !== "cancelled" && "text-neutral-500",
         disabled && "pointer-events-none"
       )}
+      title={variant === "cancelled" ? "Mark as Cancelled" : variant === "present" ? "Mark as Present" : "Mark as Absent"}
     >
       <Icon className="w-4 h-4" strokeWidth={active ? 3 : 2} />
     </button>
