@@ -4,6 +4,7 @@ import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 import { hexToHsl } from "@/lib/utils";
+import { toast } from "sonner";
 
 const DEFAULT_MIN = 75;
 
@@ -23,7 +24,7 @@ interface AttendanceContextType {
   hasCompletedOnboarding: boolean;
   isLoadingEnrolledSubjects: boolean;
   isLoadingTimetable: boolean;
-  markAttendance: (subjectId: string, slotKey: string, status: 'present' | 'absent') => void;
+  markAttendance: (subjectId: string, date: string, status: 'present' | 'absent') => Promise<void>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
   setEnrolledSubjects: (subjects: Subject[]) => void;
@@ -183,16 +184,20 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     await fetchTimetable();
   }, [fetchTimetable]);
 
-  const markAttendance = useCallback((subjectId: string, slotKey: string, status: 'present' | 'absent') => {
+  const markAttendance = useCallback(async (subjectId: string, date: string, status: 'present' | 'absent') => {
+    const slotKey = `${date}-${subjectId}`;
     const previousStatus = todayAttendance[slotKey];
     
-    // Toggle off if same status
+    // Toggle off if same status - delete from backend
     if (previousStatus === status) {
+      // TODO: Need to track attendance IDs to delete - for now just update local state
       setTodayAttendance(prev => {
-        return { ...prev, [slotKey]: null };
+        const updated = { ...prev };
+        delete updated[slotKey];
+        return updated;
       });
       
-      // Revert stats (no localStorage)
+      // Revert stats
       setSubjectStats(prev => {
         const current = prev[subjectId];
         if (!current) return prev;
@@ -208,43 +213,72 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         };
       });
       
+      // TODO: Call delete endpoint when we have attendance ID tracking
       return;
     }
 
-    // Update today's attendance (no localStorage)
-    setTodayAttendance(prev => {
-      return { ...prev, [slotKey]: status };
-    });
+    try {
+      // Call backend API to mark attendance
+      const response = await fetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subjectId,
+          lectureDate: date,
+          status,
+        }),
+      });
 
-    // Update subject stats (no localStorage)
-    setSubjectStats(prev => {
-      const current = prev[subjectId];
-      if (!current) return prev;
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to mark attendance' }));
+        throw new Error(error.error || 'Failed to mark attendance');
+      }
 
-      let newPresent = current.present;
-      let newAbsent = current.absent;
-      let newTotal = current.total;
+      const result = await response.json();
+      
+      // Update local state on success
+      setTodayAttendance(prev => {
+        return { ...prev, [slotKey]: status };
+      });
 
-      // If changing from one status to another
-      if (previousStatus === 'present') newPresent--;
-      if (previousStatus === 'absent') newAbsent--;
-      if (previousStatus) newTotal--;
+      // Update subject stats
+      setSubjectStats(prev => {
+        const current = prev[subjectId] || { subjectId, present: 0, absent: 0, total: 0 };
 
-      // Add new status
-      if (status === 'present') newPresent++;
-      if (status === 'absent') newAbsent++;
-      newTotal++;
+        let newPresent = current.present;
+        let newAbsent = current.absent;
+        let newTotal = current.total;
 
-      return {
-        ...prev,
-        [subjectId]: {
-          ...current,
-          present: newPresent,
-          absent: newAbsent,
-          total: newTotal,
-        }
-      };
-    });
+        // If changing from one status to another
+        if (previousStatus === 'present') newPresent--;
+        if (previousStatus === 'absent') newAbsent--;
+        if (previousStatus) newTotal--;
+
+        // Add new status
+        if (status === 'present') newPresent++;
+        if (status === 'absent') newAbsent++;
+        newTotal++;
+
+        return {
+          ...prev,
+          [subjectId]: {
+            ...current,
+            present: newPresent,
+            absent: newAbsent,
+            total: newTotal,
+          }
+        };
+      });
+      
+      toast.success(`Marked ${status} successfully`);
+    } catch (error: any) {
+      console.error('Error marking attendance:', error);
+      toast.error(error.message || 'Failed to mark attendance');
+      // Don't update local state on error
+    }
   }, [todayAttendance]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
