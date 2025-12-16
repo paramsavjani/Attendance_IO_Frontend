@@ -22,6 +22,7 @@ interface AttendanceContextType {
   timetable: TimetableSlot[];
   hasCompletedOnboarding: boolean;
   isLoadingEnrolledSubjects: boolean;
+  isLoadingTimetable: boolean;
   markAttendance: (subjectId: string, slotKey: string, status: 'present' | 'absent') => void;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
@@ -29,6 +30,7 @@ interface AttendanceContextType {
   setTimetable: (timetable: TimetableSlot[]) => void;
   completeOnboarding: () => void;
   refreshEnrolledSubjects: () => Promise<void>;
+  refreshTimetable: () => Promise<void>;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
@@ -86,8 +88,40 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     await fetchEnrolledSubjects();
   }, [fetchEnrolledSubjects]);
 
-  // Timetable - no localStorage, use default initially
-  const [timetable, setTimetableState] = useState<TimetableSlot[]>(initialDefaultTimetable);
+  // Timetable - fetch from backend
+  const [timetable, setTimetableState] = useState<TimetableSlot[]>([]);
+  const [isLoadingTimetable, setIsLoadingTimetable] = useState(true);
+
+  // Fetch timetable from backend
+  const fetchTimetable = useCallback(async () => {
+    if (!student) {
+      setIsLoadingTimetable(false);
+      return;
+    }
+
+    try {
+      setIsLoadingTimetable(true);
+      const response = await fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTimetableState(data.slots || []);
+      } else {
+        setTimetableState([]);
+      }
+    } catch (error) {
+      console.error('Error fetching timetable:', error);
+      setTimetableState([]);
+    } finally {
+      setIsLoadingTimetable(false);
+    }
+  }, [student]);
+
+  useEffect(() => {
+    fetchTimetable();
+  }, [fetchTimetable]);
 
   // Initialize subject stats - no localStorage, start with empty
   // Stats should come from backend attendance API in the future
@@ -127,9 +161,27 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setTimetable = useCallback((newTimetable: TimetableSlot[]) => {
-    // No localStorage - timetable is managed in memory only
+    // Update local state immediately
     setTimetableState(newTimetable);
+    
+    // Save to backend
+    fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        slots: newTimetable,
+      }),
+    }).catch(error => {
+      console.error('Error saving timetable:', error);
+    });
   }, []);
+
+  const refreshTimetable = useCallback(async () => {
+    await fetchTimetable();
+  }, [fetchTimetable]);
 
   const markAttendance = useCallback((subjectId: string, slotKey: string, status: 'present' | 'absent') => {
     const previousStatus = todayAttendance[slotKey];
@@ -219,9 +271,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setSubjectMin,
         getSubjectStats,
         setEnrolledSubjects,
-        setTimetable,
-        completeOnboarding,
-        refreshEnrolledSubjects,
+      setTimetable,
+      completeOnboarding,
+      refreshEnrolledSubjects,
+      refreshTimetable,
+      isLoadingTimetable,
       }}
     >
       {children}
