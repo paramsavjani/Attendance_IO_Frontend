@@ -96,14 +96,14 @@ export default function Dashboard() {
   };
 
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
-  const [pendingAttendance, setPendingAttendance] = useState<{subjectId: string; status: 'present' | 'absent'} | null>(null);
+  const [pendingAttendance, setPendingAttendance] = useState<{subjectId: string; status: 'present' | 'absent' | 'cancelled'} | null>(null);
 
   // Fetch attendance when date changes
   useEffect(() => {
     fetchAttendanceForDate(dateKey);
   }, [dateKey, fetchAttendanceForDate]);
 
-  const handleMarkAttendance = async (index: number, subjectId: string, status: 'present' | 'absent') => {
+  const handleMarkAttendance = async (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
     // Show warning for past dates
     if (isPastDate) {
       setPendingAttendance({ subjectId, status });
@@ -275,6 +275,7 @@ export default function Dashboard() {
                     status={status}
                     onMarkPresent={() => handleMarkAttendance(index, slot.subject!.id, "present")}
                     onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
+                    onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
                     disabled={!canMarkAttendance}
                     needsAttention={isFutureDate && needsAttention}
                     attendancePercent={isFutureDate ? percent : undefined}

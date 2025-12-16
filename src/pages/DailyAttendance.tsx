@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { officialLastDate, defaultTimetable, subjects, timeSlots } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { format, isAfter, parseISO, subDays, addDays, isSameDay } from "date-fns";
-import { Check, X, ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { Check, X, AlertTriangle, ChevronLeft, ChevronRight, Lock,  } from "lucide-react";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 export default function DailyAttendance() {
@@ -27,7 +27,7 @@ export default function DailyAttendance() {
 
   const schedule = getScheduleForDate();
 
-  const handleMark = (index: number, subjectId: string, status: 'present' | 'absent') => {
+  const handleMark = (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
     markAttendance(subjectId, dateKey, status);
   };
 
@@ -137,6 +137,18 @@ export default function DailyAttendance() {
                         >
                           <X className="w-4 h-4" />
                           {currentStatus === "absent" && <span className="text-xs">A</span>}
+                        </button>
+                        <button
+                          onClick={() => handleMark(index, slot.subjectId!, "cancelled")}
+                          className={cn(
+                            "w-16 flex items-center justify-center gap-1 transition-all text-sm font-medium border-l border-border",
+                            currentStatus === "cancelled"
+                              ? "bg-yellow-500 text-black"
+                              : "hover:bg-yellow-500/10 text-yellow-500"
+                          )}
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          {currentStatus === "cancelled" && <span className="text-xs">C</span>}
                         </button>
                       </div>
                     )}
