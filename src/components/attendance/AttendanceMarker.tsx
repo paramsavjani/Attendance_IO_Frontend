@@ -7,9 +7,10 @@ interface AttendanceMarkerProps {
   time?: string;
   color: string; // hsl value
   isCurrent?: boolean;
-  status: "present" | "absent" | null;
+  status: "present" | "absent" | "cancelled" | null;
   onMarkPresent: () => void;
   onMarkAbsent: () => void;
+  onMarkCancelled: () => void;
   disabled?: boolean;
   needsAttention?: boolean;
   attendancePercent?: number;
@@ -24,6 +25,7 @@ export function AttendanceMarker({
   status,
   onMarkPresent,
   onMarkAbsent,
+  onMarkCancelled,
   disabled = false,
   needsAttention = false,
   attendancePercent,
@@ -120,6 +122,13 @@ export function AttendanceMarker({
             disabled={disabled}
             variant="absent"
           />
+
+          <ActionButton
+            active={status === "cancelled"}
+            onClick={onMarkCancelled}
+            disabled={disabled}
+            variant="cancelled"
+          />
         </div>
       </div>
     </div>
@@ -137,9 +146,9 @@ function ActionButton({
   active: boolean;
   onClick: () => void;
   disabled?: boolean;
-  variant: "present" | "absent";
+  variant: "present" | "absent" | "cancelled";
 }) {
-  const Icon = variant === "present" ? Check : X;
+  const Icon = variant === "present" ? Check : variant === "absent" ? X : AlertTriangle;
 
   return (
     <button
@@ -151,8 +160,11 @@ function ActionButton({
         active &&
           (variant === "present"
             ? "bg-emerald-500 text-black"
-            : "bg-red-500 text-white"),
-        !active && "text-neutral-500",
+            : variant === "absent"
+            ? "bg-red-500 text-white"
+            : "bg-yellow-500 text-black"),
+        !active && variant === "cancelled" && "text-yellow-500 hover:bg-yellow-500/10",
+        !active && variant !== "cancelled" && "text-neutral-500",
         disabled && "pointer-events-none"
       )}
     >
