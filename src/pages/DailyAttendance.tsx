@@ -28,8 +28,7 @@ export default function DailyAttendance() {
   const schedule = getScheduleForDate();
 
   const handleMark = (index: number, subjectId: string, status: 'present' | 'absent') => {
-    const slotKey = `${dateKey}-${index}`;
-    markAttendance(subjectId, slotKey, status);
+    markAttendance(subjectId, dateKey, status);
   };
 
   const navigateDate = (direction: "prev" | "next") => {
@@ -91,7 +90,7 @@ export default function DailyAttendance() {
           <div className="space-y-2">
             {schedule.map((slot, index) => {
               if (!slot.subject) return null;
-              const slotKey = `${dateKey}-${index}`;
+              const slotKey = `${dateKey}-${slot.subjectId}`;
               const currentStatus = todayAttendance[slotKey];
 
               return (
