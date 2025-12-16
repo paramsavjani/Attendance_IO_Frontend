@@ -6,6 +6,7 @@ import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { AttendanceMarker, AttendanceMarkerSkeleton } from "@/components/attendance/AttendanceMarker";
+import { EmptySlot } from "@/components/attendance/EmptySlot";
 import { ChevronLeft, ChevronRight, Lock, CalendarSearch, CalendarDays, Sun, Sunrise, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,7 +44,7 @@ export default function Dashboard() {
     return hour < 8 ? hour + 12 : hour;
   }
 
-  // Get schedule for any date
+  // Get schedule for any date - always returns 5 fixed slots
   function getScheduleForDate(date: Date) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
@@ -51,10 +52,15 @@ export default function Dashboard() {
     const adjustedDay = dayOfWeek - 1;
     const daySlots = timetable.filter((slot) => slot.day === adjustedDay);
     
-    return daySlots.map((slot) => ({
-      time: timeSlots[slot.timeSlot] || `${slot.timeSlot + 8}:00 - ${slot.timeSlot + 9}:00`,
-      subject: slot.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
-    }));
+    // Always return 5 fixed slots based on timeSlots array
+    return timeSlots.map((time, slotIndex) => {
+      const slot = daySlots.find(s => s.timeSlot === slotIndex);
+      return {
+        time,
+        slotIndex,
+        subject: slot?.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
+      };
+    });
   }
 
   // Determine if showing tomorrow's schedule
@@ -253,16 +259,23 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Schedule List */}
+            {/* Schedule List - Always 5 fixed slots */}
             <div className="space-y-2">
-              {isLoadingAttendance && schedule.filter(s => s.subject).length > 0 ? (
+              {isLoadingAttendance && schedule.length > 0 ? (
                 // Show skeleton loaders while loading attendance data
-                schedule.filter(s => s.subject).map((_, index) => (
-                  <AttendanceMarkerSkeleton key={index} />
+                schedule.map((slot, index) => (
+                  slot.subject ? (
+                    <AttendanceMarkerSkeleton key={index} />
+                  ) : (
+                    <EmptySlot key={index} time={slot.time} slotNumber={slot.slotIndex + 1} />
+                  )
                 ))
               ) : (
                 schedule.map((slot, index) => {
-                  if (!slot.subject) return null;
+                  // Empty slot - no subject
+                  if (!slot.subject) {
+                    return <EmptySlot key={index} time={slot.time} slotNumber={slot.slotIndex + 1} />;
+                  }
                   
                   const startHour = parseInt(slot.time.split(":")[0]);
                   const isCurrent = isSelectedToday && startHour === currentHour;
@@ -292,7 +305,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            {canMarkAttendance && schedule.filter(s => s.subject).length > 0 && !isLoadingAttendance && (
+            {canMarkAttendance && schedule.some(s => s.subject) && !isLoadingAttendance && (
               <p className="text-center text-[10px] text-muted-foreground pt-1">
                 Tap to mark • Auto-saved
               </p>
