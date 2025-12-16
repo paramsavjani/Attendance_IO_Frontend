@@ -17,6 +17,7 @@ export const API_CONFIG = {
     SUBJECTS_CURRENT: `${API_BASE_URL}/api/subjects/current`,
     ENROLLED_SUBJECTS: `${API_BASE_URL}/api/student/enrollment/subjects`,
     UPDATE_MINIMUM_CRITERIA: `${API_BASE_URL}/api/student/enrollment/minimum-criteria`,
+    TIMETABLE: `${API_BASE_URL}/api/timetable`,
   },
 } as const;
 

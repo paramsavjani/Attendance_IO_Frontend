@@ -1,21 +1,22 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { subjects, timeSlots, defaultTimetable } from "@/data/mockData";
+import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { AttendanceMarker } from "@/components/attendance/AttendanceMarker";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, CalendarDays, Sun, Sunrise } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, CalendarDays, Sun, Sunrise, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
+import { API_CONFIG } from "@/lib/api";
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin } = useAttendance();
+  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin } = useAttendance();
   
   const now = new Date();
   const currentHour = now.getHours();
@@ -38,11 +39,11 @@ export default function Dashboard() {
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
     
     const adjustedDay = dayOfWeek - 1;
-    const daySlots = defaultTimetable.filter((slot) => slot.day === adjustedDay);
+    const daySlots = timetable.filter((slot) => slot.day === adjustedDay);
     
     return daySlots.map((slot) => ({
-      time: timeSlots[slot.timeSlot],
-      subject: slot.subjectId ? subjects.find((s) => s.id === slot.subjectId) || null : null,
+      time: timeSlots[slot.timeSlot] || `${slot.timeSlot + 8}:00 - ${slot.timeSlot + 9}:00`,
+      subject: slot.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
     }));
   }
 
@@ -55,7 +56,7 @@ export default function Dashboard() {
     showingTomorrowByDefault ? addDays(now, 1) : now
   );
 
-  const schedule = useMemo(() => getScheduleForDate(selectedDate), [selectedDate]);
+  const schedule = useMemo(() => getScheduleForDate(selectedDate), [selectedDate, timetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const isSelectedToday = isToday(selectedDate);
   const isSelectedTomorrow = isTomorrow(selectedDate);
@@ -257,26 +258,36 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="subjects" className="mt-3 space-y-2">
-            {subjects.map((subject) => {
-              const stats = subjectStats[subject.id];
-              if (!stats) return null;
-              
-              const minRequired = subjectMinAttendance[subject.id] || 75;
+            {enrolledSubjects.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-sm text-muted-foreground">No subjects enrolled</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Enroll in subjects to see them here</p>
+              </div>
+            ) : (
+              enrolledSubjects.map((subject) => {
+                const stats = subjectStats[subject.id] || { 
+                  subjectId: subject.id, 
+                  present: 0, 
+                  absent: 0, 
+                  total: 0 
+                };
+                const minRequired = subjectMinAttendance[subject.id] || subject.minimumCriteria || 75;
 
-              return (
-                <SubjectCard
-                  key={subject.id}
-                  name={subject.name}
-                  code={subject.code}
-                  color={subject.color}
-                  present={stats.present}
-                  absent={stats.absent}
-                  total={stats.total}
-                  minRequired={minRequired}
-                  onMinChange={(val) => setSubjectMin(subject.id, val)}
-                />
-              );
-            })}
+                return (
+                  <SubjectCard
+                    key={subject.id}
+                    name={subject.name}
+                    code={subject.code}
+                    color={subject.color}
+                    present={stats.present}
+                    absent={stats.absent}
+                    total={stats.total}
+                    minRequired={minRequired}
+                    onMinChange={(val) => setSubjectMin(subject.id, val)}
+                  />
+                );
+              })
+            )}
           </TabsContent>
         </Tabs>
       </div>
