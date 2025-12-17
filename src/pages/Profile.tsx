@@ -30,7 +30,7 @@ interface CurrentSemester {
 
 export default function Profile() {
   const { student, logout } = useAuth();
-  const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable, refreshEnrolledSubjects } = useAttendance();
+  const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable, refreshEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
   const [showTimetableEditor, setShowTimetableEditor] = useState(false);
@@ -73,10 +73,17 @@ export default function Profile() {
     navigate("/login");
   };
 
-  const handleSaveSubjects = (subjects: Subject[]) => {
+  const handleSaveSubjects = async (subjects: Subject[], hasConflicts?: boolean) => {
     setEnrolledSubjects(subjects);
     setShowSubjectEditor(false);
-    toast.success(`Updated to ${subjects.length} subjects`);
+    
+    // Refresh timetable to get the updated slots from backend
+    await refreshTimetable();
+    
+    if (!hasConflicts) {
+      toast.success(`Updated to ${subjects.length} subjects`);
+    }
+    // If hasConflicts is true, the SubjectSelector already showed the conflict modal
   };
 
   const handleSaveTimetable = (newTimetable: TimetableSlot[]) => {
