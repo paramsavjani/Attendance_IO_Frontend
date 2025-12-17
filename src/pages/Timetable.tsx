@@ -10,7 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RefreshCw, X, ChevronLeft, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { RefreshCw, X, ChevronLeft, Loader2, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
@@ -170,20 +181,47 @@ export default function Timetable() {
           <div className="flex-1">
             <h1 className="text-xl font-bold">Timetable</h1>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRegenerate} 
-            className="gap-1.5"
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            Reset
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Reset
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="max-w-sm mx-4">
+              <AlertDialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                  </div>
+                  <div>
+                    <AlertDialogTitle>Reset Timetable?</AlertDialogTitle>
+                    <AlertDialogDescription className="mt-1">
+                      This will clear all your scheduled classes.
+                    </AlertDialogDescription>
+                  </div>
+                </div>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4">
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleRegenerate}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Reset All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {isLoading ? (
