@@ -12,7 +12,7 @@ type OnboardingStep = "subjects" | "timetable";
 export default function SubjectOnboarding() {
   const navigate = useNavigate();
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, setTimetable, completeOnboarding, refreshEnrolledSubjects } = useAttendance();
+  const { enrolledSubjects, timetable, setTimetable, completeOnboarding, refreshEnrolledSubjects, refreshTimetable } = useAttendance();
   const [step, setStep] = useState<OnboardingStep>("subjects");
   const [tempSubjects, setTempSubjects] = useState<Subject[]>(enrolledSubjects);
   const hasMovedToTimetable = useRef(false);
@@ -31,7 +31,7 @@ export default function SubjectOnboarding() {
     }
   }, [enrolledSubjects.length]); // Only depend on length, not step
 
-  const handleSubjectsSave = async (subjects: Subject[]) => {
+  const handleSubjectsSave = async (subjects: Subject[], hasConflicts?: boolean) => {
     setTempSubjects(subjects);
     // Mark that we've moved to timetable to prevent useEffect from interfering
     hasMovedToTimetable.current = true;
@@ -42,8 +42,9 @@ export default function SubjectOnboarding() {
       }
       return prevStep; // Don't change if already on timetable
     });
-    // Don't refresh during onboarding - wait until after timetable is saved
-    // This prevents the refresh from interfering with step transition
+    // Refresh timetable to get the auto-generated slots from backend
+    // This is important because the backend now auto-generates timetable based on subject_schedule
+    await refreshTimetable();
   };
 
   const handleTimetableSave = async (newTimetable: TimetableSlot[]) => {
