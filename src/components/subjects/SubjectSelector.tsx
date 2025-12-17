@@ -153,12 +153,9 @@ export function SubjectSelector({
         setSubjectsWithConflicts(data.subjectsWithConflicts);
         setTimetableSlotsAdded(data.timetableSlotsAdded);
         
-        // Show conflict modal
+        // Show conflict modal - DON'T call onSave yet, let user see the modal first
+        // onSave will be called when user dismisses the modal
         setShowConflictModal(true);
-        
-        // Still call onSave since subjects were enrolled (just some timetable slots weren't added)
-        toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
-        onSave(selected, true); // Pass hasConflicts flag
         return;
       }
 
@@ -178,11 +175,20 @@ export function SubjectSelector({
 
   const handleGoToTimetable = () => {
     setShowConflictModal(false);
-    navigate('/timetable');
+    // Complete the save flow first, then navigate
+    toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
+    onSave(selected, true);
+    // Navigate after a small delay to let the dialog close
+    setTimeout(() => {
+      navigate('/timetable');
+    }, 100);
   };
 
   const handleDismissConflicts = () => {
     setShowConflictModal(false);
+    // Complete the save flow when user dismisses
+    toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
+    onSave(selected, true);
   };
 
   return (
