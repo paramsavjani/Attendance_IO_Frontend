@@ -1,15 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Check, X, BookOpen, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Subject } from "@/types/attendance";
+import { Subject, SaveEnrolledSubjectsResponse, TimetableConflict, SubjectInfo } from "@/types/attendance";
 import { cn, hexToHsl } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
+import { ConflictResolutionModal } from "./ConflictResolutionModal";
 
 interface SubjectSelectorProps {
   selectedSubjects: Subject[];
-  onSave: (subjects: Subject[]) => void;
+  onSave: (subjects: Subject[], hasConflicts?: boolean) => void;
   onCancel?: () => void;
   isOnboarding?: boolean;
 }
@@ -20,11 +22,18 @@ export function SubjectSelector({
   onCancel,
   isOnboarding = false 
 }: SubjectSelectorProps) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selected, setSelected] = useState<Subject[]>(selectedSubjects);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Conflict state
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflicts, setConflicts] = useState<TimetableConflict[]>([]);
+  const [subjectsWithConflicts, setSubjectsWithConflicts] = useState<SubjectInfo[]>([]);
+  const [timetableSlotsAdded, setTimetableSlotsAdded] = useState(0);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -129,19 +138,51 @@ export function SubjectSelector({
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save subjects');
+      // Handle both success and conflict responses
+      const data: SaveEnrolledSubjectsResponse = await response.json();
+
+      // Check for validation errors (400)
+      if (response.status === 400) {
+        throw new Error(data.message || 'Failed to save subjects');
       }
 
-      toast.success(`Successfully enrolled in ${selected.length} subject${selected.length !== 1 ? 's' : ''}`);
-      onSave(selected);
+      // Check for conflicts (209 = partial success with conflicts)
+      if (data.hasConflicts && data.conflicts.length > 0) {
+        // Store conflict data
+        setConflicts(data.conflicts);
+        setSubjectsWithConflicts(data.subjectsWithConflicts);
+        setTimetableSlotsAdded(data.timetableSlotsAdded);
+        
+        // Show conflict modal
+        setShowConflictModal(true);
+        
+        // Still call onSave since subjects were enrolled (just some timetable slots weren't added)
+        toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
+        onSave(selected, true); // Pass hasConflicts flag
+        return;
+      }
+
+      // Full success
+      const slotsMessage = data.timetableSlotsAdded > 0 
+        ? ` and ${data.timetableSlotsAdded} timetable slot${data.timetableSlotsAdded !== 1 ? 's' : ''} added`
+        : '';
+      toast.success(`Successfully enrolled in ${selected.length} subject${selected.length !== 1 ? 's' : ''}${slotsMessage}`);
+      onSave(selected, false);
     } catch (error: any) {
       console.error('Error saving subjects:', error);
       toast.error(error.message || 'Failed to save subjects');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleGoToTimetable = () => {
+    setShowConflictModal(false);
+    navigate('/timetable');
+  };
+
+  const handleDismissConflicts = () => {
+    setShowConflictModal(false);
   };
 
   return (
@@ -275,6 +316,17 @@ export function SubjectSelector({
           )}
         </Button>
       </div>
+
+      {/* Conflict Resolution Modal */}
+      <ConflictResolutionModal
+        open={showConflictModal}
+        onOpenChange={setShowConflictModal}
+        conflicts={conflicts}
+        subjectsWithConflicts={subjectsWithConflicts}
+        timetableSlotsAdded={timetableSlotsAdded}
+        onGoToTimetable={handleGoToTimetable}
+        onDismiss={handleDismissConflicts}
+      />
     </div>
   );
 }
