@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Search, Check, X, BookOpen, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Subject, SaveEnrolledSubjectsResponse, TimetableConflict, SubjectInfo } from "@/types/attendance";
+import { Subject, SaveEnrolledSubjectsResponse, TimetableConflict, SubjectInfo, SubjectSchedule, SelectedSubjectConflict } from "@/types/attendance";
 import { cn, hexToHsl } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
 import { ConflictResolutionModal } from "./ConflictResolutionModal";
+import { SubjectConflictResolutionModal } from "./SubjectConflictResolutionModal";
 
 interface SubjectSelectorProps {
   selectedSubjects: Subject[];
@@ -29,11 +30,16 @@ export function SubjectSelector({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Conflict state
+  // Conflict state (from backend after save)
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [conflicts, setConflicts] = useState<TimetableConflict[]>([]);
   const [subjectsWithConflicts, setSubjectsWithConflicts] = useState<SubjectInfo[]>([]);
   const [timetableSlotsAdded, setTimetableSlotsAdded] = useState(0);
+  
+  // Pre-save conflict detection (between selected subjects)
+  const [showPreSaveConflictModal, setShowPreSaveConflictModal] = useState(false);
+  const [preSaveConflicts, setPreSaveConflicts] = useState<SelectedSubjectConflict[]>([]);
+  const [pendingSelectedSubjects, setPendingSelectedSubjects] = useState<Subject[]>([]);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -115,6 +121,83 @@ export function SubjectSelector({
 
   const isSelected = (id: string) => selected.some((s) => s.id === id);
 
+  // Detect conflicts using backend endpoint
+  const detectConflicts = async (subjectIds: string[]): Promise<SelectedSubjectConflict[]> => {
+    if (subjectIds.length === 0) return [];
+
+    try {
+      // Call backend to detect conflicts
+      const response = await fetch(API_CONFIG.ENDPOINTS.CHECK_SUBJECT_CONFLICTS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subjectIds: subjectIds,
+        }),
+      });
+
+      if (!response.ok) {
+        return []; // If we can't check conflicts, proceed without conflict detection
+      }
+
+      const data = await response.json();
+      const backendConflicts: TimetableConflict[] = data.conflicts || [];
+      
+      if (backendConflicts.length === 0) {
+        return [];
+      }
+
+      // Convert backend conflicts to frontend format
+      // Group conflicts by slot (dayId-slotId)
+      const conflictMap = new Map<string, SelectedSubjectConflict>();
+      
+      backendConflicts.forEach(conflict => {
+        const key = `${conflict.dayId}-${conflict.slotId}`;
+        
+        if (!conflictMap.has(key)) {
+          conflictMap.set(key, {
+            dayId: conflict.dayId,
+            dayName: conflict.dayName,
+            slotId: conflict.slotId,
+            slotStartTime: conflict.slotStartTime,
+            slotEndTime: conflict.slotEndTime,
+            conflictingSubjects: [],
+            selectedSubjectId: null,
+          });
+        }
+        
+        const conflictEntry = conflictMap.get(key)!;
+        
+        // Add both subjects to the conflicting subjects list
+        const existingSubject = {
+          subjectId: conflict.existingSubjectId.toString(),
+          subjectCode: conflict.existingSubjectCode,
+          subjectName: conflict.existingSubjectName,
+        };
+        const newSubject = {
+          subjectId: conflict.newSubjectId.toString(),
+          subjectCode: conflict.newSubjectCode,
+          subjectName: conflict.newSubjectName,
+        };
+        
+        // Add subjects if not already in the list
+        if (!conflictEntry.conflictingSubjects.find(s => s.subjectId === existingSubject.subjectId)) {
+          conflictEntry.conflictingSubjects.push(existingSubject);
+        }
+        if (!conflictEntry.conflictingSubjects.find(s => s.subjectId === newSubject.subjectId)) {
+          conflictEntry.conflictingSubjects.push(newSubject);
+        }
+      });
+
+      return Array.from(conflictMap.values());
+    } catch (error) {
+      console.error('Error detecting conflicts:', error);
+      return []; // On error, proceed without conflict detection
+    }
+  };
+
   const handleSave = async () => {
     // Validate max subjects
     if (selected.length > MAX_SUBJECTS) {
@@ -126,7 +209,42 @@ export function SubjectSelector({
 
     try {
       setIsSaving(true);
-      // Save to backend
+      
+      // Step 1: Check for conflicts using backend
+      const detectedConflicts = await detectConflicts(selected.map(s => s.id));
+      
+      if (detectedConflicts.length > 0) {
+        // Show conflict resolution modal
+        setPreSaveConflicts(detectedConflicts);
+        setPendingSelectedSubjects(selected);
+        setShowPreSaveConflictModal(true);
+        setIsSaving(false);
+        return; // Don't save yet, wait for user to resolve conflicts
+      }
+      
+      // Step 2: No conflicts detected, proceed with save (no resolutions needed)
+      await performSave(selected, null);
+    } catch (error: any) {
+      console.error('Error saving subjects:', error);
+      toast.error(error.message || 'Failed to save subjects');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const performSave = async (subjectsToSave: Subject[], conflictResolutions: Map<string, string> | null) => {
+    try {
+      setIsSaving(true);
+      
+      // Convert Map to object for JSON
+      const resolutionsObject: Record<string, string> = {};
+      if (conflictResolutions) {
+        conflictResolutions.forEach((value, key) => {
+          resolutionsObject[key] = value;
+        });
+      }
+      
+      // Save to backend with conflict resolutions
       const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
         method: 'POST',
         headers: {
@@ -134,7 +252,8 @@ export function SubjectSelector({
         },
         credentials: 'include',
         body: JSON.stringify({
-          subjectIds: selected.map(s => s.id),
+          subjectIds: subjectsToSave.map(s => s.id),
+          conflictResolutions: conflictResolutions ? resolutionsObject : null,
         }),
       });
 
@@ -181,15 +300,31 @@ export function SubjectSelector({
       const slotsMessage = data.timetableSlotsAdded > 0 
         ? ` and ${data.timetableSlotsAdded} timetable slot${data.timetableSlotsAdded !== 1 ? 's' : ''} added`
         : '';
-      toast.success(`Successfully enrolled in ${selected.length} subject${selected.length !== 1 ? 's' : ''}${slotsMessage}`);
-      onSave(selected, false);
+      toast.success(`Successfully enrolled in ${subjectsToSave.length} subject${subjectsToSave.length !== 1 ? 's' : ''}${slotsMessage}`);
+      onSave(subjectsToSave, false);
     } catch (error: any) {
       console.error('Error saving subjects:', error);
       toast.error(error.message || 'Failed to save subjects');
-      // Don't call onSave on error - keep the dialog open so user can retry
+      throw error; // Re-throw to be caught by caller
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handlePreSaveConflictResolve = async (resolutions: Map<string, string>) => {
+    // User has resolved all conflicts
+    // Close modal and proceed with save, passing resolutions to backend
+    setShowPreSaveConflictModal(false);
+    
+    // Save with all subjects and conflict resolutions
+    // Backend will use resolutions to determine which subjects get which slots
+    await performSave(pendingSelectedSubjects, resolutions);
+  };
+
+  const handlePreSaveConflictCancel = () => {
+    setShowPreSaveConflictModal(false);
+    setPreSaveConflicts([]);
+    setPendingSelectedSubjects([]);
   };
 
   const handleGoToTimetable = () => {
@@ -342,7 +477,17 @@ export function SubjectSelector({
         </Button>
       </div>
 
-      {/* Conflict Resolution Modal */}
+      {/* Pre-save Conflict Resolution Modal (conflicts between selected subjects) */}
+      <SubjectConflictResolutionModal
+        open={showPreSaveConflictModal}
+        onOpenChange={setShowPreSaveConflictModal}
+        conflicts={preSaveConflicts}
+        subjects={subjects}
+        onResolve={handlePreSaveConflictResolve}
+        onCancel={handlePreSaveConflictCancel}
+      />
+
+      {/* Post-save Conflict Resolution Modal (conflicts with existing timetable) */}
       <ConflictResolutionModal
         open={showConflictModal}
         onOpenChange={setShowConflictModal}
