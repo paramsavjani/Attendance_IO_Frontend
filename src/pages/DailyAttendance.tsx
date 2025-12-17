@@ -28,6 +28,7 @@ export default function DailyAttendance() {
   const schedule = getScheduleForDate();
 
   const handleMark = (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
+    if (isFuture) return;
     markAttendance(subjectId, dateKey, status);
   };
 
@@ -85,6 +86,14 @@ export default function DailyAttendance() {
           </div>
         )}
 
+        {/* Future Date Notice */}
+        {isFuture && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+            <AlertTriangle className="w-4 h-4" />
+            <span>You can’t mark attendance for future dates</span>
+          </div>
+        )}
+
         {/* Schedule - One-click save */}
         {adjustedDay !== -1 && (
           <div className="space-y-2">
@@ -112,7 +121,7 @@ export default function DailyAttendance() {
                     </div>
 
                     {/* Action buttons - one click auto-save */}
-                    {!isLocked && (
+                    {!isLocked && !isFuture && (
                       <div className="flex items-stretch border-l border-border">
                         <button
                           onClick={() => handleMark(index, slot.subjectId!, "present")}
@@ -153,9 +162,9 @@ export default function DailyAttendance() {
                       </div>
                     )}
 
-                    {isLocked && (
+                    {(isLocked || isFuture) && (
                       <div className="flex items-center px-4 text-muted-foreground">
-                        <Lock className="w-4 h-4" />
+                        {isFuture ? <AlertTriangle className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                       </div>
                     )}
                   </div>
