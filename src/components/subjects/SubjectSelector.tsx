@@ -138,16 +138,34 @@ export function SubjectSelector({
         }),
       });
 
-      // Handle both success and conflict responses
-      const data: SaveEnrolledSubjectsResponse = await response.json();
-
-      // Check for validation errors (400)
-      if (response.status === 400) {
-        throw new Error(data.message || 'Failed to save subjects');
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        // Try to parse error response
+        let errorMessage = 'Failed to save subjects';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          // If JSON parsing fails, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        
+        // Handle different error statuses
+        if (response.status === 400) {
+          throw new Error(errorMessage);
+        } else if (response.status === 500) {
+          throw new Error('Server error occurred. Please try again later.');
+        } else {
+          throw new Error(errorMessage);
+        }
       }
 
-      // Check for conflicts (209 = partial success with conflicts)
-      if (data.hasConflicts && data.conflicts.length > 0) {
+      // Parse successful response
+      const data: SaveEnrolledSubjectsResponse = await response.json();
+
+      // Check for conflicts (209 = partial success with conflicts, but response.ok is true)
+      // Also check if status is 209 or if hasConflicts flag is set
+      if (response.status === 209 || (data.hasConflicts && data.conflicts.length > 0)) {
         // Store conflict data
         setConflicts(data.conflicts);
         setSubjectsWithConflicts(data.subjectsWithConflicts);
@@ -159,7 +177,7 @@ export function SubjectSelector({
         return;
       }
 
-      // Full success
+      // Full success (200 OK)
       const slotsMessage = data.timetableSlotsAdded > 0 
         ? ` and ${data.timetableSlotsAdded} timetable slot${data.timetableSlotsAdded !== 1 ? 's' : ''} added`
         : '';
@@ -168,6 +186,7 @@ export function SubjectSelector({
     } catch (error: any) {
       console.error('Error saving subjects:', error);
       toast.error(error.message || 'Failed to save subjects');
+      // Don't call onSave on error - keep the dialog open so user can retry
     } finally {
       setIsSaving(false);
     }
