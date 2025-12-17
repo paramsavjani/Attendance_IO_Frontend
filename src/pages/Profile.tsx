@@ -16,11 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 interface CurrentSemester {
   year: number;
@@ -32,11 +27,11 @@ export default function Profile() {
   const { enrolledSubjects, setEnrolledSubjects, refreshEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
+  const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [currentSemester, setCurrentSemester] = useState<CurrentSemester | null>(null);
   const [isLoadingSemester, setIsLoadingSemester] = useState(true);
   const [editingCriteria, setEditingCriteria] = useState<Record<string, string>>({});
   const [isSavingCriteria, setIsSavingCriteria] = useState<Record<string, boolean>>({});
-  const [isCriteriaOpen, setIsCriteriaOpen] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -220,26 +215,58 @@ export default function Profile() {
           </button>
         </div>
 
-        {/* Minimum Criteria Management */}
+        {/* Minimum Criteria (Modal) */}
         {enrolledSubjects.length > 0 && (
-          <Collapsible open={isCriteriaOpen} onOpenChange={setIsCriteriaOpen}>
-            <div className="bg-card rounded-xl border border-border">
-              <CollapsibleTrigger className="w-full p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Target className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium">Minimum Criteria</p>
-                    <p className="text-sm text-muted-foreground">Set attendance targets by subject</p>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isCriteriaOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-3">
+          <button
+            onClick={() => setShowCriteriaModal(true)}
+            className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Target className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium">Minimum Criteria</p>
+              <p className="text-sm text-muted-foreground">Set attendance targets by subject</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
+        )}
+
+        {/* Logout */}
+        <Button
+          variant="destructive"
+          onClick={handleLogout}
+          className="w-full py-6 rounded-xl"
+        >
+          <LogOut className="w-5 h-5 mr-2" />
+          Logout
+        </Button>
+
+        {/* Subject Editor Dialog */}
+        <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
+          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] h-[90vh] sm:h-auto overflow-hidden p-3 sm:p-4 flex flex-col top-[50%] translate-y-[-50%]">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Edit Subjects</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <SubjectSelector
+                selectedSubjects={enrolledSubjects}
+                onSave={handleSaveSubjects}
+                onCancel={() => setShowSubjectEditor(false)}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Minimum Criteria Modal */}
+        <Dialog open={showCriteriaModal} onOpenChange={setShowCriteriaModal}>
+          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Minimum Criteria</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
               {enrolledSubjects.map((subject) => {
-                const isEditing = editingCriteria.hasOwnProperty(subject.id);
+                const isEditing = Object.prototype.hasOwnProperty.call(editingCriteria, subject.id);
                 const isSaving = isSavingCriteria[subject.id] || false;
                 const currentValue = subject.minimumCriteria;
 
@@ -265,9 +292,9 @@ export default function Profile() {
                           step="1"
                           value={editingCriteria[subject.id]}
                           onChange={(e) =>
-                            setEditingCriteria(prev => ({
+                            setEditingCriteria((prev) => ({
                               ...prev,
-                              [subject.id]: e.target.value
+                              [subject.id]: e.target.value,
                             }))
                           }
                           placeholder="70"
@@ -297,9 +324,7 @@ export default function Profile() {
                     ) : (
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">
-                          {currentValue !== null && currentValue !== undefined
-                            ? `${currentValue}%`
-                            : "70%"}
+                          {currentValue !== null && currentValue !== undefined ? `${currentValue}%` : "70%"}
                         </span>
                         <Button
                           size="sm"
@@ -314,34 +339,11 @@ export default function Profile() {
                   </div>
                 );
               })}
-                </div>
-              </CollapsibleContent>
             </div>
-          </Collapsible>
-        )}
-
-        {/* Logout */}
-        <Button
-          variant="destructive"
-          onClick={handleLogout}
-          className="w-full py-6 rounded-xl"
-        >
-          <LogOut className="w-5 h-5 mr-2" />
-          Logout
-        </Button>
-
-        {/* Subject Editor Dialog */}
-        <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
-          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] h-[90vh] sm:h-auto overflow-hidden p-3 sm:p-4 flex flex-col top-[50%] translate-y-[-50%]">
-            <DialogHeader className="sr-only">
-              <DialogTitle>Edit Subjects</DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-              <SubjectSelector
-                selectedSubjects={enrolledSubjects}
-                onSave={handleSaveSubjects}
-                onCancel={() => setShowSubjectEditor(false)}
-              />
+            <div className="pt-3 border-t border-border flex justify-end">
+              <Button variant="outline" onClick={() => setShowCriteriaModal(false)}>
+                Close
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
