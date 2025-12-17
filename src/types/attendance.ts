@@ -40,3 +40,38 @@ export interface DailySchedule {
     isLocked: boolean;
   }>;
 }
+
+// Conflict types for subject enrollment
+export interface TimetableConflict {
+  dayId: number;
+  dayName: string;
+  slotId: number;
+  slotStartTime: string;
+  slotEndTime: string;
+  existingSubjectId: number;
+  existingSubjectCode: string;
+  existingSubjectName: string;
+  newSubjectId: number;
+  newSubjectCode: string;
+  newSubjectName: string;
+}
+
+export interface SubjectInfo {
+  subjectId: number;
+  subjectCode: string;
+  subjectName: string;
+}
+
+export interface SaveEnrolledSubjectsResponse {
+  success: boolean;
+  message: string;
+  subjectIds: string[];
+  count: number;
+  hasConflicts: boolean;
+  conflicts: TimetableConflict[];
+  addedSubjects: SubjectInfo[];
+  removedSubjects: SubjectInfo[];
+  subjectsWithConflicts: SubjectInfo[];
+  timetableSlotsAdded: number;
+  timetableSlotsRemoved: number;
+}
