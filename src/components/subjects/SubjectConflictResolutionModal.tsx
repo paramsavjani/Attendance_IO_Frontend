@@ -88,7 +88,7 @@ export function SubjectConflictResolutionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md mx-4 sm:mx-auto rounded-xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[92vw] sm:w-full max-w-md rounded-xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
