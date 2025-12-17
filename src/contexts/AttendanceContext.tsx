@@ -5,6 +5,7 @@ import { API_CONFIG } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 import { hexToHsl } from "@/lib/utils";
 import { toast } from "sonner";
+import { isAfter, parseISO, startOfDay } from "date-fns";
 
 const DEFAULT_MIN = 75;
 
@@ -297,6 +298,18 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [fetchTimetable]);
 
   const markAttendance = useCallback(async (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => {
+    // Frontend guard: do not allow marking attendance for future dates
+    try {
+      const lectureDay = startOfDay(parseISO(date));
+      const today = startOfDay(new Date());
+      if (isAfter(lectureDay, today)) {
+        toast.error("You can't mark attendance for a future date");
+        return;
+      }
+    } catch {
+      // If parsing fails, allow request; backend should validate
+    }
+
     const slotKey = `${date}-${subjectId}`;
     const previousStatus = todayAttendance[slotKey];
     

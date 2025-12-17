@@ -110,6 +110,12 @@ export default function Dashboard() {
   }, [dateKey, fetchAttendanceForDate]);
 
   const handleMarkAttendance = async (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
+    // Block future dates from frontend
+    if (isFutureDate) {
+      toast.error("You can't mark attendance for a future date");
+      return;
+    }
+
     // Show warning for past dates
     if (isPastDate) {
       setPendingAttendance({ subjectId, status });
@@ -117,7 +123,7 @@ export default function Dashboard() {
       return;
     }
     
-    // For today or future dates, mark directly
+    // For today, mark directly
     await markAttendance(subjectId, dateKey, status);
   };
 
