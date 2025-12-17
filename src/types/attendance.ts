@@ -75,3 +75,30 @@ export interface SaveEnrolledSubjectsResponse {
   timetableSlotsAdded: number;
   timetableSlotsRemoved: number;
 }
+
+// Subject schedule for conflict detection
+export interface SubjectSchedule {
+  subjectId: number;
+  subjectCode: string;
+  subjectName: string;
+  dayId: number; // 1-5 (Monday-Friday, backend uses 1-indexed)
+  dayName: string;
+  slotId: number; // 1-6 (backend uses 1-indexed)
+  slotStartTime: string;
+  slotEndTime: string;
+}
+
+// Conflict between selected subjects (before enrollment)
+export interface SelectedSubjectConflict {
+  dayId: number;
+  dayName: string;
+  slotId: number;
+  slotStartTime: string;
+  slotEndTime: string;
+  conflictingSubjects: Array<{
+    subjectId: string;
+    subjectCode: string;
+    subjectName: string;
+  }>;
+  selectedSubjectId: string | null; // User's choice for this conflict
+}
