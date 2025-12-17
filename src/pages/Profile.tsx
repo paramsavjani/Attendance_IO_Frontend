@@ -5,10 +5,9 @@ import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, User, GraduationCap, Calendar, BookOpen, Edit, Target, Save, X, ChevronDown } from "lucide-react";
+import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronDown, ChevronRight } from "lucide-react";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
-import { TimetableSelector } from "@/components/timetable/TimetableSelector";
-import { Subject, TimetableSlot } from "@/types/attendance";
+import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 import { API_CONFIG } from "@/lib/api";
 import {
@@ -30,10 +29,9 @@ interface CurrentSemester {
 
 export default function Profile() {
   const { student, logout } = useAuth();
-  const { enrolledSubjects, timetable, setEnrolledSubjects, setTimetable, refreshEnrolledSubjects, refreshTimetable } = useAttendance();
+  const { enrolledSubjects, setEnrolledSubjects, refreshEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
-  const [showTimetableEditor, setShowTimetableEditor] = useState(false);
   const [currentSemester, setCurrentSemester] = useState<CurrentSemester | null>(null);
   const [isLoadingSemester, setIsLoadingSemester] = useState(true);
   const [editingCriteria, setEditingCriteria] = useState<Record<string, string>>({});
@@ -84,12 +82,6 @@ export default function Profile() {
       toast.success(`Updated to ${subjects.length} subjects`);
     }
     // If hasConflicts is true, the SubjectSelector already showed the conflict modal
-  };
-
-  const handleSaveTimetable = (newTimetable: TimetableSlot[]) => {
-    setTimetable(newTimetable);
-    setShowTimetableEditor(false);
-    toast.success("Timetable updated");
   };
 
   const handleEditCriteria = (subjectId: string, currentValue: number | null | undefined) => {
@@ -214,7 +206,7 @@ export default function Profile() {
           </button>
 
           <button 
-            onClick={() => setShowTimetableEditor(true)}
+            onClick={() => navigate('/timetable')}
             className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
           >
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -224,7 +216,7 @@ export default function Profile() {
               <p className="font-medium">Timetable</p>
               <p className="text-sm text-muted-foreground">Manage your schedule</p>
             </div>
-            <Edit className="w-4 h-4 text-muted-foreground" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
 
@@ -354,20 +346,6 @@ export default function Profile() {
           </DialogContent>
         </Dialog>
 
-        {/* Timetable Editor Dialog */}
-        <Dialog open={showTimetableEditor} onOpenChange={setShowTimetableEditor}>
-          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-hidden p-4">
-            <DialogHeader>
-              <DialogTitle className="sr-only">Edit Timetable</DialogTitle>
-            </DialogHeader>
-            <TimetableSelector
-              timetable={timetable}
-              enrolledSubjects={enrolledSubjects}
-              onSave={handleSaveTimetable}
-              onCancel={() => setShowTimetableEditor(false)}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
     </AppLayout>
   );
