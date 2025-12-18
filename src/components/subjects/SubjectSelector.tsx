@@ -346,7 +346,7 @@ export function SubjectSelector({
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="text-center mb-3 sm:mb-4 px-2 flex-shrink-0">
         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 sm:mb-3">
@@ -392,8 +392,8 @@ export function SubjectSelector({
         )}
       </div>
 
-      {/* Subject List - Flexible height for mobile */}
-      <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 sm:mb-3 min-h-0 pr-1">
+      {/* Subject List - Fixed scrollable area */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 mb-3 pr-1" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '150px' }}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -446,13 +446,13 @@ export function SubjectSelector({
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-2 border-t border-border flex-shrink-0">
+      {/* Actions - Always visible at bottom */}
+      <div className="flex gap-2 pt-3 mt-auto border-t border-border flex-shrink-0 bg-card">
         {onCancel && (
           <Button
             variant="outline"
             onClick={onCancel}
-            className="flex-1 h-9 sm:h-10 rounded-lg sm:rounded-xl text-xs sm:text-sm"
+            className="flex-1 h-10 sm:h-11 rounded-lg sm:rounded-xl text-xs sm:text-sm"
           >
             <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
             Cancel
@@ -461,7 +461,7 @@ export function SubjectSelector({
         <Button
           onClick={handleSave}
           disabled={selected.length === 0 || selected.length > MAX_SUBJECTS || isSaving}
-          className="flex-1 h-9 sm:h-10 rounded-lg sm:rounded-xl text-sm sm:text-base"
+          className="flex-1 h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold"
         >
           {isSaving ? (
             <>
