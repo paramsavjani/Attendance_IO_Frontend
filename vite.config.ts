@@ -18,5 +18,7 @@ export default defineConfig(() => ({
     outDir: 'dist',
     emptyOutDir: true,
   },
-  base: './',
+  // Use absolute asset paths for Capacitor (served from https://localhost).
+  // This avoids blank screens if the app is opened on a non-root route.
+  base: '/',
 }));
