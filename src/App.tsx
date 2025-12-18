@@ -22,7 +22,7 @@ const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
-  const { hasCompletedOnboarding, isLoadingEnrolledSubjects } = useAttendance();
+  const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
 
   // Wait for enrolled subjects to load before making routing decisions
   // Only show loading if authenticated (unauthenticated users should see login)
@@ -42,7 +42,9 @@ function AppRoutes() {
           isAuthenticated 
             ? hasCompletedOnboarding 
               ? <Navigate to="/dashboard" replace /> 
-              : <Navigate to="/intro" replace />
+              : hasSeenIntro
+                ? <Navigate to="/onboarding" replace />
+                : <Navigate to="/intro" replace />
             : <Navigate to="/login" replace />
         }
       />
@@ -59,7 +61,11 @@ function AppRoutes() {
         path="/onboarding"
         element={
           <ProtectedRoute>
-            <SubjectOnboarding />
+            {hasCompletedOnboarding 
+              ? <Navigate to="/dashboard" replace /> 
+              : !hasSeenIntro 
+                ? <Navigate to="/intro" replace />
+                : <SubjectOnboarding />}
           </ProtectedRoute>
         }
       />
