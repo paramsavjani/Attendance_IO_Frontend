@@ -5,7 +5,7 @@ import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronDown, ChevronRight } from "lucide-react";
+import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronRight } from "lucide-react";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
@@ -198,20 +198,6 @@ export default function Profile() {
               <p className="text-sm text-muted-foreground">{enrolledSubjects.length} subjects enrolled</p>
             </div>
             <Edit className="w-4 h-4 text-muted-foreground" />
-          </button>
-
-          <button 
-            onClick={() => navigate('/timetable')}
-            className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium">Timetable</p>
-              <p className="text-sm text-muted-foreground">Manage your schedule</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
 
