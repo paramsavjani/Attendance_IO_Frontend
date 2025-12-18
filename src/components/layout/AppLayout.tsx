@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
+  CalendarDays,
   Search,
   BarChart3,
   User
@@ -15,6 +16,7 @@ interface AppLayoutProps {
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
   { icon: Search, label: "Search", path: "/search" },
+  { icon: CalendarDays, label: "Timetable", path: "/timetable" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
@@ -46,7 +48,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all",
+                  "flex flex-col items-center gap-1 py-2 px-2 rounded-xl transition-all",
                   isActive
                     ? "text-primary bg-primary/10"
                     : "text-muted-foreground"
