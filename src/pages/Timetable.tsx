@@ -207,36 +207,6 @@ export default function Timetable() {
           </div>
         ) : (
           <>
-            {/* Day Tabs - Horizontal scroll */}
-            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-              {days.map((day, index) => {
-                const slotCount = getDaySlotCount(index);
-                return (
-                  <button
-                    key={day}
-                    onClick={() => setActiveDay(index)}
-                    className={cn(
-                      "flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                      activeDay === index
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                    )}
-                  >
-                    {day.slice(0, 3)}
-                    {slotCount > 0 && (
-                      <span className={cn(
-                        "ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]",
-                        activeDay === index 
-                          ? "bg-primary-foreground/20" 
-                          : "bg-muted"
-                      )}>
-                        {slotCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
 
             {/* Time Slots for Active Day - Compact List */}
             <div className="space-y-1.5">
@@ -322,7 +292,7 @@ export default function Timetable() {
                     <p className="text-[10px] text-center text-muted-foreground mb-1">
                       {day.slice(0, 2)}
                     </p>
-                    <div className="grid grid-cols-2 gap-0.5">
+                    <div className="grid grid-cols-1 gap-0.5">
                       {timeSlots.slice(0, 6).map((_, timeIndex) => {
                         const subject = getSlotSubject(dayIndex, timeIndex);
                         return (
