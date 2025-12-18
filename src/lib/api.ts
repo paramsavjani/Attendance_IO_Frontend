@@ -9,6 +9,8 @@ export const API_CONFIG = {
   BASE_URL: API_BASE_URL,
   ENDPOINTS: {
     OAUTH_GOOGLE: `${API_BASE_URL}/oauth2/authorization/google`,
+    OAUTH_GOOGLE_MOBILE_START: `${API_BASE_URL}/api/auth/mobile/google/start`,
+    OAUTH_MOBILE_EXCHANGE: `${API_BASE_URL}/api/auth/mobile/exchange`,
     USER_ME: `${API_BASE_URL}/api/user/me`,
     USER_LOGOUT: `${API_BASE_URL}/api/user/logout`,
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,

@@ -10,6 +10,26 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Receive auth events from the Capacitor deep-link handler (mobile flow)
+  useEffect(() => {
+    const onAuthError = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail;
+      if (detail) toast.error(detail);
+      setIsLoading(false);
+    };
+
+    const onAuthSuccess = () => {
+      setIsLoading(false);
+    };
+
+    window.addEventListener("auth:error", onAuthError as EventListener);
+    window.addEventListener("auth:success", onAuthSuccess);
+    return () => {
+      window.removeEventListener("auth:error", onAuthError as EventListener);
+      window.removeEventListener("auth:success", onAuthSuccess);
+    };
+  }, []);
+
   // Check if user is already authenticated (e.g., returning from OAuth)
   useEffect(() => {
     checkAuth();
