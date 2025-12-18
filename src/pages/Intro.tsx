@@ -91,7 +91,7 @@ export default function Intro() {
   const isFirstSlide = currentSlide === 0;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-2">
       {/* Background blur effect */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
@@ -103,13 +103,13 @@ export default function Intro() {
         {/* Skip button */}
         <button 
           onClick={handleSkip}
-          className="absolute top-4 right-4 text-xs text-muted-foreground hover:text-foreground transition-colors z-10"
+          className="absolute top-3 right-3 text-xs text-muted-foreground hover:text-foreground transition-colors z-10"
         >
           Skip
         </button>
 
         {/* Progress dots */}
-        <div className="flex justify-center gap-1.5 pt-6 pb-2">
+        <div className="flex justify-center gap-1.5 pt-4 pb-1">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -118,51 +118,51 @@ export default function Intro() {
                 setCurrentSlide(index);
               }}
               className={cn(
-                "h-1.5 rounded-full transition-all duration-300",
+                "h-1 rounded-full transition-all duration-300",
                 index === currentSlide 
-                  ? "w-6 bg-primary" 
-                  : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                  ? "w-5 bg-primary" 
+                  : "w-1 bg-muted-foreground/30 hover:bg-muted-foreground/50"
               )}
             />
           ))}
         </div>
 
         {/* Slide content */}
-        <div className="px-6 py-6 min-h-[420px] flex flex-col">
+        <div className="px-4 py-3 flex flex-col">
           <div 
             key={currentSlide}
             className={cn(
-              "flex-1 flex flex-col items-center text-center",
+              "flex flex-col items-center text-center",
               direction === 'right' ? "animate-slide-in-right" : "animate-slide-in-left"
             )}
           >
             {/* Icon */}
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2 text-primary">
               {slide.icon}
             </div>
 
             {/* Title */}
-            <h2 className="text-lg font-bold mb-2">{slide.title}</h2>
+            <h2 className="text-base font-bold mb-1">{slide.title}</h2>
 
             {/* Highlight badge */}
             {slide.highlight && (
-              <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">
+              <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium mb-2">
                 {slide.highlight}
               </div>
             )}
 
             {/* Description */}
-            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+            <p className="text-xs text-muted-foreground mb-3 leading-relaxed px-2">
               {slide.description}
             </p>
 
-            {/* Demo Image */}
+            {/* Demo Image - Compact */}
             {slide.image && (
-              <div className="w-full rounded-xl overflow-hidden border border-border/50 shadow-lg">
+              <div className="w-full max-h-[180px] rounded-lg overflow-hidden border border-border/50 shadow-md">
                 <img 
                   src={slide.image} 
                   alt={slide.title}
-                  className="w-full h-auto object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
               </div>
             )}
@@ -170,33 +170,33 @@ export default function Intro() {
         </div>
 
         {/* Navigation */}
-        <div className="px-6 pb-6 flex items-center gap-3">
+        <div className="px-4 pb-4 pt-2 flex items-center gap-2">
           {!isFirstSlide && (
             <Button
               variant="outline"
               size="icon"
               onClick={handlePrev}
-              className="rounded-xl h-12 w-12 border-border/50"
+              className="rounded-lg h-10 w-10 border-border/50"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </Button>
           )}
           
           {isLastSlide ? (
             <Button
               onClick={handleGetStarted}
-              className="flex-1 h-12 rounded-xl text-base font-semibold"
+              className="flex-1 h-10 rounded-lg text-sm font-semibold"
             >
               Get Started
-              <ChevronRight className="w-5 h-5 ml-2" />
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
             <Button
               onClick={handleNext}
-              className="flex-1 h-12 rounded-xl text-base font-semibold"
+              className="flex-1 h-10 rounded-lg text-sm font-semibold"
             >
               Next
-              <ChevronRight className="w-5 h-5 ml-2" />
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           )}
         </div>
