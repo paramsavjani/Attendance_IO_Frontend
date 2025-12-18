@@ -23,6 +23,7 @@ interface AttendanceContextType {
   enrolledSubjects: Subject[];
   timetable: TimetableSlot[];
   hasCompletedOnboarding: boolean;
+  hasSeenIntro: boolean;
   isLoadingEnrolledSubjects: boolean;
   isLoadingTimetable: boolean;
   isLoadingAttendance: boolean;
@@ -33,6 +34,7 @@ interface AttendanceContextType {
   setEnrolledSubjects: (subjects: Subject[]) => void;
   setTimetable: (timetable: TimetableSlot[]) => void;
   completeOnboarding: () => void;
+  markIntroAsSeen: () => void;
   refreshEnrolledSubjects: () => Promise<void>;
   refreshTimetable: () => Promise<void>;
   fetchAttendanceForDate: (date?: string) => Promise<void>;
@@ -252,6 +254,19 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   // If enrolledSubjects.length > 0, onboarding is complete
   const hasCompletedOnboarding = enrolledSubjects.length > 0;
 
+  // Track if user has seen intro (localStorage)
+  const [hasSeenIntro, setHasSeenIntro] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('hasSeenIntro') === 'true';
+    }
+    return false;
+  });
+
+  const markIntroAsSeen = useCallback(() => {
+    setHasSeenIntro(true);
+    localStorage.setItem('hasSeenIntro', 'true');
+  }, []);
+
   const completeOnboarding = useCallback(() => {
     // Onboarding is considered complete when user has enrolled subjects
     // No localStorage needed - the enrolledSubjects state is the source of truth
@@ -387,6 +402,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         enrolledSubjects,
         timetable,
         hasCompletedOnboarding,
+        hasSeenIntro,
         isLoadingEnrolledSubjects,
         isLoadingTimetable,
         isLoadingAttendance,
@@ -397,6 +413,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setEnrolledSubjects,
         setTimetable,
         completeOnboarding,
+        markIntroAsSeen,
         refreshEnrolledSubjects,
         refreshTimetable,
         fetchAttendanceForDate: fetchAttendanceData,
