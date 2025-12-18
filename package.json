@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "assets:generate:android": "node ./scripts/pad-logo.mjs && node ./node_modules/@capacitor/assets/bin/capacitor-assets generate --android --iconBackgroundColor \"#000000\" --iconBackgroundColorDark \"#000000\"",
     "cap:sync": "npx cap sync",
     "cap:copy": "npx cap copy",
     "cap:open:android": "npx cap open android",
@@ -74,6 +75,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
