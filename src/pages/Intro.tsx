@@ -99,7 +99,7 @@ export default function Intro() {
       </div>
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-md h-[90vh] max-h-[90vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         
 
         {/* Progress dots */}
@@ -122,11 +122,11 @@ export default function Intro() {
         </div>
 
         {/* Slide content */}
-        <div className="px-4 py-3 flex flex-col">
+        <div className="px-4 py-3 flex-1 min-h-0 flex flex-col">
           <div 
             key={currentSlide}
             className={cn(
-              "flex flex-col items-center text-center",
+              "flex flex-col items-center text-center flex-1 min-h-0",
               direction === 'right' ? "animate-slide-in-right" : "animate-slide-in-left"
             )}
           >
@@ -152,7 +152,7 @@ export default function Intro() {
 
             {/* Demo Image - Compact */}
             {slide.image && (
-              <div className="w-full max-h-[580px] rounded-lg overflow-hidden border border-border/50 shadow-md">
+              <div className="w-full flex-1 min-h-0 rounded-lg overflow-hidden border border-border/50 shadow-md bg-muted/20">
                 <img 
                   src={slide.image} 
                   alt={slide.title}
