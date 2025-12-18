@@ -21,34 +21,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, X, ChevronLeft, Loader2, AlertTriangle } from "lucide-react";
+import { RefreshCw, X, ChevronLeft, Loader2, AlertTriangle, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { toast } from "sonner";
-
-// Helper to convert hex to HSL
-function hexToHsl(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
-    }
-  }
-
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
 
 export default function Timetable() {
   const navigate = useNavigate();
@@ -58,6 +35,7 @@ export default function Timetable() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeDay, setActiveDay] = useState(0);
 
   // Fetch timetable from backend
   useEffect(() => {
@@ -101,14 +79,12 @@ export default function Timetable() {
   const handleAssignSubject = async (subjectId: string | null) => {
     if (!selectedSlot) return;
 
-    // Update local state immediately for better UX
     const updatedTimetable = timetable.map((slot) =>
       slot.day === selectedSlot.day && slot.timeSlot === selectedSlot.timeSlot
         ? { ...slot, subjectId }
         : slot
     );
 
-    // If slot doesn't exist, add it
     const existingSlot = updatedTimetable.find(
       (s) => s.day === selectedSlot.day && s.timeSlot === selectedSlot.timeSlot
     );
@@ -122,8 +98,6 @@ export default function Timetable() {
 
     setTimetable(updatedTimetable);
     setDialogOpen(false);
-
-    // Save to backend
     await saveTimetable(updatedTimetable);
   };
 
@@ -146,11 +120,10 @@ export default function Timetable() {
         throw new Error(error.error || 'Failed to save timetable');
       }
 
-      toast.success('Timetable saved successfully');
+      toast.success('Timetable saved');
     } catch (error: any) {
       console.error('Error saving timetable:', error);
       toast.error(error.message || 'Failed to save timetable');
-      // Revert on error - refetch from backend
       const response = await fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
         credentials: 'include',
       });
@@ -164,35 +137,39 @@ export default function Timetable() {
   };
 
   const handleRegenerate = async () => {
-    // Clear all slots
     const emptyTimetable: TimetableSlot[] = [];
     setTimetable(emptyTimetable);
     await saveTimetable(emptyTimetable);
   };
 
+  // Get count of slots for each day
+  const getDaySlotCount = (dayIndex: number) => {
+    return timetable.filter(s => s.day === dayIndex && s.subjectId).length;
+  };
+
   return (
     <AppLayout>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold">Timetable</h1>
+            <h1 className="text-lg font-bold">Timetable</h1>
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="gap-1.5"
+                className="gap-1.5 h-8 text-xs"
                 disabled={isSaving}
               >
                 {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                 )}
                 Reset
               </Button>
@@ -206,7 +183,7 @@ export default function Timetable() {
                   <div>
                     <AlertDialogTitle>Reset Timetable?</AlertDialogTitle>
                     <AlertDialogDescription className="mt-1">
-                      This will clear all your scheduled classes.
+                      This will clear all scheduled classes.
                     </AlertDialogDescription>
                   </div>
                 </div>
@@ -230,49 +207,141 @@ export default function Timetable() {
           </div>
         ) : (
           <>
-            {/* Days as tabs */}
-            {days.map((day, dayIndex) => (
-              <div key={day} className="space-y-2">
-                <h3 className="font-semibold text-sm text-muted-foreground">{day}</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {timeSlots.slice(0, 6).map((time, timeIndex) => {
-                const subject = getSlotSubject(dayIndex, timeIndex);
+            {/* Day Tabs - Horizontal scroll */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+              {days.map((day, index) => {
+                const slotCount = getDaySlotCount(index);
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setActiveDay(index)}
+                    className={cn(
+                      "flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      activeDay === index
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                    )}
+                  >
+                    {day.slice(0, 3)}
+                    {slotCount > 0 && (
+                      <span className={cn(
+                        "ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]",
+                        activeDay === index 
+                          ? "bg-primary-foreground/20" 
+                          : "bg-muted"
+                      )}>
+                        {slotCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Time Slots for Active Day - Compact List */}
+            <div className="space-y-1.5">
+              {timeSlots.slice(0, 6).map((time, timeIndex) => {
+                const subject = getSlotSubject(activeDay, timeIndex);
+                const timeStart = time.split(" - ")[0];
+                const timeEnd = time.split(" - ")[1];
+                
                 return (
                   <button
                     key={timeIndex}
-                    onClick={() => handleSlotClick(dayIndex, timeIndex)}
+                    onClick={() => handleSlotClick(activeDay, timeIndex)}
                     className={cn(
-                      "p-3 rounded-xl text-left transition-all",
+                      "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left",
                       subject
                         ? "border"
-                        : "bg-muted/30 border border-dashed border-border"
+                        : "bg-muted/30 border border-dashed border-border/50"
                     )}
                     style={
                       subject
                         ? {
-                            backgroundColor: `hsl(${subject.color} / 0.15)`,
-                            borderColor: `hsl(${subject.color} / 0.3)`,
+                            backgroundColor: `hsl(${subject.color} / 0.1)`,
+                            borderColor: `hsl(${subject.color} / 0.25)`,
                           }
                         : undefined
                     }
                   >
-                    <p className="text-[10px] text-muted-foreground mb-1">
-                      {time.split(" - ")[0]}
-                    </p>
-                    <p className={cn(
-                      "text-xs font-medium truncate",
-                      subject ? "" : "text-muted-foreground"
-                    )}
-                    style={subject ? { color: `hsl(${subject.color})` } : undefined}
-                    >
-                      {subject?.code || "—"}
-                    </p>
+                    {/* Time Column */}
+                    <div className="w-14 flex-shrink-0 text-center">
+                      <p className="text-xs font-medium">{timeStart}</p>
+                      <p className="text-[10px] text-muted-foreground">{timeEnd}</p>
+                    </div>
+
+                    {/* Divider */}
+                    <div 
+                      className="w-1 h-8 rounded-full flex-shrink-0"
+                      style={{ 
+                        backgroundColor: subject 
+                          ? `hsl(${subject.color})` 
+                          : 'hsl(var(--muted))' 
+                      }}
+                    />
+
+                    {/* Subject Info */}
+                    <div className="flex-1 min-w-0">
+                      {subject ? (
+                        <>
+                          <p 
+                            className="text-sm font-medium truncate"
+                            style={{ color: `hsl(${subject.color})` }}
+                          >
+                            {subject.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{subject.code}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Free slot</p>
+                      )}
+                    </div>
                   </button>
                 );
-                  })}
-                </div>
+              })}
+            </div>
+
+            {/* Quick Overview - All Days Mini Grid */}
+            <div className="pt-3 border-t border-border/50">
+              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                Week Overview
+              </p>
+              <div className="grid grid-cols-5 gap-1">
+                {days.map((day, dayIndex) => (
+                  <button
+                    key={day}
+                    onClick={() => setActiveDay(dayIndex)}
+                    className={cn(
+                      "rounded-lg p-1.5 transition-all",
+                      activeDay === dayIndex 
+                        ? "bg-primary/10 ring-1 ring-primary/30" 
+                        : "bg-muted/30"
+                    )}
+                  >
+                    <p className="text-[10px] text-center text-muted-foreground mb-1">
+                      {day.slice(0, 2)}
+                    </p>
+                    <div className="grid grid-cols-2 gap-0.5">
+                      {timeSlots.slice(0, 6).map((_, timeIndex) => {
+                        const subject = getSlotSubject(dayIndex, timeIndex);
+                        return (
+                          <div
+                            key={timeIndex}
+                            className="h-1.5 rounded-sm"
+                            style={{
+                              backgroundColor: subject 
+                                ? `hsl(${subject.color})` 
+                                : 'hsl(var(--muted))'
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
           </>
         )}
 
@@ -287,7 +356,7 @@ export default function Timetable() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-2 pt-2">
+            <div className="space-y-1.5 pt-2 max-h-[50vh] overflow-y-auto">
               {enrolledSubjects.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No enrolled subjects. Please enroll in subjects first.
@@ -297,24 +366,27 @@ export default function Timetable() {
                   <button
                     key={subject.id}
                     onClick={() => handleAssignSubject(subject.id)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border active:scale-98 transition-all text-left"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-border active:scale-98 transition-all text-left hover:bg-muted/30"
                   >
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-2.5 h-6 rounded-full"
                       style={{ backgroundColor: `hsl(${subject.color})` }}
                     />
-                    <span className="text-sm font-medium">{subject.name}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium block truncate">{subject.name}</span>
+                      <span className="text-xs text-muted-foreground">{subject.code}</span>
+                    </div>
                   </button>
                 ))
               )}
 
               <Button
                 variant="ghost"
-                className="w-full gap-2 text-destructive"
+                className="w-full gap-2 text-destructive mt-2"
                 onClick={() => handleAssignSubject(null)}
               >
                 <X className="w-4 h-4" />
-                Clear
+                Clear Slot
               </Button>
             </div>
           </DialogContent>
