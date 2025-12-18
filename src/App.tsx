@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 import Analytics from "./pages/Analytics";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
+import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
 import { Capacitor } from "@capacitor/core";
 
@@ -41,11 +42,19 @@ function AppRoutes() {
           isAuthenticated 
             ? hasCompletedOnboarding 
               ? <Navigate to="/dashboard" replace /> 
-              : <Navigate to="/onboarding" replace />
+              : <Navigate to="/intro" replace />
             : <Navigate to="/login" replace />
         }
       />
       <Route path="/login" element={<Login />} />
+      <Route
+        path="/intro"
+        element={
+          <ProtectedRoute>
+            {hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Intro />}
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/onboarding"
         element={
