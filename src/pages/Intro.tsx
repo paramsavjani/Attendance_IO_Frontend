@@ -9,11 +9,7 @@ import {
   AlertTriangle, 
   ChevronRight,
   ChevronLeft,
-  BookOpen,
-  Zap,
-  Shield,
-  Sparkles,
-  CheckCircle2
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +17,7 @@ interface SlideContent {
   icon: React.ReactNode;
   title: string;
   description: string;
+  image?: string;
   highlight?: string;
   features?: { icon: React.ReactNode; text: string }[];
 }
@@ -30,52 +27,32 @@ const slides: SlideContent[] = [
     icon: <Sparkles className="w-8 h-8" />,
     title: "Welcome to Attendance Aid",
     description: "Your personal attendance tracker while you wait for official institute records.",
+    image: "/demo/self_attendance.png",
     highlight: "Track • Analyze • Stay Ahead",
-    features: [
-      { icon: <CheckCircle2 className="w-4 h-4" />, text: "Easy daily tracking" },
-      { icon: <CheckCircle2 className="w-4 h-4" />, text: "Smart warnings" },
-      { icon: <CheckCircle2 className="w-4 h-4" />, text: "Auto timetable" },
-    ],
   },
   {
     icon: <Clock className="w-8 h-8" />,
     title: "Smart Timetable",
     description: "Select your subjects and get an auto-generated timetable based on default schedules.",
-    features: [
-      { icon: <CalendarCheck className="w-4 h-4" />, text: "Auto-generated from subject data" },
-      { icon: <AlertTriangle className="w-4 h-4" />, text: "Conflict detection & resolution" },
-      { icon: <Zap className="w-4 h-4" />, text: "Easy manual adjustments" },
-    ],
+    image: "/demo/timetable.png",
   },
   {
     icon: <CalendarCheck className="w-8 h-8" />,
     title: "Daily Attendance",
     description: "Mark your attendance with a single tap. Track present, absent, or cancelled classes.",
-    features: [
-      { icon: <CheckCircle2 className="w-4 h-4" />, text: "One-tap marking" },
-      { icon: <Shield className="w-4 h-4" />, text: "Institute data is always final" },
-      { icon: <BarChart3 className="w-4 h-4" />, text: "Real-time statistics" },
-    ],
+    image: "/demo/daily_attendance.png",
   },
   {
     icon: <AlertTriangle className="w-8 h-8" />,
     title: "Smart Warnings",
     description: "Set minimum attendance criteria. Get alerts when you're at risk of falling below.",
-    features: [
-      { icon: <Zap className="w-4 h-4" />, text: "Per-subject thresholds" },
-      { icon: <AlertTriangle className="w-4 h-4" />, text: "Visual warnings on timetable" },
-      { icon: <CalendarCheck className="w-4 h-4" />, text: "Know which classes matter" },
-    ],
+    image: "/demo/minimum_criteria.png",
   },
   {
     icon: <BarChart3 className="w-8 h-8" />,
     title: "Analytics & Search",
     description: "Search your history, analyze trends, and plan your attendance strategy.",
-    features: [
-      { icon: <BarChart3 className="w-4 h-4" />, text: "Subject-wise breakdown" },
-      { icon: <CalendarCheck className="w-4 h-4" />, text: "Historical data" },
-      { icon: <CheckCircle2 className="w-4 h-4" />, text: "Export & share" },
-    ],
+    image: "/demo/analytics.png",
   },
 ];
 
@@ -151,7 +128,7 @@ export default function Intro() {
         </div>
 
         {/* Slide content */}
-        <div className="px-6 py-8 min-h-[380px] flex flex-col">
+        <div className="px-6 py-6 min-h-[420px] flex flex-col">
           <div 
             key={currentSlide}
             className={cn(
@@ -160,40 +137,33 @@ export default function Intro() {
             )}
           >
             {/* Icon */}
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 text-primary">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
               {slide.icon}
             </div>
 
             {/* Title */}
-            <h2 className="text-xl font-bold mb-3">{slide.title}</h2>
+            <h2 className="text-lg font-bold mb-2">{slide.title}</h2>
 
             {/* Highlight badge */}
             {slide.highlight && (
-              <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
+              <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">
                 {slide.highlight}
               </div>
             )}
 
             {/* Description */}
-            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               {slide.description}
             </p>
 
-            {/* Features */}
-            {slide.features && (
-              <div className="w-full space-y-2.5">
-                {slide.features.map((feature, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 text-left"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="text-primary flex-shrink-0">
-                      {feature.icon}
-                    </div>
-                    <span className="text-sm">{feature.text}</span>
-                  </div>
-                ))}
+            {/* Demo Image */}
+            {slide.image && (
+              <div className="w-full rounded-xl overflow-hidden border border-border/50 shadow-lg">
+                <img 
+                  src={slide.image} 
+                  alt={slide.title}
+                  className="w-full h-auto object-cover"
+                />
               </div>
             )}
           </div>
