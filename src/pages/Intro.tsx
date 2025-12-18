@@ -100,13 +100,7 @@ export default function Intro() {
 
       {/* Modal */}
       <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
-        {/* Skip button */}
-        <button 
-          onClick={handleSkip}
-          className="absolute top-3 right-3 text-xs text-muted-foreground hover:text-foreground transition-colors z-10"
-        >
-          Skip
-        </button>
+        
 
         {/* Progress dots */}
         <div className="flex justify-center gap-1.5 pt-4 pb-1">
@@ -158,7 +152,7 @@ export default function Intro() {
 
             {/* Demo Image - Compact */}
             {slide.image && (
-              <div className="w-full max-h-[180px] rounded-lg overflow-hidden border border-border/50 shadow-md">
+              <div className="w-full max-h-[680px] rounded-lg overflow-hidden border border-border/50 shadow-md">
                 <img 
                   src={slide.image} 
                   alt={slide.title}
