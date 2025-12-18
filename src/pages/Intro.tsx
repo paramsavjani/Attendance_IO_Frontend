@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAttendance } from "@/contexts/AttendanceContext";
 import { Button } from "@/components/ui/button";
 import { 
   CalendarCheck, 
@@ -15,8 +16,10 @@ import {
 
 export default function Intro() {
   const navigate = useNavigate();
+  const { markIntroAsSeen } = useAttendance();
 
   const handleGetStarted = () => {
+    markIntroAsSeen();
     navigate("/onboarding");
   };
 
