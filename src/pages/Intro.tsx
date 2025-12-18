@@ -25,10 +25,10 @@ interface SlideContent {
 const slides: SlideContent[] = [
   {
     icon: <Sparkles className="w-8 h-8" />,
-    title: "Welcome to Attendance Aid",
-    description: "Your personal attendance tracker while you wait for official institute records.",
+    title: "Welcome to Attendance IO",
+    description: "Your personal attendance tracker with auto sync with official institute records",
     image: "/demo/self_attendance.png",
-    highlight: "Track • Analyze • Stay Ahead",
+    highlight: "",
   },
   {
     icon: <Clock className="w-8 h-8" />,
@@ -152,7 +152,7 @@ export default function Intro() {
 
             {/* Demo Image - Compact */}
             {slide.image && (
-              <div className="w-full max-h-[680px] rounded-lg overflow-hidden border border-border/50 shadow-md">
+              <div className="w-full max-h-[580px] rounded-lg overflow-hidden border border-border/50 shadow-md">
                 <img 
                   src={slide.image} 
                   alt={slide.title}
