@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { API_CONFIG } from "@/lib/api";
+import { Capacitor } from "@capacitor/core";
 
 interface Student {
   id: string;
@@ -25,13 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [student, setStudent] = useState<Student | null>(null);
 
-  // Check authentication status on mount
-  useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await fetch(API_CONFIG.ENDPOINTS.USER_ME, {
         method: "GET",
@@ -59,12 +54,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Silently fail - user might not be logged in
       setStudent(null);
     }
-  };
+  }, []);
 
-  const handleGoogleLogin = async () => {
-    // Redirect to backend OAuth endpoint
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Mobile: listen for deep-link callback and exchange one-time code for a WebView session.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let remove: { remove: () => Promise<void> } | undefined;
+
+    (async () => {
+      const [{ App }, { Browser }] = await Promise.all([
+        import("@capacitor/app"),
+        import("@capacitor/browser"),
+      ]);
+
+      remove = await App.addListener("appUrlOpen", async ({ url }) => {
+        try {
+          const parsed = new URL(url);
+          const code = parsed.searchParams.get("code");
+          const error = parsed.searchParams.get("error");
+
+          if (error) {
+            await Browser.close();
+            window.dispatchEvent(
+              new CustomEvent("auth:error", { detail: decodeURIComponent(error) })
+            );
+            return;
+          }
+
+          if (!code) return;
+
+          await Browser.close();
+
+          const exchangeRes = await fetch(API_CONFIG.ENDPOINTS.OAUTH_MOBILE_EXCHANGE, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ code }),
+          });
+
+          if (!exchangeRes.ok) {
+            const text = await exchangeRes.text().catch(() => "");
+            window.dispatchEvent(
+              new CustomEvent("auth:error", {
+                detail: text || "Failed to complete login. Please try again.",
+              })
+            );
+            return;
+          }
+
+          await checkAuth();
+          window.dispatchEvent(new CustomEvent("auth:success"));
+        } catch (e) {
+          console.error("Failed to handle appUrlOpen:", e);
+        }
+      });
+    })();
+
+    return () => {
+      void remove?.remove();
+    };
+  }, [checkAuth]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    // Web: normal redirect
+    if (!Capacitor.isNativePlatform()) {
     window.location.href = API_CONFIG.ENDPOINTS.OAUTH_GOOGLE;
-  };
+      return;
+    }
+
+    // Native app: open system browser and return via deep link.
+    const { Browser } = await import("@capacitor/browser");
+    const redirectUri = "com.attendanceio.app://auth";
+
+    const url = `${API_CONFIG.ENDPOINTS.OAUTH_GOOGLE_MOBILE_START}?redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}`;
+
+    await Browser.open({ url });
+  }, []);
 
   const logout = async () => {
     try {
