@@ -7,6 +7,7 @@ import {
   Clock, 
   BarChart3, 
   AlertTriangle, 
+  Search,
   ChevronRight,
   ChevronLeft,
   Sparkles
@@ -24,7 +25,13 @@ interface SlideContent {
 
 const slides: SlideContent[] = [
   {
-    icon: <Sparkles className="w-8 h-8" />,
+    icon: (
+      <img
+        src="/logo.png"
+        alt="Attendance IO"
+        className="w-8 h-8 object-contain"
+      />
+    ),
     title: "Welcome to Attendance IO",
     description: "Your personal attendance tracker with auto sync with official institute records",
     image: "/demo/self_attendance.png",
@@ -47,6 +54,12 @@ const slides: SlideContent[] = [
     title: "Smart Warnings",
     description: "Set minimum attendance criteria. Get alerts when you're at risk of falling below.",
     image: "/demo/minimum_criteria.png",
+  },
+  {
+    icon: <Search className="w-8 h-8" />,
+    title: "Search Anyone",
+    description: "Search students by name or roll number and view attendance across semesters.",
+    image: "/demo/search_anyone.png",
   },
   {
     icon: <BarChart3 className="w-8 h-8" />,
