@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
+import { SleepDurationDialog } from "@/components/sleep/SleepDurationDialog";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 
@@ -9,20 +11,49 @@ export default function SubjectOnboarding() {
   const navigate = useNavigate();
   const { student } = useAuth();
   const { refreshEnrolledSubjects, refreshTimetable, completeOnboarding } = useAttendance();
+  const [showSleepDialog, setShowSleepDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<{ subjects: Subject[]; hasConflicts?: boolean } | null>(null);
 
   const handleSubjectsSave = async (subjects: Subject[], hasConflicts?: boolean) => {
-    // Refresh data from backend
+    // Store navigation info and show dialog FIRST (before refresh causes navigation)
+    setPendingNavigation({ subjects, hasConflicts });
+    setShowSleepDialog(true);
+  };
+
+  const handleSleepDialogClose = async () => {
+    setShowSleepDialog(false);
+    // Now refresh and navigate AFTER dialog closes
     await refreshEnrolledSubjects();
     await refreshTimetable();
     completeOnboarding();
     
-    // Show success and redirect to timetable
-    if (hasConflicts) {
-      toast.warning("Subjects saved! Please resolve timetable conflicts.");
-    } else {
-      toast.success("Setup complete! Check your timetable.");
+    if (pendingNavigation) {
+      if (pendingNavigation.hasConflicts) {
+        toast.warning("Subjects saved! Please resolve timetable conflicts.");
+      } else {
+        toast.success("Setup complete! Check your timetable.");
+      }
+      navigate("/timetable", { replace: true });
+      setPendingNavigation(null);
     }
-    navigate("/timetable", { replace: true });
+  };
+
+  const handleSleepDialogSave = async () => {
+    setShowSleepDialog(false);
+    // Now refresh and navigate AFTER dialog closes
+    await refreshEnrolledSubjects();
+    await refreshTimetable();
+    completeOnboarding();
+    
+    if (pendingNavigation) {
+      if (pendingNavigation.hasConflicts) {
+        toast.warning("Subjects saved! Please resolve timetable conflicts.");
+      } else {
+        toast.success("Setup complete! Check your timetable.");
+      }
+      navigate("/timetable", { replace: true });
+      setPendingNavigation(null);
+    }
   };
 
   return (
@@ -58,6 +89,14 @@ export default function SubjectOnboarding() {
           />
         </div>
       </div>
+
+      {/* Sleep Duration Dialog */}
+      <SleepDurationDialog
+        open={showSleepDialog}
+        onClose={handleSleepDialogClose}
+        onSave={handleSleepDialogSave}
+        defaultHours={8}
+      />
     </div>
   );
 }
