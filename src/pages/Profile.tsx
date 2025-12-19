@@ -5,7 +5,7 @@ import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronRight } from "lucide-react";
+import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronRight, Moon } from "lucide-react";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
@@ -32,6 +32,11 @@ export default function Profile() {
   const [isLoadingSemester, setIsLoadingSemester] = useState(true);
   const [editingCriteria, setEditingCriteria] = useState<Record<string, string>>({});
   const [isSavingCriteria, setIsSavingCriteria] = useState<Record<string, boolean>>({});
+  const [sleepDuration, setSleepDuration] = useState<number | null>(null);
+  const [isLoadingSleepDuration, setIsLoadingSleepDuration] = useState(true);
+  const [isEditingSleepDuration, setIsEditingSleepDuration] = useState(false);
+  const [editingSleepHours, setEditingSleepHours] = useState<string>("");
+  const [isSavingSleepDuration, setIsSavingSleepDuration] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -59,6 +64,32 @@ export default function Profile() {
     };
 
     fetchCurrentSemester();
+  }, []);
+
+  useEffect(() => {
+    const fetchSleepDuration = async () => {
+      try {
+        const response = await fetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSleepDuration(data.sleepDurationHours);
+        } else if (response.status === 404) {
+          // Default to 8 if not set
+          setSleepDuration(8);
+        } else {
+          console.error('Failed to fetch sleep duration:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching sleep duration:', error);
+      } finally {
+        setIsLoadingSleepDuration(false);
+      }
+    };
+
+    fetchSleepDuration();
   }, []);
 
   const handleLogout = () => {
@@ -143,6 +174,54 @@ export default function Profile() {
     }
   };
 
+  const handleEditSleepDuration = () => {
+    setEditingSleepHours(sleepDuration?.toString() || "8");
+    setIsEditingSleepDuration(true);
+  };
+
+  const handleCancelEditSleepDuration = () => {
+    setIsEditingSleepDuration(false);
+    setEditingSleepHours("");
+  };
+
+  const handleSaveSleepDuration = async () => {
+    const hoursNum = parseInt(editingSleepHours, 10);
+    
+    // Validate value
+    if (isNaN(hoursNum) || hoursNum < 4 || hoursNum > 16) {
+      toast.error("Sleep duration must be between 4 and 16 hours");
+      return;
+    }
+
+    setIsSavingSleepDuration(true);
+    try {
+      const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_SLEEP_DURATION, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          sleepDurationHours: hoursNum,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update sleep duration');
+      }
+
+      setSleepDuration(hoursNum);
+      setIsEditingSleepDuration(false);
+      toast.success("Sleep duration updated successfully");
+    } catch (error: any) {
+      console.error('Error updating sleep duration:', error);
+      toast.error(error.message || 'Failed to update sleep duration');
+    } finally {
+      setIsSavingSleepDuration(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-5">
@@ -199,6 +278,71 @@ export default function Profile() {
             </div>
             <Edit className="w-4 h-4 text-muted-foreground" />
           </button>
+        </div>
+
+        {/* Sleep Duration */}
+        <div className="bg-card rounded-xl p-4 border border-border">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Moon className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium">Sleep Duration</p>
+              <p className="text-sm text-muted-foreground">Set your preferred sleep hours</p>
+            </div>
+          </div>
+          {isLoadingSleepDuration ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : isEditingSleepDuration ? (
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min="4"
+                max="16"
+                value={editingSleepHours}
+                onChange={(e) => setEditingSleepHours(e.target.value)}
+                placeholder="8"
+                className="w-24"
+                disabled={isSavingSleepDuration}
+              />
+              <span className="text-sm text-muted-foreground">hours</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleSaveSleepDuration}
+                disabled={isSavingSleepDuration}
+                className="ml-auto"
+              >
+                <Save className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleCancelEditSleepDuration}
+                disabled={isSavingSleepDuration}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">
+                  {sleepDuration !== null ? `${sleepDuration} hours` : "8 hours (default)"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  We'll remind you to sleep before important lectures
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleEditSleepDuration}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Minimum Criteria (Modal) */}
