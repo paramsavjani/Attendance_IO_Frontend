@@ -296,12 +296,19 @@ export function SubjectSelector({
         return;
       }
 
-      // Full success (200 OK)
+      // Full success (200 OK) - ensure any open modals are closed first
+      setShowConflictModal(false);
+      setShowPreSaveConflictModal(false);
+      
       const slotsMessage = data.timetableSlotsAdded > 0 
         ? ` and ${data.timetableSlotsAdded} timetable slot${data.timetableSlotsAdded !== 1 ? 's' : ''} added`
         : '';
       toast.success(`Successfully enrolled in ${subjectsToSave.length} subject${subjectsToSave.length !== 1 ? 's' : ''}${slotsMessage}`);
-      onSave(subjectsToSave, false);
+      
+      // Small delay to ensure modals are closed before showing sleep dialog
+      setTimeout(() => {
+        onSave(subjectsToSave, false);
+      }, 200);
     } catch (error: any) {
       console.error('Error saving subjects:', error);
       toast.error(error.message || 'Failed to save subjects');
@@ -330,19 +337,26 @@ export function SubjectSelector({
   const handleGoToTimetable = () => {
     setShowConflictModal(false);
     // Complete the save flow first, then navigate
-    toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
-    onSave(selected, true);
-    // Navigate after a small delay to let the dialog close
-    setTimeout(() => {
-      navigate('/timetable');
-    }, 100);
+    // Use savedSubjects if available, otherwise fall back to selected
+    const subjectsToUse = savedSubjects.length > 0 ? savedSubjects : selected;
+    toast.warning(`Enrolled in ${subjectsToUse.length} subjects, but some timetable conflicts need resolution`);
+    onSave(subjectsToUse, true);
+    // Only navigate if NOT in onboarding mode (onboarding will handle navigation after sleep dialog)
+    if (!isOnboarding) {
+      // Navigate after a small delay to let the dialog close
+      setTimeout(() => {
+        navigate('/timetable');
+      }, 100);
+    }
   };
 
   const handleDismissConflicts = () => {
     setShowConflictModal(false);
     // Complete the save flow when user dismisses
-    toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
-    onSave(selected, true);
+    // Use savedSubjects if available, otherwise fall back to selected
+    const subjectsToUse = savedSubjects.length > 0 ? savedSubjects : selected;
+    toast.warning(`Enrolled in ${subjectsToUse.length} subjects, but some timetable conflicts need resolution`);
+    onSave(subjectsToUse, true);
   };
 
   return (
