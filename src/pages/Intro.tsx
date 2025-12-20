@@ -11,7 +11,9 @@ import {
   Loader2,
   ChevronRight,
   ChevronLeft,
-  Sparkles
+  Sparkles,
+  Moon,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +59,12 @@ const slides: SlideContent[] = [
     image: "/demo/minimum_criteria.png",
   },
   {
+    icon: <Moon className="w-8 h-8" />,
+    title: "Sleep Reminders",
+    description: "Get smart sleep notifications based on your first lecture. Critical lectures get priority alerts to ensure you never miss important classes.",
+    image: "/demo/sleep_notification_screenshot.jpg",
+  },
+  {
     icon: <Search className="w-8 h-8" />,
     title: "Search Anyone",
     description: "Search students by name or roll number and view attendance across semesters.",
@@ -68,6 +76,12 @@ const slides: SlideContent[] = [
     description: "Search your history, analyze trends, and plan your attendance strategy.",
     image: "/demo/analytics.png",
   },
+  {
+    icon: <BookOpen className="w-8 h-8" />,
+    title: "Get Started",
+    description: "Next, you'll choose your subjects and an auto-generated timetable will be created based on default schedules. Please note that there may be some errors in the auto-generated timetable, so make sure to review and adjust it as needed.",
+    image: undefined,
+  },
 ];
 
 export default function Intro() {
@@ -78,6 +92,8 @@ export default function Intro() {
   const [assetsReady, setAssetsReady] = useState(false);
   const [assetsLoadedCount, setAssetsLoadedCount] = useState(0);
   const [assetsTotal, setAssetsTotal] = useState(0);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -119,6 +135,31 @@ export default function Intro() {
       cancelled = true;
     };
   }, []);
+
+  // Disable button for 4 seconds when on last slide with countdown
+  useEffect(() => {
+    const isLastSlide = currentSlide === slides.length - 1;
+    if (isLastSlide) {
+      setIsButtonDisabled(true);
+      setCountdown(4);
+      
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            setIsButtonDisabled(false);
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setIsButtonDisabled(false);
+      setCountdown(0);
+    }
+  }, [currentSlide]);
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
@@ -226,7 +267,12 @@ export default function Intro() {
                 )}
 
                 {/* Description */}
-                <p className="text-xs text-muted-foreground mb-3 leading-relaxed px-2">
+                <p className={cn(
+                  "mb-3 leading-relaxed px-2",
+                  isLastSlide 
+                    ? "text-base font-bold text-foreground" 
+                    : "text-xs text-muted-foreground"
+                )}>
                   {slide.description}
                 </p>
 
@@ -259,9 +305,10 @@ export default function Intro() {
               {isLastSlide ? (
                 <Button
                   onClick={handleGetStarted}
+                  disabled={isButtonDisabled}
                   className="flex-1 h-10 rounded-lg text-sm font-semibold"
                 >
-                  Get Started
+                  {isButtonDisabled ? `Get Started (${countdown}s)` : "Get Started"}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
