@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { API_CONFIG } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
+import { initializePushNotifications, clearFcmToken } from "@/lib/notifications";
 
 interface Student {
   id: string;
@@ -45,6 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           phone: userData.phone,
         };
         setStudent(studentData);
+        
+        // Initialize push notifications after successful auth check (if on native platform)
+        if (Capacitor.isNativePlatform()) {
+          initializePushNotifications().catch(console.error);
+        }
       } else if (response.status === 401 || response.status === 404) {
         // Not authenticated or student not found
         setStudent(null);
@@ -109,6 +115,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           await checkAuth();
+          // Initialize push notifications after successful login
+          if (Capacitor.isNativePlatform()) {
+            initializePushNotifications().catch(console.error);
+          }
           window.dispatchEvent(new CustomEvent("auth:success"));
         } catch (e) {
           console.error("Failed to handle appUrlOpen:", e);
@@ -141,6 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // Clear FCM token before logout
+      if (Capacitor.isNativePlatform()) {
+        await clearFcmToken();
+      }
+      
       await fetch(API_CONFIG.ENDPOINTS.USER_LOGOUT, {
         method: "POST",
         credentials: "include",
