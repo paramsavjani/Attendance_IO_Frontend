@@ -13,7 +13,9 @@ import {
   ChevronLeft,
   Sparkles,
   Moon,
-  BookOpen
+  BookOpen,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -244,49 +246,118 @@ export default function Intro() {
 
             {/* Slide content */}
             <div className="px-4 py-3 flex-1 min-h-0 flex flex-col">
-              <div 
-                key={currentSlide}
-                className={cn(
-                  "flex flex-col items-center text-center flex-1 min-h-0",
-                  direction === 'right' ? "animate-slide-in-right" : "animate-slide-in-left"
-                )}
-              >
-                {/* Icon */}
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2 text-primary">
-                  {slide.icon}
+              {isLastSlide ? (
+                <div 
+                  key={currentSlide}
+                  className={cn(
+                    "flex flex-col flex-1 min-h-0 justify-center",
+                    direction === 'right' ? "animate-slide-in-right" : "animate-slide-in-left"
+                  )}
+                >
+                  {/* Large Icon */}
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 mx-auto text-primary">
+                    <BookOpen className="w-8 h-8" />
+                  </div>
+
+                  {/* Large Title */}
+                  <h2 className="text-2xl font-bold mb-6 text-center text-foreground">
+                    {slide.title}
+                  </h2>
+
+                  {/* Content Cards */}
+                  <div className="space-y-4 mb-6">
+                    {/* Step 1 Card */}
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-foreground mb-1">
+                            Choose Your Subjects
+                          </h3>
+                          <p className="text-base text-muted-foreground leading-relaxed">
+                            Select the subjects you're enrolled in for this semester
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step 2 Card */}
+                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Clock className="w-5 h-5 text-accent-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-foreground mb-1">
+                            Auto-Generated Timetable
+                          </h3>
+                          <p className="text-base text-muted-foreground leading-relaxed">
+                            A timetable will be automatically created based on default schedules
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Warning Card */}
+                    <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <AlertCircle className="w-5 h-5 text-destructive" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-foreground mb-1">
+                            Important Notice
+                          </h3>
+                          <p className="text-base text-muted-foreground leading-relaxed font-semibold">
+                            There may be errors in the auto-generated timetable. Please review and adjust it as needed to ensure accuracy.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Title */}
-                <h2 className="text-base font-bold mb-1">{slide.title}</h2>
-
-                {/* Highlight badge */}
-                {slide.highlight && (
-                  <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium mb-2">
-                    {slide.highlight}
+              ) : (
+                <div 
+                  key={currentSlide}
+                  className={cn(
+                    "flex flex-col items-center text-center flex-1 min-h-0",
+                    direction === 'right' ? "animate-slide-in-right" : "animate-slide-in-left"
+                  )}
+                >
+                  {/* Icon */}
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2 text-primary">
+                    {slide.icon}
                   </div>
-                )}
 
-                {/* Description */}
-                <p className={cn(
-                  "mb-3 leading-relaxed px-2",
-                  isLastSlide 
-                    ? "text-base font-bold text-foreground" 
-                    : "text-xs text-muted-foreground"
-                )}>
-                  {slide.description}
-                </p>
+                  {/* Title */}
+                  <h2 className="text-base font-bold mb-1">{slide.title}</h2>
 
-                {/* Demo Image - Compact */}
-                {slide.image && (
-                  <div className="w-full flex-1 min-h-0 rounded-lg overflow-hidden border border-border/50 shadow-md bg-muted/20">
-                    <img 
-                      src={slide.image} 
-                      alt={slide.title}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                )}
-              </div>
+                  {/* Highlight badge */}
+                  {slide.highlight && (
+                    <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium mb-2">
+                      {slide.highlight}
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed px-2">
+                    {slide.description}
+                  </p>
+
+                  {/* Demo Image - Compact */}
+                  {slide.image && (
+                    <div className="w-full flex-1 min-h-0 rounded-lg overflow-hidden border border-border/50 shadow-md bg-muted/20">
+                      <img 
+                        src={slide.image} 
+                        alt={slide.title}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Navigation */}
