@@ -13,6 +13,7 @@ export const API_CONFIG = {
     OAUTH_MOBILE_EXCHANGE: `${API_BASE_URL}/api/auth/mobile/exchange`,
     USER_ME: `${API_BASE_URL}/api/user/me`,
     USER_LOGOUT: `${API_BASE_URL}/api/user/logout`,
+    UPDATE_FCM_TOKEN: `${API_BASE_URL}/api/user/fcm-token`,
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,
     SEARCH_STUDENTS: `${API_BASE_URL}/api/search/students`,
     STUDENT_ATTENDANCE: (studentId: string) => `${API_BASE_URL}/api/search/student/${studentId}/attendance`,
