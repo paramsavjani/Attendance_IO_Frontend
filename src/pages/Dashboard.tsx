@@ -214,7 +214,7 @@ export default function Dashboard() {
 
           <TabsContent value="schedule" className="mt-3 space-y-3">
             {/* Inline Date Navigation */}
-            <div className="flex items-center justify-between bg-card/50 rounded-xl px-2 py-1.5 border border-border/30">
+            <div className="flex items-center justify-between bg-card/50 rounded-xl px-2 py-0.5 border border-border/30">
               <button
                 onClick={() => navigateDate("prev")}
                 className="w-8 h-8 rounded-lg hover:bg-secondary/50 flex items-center justify-center transition-colors"
