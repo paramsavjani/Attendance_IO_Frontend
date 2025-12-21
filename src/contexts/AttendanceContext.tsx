@@ -45,7 +45,7 @@ const AttendanceContext = createContext<AttendanceContextType | undefined>(undef
 
 export function AttendanceProvider({ children }: { children: ReactNode }) {
   const { student } = useAuth();
-  
+
   // Enrolled subjects
   const [enrolledSubjects, setEnrolledSubjectsState] = useState<Subject[]>([]);
   const [isLoadingEnrolledSubjects, setIsLoadingEnrolledSubjects] = useState(true);
@@ -134,7 +134,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
   // Initialize subject stats - fetch from backend (for selected date)
   const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStats>>({});
-  
+
   // Today's subject stats - always shows today's total attendance (for Subjects tab)
   const [subjectStatsToday, setSubjectStatsToday] = useState<Record<string, SubjectStats>>({});
 
@@ -145,14 +145,16 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | 'cancelled' | null>>({});
   // Store attendance IDs for deletion
   const [attendanceIds, setAttendanceIds] = useState<Record<string, number | null>>({});
-  
+
   // Loading states
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
   const [savingState, setSavingState] = useState<{ subjectId: string; action: 'present' | 'absent' | 'cancelled' } | null>(null);
-  
+
   // Track if we've successfully loaded data to prevent clearing on race conditions
   const hasLoadedDataRef = useRef(false);
   const lastStudentIdRef = useRef<string | null>(null);
+  // Track ongoing attendance operations to prevent duplicate calls
+  const ongoingOperationsRef = useRef<Set<string>>(new Set());
 
   // Fetch attendance data from backend for a specific date (defaults to today)
   // silent = true skips showing loading state (used for background refresh after marking)
@@ -178,7 +180,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     // Track student ID to detect actual logout vs temporary null
     const currentStudentId = student.id;
     const isDifferentStudent = lastStudentIdRef.current !== null && lastStudentIdRef.current !== currentStudentId;
-    
+
     if (isDifferentStudent) {
       // Different student logged in - clear previous data
       setSubjectStats({});
@@ -187,7 +189,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setAttendanceIds({});
       hasLoadedDataRef.current = false;
     }
-    
+
     lastStudentIdRef.current = currentStudentId;
 
     if (!silent) {
@@ -195,17 +197,17 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const url = date 
+      const url = date
         ? `${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`
         : API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE;
-      
+
       const response = await fetch(url, {
         credentials: 'include',
       });
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Convert subject stats to the format expected by the frontend
         const statsMap: Record<string, SubjectStats> = {};
         data.subjectStats?.forEach((stat: any) => {
@@ -217,7 +219,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           };
         });
         setSubjectStats(statsMap);
-        
+
         // Convert attendance records to the format expected by the frontend
         const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
         const idsMap: Record<string, number | null> = {};
@@ -268,7 +270,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Convert subject stats to the format expected by the frontend
         const statsMap: Record<string, SubjectStats> = {};
         data.subjectStats?.forEach((stat: any) => {
@@ -331,7 +333,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     // This is only used for temporary state during onboarding
     // The actual enrolled subjects come from backend via fetchEnrolledSubjects
     setEnrolledSubjectsState(subjects);
-    
+
     // Initialize stats for new subjects (no localStorage)
     setSubjectStats(prev => {
       const updated = { ...prev };
@@ -347,7 +349,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const setTimetable = useCallback((newTimetable: TimetableSlot[]) => {
     // Update local state immediately
     setTimetableState(newTimetable);
-    
+
     // Save to backend
     fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
       method: 'POST',
@@ -367,80 +369,94 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     await fetchTimetable();
   }, [fetchTimetable]);
 
-  // Helper function to update subjectStatsToday locally
-  const updateSubjectStatsTodayLocally = useCallback((
+  // Helper to calculate new stats logic (reused for both Today and All-Time stats)
+  const calculateNewStats = (
+    currentStats: SubjectStats,
+    previousStatus: 'present' | 'absent' | 'cancelled' | null,
+    newStatus: 'present' | 'absent' | 'cancelled' | null
+  ) => {
+    let newPresent = currentStats.present;
+    let newAbsent = currentStats.absent;
+    let newTotal = currentStats.total;
+
+    // Handle deletion (unmarking)
+    if (newStatus === null) {
+      if (previousStatus === 'present') {
+        newPresent = Math.max(0, newPresent - 1);
+        newTotal = Math.max(0, newTotal - 1);
+      } else if (previousStatus === 'absent') {
+        newAbsent = Math.max(0, newAbsent - 1);
+        newTotal = Math.max(0, newTotal - 1);
+      }
+      // Cancelled classes don't count in total, so no change needed
+    } else {
+      // Handle marking new attendance or changing status
+      if (previousStatus === null) {
+        // New attendance mark
+        if (newStatus === 'present') {
+          newPresent += 1;
+          newTotal += 1;
+        } else if (newStatus === 'absent') {
+          newAbsent += 1;
+          newTotal += 1;
+        }
+        // Cancelled classes don't count in total
+      } else if (previousStatus === newStatus) {
+        // Clicking the same status again - should not change stats
+        // This is a no-op, stats remain the same
+        // (The toggle logic in markAttendance handles deletion separately)
+      } else if (previousStatus !== newStatus) {
+        // Changing from one status to another
+        if (previousStatus === 'present') {
+          newPresent = Math.max(0, newPresent - 1);
+        } else if (previousStatus === 'absent') {
+          newAbsent = Math.max(0, newAbsent - 1);
+        } else if (previousStatus === 'cancelled') {
+          // Was cancelled (not counted), now counting
+          newTotal += 1;
+        }
+
+        if (newStatus === 'present') {
+          newPresent += 1;
+        } else if (newStatus === 'absent') {
+          newAbsent += 1;
+        } else if (newStatus === 'cancelled') {
+          // Now cancelled (not counted), remove from total if previously counted
+          if (previousStatus === 'present' || previousStatus === 'absent') {
+            newTotal = Math.max(0, newTotal - 1);
+          }
+        }
+      }
+    }
+
+    return {
+      ...currentStats,
+      present: newPresent,
+      absent: newAbsent,
+      total: newTotal
+    };
+  };
+
+  const updateStatsLocally = useCallback((
     subjectId: string,
     previousStatus: 'present' | 'absent' | 'cancelled' | null,
     newStatus: 'present' | 'absent' | 'cancelled' | null
   ) => {
+    // Update Today's Stats
     setSubjectStatsToday(prev => {
-      const currentStats = prev[subjectId] || {
-        subjectId,
-        present: 0,
-        absent: 0,
-        total: 0
-      };
-
-      let newPresent = currentStats.present;
-      let newAbsent = currentStats.absent;
-      let newTotal = currentStats.total;
-
-      // Handle deletion (unmarking)
-      if (newStatus === null) {
-        if (previousStatus === 'present') {
-          newPresent = Math.max(0, newPresent - 1);
-          newTotal = Math.max(0, newTotal - 1);
-        } else if (previousStatus === 'absent') {
-          newAbsent = Math.max(0, newAbsent - 1);
-          newTotal = Math.max(0, newTotal - 1);
-        } else if (previousStatus === 'cancelled') {
-          // Cancelled classes don't count in total, so no change needed
-        }
-      } else {
-        // Handle marking new attendance or changing status
-        if (previousStatus === null) {
-          // New attendance mark
-          if (newStatus === 'present') {
-            newPresent += 1;
-            newTotal += 1;
-          } else if (newStatus === 'absent') {
-            newAbsent += 1;
-            newTotal += 1;
-          } else if (newStatus === 'cancelled') {
-            // Cancelled classes don't count in total
-          }
-        } else if (previousStatus !== newStatus) {
-          // Changing from one status to another
-          if (previousStatus === 'present') {
-            newPresent = Math.max(0, newPresent - 1);
-          } else if (previousStatus === 'absent') {
-            newAbsent = Math.max(0, newAbsent - 1);
-          } else if (previousStatus === 'cancelled') {
-            // Cancelled was not counted, so now we need to add to total
-            newTotal += 1;
-          }
-
-          if (newStatus === 'present') {
-            newPresent += 1;
-          } else if (newStatus === 'absent') {
-            newAbsent += 1;
-          } else if (newStatus === 'cancelled') {
-            // Cancelled doesn't count, so remove from total if it was counted before
-            if (previousStatus === 'present' || previousStatus === 'absent') {
-              newTotal = Math.max(0, newTotal - 1);
-            }
-          }
-        }
-      }
-
+      const currentStats = prev[subjectId] || { subjectId, present: 0, absent: 0, total: 0 };
       return {
         ...prev,
-        [subjectId]: {
-          subjectId,
-          present: newPresent,
-          absent: newAbsent,
-          total: newTotal
-        }
+        [subjectId]: calculateNewStats(currentStats, previousStatus, newStatus)
+      };
+    });
+
+    // Update All-Time Stats (SubjectStats)
+    setSubjectStats(prev => {
+      const currentStats = prev[subjectId] || { subjectId, present: 0, absent: 0, total: 0 };
+      return {
+        ...prev,
+        [subjectId]: calculateNewStats(currentStats, previousStatus, newStatus)
       };
     });
   }, []);
@@ -463,11 +479,21 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
 
     const slotKey = `${date}-${subjectId}`;
-    const previousStatus = todayAttendance[slotKey];
-    const attendanceId = attendanceIds[slotKey];
+    const operationKey = `${slotKey}-${status}`;
     
+    // Prevent duplicate simultaneous operations for the same slot and status
+    if (ongoingOperationsRef.current.has(operationKey)) {
+      return;
+    }
+    
+    ongoingOperationsRef.current.add(operationKey);
+    
+    // Read current state from closure (should be up to date due to dependency array)
+    const previousStatus = todayAttendance[slotKey] || null;
+    const attendanceId = attendanceIds[slotKey] || null;
+
     setSavingState({ subjectId, action: status });
-    
+
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
       // Delete from backend if we have the attendance ID
@@ -481,7 +507,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           if (!deleteResponse.ok) {
             throw new Error('Failed to delete attendance');
           }
-          
+
         } catch (error: any) {
           console.error('Error deleting attendance:', error);
           toast.error('Failed to unmark attendance');
@@ -493,29 +519,39 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         toast.info('Attendance cleared');
       }
 
-      // Update local stats immediately
-      updateSubjectStatsTodayLocally(subjectId, previousStatus, null);
-      
+      // Update local stats immediately (Optimistic)
+      updateStatsLocally(subjectId, previousStatus, null);
+
       // Mark as null (cleared) and refresh from backend
       setTodayAttendance(prev => {
         const updated = { ...prev };
         delete updated[slotKey];
         return updated;
       });
-      
+
       setAttendanceIds(prev => {
         const updated = { ...prev };
         delete updated[slotKey];
         return updated;
       });
-      
+
       // Refresh from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
       setSavingState(null);
+      ongoingOperationsRef.current.delete(operationKey);
       return;
     }
 
     try {
+      // Update local state optimistically BEFORE API call to prevent race conditions
+      // This ensures subsequent clicks see the updated status immediately
+      setTodayAttendance(prev => {
+        return { ...prev, [slotKey]: status };
+      });
+      
+      // Update local stats immediately (Optimistic Update BEFORE API call for responsiveness)
+      updateStatsLocally(subjectId, previousStatus, status);
+
       // Call backend API to mark attendance
       const response = await fetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
         method: 'POST',
@@ -531,37 +567,41 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
+        // Revert optimistic updates on failure
+        setTodayAttendance(prev => {
+          const updated = { ...prev };
+          if (previousStatus === null) {
+            delete updated[slotKey];
+          } else {
+            updated[slotKey] = previousStatus;
+          }
+          return updated;
+        });
+        updateStatsLocally(subjectId, status, previousStatus);
         const error = await response.json().catch(() => ({ error: 'Failed to mark attendance' }));
         throw new Error(error.error || 'Failed to mark attendance');
       }
 
       const result = await response.json();
-      
-      // Update local stats immediately
-      updateSubjectStatsTodayLocally(subjectId, previousStatus, status);
-      
-      // Update local state immediately for better UX
-      setTodayAttendance(prev => {
-        return { ...prev, [slotKey]: status };
-      });
-      
+
       // Store attendance ID for future deletion
       if (result.attendanceId) {
         setAttendanceIds(prev => {
           return { ...prev, [slotKey]: result.attendanceId };
         });
       }
-      
+
       // Refresh attendance data from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
     } catch (error: any) {
       console.error('Error marking attendance:', error);
       toast.error(error.message || 'Failed to mark attendance');
-      // Don't update local state on error
+      // Don't update local state on error (already reverted above)
     } finally {
       setSavingState(null);
+      ongoingOperationsRef.current.delete(operationKey);
     }
-  }, [todayAttendance, attendanceIds, fetchAttendanceData, updateSubjectStatsTodayLocally]);
+  }, [todayAttendance, attendanceIds, fetchAttendanceData, updateStatsLocally]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {

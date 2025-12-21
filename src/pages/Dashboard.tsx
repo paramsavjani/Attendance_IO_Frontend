@@ -82,15 +82,17 @@ export default function Dashboard() {
   const canMarkAttendance = true; // Allow marking for any date
 
   // Calculate if a subject needs attention (below minimum requirement)
+  // Always use today's stats to show final attendance up to now
   const getSubjectAttendanceInfo = (subjectId: string) => {
-    const stats = subjectStats[subjectId];
+    const stats = subjectStatsToday[subjectId];
     const minRequired = subjectMinAttendance[subjectId] || 75;
     
-    if (!stats || stats.total === 0) {
-      return { percent: 0, needsAttention: false };
+    // Always calculate percentage, even if stats don't exist or total is 0
+    let percent = 0;
+    if (stats && stats.total > 0) {
+      percent = (stats.present / stats.total) * 100;
     }
     
-    const percent = (stats.present / stats.total) * 100;
     const needsAttention = percent < minRequired;
     
     return { percent, needsAttention };
@@ -310,8 +312,8 @@ export default function Dashboard() {
                       onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
                       disabled={!canMarkAttendance}
                       disablePresentAbsent={isFutureDate} // Disable present/absent for future dates
-                      needsAttention={isFutureDate && needsAttention}
-                      attendancePercent={isFutureDate ? percent : undefined}
+                      needsAttention={needsAttention}
+                      attendancePercent={percent}
                       savingAction={savingState?.subjectId === slot.subject.id ? savingState.action : null}
                     />
                   );
