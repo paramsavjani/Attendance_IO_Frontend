@@ -18,6 +18,7 @@ interface SubjectStats {
 
 interface AttendanceContextType {
   subjectStats: Record<string, SubjectStats>;
+  subjectStatsToday: Record<string, SubjectStats>; // Always shows today's total attendance
   subjectMinAttendance: Record<string, number>;
   todayAttendance: Record<string, 'present' | 'absent' | 'cancelled' | null>;
   enrolledSubjects: Subject[];
@@ -131,8 +132,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     fetchTimetable();
   }, [fetchTimetable]);
 
-  // Initialize subject stats - fetch from backend
+  // Initialize subject stats - fetch from backend (for selected date)
   const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStats>>({});
+  
+  // Today's subject stats - always shows today's total attendance (for Subjects tab)
+  const [subjectStatsToday, setSubjectStatsToday] = useState<Record<string, SubjectStats>>({});
 
   // Subject min attendance - no localStorage, use defaults
   const [subjectMinAttendance, setSubjectMinAttendance] = useState<Record<string, number>>({});
@@ -159,6 +163,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       if (lastStudentIdRef.current !== null) {
         // User was logged in before, now logged out - clear data
         setSubjectStats({});
+        setSubjectStatsToday({});
         setTodayAttendance({});
         setAttendanceIds({});
         hasLoadedDataRef.current = false;
@@ -177,6 +182,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     if (isDifferentStudent) {
       // Different student logged in - clear previous data
       setSubjectStats({});
+      setSubjectStatsToday({});
       setTodayAttendance({});
       setAttendanceIds({});
       hasLoadedDataRef.current = false;
@@ -227,6 +233,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         // Only clear on error if we haven't loaded data yet, or if it's a 401 (unauthorized)
         if (!hasLoadedDataRef.current || response.status === 401) {
           setSubjectStats({});
+          setSubjectStatsToday({});
           setTodayAttendance({});
           setAttendanceIds({});
           hasLoadedDataRef.current = false;
@@ -238,6 +245,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       // This prevents clearing data during network hiccups
       if (!hasLoadedDataRef.current) {
         setSubjectStats({});
+        setSubjectStatsToday({});
         setTodayAttendance({});
         setAttendanceIds({});
       }
@@ -248,6 +256,36 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
   }, [student]);
 
+  // Fetch today's subject stats separately (for Subjects tab)
+  const fetchTodayStats = useCallback(async () => {
+    if (!student) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+      const response = await fetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${today}`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Convert subject stats to the format expected by the frontend
+        const statsMap: Record<string, SubjectStats> = {};
+        data.subjectStats?.forEach((stat: any) => {
+          statsMap[stat.subjectId] = {
+            subjectId: stat.subjectId,
+            present: stat.present,
+            absent: stat.absent,
+            total: stat.total,
+          };
+        });
+        setSubjectStatsToday(statsMap);
+      }
+    } catch (error) {
+      console.error('Error fetching today\'s stats:', error);
+    }
+  }, [student]);
+
   // Fetch attendance data when student is available (defaults to today)
   // Only fetch when student ID actually changes, not when object reference changes
   useEffect(() => {
@@ -255,8 +293,16 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     // Only fetch if we have a student and it's different from last time
     if (currentStudentId && lastStudentIdRef.current !== currentStudentId) {
       fetchAttendanceData();
+      fetchTodayStats(); // Also fetch today's stats
     }
-  }, [student?.id, fetchAttendanceData]);
+  }, [student?.id, fetchAttendanceData, fetchTodayStats]);
+
+  // Fetch today's stats on mount and when attendance is marked
+  useEffect(() => {
+    if (student) {
+      fetchTodayStats();
+    }
+  }, [student, fetchTodayStats]);
 
   // Onboarding completion is based solely on backend data
   // If enrolledSubjects.length === 0, show onboarding
@@ -384,6 +430,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       
       // Refresh from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
+      // Also refresh today's stats if marking for today
+      const today = new Date().toISOString().split('T')[0];
+      if (date === today) {
+        await fetchTodayStats();
+      }
       setSavingState(null);
       return;
     }
@@ -424,6 +475,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       
       // Refresh attendance data from backend to get updated stats (silent - no loading UI)
       await fetchAttendanceData(date, true);
+      // Also refresh today's stats if marking for today
+      const today = new Date().toISOString().split('T')[0];
+      if (date === today) {
+        await fetchTodayStats();
+      }
     } catch (error: any) {
       console.error('Error marking attendance:', error);
       toast.error(error.message || 'Failed to mark attendance');
@@ -431,7 +487,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     } finally {
       setSavingState(null);
     }
-  }, [todayAttendance, fetchAttendanceData]);
+  }, [todayAttendance, fetchAttendanceData, fetchTodayStats]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {
@@ -447,6 +503,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     <AttendanceContext.Provider
       value={{
         subjectStats,
+        subjectStatsToday,
         subjectMinAttendance,
         todayAttendance,
         enrolledSubjects,
