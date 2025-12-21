@@ -55,7 +55,7 @@ export function AttendanceMarker({
   return (
     <div
       className={cn(
-        "relative flex flex-col md:flex-row md:items-center rounded-2xl overflow-hidden",
+        "relative flex flex-col rounded-2xl overflow-hidden",
         "bg-neutral-900/50 border border-white/5 backdrop-blur-sm",
         "transition-all duration-300 group",
         isCurrent ? "ring-1 ring-primary/40 bg-primary/5 shadow-[0_0_30px_-10px_bg-primary/20]" : "hover:bg-white/[0.02]",
@@ -63,12 +63,14 @@ export function AttendanceMarker({
       )}
     >
 
-      {/* Mobile Top Row: Color Dot + Subject Name + Time */}
-      <div className="flex items-start justify-between p-2.5 pb-1 md:p-3 md:pl-5 md:flex-1 md:items-center md:pb-3">
+
+      {/* Top Row: Color Dot + Subject Name + Time */}
+      {/* Top Row: Color Dot + Subject Name + Time */}
+      <div className="flex items-start justify-between px-3 py-2 pb-0.5">
         <div className="flex items-start gap-3 min-w-0">
-          {/* Color Dot (visible on mobile only/mostly) */}
+          {/* Color Dot */}
           <div
-            className="w-2.5 h-2.5 rounded-full mt-1.5 md:hidden flex-shrink-0 shadow-[0_0_8px] shadow-current transition-opacity"
+            className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 shadow-[0_0_8px] shadow-current transition-opacity"
             style={{ color: `hsl(${color})`, backgroundColor: `hsl(${color})` }}
           />
 
@@ -92,21 +94,11 @@ export function AttendanceMarker({
               {subjectCode && (
                 <span className="opacity-80">{subjectCode}</span>
               )}
-              {lecturePlace && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-neutral-700" />
-                  <span>{lecturePlace}</span>
-                </>
-              )}
-              <span className="md:hidden flex items-center gap-1.5 text-neutral-500">
-                <span className="w-1 h-1 rounded-full bg-neutral-700" />
-                {time}
-              </span>
             </div>
           </div>
         </div>
 
-        {/* Percentage Badge (Mobile & Desktop) */}
+        {/* Percentage Badge */}
         {attendancePercent !== undefined && (
           <div className="flex flex-col items-end pl-3">
             <div className={cn(
@@ -122,34 +114,19 @@ export function AttendanceMarker({
         )}
       </div>
 
-      {/* Desktop Time - Hidden on mobile */}
-      <div className="hidden md:flex items-center text-sm text-neutral-400 font-medium px-4 border-l border-white/5 h-10">
-        {time}
-      </div>
-
       {/* Actions Section */}
-      <div className="flex items-center justify-between p-2.5 pt-0 pb-1.5 md:p-3 md:pl-4 md:border-l md:border-white/5 bg-gradient-to-t from-black/20 to-transparent md:bg-none">
+      <div className="flex items-center justify-between px-3 py-2 pt-0 pb-1.5 bg-gradient-to-t from-black/20 to-transparent">
 
-        {/* Status Text (visible if marked) */}
-        <div className="flex-1 md:hidden">
-          {status && (
-            <span className={cn(
-              "text-xs font-semibold px-2 py-1 rounded-md capitalize inline-flex items-center gap-1.5",
-              status === 'present' && "bg-emerald-500/10 text-emerald-400",
-              status === 'absent' && "bg-red-500/10 text-red-400",
-              status === 'cancelled' && "bg-yellow-500/10 text-yellow-400",
-            )}>
-              <span className={cn("w-1.5 h-1.5 rounded-full",
-                status === 'present' ? "bg-emerald-400" :
-                  status === 'absent' ? "bg-red-400" : "bg-yellow-400"
-              )} />
-              {status}
-            </span>
-          )}
-          {!status && (
-            <span className="text-xs text-neutral-600 font-medium italic">
-              Not marked yet
-            </span>
+        {/* Lecture Place & Time (Replaces Status Text) */}
+        <div className="flex-1 flex flex-col justify-center min-w-0 pr-3 pl-[1.375rem]">
+          <div className="flex items-center gap-1.5 text-xs text-neutral-300 font-medium">
+            {lecturePlace && <span>{lecturePlace}</span>}
+          </div>
+          {time && (
+            <div className="flex items-center gap-1.5 text-[10px] text-neutral-500 mt-0.5 font-medium">
+              <span className="w-1 h-1 rounded-full bg-neutral-600" />
+              <span className="truncate">{time}</span>
+            </div>
           )}
         </div>
 
