@@ -28,7 +28,7 @@ import {
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState } = useAttendance();
+  const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState } = useAttendance();
   
   const now = new Date();
   const currentHour = now.getHours();
@@ -334,7 +334,8 @@ export default function Dashboard() {
               </div>
             ) : (
               enrolledSubjects.map((subject) => {
-                const stats = subjectStats[subject.id] || { 
+                // Always use today's stats for Subjects tab, regardless of selected date
+                const stats = subjectStatsToday[subject.id] || { 
                   subjectId: subject.id, 
                   present: 0, 
                   absent: 0, 
