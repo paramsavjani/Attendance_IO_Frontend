@@ -367,6 +367,84 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     await fetchTimetable();
   }, [fetchTimetable]);
 
+  // Helper function to update subjectStatsToday locally
+  const updateSubjectStatsTodayLocally = useCallback((
+    subjectId: string,
+    previousStatus: 'present' | 'absent' | 'cancelled' | null,
+    newStatus: 'present' | 'absent' | 'cancelled' | null
+  ) => {
+    setSubjectStatsToday(prev => {
+      const currentStats = prev[subjectId] || {
+        subjectId,
+        present: 0,
+        absent: 0,
+        total: 0
+      };
+
+      let newPresent = currentStats.present;
+      let newAbsent = currentStats.absent;
+      let newTotal = currentStats.total;
+
+      // Handle deletion (unmarking)
+      if (newStatus === null) {
+        if (previousStatus === 'present') {
+          newPresent = Math.max(0, newPresent - 1);
+          newTotal = Math.max(0, newTotal - 1);
+        } else if (previousStatus === 'absent') {
+          newAbsent = Math.max(0, newAbsent - 1);
+          newTotal = Math.max(0, newTotal - 1);
+        } else if (previousStatus === 'cancelled') {
+          // Cancelled classes don't count in total, so no change needed
+        }
+      } else {
+        // Handle marking new attendance or changing status
+        if (previousStatus === null) {
+          // New attendance mark
+          if (newStatus === 'present') {
+            newPresent += 1;
+            newTotal += 1;
+          } else if (newStatus === 'absent') {
+            newAbsent += 1;
+            newTotal += 1;
+          } else if (newStatus === 'cancelled') {
+            // Cancelled classes don't count in total
+          }
+        } else if (previousStatus !== newStatus) {
+          // Changing from one status to another
+          if (previousStatus === 'present') {
+            newPresent = Math.max(0, newPresent - 1);
+          } else if (previousStatus === 'absent') {
+            newAbsent = Math.max(0, newAbsent - 1);
+          } else if (previousStatus === 'cancelled') {
+            // Cancelled was not counted, so now we need to add to total
+            newTotal += 1;
+          }
+
+          if (newStatus === 'present') {
+            newPresent += 1;
+          } else if (newStatus === 'absent') {
+            newAbsent += 1;
+          } else if (newStatus === 'cancelled') {
+            // Cancelled doesn't count, so remove from total if it was counted before
+            if (previousStatus === 'present' || previousStatus === 'absent') {
+              newTotal = Math.max(0, newTotal - 1);
+            }
+          }
+        }
+      }
+
+      return {
+        ...prev,
+        [subjectId]: {
+          subjectId,
+          present: newPresent,
+          absent: newAbsent,
+          total: newTotal
+        }
+      };
+    });
+  }, []);
+
   const markAttendance = useCallback(async (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => {
     // Frontend guard: only allow "cancelled" for future dates, block "present" and "absent"
     try {
@@ -415,6 +493,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         toast.info('Attendance cleared');
       }
 
+      // Update local stats immediately
+      updateSubjectStatsTodayLocally(subjectId, previousStatus, null);
+      
       // Mark as null (cleared) and refresh from backend
       setTodayAttendance(prev => {
         const updated = { ...prev };
@@ -430,11 +511,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       
       // Refresh from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
-      // Also refresh today's stats if marking for today
-      const today = new Date().toISOString().split('T')[0];
-      if (date === today) {
-        await fetchTodayStats();
-      }
       setSavingState(null);
       return;
     }
@@ -461,6 +537,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
       const result = await response.json();
       
+      // Update local stats immediately
+      updateSubjectStatsTodayLocally(subjectId, previousStatus, status);
+      
       // Update local state immediately for better UX
       setTodayAttendance(prev => {
         return { ...prev, [slotKey]: status };
@@ -473,13 +552,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         });
       }
       
-      // Refresh attendance data from backend to get updated stats (silent - no loading UI)
+      // Refresh attendance data from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
-      // Also refresh today's stats if marking for today
-      const today = new Date().toISOString().split('T')[0];
-      if (date === today) {
-        await fetchTodayStats();
-      }
     } catch (error: any) {
       console.error('Error marking attendance:', error);
       toast.error(error.message || 'Failed to mark attendance');
@@ -487,7 +561,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     } finally {
       setSavingState(null);
     }
-  }, [todayAttendance, fetchAttendanceData, fetchTodayStats]);
+  }, [todayAttendance, attendanceIds, fetchAttendanceData, updateSubjectStatsTodayLocally]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {
