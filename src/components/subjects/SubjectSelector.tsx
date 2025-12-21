@@ -4,7 +4,7 @@ import { Search, Check, X, BookOpen, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Subject, SaveEnrolledSubjectsResponse, TimetableConflict, SubjectInfo, SubjectSchedule, SelectedSubjectConflict } from "@/types/attendance";
-import { cn, hexToHsl } from "@/lib/utils";
+import { cn, hexToHslLightened } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
 import { ConflictResolutionModal } from "./ConflictResolutionModal";
@@ -61,7 +61,7 @@ export function SubjectSelector({
           code: subject.code,
           name: subject.name,
           lecturePlace: subject.lecturePlace ?? null,
-          color: hexToHsl(subject.color || "#3B82F6"),
+          color: hexToHslLightened(subject.color || "#3B82F6"),
         }));
         
         setSubjects(formattedSubjects);

@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
-import { hexToHsl } from "@/lib/utils";
+import { hexToHslLightened } from "@/lib/utils";
 
 interface Student {
   id: string;
@@ -138,7 +138,7 @@ export default function Search() {
           if (data.subjects) {
             data.subjects = data.subjects.map(subj => ({
               ...subj,
-              color: hexToHsl(subj.color || "#3B82F6")
+              color: hexToHslLightened(subj.color || "#3B82F6")
             }));
           }
           
@@ -147,7 +147,7 @@ export default function Search() {
               ...sem,
               subjects: sem.subjects.map(subj => ({
                 ...subj,
-                color: hexToHsl(subj.color || "#3B82F6")
+                color: hexToHslLightened(subj.color || "#3B82F6")
               }))
             }));
           }
