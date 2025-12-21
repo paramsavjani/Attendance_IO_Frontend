@@ -256,9 +256,9 @@ export default function Dashboard() {
             )}
 
             {!isSelectedToday && !isFutureDate && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
+              <div className="flex items-center justify-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
                 <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">Past date — View only</p>
+                <p className="text-xs text-muted-foreground">Past date</p>
               </div>
             )}
 
