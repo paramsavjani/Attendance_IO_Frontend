@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
-  const { handleGoogleLogin, isAuthenticated, checkAuth } = useAuth();
+  const { handleGoogleLogin, isAuthenticated, isLoadingAuth, checkAuth } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -30,10 +30,7 @@ export default function Login() {
     };
   }, []);
 
-  // Check if user is already authenticated (e.g., returning from OAuth)
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  // Note: checkAuth is already called on mount in AuthContext, so we don't need to call it here
 
   // Handle error from OAuth callback
   useEffect(() => {
@@ -55,6 +52,15 @@ export default function Login() {
       navigate("/dashboard", { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  // Show loading while checking authentication status
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#000', color: '#fff' }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);

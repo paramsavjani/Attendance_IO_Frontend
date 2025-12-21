@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
 import { API_CONFIG } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { initializePushNotifications, clearFcmToken } from "@/lib/notifications";
@@ -17,6 +17,7 @@ interface Student {
 interface AuthContextType {
   student: Student | null;
   isAuthenticated: boolean;
+  isLoadingAuth: boolean;
   handleGoogleLogin: () => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -26,6 +27,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [student, setStudent] = useState<Student | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+  const hasCompletedInitialCheck = useRef<boolean>(false);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -59,6 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Auth check failed:", error);
       // Silently fail - user might not be logged in
       setStudent(null);
+    } finally {
+      // Only set loading to false on the initial check
+      if (!hasCompletedInitialCheck.current) {
+        hasCompletedInitialCheck.current = true;
+        setIsLoadingAuth(false);
+      }
     }
   }, []);
 
@@ -172,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         student,
         isAuthenticated: !!student,
+        isLoadingAuth,
         handleGoogleLogin,
         logout,
         checkAuth,
