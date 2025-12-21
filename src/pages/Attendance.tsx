@@ -8,7 +8,7 @@ import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Attendance() {
-  const { subjectStats, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin } = useAttendance();
+  const { subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin } = useAttendance();
   const schedule = getTodaySchedule();
   const now = new Date();
   const currentHour = now.getHours();
@@ -38,11 +38,19 @@ export default function Attendance() {
           <TabsContent value="today" className="mt-4 space-y-2">
             {schedule.slots.map((slot, index) => {
               if (!slot.subject) return null;
-              
+
               const startHour = parseInt(slot.time.split(":")[0]);
               const isCurrent = startHour === currentHour;
               const slotKey = `${todayKey}-${slot.subject!.id}`;
               const status = todayAttendance[slotKey] || null;
+
+              // Calculate attendance percentage - always use today's stats to show final attendance up to now
+              // Always show percentage, even if it's 0% or nothing is marked
+              const stats = subjectStatsToday[slot.subject!.id];
+              let attendancePercent = 0;
+              if (stats && stats.total > 0) {
+                attendancePercent = (stats.present / stats.total) * 100;
+              }
 
               return (
                 <AttendanceMarker
@@ -54,6 +62,7 @@ export default function Attendance() {
                   color={slot.subject.color}
                   isCurrent={isCurrent}
                   status={status}
+                  attendancePercent={attendancePercent} // Pass the calculated percentage
                   onMarkPresent={() => handleMarkAttendance(index, slot.subject!.id, "present")}
                   onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
                   onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
@@ -64,9 +73,10 @@ export default function Attendance() {
 
           <TabsContent value="subjects" className="mt-4 space-y-2">
             {subjects.map((subject) => {
-              const stats = subjectStats[subject.id];
+              // Always use today's stats to show final attendance up to now
+              const stats = subjectStatsToday[subject.id];
               if (!stats) return null;
-              
+
               const minRequired = subjectMinAttendance[subject.id] || 75;
 
               return (
