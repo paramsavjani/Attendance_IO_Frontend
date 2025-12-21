@@ -321,11 +321,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {canMarkAttendance && schedule.some(s => s.subject) && !isLoadingAttendance && (
-              <p className="text-center text-[10px] text-muted-foreground pt-1">
-                Tap to mark • Auto-saved
-              </p>
-            )}
           </TabsContent>
 
           <TabsContent value="subjects" className="mt-3 space-y-2">
