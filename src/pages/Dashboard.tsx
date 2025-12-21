@@ -111,9 +111,15 @@ export default function Dashboard() {
   }, [dateKey, fetchAttendanceForDate]);
 
   const handleMarkAttendance = async (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
-    // Block future dates from frontend
+    // For future dates: only allow "cancelled", block "present" and "absent"
     if (isFutureDate) {
-      toast.error("You can't mark attendance for a future date");
+      if (status === 'cancelled') {
+        // Allow marking cancelled for future dates
+        await markAttendance(subjectId, dateKey, status);
+      } else {
+        // Block present/absent for future dates
+        toast.error("You can only mark lectures as 'cancelled' for future dates");
+      }
       return;
     }
 
@@ -244,7 +250,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
                 <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  Attendance available on this day
+                  Future date - You can only mark lectures as "cancelled"
                 </p>
               </div>
             )}
@@ -303,6 +309,7 @@ export default function Dashboard() {
                       onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
                       onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
                       disabled={!canMarkAttendance}
+                      disablePresentAbsent={isFutureDate} // Disable present/absent for future dates
                       needsAttention={isFutureDate && needsAttention}
                       attendancePercent={isFutureDate ? percent : undefined}
                       savingAction={savingState?.subjectId === slot.subject.id ? savingState.action : null}
