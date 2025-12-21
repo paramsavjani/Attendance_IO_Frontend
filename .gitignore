@@ -13,7 +13,7 @@ dist-ssr
 *.local
 
 # Capacitor
-android
+# android
 ios
 .capacitor
 
@@ -27,5 +27,3 @@ ios
 *.njsproj
 *.sln
 *.sw?
-
-/icons
