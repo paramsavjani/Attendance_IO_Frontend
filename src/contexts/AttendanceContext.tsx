@@ -139,6 +139,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
   // Today's attendance - fetch from backend
   const [todayAttendance, setTodayAttendance] = useState<Record<string, 'present' | 'absent' | 'cancelled' | null>>({});
+  // Store attendance IDs for deletion
+  const [attendanceIds, setAttendanceIds] = useState<Record<string, number | null>>({});
   
   // Loading states
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
@@ -158,6 +160,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         // User was logged in before, now logged out - clear data
         setSubjectStats({});
         setTodayAttendance({});
+        setAttendanceIds({});
         hasLoadedDataRef.current = false;
         lastStudentIdRef.current = null;
       }
@@ -175,6 +178,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       // Different student logged in - clear previous data
       setSubjectStats({});
       setTodayAttendance({});
+      setAttendanceIds({});
       hasLoadedDataRef.current = false;
     }
     
@@ -210,17 +214,21 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         
         // Convert attendance records to the format expected by the frontend
         const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
+        const idsMap: Record<string, number | null> = {};
         data.todayAttendance?.forEach((record: any) => {
           const slotKey = `${record.lectureDate}-${record.subjectId}`;
           attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
+          idsMap[slotKey] = record.attendanceId || null;
         });
         setTodayAttendance(attendanceMap);
+        setAttendanceIds(idsMap);
         hasLoadedDataRef.current = true;
       } else {
         // Only clear on error if we haven't loaded data yet, or if it's a 401 (unauthorized)
         if (!hasLoadedDataRef.current || response.status === 401) {
           setSubjectStats({});
           setTodayAttendance({});
+          setAttendanceIds({});
           hasLoadedDataRef.current = false;
         }
       }
@@ -231,6 +239,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       if (!hasLoadedDataRef.current) {
         setSubjectStats({});
         setTodayAttendance({});
+        setAttendanceIds({});
       }
     } finally {
       if (!silent) {
@@ -313,13 +322,17 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [fetchTimetable]);
 
   const markAttendance = useCallback(async (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => {
-    // Frontend guard: do not allow marking attendance for future dates
+    // Frontend guard: only allow "cancelled" for future dates, block "present" and "absent"
     try {
       const lectureDay = startOfDay(parseISO(date));
       const today = startOfDay(new Date());
       if (isAfter(lectureDay, today)) {
-        toast.error("You can't mark attendance for a future date");
-        return;
+        // Allow cancelled for future dates
+        if (status !== 'cancelled') {
+          toast.error("You can only mark lectures as 'cancelled' for future dates");
+          return;
+        }
+        // If status is cancelled, continue to mark it
       }
     } catch {
       // If parsing fails, allow request; backend should validate
@@ -327,13 +340,43 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     const slotKey = `${date}-${subjectId}`;
     const previousStatus = todayAttendance[slotKey];
+    const attendanceId = attendanceIds[slotKey];
     
     setSavingState({ subjectId, action: status });
     
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
+      // Delete from backend if we have the attendance ID
+      if (attendanceId) {
+        try {
+          const deleteResponse = await fetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(attendanceId.toString()), {
+            method: 'DELETE',
+            credentials: 'include',
+          });
+
+          if (!deleteResponse.ok) {
+            throw new Error('Failed to delete attendance');
+          }
+          
+        } catch (error: any) {
+          console.error('Error deleting attendance:', error);
+          toast.error('Failed to unmark attendance');
+          setSavingState(null);
+          return;
+        }
+      } else {
+        // If no attendance ID, just clear local state (shouldn't happen, but handle gracefully)
+        toast.info('Attendance cleared');
+      }
+
       // Mark as null (cleared) and refresh from backend
       setTodayAttendance(prev => {
+        const updated = { ...prev };
+        delete updated[slotKey];
+        return updated;
+      });
+      
+      setAttendanceIds(prev => {
         const updated = { ...prev };
         delete updated[slotKey];
         return updated;
@@ -371,6 +414,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setTodayAttendance(prev => {
         return { ...prev, [slotKey]: status };
       });
+      
+      // Store attendance ID for future deletion
+      if (result.attendanceId) {
+        setAttendanceIds(prev => {
+          return { ...prev, [slotKey]: result.attendanceId };
+        });
+      }
       
       // Refresh attendance data from backend to get updated stats (silent - no loading UI)
       await fetchAttendanceData(date, true);

@@ -14,6 +14,7 @@ interface AttendanceMarkerProps {
   onMarkAbsent: () => void;
   onMarkCancelled: () => void;
   disabled?: boolean;
+  disablePresentAbsent?: boolean; // Disable present/absent buttons (e.g., for future dates)
   needsAttention?: boolean;
   attendancePercent?: number;
   isLoading?: boolean;
@@ -32,6 +33,7 @@ export function AttendanceMarker({
   onMarkAbsent,
   onMarkCancelled,
   disabled = false,
+  disablePresentAbsent = false,
   needsAttention = false,
   attendancePercent,
   isLoading = false,
@@ -131,16 +133,18 @@ export function AttendanceMarker({
               <ActionButton
                 active={status === "present"}
                 onClick={onMarkPresent}
-                disabled={isInteractionDisabled}
+                disabled={isInteractionDisabled || disablePresentAbsent}
                 variant="present"
                 isSaving={savingAction === "present"}
+                disabledReason={disablePresentAbsent ? "Only 'cancelled' allowed for future dates" : undefined}
               />
               <ActionButton
                 active={status === "absent"}
                 onClick={onMarkAbsent}
-                disabled={isInteractionDisabled}
+                disabled={isInteractionDisabled || disablePresentAbsent}
                 variant="absent"
                 isSaving={savingAction === "absent"}
+                disabledReason={disablePresentAbsent ? "Only 'cancelled' allowed for future dates" : undefined}
               />
               <ActionButton
                 active={status === "cancelled"}
@@ -188,12 +192,14 @@ function ActionButton({
   disabled,
   variant,
   isSaving = false,
+  disabledReason,
 }: {
   active: boolean;
   onClick: () => void;
   disabled?: boolean;
   variant: "present" | "absent" | "cancelled";
   isSaving?: boolean;
+  disabledReason?: string;
 }) {
   const Icon = variant === "present" ? Check : variant === "absent" ? X : Ban;
 
@@ -223,6 +229,13 @@ function ActionButton({
     return variantStyles[variant].inactive;
   };
 
+  const getTitle = () => {
+    if (disabledReason) return disabledReason;
+    if (variant === "cancelled") return "Mark as Cancelled";
+    if (variant === "present") return "Mark as Present";
+    return "Mark as Absent";
+  };
+
   return (
     <button
       onClick={onClick}
@@ -232,13 +245,7 @@ function ActionButton({
         getButtonStyle(),
         disabled && !isSaving && "pointer-events-none opacity-50"
       )}
-      title={
-        variant === "cancelled"
-          ? "Lecture Cancelled"
-          : variant === "present"
-          ? "Present"
-          : "Absent"
-      }
+      title={getTitle()}
     >
       {isSaving ? (
         <Loader2 className="w-4 h-4 lg:w-5 lg:h-5 animate-spin" />
