@@ -3,7 +3,7 @@ import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG } from "@/lib/api";
 import { useAuth } from "./AuthContext";
-import { hexToHsl } from "@/lib/utils";
+import { hexToHslLightened } from "@/lib/utils";
 import { toast } from "sonner";
 import { isAfter, parseISO, startOfDay } from "date-fns";
 
@@ -71,7 +71,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           code: s.subjectCode,
           name: s.subjectName,
           lecturePlace: s.lecturePlace ?? null,
-          color: hexToHsl(s.color || "#3B82F6"),
+          color: hexToHslLightened(s.color || "#3B82F6"),
           minimumCriteria: s.minimumCriteria ?? null,
         }));
         setEnrolledSubjectsState(subjects);
