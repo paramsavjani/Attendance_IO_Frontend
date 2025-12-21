@@ -77,7 +77,7 @@ export function AttendanceMarker({
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className={cn(
-                "text-base font-semibold leading-none tracking-tight truncate pr-2",
+                "text-base font-semibold leading-none tracking-tight truncate pr-2 pt-1",
                 isCurrent ? "text-primary" : "text-white"
               )}>
                 {subjectName}
@@ -100,22 +100,19 @@ export function AttendanceMarker({
 
         {/* Percentage Badge */}
         {attendancePercent !== undefined && (
-          <div className="flex flex-col items-end pl-3">
+          <div className="flex flex-col items-end pl-3 pt-1">
             <div className={cn(
               "text-lg font-bold tabular-nums leading-none tracking-tight",
               getPercentColor(attendancePercent)
             )}>
               {displayPercent}<span className="text-xs opacity-60 ml-0.5">%</span>
             </div>
-            <div className="text-[10px] text-neutral-500 font-medium mt-0.5 uppercase tracking-wide">
-              Attd.
-            </div>
           </div>
         )}
       </div>
 
       {/* Actions Section */}
-      <div className="flex items-center justify-between px-3 py-2 pt-0 pb-1.5 bg-gradient-to-t from-black/20 to-transparent">
+      <div className="flex items-center justify-between px-3 py-2 pt-1 pb-1.5 bg-gradient-to-t from-black/20 to-transparent">
 
         {/* Lecture Place & Time (Replaces Status Text) */}
         <div className="flex-1 flex flex-col justify-center min-w-0 pr-3 pl-[1.375rem]">
