@@ -42,94 +42,126 @@ export function AttendanceMarker({
   const isSaving = savingAction !== null;
   const isInteractionDisabled = disabled || isSaving;
 
+  // Format percentage nicely
+  const displayPercent = attendancePercent !== undefined ? attendancePercent.toFixed(0) : null;
+
+  // Determine color for percentage
+  const getPercentColor = (percent: number) => {
+    if (percent >= 75) return "text-emerald-400";
+    if (percent >= 65) return "text-yellow-400";
+    return "text-red-400";
+  };
+
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-xl overflow-hidden",
-        "bg-neutral-900 border border-white/5",
-        "transition-all duration-200",
-        isCurrent && "ring-1 ring-primary/40 bg-primary/5",
+        "relative flex flex-col md:flex-row md:items-center rounded-2xl overflow-hidden",
+        "bg-neutral-900/50 border border-white/5 backdrop-blur-sm",
+        "transition-all duration-300 group",
+        isCurrent ? "ring-1 ring-primary/40 bg-primary/5 shadow-[0_0_30px_-10px_bg-primary/20]" : "hover:bg-white/[0.02]",
         needsAttention && !isCurrent && "ring-1 ring-warning/40"
       )}
     >
-      {/* Left color indicator */}
-      <div className="flex items-center pl-3">
-        <div
-          className="w-1 rounded-full h-10"
-          style={{ backgroundColor: `hsl(${color})` }}
-        />
-      </div>
 
-      {/* Content */}
-      <div className="flex flex-1 items-center justify-between px-3 py-2.5 min-w-0">
-        {/* Text section */}
-        <div className="min-w-0 flex-1 pr-3">
-          <div className="flex items-center gap-2">
-            <p
-              className={cn(
-                "text-sm font-semibold line-clamp-1",
+      {/* Mobile Top Row: Color Dot + Subject Name + Time */}
+      <div className="flex items-start justify-between p-2.5 pb-1 md:p-3 md:pl-5 md:flex-1 md:items-center md:pb-3">
+        <div className="flex items-start gap-3 min-w-0">
+          {/* Color Dot (visible on mobile only/mostly) */}
+          <div
+            className="w-2.5 h-2.5 rounded-full mt-1.5 md:hidden flex-shrink-0 shadow-[0_0_8px] shadow-current transition-opacity"
+            style={{ color: `hsl(${color})`, backgroundColor: `hsl(${color})` }}
+          />
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className={cn(
+                "text-base font-semibold leading-none tracking-tight truncate pr-2",
                 isCurrent ? "text-primary" : "text-white"
+              )}>
+                {subjectName}
+              </h3>
+              {isCurrent && (
+                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold tracking-wider animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                  LIVE
+                </span>
               )}
-            >
-              {subjectName}
-            </p>
-            {isCurrent && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold tracking-wide flex-shrink-0">
-                LIVE
-              </span>
-            )}
-          </div>
+            </div>
 
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {subjectCode && (
-              <span className="text-[11px] text-neutral-400 font-medium">
-                {subjectCode}
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-neutral-400 font-medium">
+              {subjectCode && (
+                <span className="opacity-80">{subjectCode}</span>
+              )}
+              {lecturePlace && (
+                <>
+                  <span className="w-1 h-1 rounded-full bg-neutral-700" />
+                  <span>{lecturePlace}</span>
+                </>
+              )}
+              <span className="md:hidden flex items-center gap-1.5 text-neutral-500">
+                <span className="w-1 h-1 rounded-full bg-neutral-700" />
+                {time}
               </span>
-            )}
-            {lecturePlace && (
-              <span className="text-[11px] text-neutral-500">
-                • {lecturePlace}
-              </span>
-            )}
-            {time && (
-              <span className="text-[11px] text-neutral-500">
-                • {time}
-              </span>
-            )}
-            {needsAttention && !isCurrent && (
-              <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-semibold ml-1">
-                <AlertTriangle className="w-2.5 h-2.5" />
-                Low
-              </span>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Attendance percent for disabled/future views */}
-          {attendancePercent !== undefined && disabled && !isLoading && (
-            <span
-              className={cn(
-                "mr-2 text-xs font-medium",
-                attendancePercent >= 75
-                  ? "text-emerald-400"
-                  : "text-red-400"
-              )}
-            >
-              {attendancePercent.toFixed(0)}%
+        {/* Percentage Badge (Mobile & Desktop) */}
+        {attendancePercent !== undefined && (
+          <div className="flex flex-col items-end pl-3">
+            <div className={cn(
+              "text-lg font-bold tabular-nums leading-none tracking-tight",
+              getPercentColor(attendancePercent)
+            )}>
+              {displayPercent}<span className="text-xs opacity-60 ml-0.5">%</span>
+            </div>
+            <div className="text-[10px] text-neutral-500 font-medium mt-0.5 uppercase tracking-wide">
+              Attd.
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Time - Hidden on mobile */}
+      <div className="hidden md:flex items-center text-sm text-neutral-400 font-medium px-4 border-l border-white/5 h-10">
+        {time}
+      </div>
+
+      {/* Actions Section */}
+      <div className="flex items-center justify-between p-2.5 pt-0 pb-1.5 md:p-3 md:pl-4 md:border-l md:border-white/5 bg-gradient-to-t from-black/20 to-transparent md:bg-none">
+
+        {/* Status Text (visible if marked) */}
+        <div className="flex-1 md:hidden">
+          {status && (
+            <span className={cn(
+              "text-xs font-semibold px-2 py-1 rounded-md capitalize inline-flex items-center gap-1.5",
+              status === 'present' && "bg-emerald-500/10 text-emerald-400",
+              status === 'absent' && "bg-red-500/10 text-red-400",
+              status === 'cancelled' && "bg-yellow-500/10 text-yellow-400",
+            )}>
+              <span className={cn("w-1.5 h-1.5 rounded-full",
+                status === 'present' ? "bg-emerald-400" :
+                  status === 'absent' ? "bg-red-400" : "bg-yellow-400"
+              )} />
+              {status}
             </span>
           )}
+          {!status && (
+            <span className="text-xs text-neutral-600 font-medium italic">
+              Not marked yet
+            </span>
+          )}
+        </div>
 
-          {/* Loading skeleton for buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
           {isLoading ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
               <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
               <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <ActionButton
                 active={status === "present"}
                 onClick={onMarkPresent}
@@ -204,7 +236,7 @@ function ActionButton({
   const Icon = variant === "present" ? Check : variant === "absent" ? X : Ban;
 
   const baseStyles = "h-10 w-10 lg:h-11 lg:w-11 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
-  
+
   const variantStyles = {
     present: {
       active: "bg-emerald-500 text-black",
