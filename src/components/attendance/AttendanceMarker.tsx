@@ -63,8 +63,6 @@ export function AttendanceMarker({
       )}
     >
 
-
-      {/* Top Row: Color Dot + Subject Name + Time */}
       {/* Top Row: Color Dot + Subject Name + Time */}
       <div className="flex items-start justify-between px-3 py-2 pb-0.5">
         <div className="flex items-start gap-3 min-w-0">
@@ -127,7 +125,7 @@ export function AttendanceMarker({
           )}
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+        <div className="flex items-center gap-2 flex-shrink-1 ml-auto">
           {isLoading ? (
             <div className="flex items-center gap-2">
               <Skeleton className="h-10 w-10 rounded-xl bg-neutral-800" />
@@ -209,7 +207,7 @@ function ActionButton({
 }) {
   const Icon = variant === "present" ? Check : variant === "absent" ? X : Ban;
 
-  const baseStyles = "h-10 w-10 lg:h-11 lg:w-11 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
+  const baseStyles = "h-9 w-9 lg:h-11 lg:w-11 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 relative";
 
   const variantStyles = {
     present: {
