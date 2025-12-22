@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
@@ -8,6 +9,7 @@ import { SemesterSelector, availableSemesters, Semester } from "@/components/fil
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
 import { hexToHslLightened } from "@/lib/utils";
+import { Capacitor } from "@capacitor/core";
 
 interface Student {
   id: string;
@@ -53,6 +55,9 @@ interface StudentAttendanceData {
 
 
 export default function Search() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const studentIdParam = searchParams.get("studentId");
+  
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
@@ -61,6 +66,62 @@ export default function Search() {
   const [attendanceData, setAttendanceData] = useState<StudentAttendanceData | null>(null);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [currentSemester, setCurrentSemester] = useState<{ year: number; type: string } | null>(null);
+
+  // Handle browser/Capacitor back button
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      // Browser: URL params handle navigation automatically
+      return;
+    }
+
+    // Capacitor: Handle hardware back button
+    let removeListener: (() => Promise<void>) | undefined;
+
+    (async () => {
+      const { App } = await import("@capacitor/app");
+      
+      removeListener = await App.addListener("backButton", ({ canGoBack }) => {
+        if (studentIdParam) {
+          // If viewing a profile, go back to search results
+          setSearchParams((prev) => {
+            const newParams = new URLSearchParams(prev);
+            newParams.delete("studentId");
+            return newParams;
+          });
+        } else if (canGoBack) {
+          // Otherwise, let the default behavior handle it
+          window.history.back();
+        }
+      });
+    })();
+
+    return () => {
+      removeListener?.();
+    };
+  }, [studentIdParam, setSearchParams]);
+
+  // Sync selectedStudent with URL parameter
+  useEffect(() => {
+    if (studentIdParam) {
+      // Find the student from the current students list
+      const student = students.find(s => s.id === studentIdParam);
+      if (student) {
+        setSelectedStudent(student);
+      } else if (students.length > 0) {
+        // Student ID in URL but not in current search results - clear it
+        // This can happen if user navigated via browser history
+        setSearchParams((prev) => {
+          const newParams = new URLSearchParams(prev);
+          newParams.delete("studentId");
+          return newParams;
+        });
+      }
+      // If students.length === 0, we might still be loading or haven't searched yet
+      // Don't clear the param in that case - wait for search to complete
+    } else {
+      setSelectedStudent(null);
+    }
+  }, [studentIdParam, students, setSearchParams]);
 
   // Fetch current semester on mount
   useEffect(() => {
@@ -195,7 +256,13 @@ export default function Search() {
           {/* Back button */}
           <button
             onClick={() => {
-              setSelectedStudent(null);
+              // Remove studentId from URL to go back to search results
+              // This works with browser history - when URL changes, browser history is updated
+              setSearchParams((prev) => {
+                const newParams = new URLSearchParams(prev);
+                newParams.delete("studentId");
+                return newParams;
+              });
               setSelectedSemester(null);
             }}
             className="flex items-center gap-2 text-muted-foreground text-sm"
@@ -392,7 +459,14 @@ export default function Search() {
             {students.map((student) => (
               <button
                 key={student.id}
-                onClick={() => setSelectedStudent(student)}
+                onClick={() => {
+                  // Update URL with studentId to maintain browser history
+                  setSearchParams((prev) => {
+                    const newParams = new URLSearchParams(prev);
+                    newParams.set("studentId", student.id);
+                    return newParams;
+                  });
+                }}
                 className="bg-card rounded-xl p-4 border border-border flex items-center gap-3 text-left w-full active:scale-98 transition-transform"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
