@@ -13,9 +13,22 @@ android {
         applicationId "com.attendanceio.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Version can be overridden via gradle.properties
-        versionCode project.findProperty('VERSION_CODE')?.toInteger() ?: 1
-        versionName project.findProperty('VERSION_NAME') ?: "1.0"
+        // Version can be overridden via gradle.properties or -P command line properties
+        // Check both project properties and system properties
+        def versionCodeProp = project.findProperty('VERSION_CODE') ?: System.getProperty('VERSION_CODE')
+        def versionNameProp = project.findProperty('VERSION_NAME') ?: System.getProperty('VERSION_NAME')
+        
+        versionCode versionCodeProp?.toInteger() ?: 1
+        versionName versionNameProp ?: "1.0"
+        
+        // Debug output
+        println "=== Version Configuration ==="
+        println "VERSION_CODE property: ${versionCodeProp}"
+        println "VERSION_NAME property: ${versionNameProp}"
+        println "Final versionCode: ${versionCode}"
+        println "Final versionName: ${versionName}"
+        println "=============================="
+        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
