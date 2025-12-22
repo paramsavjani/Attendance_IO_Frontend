@@ -389,20 +389,6 @@ export default function Timetable() {
                       </div>
                     </button>
                   ))}
-                  
-                  {selectedSlot && getSlotSubject(selectedSlot.day, selectedSlot.timeSlot) && (
-                    <div className="pt-1.5 mt-1.5 border-t border-border">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 h-8 text-xs"
-                        onClick={() => handleAssignSubject(null)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Remove from slot
-                      </Button>
-                    </div>
-                  )}
                 </>
               )}
             </div>
