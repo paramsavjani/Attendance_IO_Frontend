@@ -95,6 +95,26 @@ jobs:
         working-directory: android
         run: ./gradlew assembleRelease
 
+      - name: Find APK file
+        id: find_apk
+        working-directory: android/app/build/outputs/apk/release
+        run: |
+          APK_FILE=$(ls -1 AttendanceIo-*.apk 2>/dev/null | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: APK file not found"
+            ls -la
+            exit 1
+          fi
+          echo "apk_file=$APK_FILE" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK_FILE"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: android/app/build/outputs/apk/release/${{ steps.find_apk.outputs.apk_file }}
+          retention-days: 30
+
       - name: Get version info
         id: version
         working-directory: android/app
@@ -104,33 +124,11 @@ jobs:
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
 
-      - name: Find APK file
-        id: find_apk
-        working-directory: android/app/build/outputs/apk/release
-        run: |
-          APK_FILE=$(ls AttendanceIo-*.apk 2>/dev/null | head -1)
-          if [ -z "$APK_FILE" ]; then
-            echo "Error: APK file not found. Listing directory contents:"
-            ls -la
-            exit 1
-          fi
-          echo "apk_file=$APK_FILE" >> $GITHUB_OUTPUT
-          echo "apk_path=android/app/build/outputs/apk/release/$APK_FILE" >> $GITHUB_OUTPUT
-          echo "Found APK: $APK_FILE"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: ${{ steps.find_apk.outputs.apk_path }}
-          retention-days: 30
-          if-no-files-found: error
-
       - name: Create Release
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ steps.find_apk.outputs.apk_path }}
+          files: android/app/build/outputs/apk/release/${{ steps.find_apk.outputs.apk_file }}
           tag_name: ${{ steps.version.outputs.version_name }}-${{ github.run_number }}
           name: Release ${{ steps.version.outputs.version_name }}-${{ github.run_number }}
           body: |
