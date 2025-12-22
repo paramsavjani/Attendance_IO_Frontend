@@ -255,10 +255,10 @@ export default function Profile() {
 
   return (
     <AppLayout>
-      <div className="space-y-5">
+      <div className="space-y-3">
         {/* Profile Header */}
-        <div className="flex flex-col items-center text-center pt-4">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 overflow-hidden">
+        <div className="flex flex-col items-center text-center pt-2">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2 overflow-hidden">
             {student?.pictureUrl ? (
               <img 
                 src={student.pictureUrl} 
@@ -266,64 +266,62 @@ export default function Profile() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User className="w-10 h-10 text-primary" />
+              <User className="w-8 h-8 text-primary" />
             )}
           </div>
-          <h1 className="text-xl font-bold">{student?.name}</h1>
-          <p className="text-muted-foreground">{student?.rollNumber}</p>
+          <h1 className="text-lg font-bold">{student?.name}</h1>
+          <p className="text-sm text-muted-foreground">{student?.rollNumber}</p>
         </div>
 
         {/* Current Semester Info */}
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-primary" />
+        <div className="bg-card rounded-xl p-3 border border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Current Term</p>
+              <p className="text-xs text-muted-foreground">Current Term</p>
               {isLoadingSemester ? (
-                <p className="font-semibold">Loading...</p>
+                <p className="font-semibold text-sm">Loading...</p>
               ) : currentSemester ? (
-                <p className="font-semibold">
+                <p className="font-semibold text-sm">
                   {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
                 </p>
               ) : (
-                <p className="font-semibold text-muted-foreground">No active semester</p>
+                <p className="font-semibold text-sm text-muted-foreground">No active semester</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Info Cards */}
-        <div className="space-y-2">
-          <button 
-            onClick={() => setShowSubjectEditor(true)}
-            className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium">My Subjects</p>
-              <p className="text-sm text-muted-foreground">{enrolledSubjects.length} subjects enrolled</p>
-            </div>
-            <Edit className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
+        <button 
+          onClick={() => setShowSubjectEditor(true)}
+          className="w-full bg-card rounded-xl p-3 border border-border flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-sm">My Subjects</p>
+            <p className="text-xs text-muted-foreground">{enrolledSubjects.length} subjects enrolled</p>
+          </div>
+          <Edit className="w-4 h-4 text-muted-foreground" />
+        </button>
 
         {/* Sleep Duration - Compact Mobile Optimized */}
-        <div className="bg-card rounded-xl p-4 border border-border">
+        <div className="bg-card rounded-xl p-3 border border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Moon className="w-5 h-5 text-primary" />
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Moon className="w-4 h-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm">Sleep Duration</p>
               {isLoadingSleepDuration ? (
                 <p className="text-xs text-muted-foreground">Loading...</p>
               ) : isEditingSleepDuration ? (
-                <div className="flex items-center gap-2 mt-1.5">
-                  <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-2 py-1">
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-2 py-0.5">
                     <Input
                       type="number"
                       min="4"
@@ -331,7 +329,7 @@ export default function Profile() {
                       value={editingSleepHours}
                       onChange={(e) => setEditingSleepHours(e.target.value)}
                       placeholder="8"
-                      className="w-12 h-7 text-center text-sm font-semibold border-0 bg-transparent p-0 focus-visible:ring-0"
+                      className="w-10 h-6 text-center text-sm font-semibold border-0 bg-transparent p-0 focus-visible:ring-0"
                       disabled={isSavingSleepDuration}
                     />
                     <span className="text-xs text-muted-foreground">hrs</span>
@@ -342,18 +340,18 @@ export default function Profile() {
                       variant="ghost"
                       onClick={handleSaveSleepDuration}
                       disabled={isSavingSleepDuration}
-                      className="h-7 w-7 p-0 text-primary hover:bg-primary/10"
+                      className="h-6 w-6 p-0 text-primary hover:bg-primary/10"
                     >
-                      <Save className="w-3.5 h-3.5" />
+                      <Save className="w-3 h-3" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={handleCancelEditSleepDuration}
                       disabled={isSavingSleepDuration}
-                      className="h-7 w-7 p-0 text-muted-foreground hover:bg-muted"
+                      className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
@@ -368,9 +366,9 @@ export default function Profile() {
                 size="sm"
                 variant="ghost"
                 onClick={handleEditSleepDuration}
-                className="h-8 w-8 p-0 flex-shrink-0"
+                className="h-7 w-7 p-0 flex-shrink-0"
               >
-                <Edit className="w-4 h-4 text-muted-foreground" />
+                <Edit className="w-3.5 h-3.5 text-muted-foreground" />
               </Button>
             )}
           </div>
@@ -380,14 +378,14 @@ export default function Profile() {
         {enrolledSubjects.length > 0 && (
           <button
             onClick={() => setShowCriteriaModal(true)}
-            className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
+            className="w-full bg-card rounded-xl p-3 border border-border flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Target className="w-5 h-5 text-primary" />
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <Target className="w-4 h-4 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium">Minimum Criteria</p>
-              <p className="text-sm text-muted-foreground">Set attendance targets by subject</p>
+              <p className="font-medium text-sm">Minimum Criteria</p>
+              <p className="text-xs text-muted-foreground">Set attendance targets by subject</p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -396,14 +394,14 @@ export default function Profile() {
         {/* Feedback & Bugs */}
         <button
           onClick={() => setShowFeedbackModal(true)}
-          className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
+          className="w-full bg-card rounded-xl p-3 border border-border flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
         >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-primary" />
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+            <MessageSquare className="w-4 h-4 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="font-medium">Feedback & Bugs</p>
-            <p className="text-sm text-muted-foreground">Help us improve the app</p>
+            <p className="font-medium text-sm">Feedback & Bugs</p>
+            <p className="text-xs text-muted-foreground">Help us improve the app</p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -412,16 +410,16 @@ export default function Profile() {
         <Button
           variant="destructive"
           onClick={handleLogout}
-          className="w-full py-6 rounded-xl"
+          className="w-full py-5 rounded-xl"
         >
-          <LogOut className="w-5 h-5 mr-2" />
+          <LogOut className="w-4 h-4 mr-2" />
           Logout
         </Button>
 
         {/* Creator Credit */}
-        <div className="flex items-center justify-center gap-1.5 pt-4 pb-2">
+        <div className="flex items-center justify-center gap-1.5 pt-2 pb-1">
           <span className="text-xs text-muted-foreground">Made with</span>
-          <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse" />
+          <Heart className="w-3 h-3 text-red-500 fill-red-500 animate-pulse" />
           <span className="text-xs text-muted-foreground">by</span>
           <span className="text-xs font-medium text-foreground">Param Savjani</span>
         </div>
