@@ -5,14 +5,11 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { AttendanceMarker, AttendanceMarkerSkeleton } from "@/components/attendance/AttendanceMarker";
-import { EmptySlot } from "@/components/attendance/EmptySlot";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, CalendarDays, Sun, Sunrise, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
 import {
@@ -171,23 +168,31 @@ export default function Dashboard() {
     }
   };
 
+  // Count classes for today
+  const todayClasses = schedule.filter(s => s.subject).length;
+  const markedClasses = schedule.filter(s => {
+    if (!s.subject) return false;
+    const slotKey = `${dateKey}-${s.subject.id}`;
+    return todayAttendance[slotKey];
+  }).length;
+
   return (
     <AppLayout>
-      <div className="space-y-3 pb-4">
-        {/* Compact Header with Date */}
-        <div className="flex items-center justify-between pt-2">
+      <div className="min-h-screen pb-6">
+        {/* Header - matching timetable style */}
+        <div className="flex items-center justify-between mb-5">
           <div>
             <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">
               {format(now, "EEEE, MMM d")}
             </p>
-            <h1 className="text-lg font-bold">
+            <h1 className="text-lg font-semibold">
               Hi, {student?.name?.split(" ")[0]} {student?.name?.split(" ")[1]}
             </h1>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <button className="w-9 h-9 rounded-lg bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors">
+                <button className="p-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
                   <CalendarSearch className="w-4 h-4 text-muted-foreground" />
                 </button>
               </PopoverTrigger>
@@ -219,7 +224,6 @@ export default function Dashboard() {
               value="schedule" 
               className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
             >
-              <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
               Schedule
             </TabsTrigger>
             <TabsTrigger 
@@ -230,12 +234,25 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="schedule" className="mt-3 space-y-3">
-            {/* Inline Date Navigation */}
-            <div className="flex items-center justify-between bg-card/50 rounded-xl px-2 py-0.5 border border-border/30">
+          <TabsContent value="schedule" className="mt-4 space-y-4">
+            {/* Stats Row - matching timetable */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-2xl font-bold">{todayClasses}</span>
+                <span className="text-xs text-muted-foreground">classes</span>
+              </div>
+              <div className="w-px h-4 bg-border" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-2xl font-bold text-muted-foreground">{markedClasses}</span>
+                <span className="text-xs text-muted-foreground">marked</span>
+              </div>
+            </div>
+
+            {/* Date Navigation - matching timetable pill style */}
+            <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-1">
               <button
                 onClick={() => navigateDate("prev")}
-                className="w-8 h-8 rounded-lg hover:bg-secondary/50 flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full hover:bg-secondary flex items-center justify-center transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -250,13 +267,13 @@ export default function Dashboard() {
               
               <button
                 onClick={() => navigateDate("next")}
-                className="w-8 h-8 rounded-lg hover:bg-secondary/50 flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full hover:bg-secondary flex items-center justify-center transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Compact Notice */}
+            {/* Compact Notices */}
             {isSelectedTomorrow && showingTomorrowByDefault && (
               <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/20">
                 <Sunrise className="w-4 h-4 text-primary flex-shrink-0" />
@@ -297,69 +314,198 @@ export default function Dashboard() {
             {!isBeforeStartDate && schedule.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                  <CalendarDays className="w-6 h-6 text-muted-foreground/50" />
+                  <BookOpen className="w-6 h-6 text-muted-foreground/50" />
                 </div>
                 <p className="font-medium text-sm text-muted-foreground">No classes</p>
                 <p className="text-xs text-muted-foreground/70 mt-0.5">Enjoy your day off!</p>
               </div>
             )}
 
-            {/* Schedule List - Always 5 fixed slots */}
-            {!isBeforeStartDate && (
-            <div className="space-y-2">
-              {isLoadingAttendance && schedule.length > 0 ? (
-                // Show skeleton loaders while loading attendance data
-                schedule.map((slot, index) => (
-                  slot.subject ? (
-                    <AttendanceMarkerSkeleton key={index} />
+            {/* Timeline Schedule - matching timetable structure */}
+            {!isBeforeStartDate && schedule.length > 0 && (
+              <div className="relative">
+                {/* Vertical line */}
+                <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
+
+                <div className="space-y-0">
+                  {isLoadingAttendance ? (
+                    // Loading skeleton
+                    schedule.map((slot, index) => (
+                      <div key={index} className="relative flex items-stretch gap-3 min-h-[72px]">
+                        <div className="flex flex-col items-center w-3 flex-shrink-0">
+                          <div className="flex-1" />
+                          <div className="w-3 h-3 rounded-full bg-muted-foreground/30 animate-pulse" />
+                          <div className="flex-1" />
+                        </div>
+                        <div className="w-10 flex-shrink-0 flex flex-col justify-center">
+                          <div className="h-4 w-10 bg-muted rounded animate-pulse" />
+                          <div className="h-2.5 w-8 bg-muted rounded mt-1 animate-pulse" />
+                        </div>
+                        <div className="flex-1 py-1.5">
+                          <div className="bg-card border border-border rounded-xl p-3 h-full animate-pulse">
+                            <div className="h-4 w-24 bg-muted rounded mb-1" />
+                            <div className="h-3 w-16 bg-muted rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    ))
                   ) : (
-                    <EmptySlot key={index} time={slot.time} slotNumber={slot.slotIndex + 1} />
-                  )
-                ))
-              ) : (
-                schedule.map((slot, index) => {
-                  // Empty slot - no subject
-                  if (!slot.subject) {
-                    return <EmptySlot key={index} time={slot.time} slotNumber={slot.slotIndex + 1} />;
-                  }
-                  
-                  const startHour = parseInt(slot.time.split(":")[0]);
-                  const isCurrent = isSelectedToday && startHour === currentHour;
-                  const slotKey = `${dateKey}-${slot.subject.id}`;
-                  const status = todayAttendance[slotKey] || null;
-                  const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
+                    schedule.map((slot, index) => {
+                      const timeStart = slot.time.split(" - ")[0];
+                      const timeEnd = slot.time.split(" - ")[1];
+                      const startHour = parseInt(slot.time.split(":")[0]);
+                      const isCurrent = isSelectedToday && startHour === currentHour;
+                      
+                      if (!slot.subject) {
+                        // Empty slot
+                        return (
+                          <div key={index} className="relative flex items-stretch gap-3 min-h-[56px]">
+                            <div className="flex flex-col items-center w-3 flex-shrink-0">
+                              <div className="flex-1" />
+                              <div className="w-3 h-3 rounded-full bg-muted-foreground/20" />
+                              <div className="flex-1" />
+                            </div>
+                            <div className="w-10 flex-shrink-0 flex flex-col justify-center">
+                              <p className="text-sm font-semibold leading-none text-muted-foreground/50">{timeStart}</p>
+                              <p className="text-[10px] text-muted-foreground/40 mt-0.5">{timeEnd}</p>
+                            </div>
+                            <div className="flex-1 py-1.5 flex items-center">
+                              <p className="text-xs text-muted-foreground/50">Free period</p>
+                            </div>
+                          </div>
+                        );
+                      }
 
-                  return (
-                    <AttendanceMarker
-                      key={index}
-                      subjectName={slot.subject.name}
-                      lecturePlace={slot.subject.lecturePlace}
-                      time={slot.time}
-                      color={slot.subject.color}
-                      isCurrent={isCurrent}
-                      status={status}
-                      onMarkPresent={() => handleMarkAttendance(index, slot.subject!.id, "present")}
-                      onMarkAbsent={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
-                      onMarkCancelled={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
-                      disabled={!canMarkAttendance}
-                      disablePresentAbsent={isFutureDate} // Disable present/absent for future dates
-                      needsAttention={needsAttention}
-                      attendancePercent={percent}
-                      savingAction={savingState?.subjectId === slot.subject.id ? savingState.action : null}
-                    />
-                  );
-                })
-              )}
-            </div>
+                      const slotKey = `${dateKey}-${slot.subject.id}`;
+                      const status = todayAttendance[slotKey] || null;
+                      const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
+                      const isSaving = savingState?.subjectId === slot.subject.id;
+
+                      return (
+                        <div 
+                          key={index} 
+                          className={cn(
+                            "relative flex items-stretch gap-3 min-h-[72px]",
+                            isCurrent && "bg-primary/5 -mx-4 px-4 rounded-xl"
+                          )}
+                        >
+                          {/* Dot */}
+                          <div className="flex flex-col items-center w-3 flex-shrink-0">
+                            <div className="flex-1" />
+                            <div 
+                              className={cn(
+                                "w-3 h-3 rounded-full flex-shrink-0",
+                                status === 'present' ? "bg-emerald-500" :
+                                status === 'absent' ? "bg-destructive" :
+                                status === 'cancelled' ? "bg-muted-foreground" :
+                                isCurrent ? "bg-primary animate-pulse" :
+                                "bg-primary/40"
+                              )} 
+                            />
+                            <div className="flex-1" />
+                          </div>
+
+                          {/* Time */}
+                          <div className="w-10 flex-shrink-0 flex flex-col justify-center">
+                            <p className={cn(
+                              "text-sm font-semibold leading-none",
+                              isCurrent && "text-primary"
+                            )}>{timeStart}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{timeEnd}</p>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 py-1.5">
+                            <div className={cn(
+                              "bg-card border rounded-xl p-3 h-full",
+                              isCurrent ? "border-primary/30" : "border-border"
+                            )}>
+                              {/* Subject info */}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{slot.subject.name}</p>
+                                  <p className="text-xs text-muted-foreground">{slot.subject.lecturePlace || slot.subject.code}</p>
+                                </div>
+                                {needsAttention && (
+                                  <span className="text-[10px] px-1.5 py-0.5 bg-destructive/10 text-destructive rounded-md flex-shrink-0">
+                                    {Math.round(percent)}%
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handleMarkAttendance(index, slot.subject!.id, "present")}
+                                  disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
+                                  className={cn(
+                                    "flex-1 h-8 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1",
+                                    status === 'present'
+                                      ? "bg-emerald-500 text-white"
+                                      : "bg-secondary hover:bg-emerald-500/20 hover:text-emerald-600 disabled:opacity-40 disabled:hover:bg-secondary"
+                                  )}
+                                >
+                                  {isSaving && savingState?.action === 'present' ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3 h-3" />
+                                  )}
+                                  Present
+                                </button>
+                                <button
+                                  onClick={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
+                                  disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
+                                  className={cn(
+                                    "flex-1 h-8 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1",
+                                    status === 'absent'
+                                      ? "bg-destructive text-white"
+                                      : "bg-secondary hover:bg-destructive/20 hover:text-destructive disabled:opacity-40 disabled:hover:bg-secondary"
+                                  )}
+                                >
+                                  {isSaving && savingState?.action === 'absent' ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <X className="w-3 h-3" />
+                                  )}
+                                  Absent
+                                </button>
+                                <button
+                                  onClick={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
+                                  disabled={isSaving}
+                                  className={cn(
+                                    "h-8 w-8 rounded-lg text-xs font-medium transition-all flex items-center justify-center",
+                                    status === 'cancelled'
+                                      ? "bg-muted-foreground text-white"
+                                      : "bg-secondary hover:bg-muted-foreground/20 hover:text-muted-foreground"
+                                  )}
+                                  title="Cancelled"
+                                >
+                                  {isSaving && savingState?.action === 'cancelled' ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Ban className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             )}
-
           </TabsContent>
 
-          <TabsContent value="subjects" className="mt-3 space-y-2">
+          <TabsContent value="subjects" className="mt-4 space-y-2">
             {enrolledSubjects.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-sm text-muted-foreground">No subjects enrolled</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Enroll in subjects to see them here</p>
+                <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="w-6 h-6 text-muted-foreground/50" />
+                </div>
+                <p className="font-medium text-sm text-muted-foreground">No subjects enrolled</p>
+                <p className="text-xs text-muted-foreground/70 mt-0.5">Enroll in subjects to see them here</p>
               </div>
             ) : (
               enrolledSubjects.map((subject) => {
@@ -393,19 +539,19 @@ export default function Dashboard() {
 
       {/* Past Date Warning Dialog */}
       <AlertDialog open={showPastDateWarning} onOpenChange={setShowPastDateWarning}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Update Past Date Attendance?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to update attendance for a past date ({format(selectedDate, "MMM d, yyyy")}). 
-              This will modify historical records. Are you sure you want to continue?
+            <AlertDialogTitle className="text-base">Update Past Attendance?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              You are about to update attendance for {format(selectedDate, "MMM d, yyyy")}. 
+              This will modify historical records.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingAttendance(null)}>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={() => setPendingAttendance(null)} className="h-9 text-sm">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmPastDateAttendance}>
+            <AlertDialogAction onClick={confirmPastDateAttendance} className="h-9 text-sm">
               Yes, Update
             </AlertDialogAction>
           </AlertDialogFooter>
