@@ -3,7 +3,6 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots, days } from "@/data/mockData";
 import { TimetableSlot } from "@/types/attendance";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, ChevronLeft, Loader2, AlertTriangle, Clock, Plus, BookOpen, Trash2, X } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, BookOpen, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
@@ -40,7 +39,6 @@ export default function Timetable() {
     return today === 0 ? 0 : Math.min(today - 1, 4);
   });
 
-  // Fetch timetable from backend
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
@@ -106,7 +104,7 @@ export default function Timetable() {
   };
 
   const handleClearSlot = async (day: number, timeSlot: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent slot click from firing
+    e.stopPropagation();
     
     const updatedTimetable = timetable.filter(
       (slot) => !(slot.day === day && slot.timeSlot === timeSlot)
@@ -161,60 +159,46 @@ export default function Timetable() {
     return timetable.filter(s => s.day === dayIndex && s.subjectId).length;
   };
 
+  const totalWeekClasses = days.reduce((acc, _, idx) => acc + getDaySlotCount(idx), 0);
+
   return (
     <AppLayout>
-      <div className="space-y-4">
+      <div className="min-h-screen pb-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="p-2 -ml-2 hover:bg-secondary/80 rounded-xl transition-all duration-200 active:scale-95"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-              My Timetable
-            </h1>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold">Timetable</h1>
           </div>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5 h-8 text-xs px-3 rounded-xl border-border/50 hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+              <button 
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                 disabled={isSaving}
               >
-                {isSaving ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-3.5 h-3.5" />
-                )}
-                Reset
-              </Button>
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Clear all"}
+              </button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="max-w-[calc(100vw-2rem)] mx-4 rounded-2xl border-border/50 bg-card/95 backdrop-blur-xl">
+            <AlertDialogContent className="max-w-[90vw] rounded-xl">
               <AlertDialogHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-destructive/20 to-destructive/10 flex items-center justify-center flex-shrink-0 border border-destructive/20">
-                    <AlertTriangle className="w-5 h-5 text-destructive" />
-                  </div>
-                  <div>
-                    <AlertDialogTitle className="text-base font-semibold">Reset Timetable?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-sm mt-0.5 text-muted-foreground">
-                      This will clear all scheduled classes.
-                    </AlertDialogDescription>
-                  </div>
-                </div>
+                <AlertDialogTitle className="text-base">Reset Timetable?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                  This will remove all scheduled classes.
+                </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter className="mt-4 gap-2">
-                <AlertDialogCancel className="h-10 rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogFooter className="gap-2">
+                <AlertDialogCancel className="h-9 text-sm">Cancel</AlertDialogCancel>
                 <AlertDialogAction 
                   onClick={handleRegenerate}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 rounded-xl"
+                  className="bg-destructive text-destructive-foreground h-9 text-sm"
                 >
-                  Reset All
+                  Reset
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -222,38 +206,47 @@ export default function Timetable() {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-            <p className="text-sm text-muted-foreground">Loading timetable...</p>
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <>
-            {/* Day Tabs */}
-            <div className="flex gap-1 p-1 bg-secondary/50 rounded-2xl border border-border/30">
+            {/* Stats Row */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-2xl font-bold">{getDaySlotCount(activeDay)}</span>
+                <span className="text-xs text-muted-foreground">today</span>
+              </div>
+              <div className="w-px h-4 bg-border" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-2xl font-bold text-muted-foreground">{totalWeekClasses}</span>
+                <span className="text-xs text-muted-foreground">this week</span>
+              </div>
+            </div>
+
+            {/* Day Pills */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
               {days.map((day, dayIndex) => {
                 const slotCount = getDaySlotCount(dayIndex);
+                const isActive = activeDay === dayIndex;
                 return (
                   <button
                     key={day}
                     onClick={() => setActiveDay(dayIndex)}
                     className={cn(
-                      "flex-1 py-2.5 px-1 rounded-xl text-center transition-all duration-300 relative",
-                      activeDay === dayIndex 
-                        ? "bg-gradient-to-b from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                      "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                      isActive 
+                        ? "bg-foreground text-background" 
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    <span className="text-xs font-semibold">{day.slice(0, 3)}</span>
+                    {day.slice(0, 3)}
                     {slotCount > 0 && (
                       <span className={cn(
-                        "absolute -top-1 -right-0.5 min-w-[18px] h-[18px] text-[10px] font-bold rounded-full flex items-center justify-center px-1",
-                        activeDay === dayIndex 
-                          ? "bg-primary-foreground text-primary shadow-sm" 
-                          : "bg-primary/20 text-primary"
+                        "ml-1.5 text-xs",
+                        isActive ? "text-background/70" : "text-muted-foreground"
                       )}>
-                        {slotCount}
+                        · {slotCount}
                       </span>
                     )}
                   </button>
@@ -261,159 +254,104 @@ export default function Timetable() {
               })}
             </div>
 
-            {/* Time Slots List */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 px-1">
-                <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Clock className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <span className="text-sm font-medium text-foreground">{days[activeDay]}'s Schedule</span>
-              </div>
-              
-              <div className="space-y-2">
+            {/* Timeline */}
+            <div className="relative pl-6">
+              {/* Vertical line */}
+              <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-border rounded-full" />
+
+              <div className="space-y-1">
                 {timeSlots.slice(0, 6).map((time, timeIndex) => {
                   const subject = getSlotSubject(activeDay, timeIndex);
                   const timeStart = time.split(" - ")[0];
                   const timeEnd = time.split(" - ")[1];
                   
                   return (
-                    <button
-                      key={timeIndex}
-                      onClick={() => handleSlotClick(activeDay, timeIndex)}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 text-left group active:scale-[0.98]",
-                        subject
-                          ? "bg-gradient-to-r from-card to-card/80 border border-border/50 hover:border-primary/40 shadow-sm hover:shadow-md hover:shadow-primary/5"
-                          : "bg-secondary/30 border border-dashed border-border/30 hover:border-primary/40 hover:bg-secondary/50"
-                      )}
-                    >
-                      {/* Time Column */}
-                      <div className="w-14 flex-shrink-0">
-                        <p className="text-sm font-bold text-foreground">{timeStart}</p>
-                        <p className="text-[11px] text-muted-foreground">{timeEnd}</p>
+                    <div key={timeIndex} className="relative flex items-start gap-4 py-2">
+                      {/* Dot */}
+                      <div 
+                        className={cn(
+                          "absolute left-[-18px] top-[14px] w-[10px] h-[10px] rounded-full border-2 bg-background",
+                          subject 
+                            ? "border-primary bg-primary" 
+                            : "border-muted-foreground/40"
+                        )} 
+                      />
+
+                      {/* Time */}
+                      <div className="w-11 flex-shrink-0 pt-1">
+                        <p className="text-xs font-medium">{timeStart}</p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">{timeEnd}</p>
                       </div>
 
-                      {/* Slot Number */}
-                      <div className={cn(
-                        "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold transition-all duration-200",
-                        subject 
-                          ? "bg-gradient-to-br from-primary/20 to-primary/10 text-primary border border-primary/20" 
-                          : "bg-muted/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 border border-transparent"
-                      )}>
-                        {timeIndex + 1}
-                      </div>
-
-                      {/* Subject Info */}
-                      <div className="flex-1 min-w-0">
+                      {/* Content */}
+                      <button
+                        onClick={() => handleSlotClick(activeDay, timeIndex)}
+                        className="flex-1 min-w-0 text-left group"
+                      >
                         {subject ? (
-                          <>
-                            <p className="text-sm font-semibold text-foreground truncate">
-                              {subject.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{subject.code}</p>
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                              <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{subject.name}</p>
+                              <p className="text-xs text-muted-foreground">{subject.code}</p>
                             </div>
-                            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                              Add class
-                            </span>
+                            <button
+                              onClick={(e) => handleClearSlot(activeDay, timeIndex, e)}
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="border border-dashed border-border rounded-lg p-3 group-hover:border-muted-foreground/50 transition-colors">
+                            <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                              <Plus className="w-3.5 h-3.5" />
+                              <span className="text-sm">Add class</span>
+                            </div>
                           </div>
                         )}
-                      </div>
-
-                      {/* Clear button for assigned slots */}
-                      {subject && (
-                        <button
-                          onClick={(e) => handleClearSlot(activeDay, timeIndex, e)}
-                          className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all duration-200 flex-shrink-0 border border-transparent hover:border-destructive/20"
-                          title="Clear slot"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </button>
+                      </button>
+                    </div>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="bg-gradient-to-br from-card to-card/80 border border-border/50 rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <BookOpen className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">Today</p>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{getDaySlotCount(activeDay)}</p>
-                <p className="text-[11px] text-muted-foreground">classes</p>
-              </div>
-              <div className="bg-gradient-to-br from-card to-card/80 border border-border/50 rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <Clock className="w-3.5 h-3.5 text-accent" />
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">Week</p>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {days.reduce((acc, _, idx) => acc + getDaySlotCount(idx), 0)}
-                </p>
-                <p className="text-[11px] text-muted-foreground">total classes</p>
               </div>
             </div>
           </>
         )}
 
-        {/* Assignment Dialog */}
+        {/* Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-sm mx-auto rounded-2xl border-border/50 bg-card/95 backdrop-blur-xl">
-            <DialogHeader className="pb-2">
-              <DialogTitle className="text-base flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground">Assign Subject</p>
-                  {selectedSlot && (
-                    <p className="text-xs font-normal text-muted-foreground mt-0.5">
-                      {days[selectedSlot.day]} • Slot {selectedSlot.timeSlot + 1} • {timeSlots[selectedSlot.timeSlot].split(" - ")[0]}
-                    </p>
-                  )}
-                </div>
-              </DialogTitle>
+          <DialogContent className="max-w-sm mx-auto rounded-xl">
+            <DialogHeader>
+              <DialogTitle className="text-base font-semibold">Select Subject</DialogTitle>
+              {selectedSlot && (
+                <p className="text-sm text-muted-foreground">
+                  {days[selectedSlot.day]} · {timeSlots[selectedSlot.timeSlot]}
+                </p>
+              )}
             </DialogHeader>
 
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto py-1">
+            <div className="space-y-1 max-h-[50vh] overflow-y-auto">
               {enrolledSubjects.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 flex items-center justify-center mx-auto mb-3 border border-border/30">
-                    <BookOpen className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground">No enrolled subjects</p>
-                  <p className="text-xs text-muted-foreground mt-1">Please enroll in subjects first</p>
+                  <BookOpen className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No subjects enrolled</p>
                 </div>
               ) : (
-                <>
-                  {enrolledSubjects.map((subject, index) => (
-                    <button
-                      key={subject.id}
-                      onClick={() => handleAssignSubject(subject.id)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/50 active:scale-[0.98] transition-all duration-200 text-left hover:bg-secondary/50 hover:border-primary/30 group"
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0 border border-primary/20 group-hover:from-primary/30 group-hover:to-primary/20 transition-all">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold block truncate text-foreground">{subject.name}</span>
-                        <span className="text-xs text-muted-foreground">{subject.code}</span>
-                      </div>
-                    </button>
-                  ))}
-                </>
+                enrolledSubjects.map((subject) => (
+                  <button
+                    key={subject.id}
+                    onClick={() => handleAssignSubject(subject.id)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
+                      {subject.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{subject.code}</p>
+                    </div>
+                  </button>
+                ))
               )}
             </div>
           </DialogContent>
