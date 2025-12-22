@@ -56,12 +56,18 @@ export function AttendanceMarker({
     <div
       className={cn(
         "relative flex flex-col rounded-2xl overflow-hidden",
-        "bg-neutral-900/50 border border-white/5 backdrop-blur-sm",
-        "transition-all duration-300 group",
-        needsAttention ? "ring-1 ring-warning/40" : 
-        (isCurrent ? "ring-1 ring-primary/40" : "hover:bg-white/[0.02]")
+        "backdrop-blur-sm transition-all duration-300 group",
+        needsAttention 
+          ? "bg-red-500/5 border-2 border-red-500/40 shadow-[0_0_20px_-5px] shadow-red-500/30" 
+          : "bg-neutral-900/50 border border-white/5",
+        !needsAttention && isCurrent && "ring-1 ring-primary/40",
+        !needsAttention && !isCurrent && "hover:bg-white/[0.02]"
       )}
     >
+      {/* Warning indicator strip */}
+      {needsAttention && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-red-500/80 via-orange-500/80 to-red-500/80" />
+      )}
 
       {/* Top Row: Color Dot + Subject Name + LIVE + Percentage (same row) */}
       <div className="flex items-start justify-between px-3 py-2 pb-0.5">
