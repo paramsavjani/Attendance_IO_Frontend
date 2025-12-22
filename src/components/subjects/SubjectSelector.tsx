@@ -337,10 +337,8 @@ export function SubjectSelector({
   const handleGoToTimetable = () => {
     setShowConflictModal(false);
     // Complete the save flow first, then navigate
-    // Use savedSubjects if available, otherwise fall back to selected
-    const subjectsToUse = savedSubjects.length > 0 ? savedSubjects : selected;
-    toast.warning(`Enrolled in ${subjectsToUse.length} subjects, but some timetable conflicts need resolution`);
-    onSave(subjectsToUse, true);
+    toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
+    onSave(selected, true);
     // Only navigate if NOT in onboarding mode (onboarding will handle navigation after sleep dialog)
     if (!isOnboarding) {
       // Navigate after a small delay to let the dialog close
@@ -353,10 +351,8 @@ export function SubjectSelector({
   const handleDismissConflicts = () => {
     setShowConflictModal(false);
     // Complete the save flow when user dismisses
-    // Use savedSubjects if available, otherwise fall back to selected
-    const subjectsToUse = savedSubjects.length > 0 ? savedSubjects : selected;
-    toast.warning(`Enrolled in ${subjectsToUse.length} subjects, but some timetable conflicts need resolution`);
-    onSave(subjectsToUse, true);
+    toast.warning(`Enrolled in ${selected.length} subjects, but some timetable conflicts need resolution`);
+    onSave(selected, true);
   };
 
   return (
