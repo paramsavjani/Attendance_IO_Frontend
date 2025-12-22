@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history and tags for version calculation
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -91,6 +93,57 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Calculate version
+        id: version
+        run: |
+          # Fetch all tags
+          git fetch --tags --depth=1 origin +refs/tags/*:refs/tags/* || true
+          
+          # Get the latest version tag (format: v1.0.0 or 1.0.0)
+          LATEST_TAG=$(git tag -l "v*" | sort -V | tail -1 || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # No tags found, start with v1.0.0
+            NEW_VERSION_NAME="v1.0.0"
+            echo "No existing tags found, starting with $NEW_VERSION_NAME"
+          else
+            echo "Latest tag: $LATEST_TAG"
+            
+            # Extract version numbers (remove 'v' prefix if present)
+            VERSION_STRING=$(echo "$LATEST_TAG" | sed 's/^v//')
+            
+            # Parse version parts (major.minor.patch)
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_STRING"
+            MAJOR=${MAJOR:-1}
+            MINOR=${MINOR:-0}
+            PATCH=${PATCH:-0}
+            
+            # Increment patch version for new build
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION_NAME="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+          fi
+          
+          # Use GitHub run number as version code (increments with each build)
+          VERSION_CODE=${{ github.run_number }}
+          
+          # Clean version name (without 'v' prefix) for gradle.properties
+          VERSION_NAME_CLEAN=$(echo "$NEW_VERSION_NAME" | sed 's/^v//')
+          
+          echo "version_name=$NEW_VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "version_name_clean=$VERSION_NAME_CLEAN" >> $GITHUB_OUTPUT
+          
+          echo "Calculated version: $NEW_VERSION_NAME (code: $VERSION_CODE)"
+          echo "Version name for APK: $VERSION_NAME_CLEAN"
+
+      - name: Set version in gradle.properties
+        working-directory: android
+        run: |
+          echo "VERSION_NAME=${{ steps.version.outputs.version_name_clean }}" >> gradle.properties
+          echo "VERSION_CODE=${{ steps.version.outputs.version_code }}" >> gradle.properties
+          echo "Version set in gradle.properties:"
+          grep -E "VERSION_" gradle.properties || echo "No VERSION_ properties found"
+
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease
@@ -115,22 +168,13 @@ jobs:
           path: android/app/build/outputs/apk/release/${{ steps.find_apk.outputs.apk_file }}
           retention-days: 30
 
-      - name: Get version info
-        id: version
-        working-directory: android/app
-        run: |
-          VERSION_CODE=$(grep -oP 'versionCode \K\d+' build.gradle || echo "1")
-          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' build.gradle || echo "1.0")
-          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
-          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
-
-      - name: Create Release
+      - name: Create Release and Tag
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         uses: softprops/action-gh-release@v1
         with:
           files: android/app/build/outputs/apk/release/${{ steps.find_apk.outputs.apk_file }}
-          tag_name: ${{ steps.version.outputs.version_name }}-${{ github.run_number }}
-          name: Release ${{ steps.version.outputs.version_name }}-${{ github.run_number }}
+          tag_name: ${{ steps.version.outputs.version_name }}
+          name: Release ${{ steps.version.outputs.version_name }}
           body: |
             Android APK Release
             
