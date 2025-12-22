@@ -413,11 +413,17 @@ export default function Dashboard() {
                                   <p className="text-xs font-medium truncate">{slot.subject.name}</p>
                                   <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.lecturePlace || slot.subject.code}</p>
                                 </div>
-                                {needsAttention && (
-                                  <span className="text-[9px] px-1 py-0.5 bg-destructive/10 text-destructive rounded flex-shrink-0">
-                                    {Math.round(percent)}%
-                                  </span>
-                                )}
+                                {/* Always show percentage - larger when marked present */}
+                                <span className={cn(
+                                  "px-1.5 py-0.5 rounded flex-shrink-0 font-bold",
+                                  status === 'present' 
+                                    ? "text-sm bg-emerald-500/15 text-emerald-600" 
+                                    : needsAttention 
+                                      ? "text-[9px] bg-destructive/10 text-destructive"
+                                      : "text-sm bg-primary/10 text-primary"
+                                )}>
+                                  {Math.round(percent)}%
+                                </span>
                               </div>
 
                               {/* Action buttons */}
@@ -426,7 +432,7 @@ export default function Dashboard() {
                                   onClick={() => handleMarkAttendance(index, slot.subject!.id, "present")}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
-                                    "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-1",
+                                    "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
                                     status === 'present'
                                       ? "bg-emerald-500 text-white"
                                       : "bg-secondary hover:bg-emerald-500/20 hover:text-emerald-600 disabled:opacity-40 disabled:hover:bg-secondary"
@@ -437,11 +443,7 @@ export default function Dashboard() {
                                   ) : (
                                     <Check className="w-2.5 h-2.5" />
                                   )}
-                                  {status === 'present' ? (
-                                    <span className="text-xs font-semibold">{Math.round(percent)}%</span>
-                                  ) : (
-                                    "Present"
-                                  )}
+                                  Present
                                 </button>
                                 <button
                                   onClick={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
