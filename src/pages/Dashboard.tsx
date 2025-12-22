@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
-import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow } from "date-fns";
+import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { AttendanceMarker, AttendanceMarkerSkeleton } from "@/components/attendance/AttendanceMarker";
 import { EmptySlot } from "@/components/attendance/EmptySlot";
@@ -72,6 +72,23 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => 
     showingTomorrowByDefault ? addDays(now, 1) : now
   );
+  const [classesStartDate, setClassesStartDate] = useState<Date | null>(null);
+
+  // Fetch classes start date
+  useEffect(() => {
+    fetch(API_CONFIG.ENDPOINTS.CLASSES_START_DATE, {
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.startDate) {
+          setClassesStartDate(parseISO(data.startDate));
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching classes start date:', err);
+      });
+  }, []);
 
   const schedule = useMemo(() => getScheduleForDate(selectedDate), [selectedDate, timetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
@@ -79,6 +96,7 @@ export default function Dashboard() {
   const isSelectedTomorrow = isTomorrow(selectedDate);
   const isFutureDate = isBefore(startOfDay(now), startOfDay(selectedDate));
   const isPastDate = isBefore(startOfDay(selectedDate), startOfDay(now));
+  const isBeforeStartDate = classesStartDate ? isBefore(startOfDay(selectedDate), startOfDay(classesStartDate)) : false;
   const canMarkAttendance = true; // Allow marking for any date
 
   // Calculate if a subject needs attention (below minimum requirement)
@@ -257,14 +275,26 @@ export default function Dashboard() {
               </div>
             )}
 
-            {!isSelectedToday && !isFutureDate && (
+            {isBeforeStartDate && (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                  <Sun className="w-6 h-6 text-muted-foreground/50" />
+                </div>
+                <p className="font-medium text-sm text-muted-foreground">Enjoy vacation</p>
+                <p className="text-xs text-muted-foreground/70 mt-0.5">
+                  Classes start on {classesStartDate ? format(classesStartDate, "MMM d, yyyy") : ""}
+                </p>
+              </div>
+            )}
+
+            {!isBeforeStartDate && !isSelectedToday && !isFutureDate && (
               <div className="flex items-center justify-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
                 <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">Past date</p>
               </div>
             )}
 
-            {schedule.length === 0 && (
+            {!isBeforeStartDate && schedule.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
                   <CalendarDays className="w-6 h-6 text-muted-foreground/50" />
@@ -275,6 +305,7 @@ export default function Dashboard() {
             )}
 
             {/* Schedule List - Always 5 fixed slots */}
+            {!isBeforeStartDate && (
             <div className="space-y-2">
               {isLoadingAttendance && schedule.length > 0 ? (
                 // Show skeleton loaders while loading attendance data
@@ -320,6 +351,7 @@ export default function Dashboard() {
                 })
               )}
             </div>
+            )}
 
           </TabsContent>
 

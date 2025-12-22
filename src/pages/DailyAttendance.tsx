@@ -1,20 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { officialLastDate, defaultTimetable, subjects, timeSlots } from "@/data/mockData";
 import { cn } from "@/lib/utils";
-import { format, isAfter, parseISO, subDays, addDays, isSameDay } from "date-fns";
-import { Check, X, AlertTriangle, ChevronLeft, ChevronRight, Lock, } from "lucide-react";
+import { format, isAfter, parseISO, subDays, addDays, isSameDay, isBefore, startOfDay } from "date-fns";
+import { Check, X, AlertTriangle, ChevronLeft, ChevronRight, Lock, Sun } from "lucide-react";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AttendanceMarker } from "@/components/attendance/AttendanceMarker";
+import { API_CONFIG } from "@/lib/api";
 
 export default function DailyAttendance() {
   const { todayAttendance, markAttendance, subjectStatsToday, fetchAttendanceForDate } = useAttendance();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [classesStartDate, setClassesStartDate] = useState<Date | null>(null);
   const today = new Date();
   const isLocked = !isAfter(selectedDate, parseISO(officialLastDate));
   const dayOfWeek = selectedDate.getDay();
   const adjustedDay = dayOfWeek === 0 || dayOfWeek === 6 ? -1 : dayOfWeek - 1;
   const dateKey = format(selectedDate, "yyyy-MM-dd");
+  const isBeforeStartDate = classesStartDate ? isBefore(startOfDay(selectedDate), startOfDay(classesStartDate)) : false;
+
+  // Fetch classes start date
+  useEffect(() => {
+    fetch(API_CONFIG.ENDPOINTS.CLASSES_START_DATE, {
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.startDate) {
+          setClassesStartDate(parseISO(data.startDate));
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching classes start date:', err);
+      });
+  }, []);
 
   // Fetch attendance when date changes
   // We need to fetch specific date stats for the status (present/absent)
@@ -89,23 +108,36 @@ export default function DailyAttendance() {
           </div>
         )}
 
+        {/* Before Start Date Notice */}
+        {isBeforeStartDate && (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+              <Sun className="w-6 h-6 text-muted-foreground/50" />
+            </div>
+            <p className="font-medium text-sm text-muted-foreground">Enjoy vacation</p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">
+              Classes start on {classesStartDate ? format(classesStartDate, "MMM d, yyyy") : ""}
+            </p>
+          </div>
+        )}
+
         {/* Weekend Notice */}
-        {adjustedDay === -1 && (
+        {!isBeforeStartDate && adjustedDay === -1 && (
           <div className="text-center py-10 text-muted-foreground">
             No classes on weekends
           </div>
         )}
 
         {/* Future Date Notice */}
-        {isFuture && (
+        {!isBeforeStartDate && isFuture && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
             <AlertTriangle className="w-4 h-4" />
-            <span>You can’t mark attendance for future dates</span>
+            <span>You can't mark attendance for future dates</span>
           </div>
         )}
 
         {/* Schedule */}
-        {adjustedDay !== -1 && (
+        {!isBeforeStartDate && adjustedDay !== -1 && (
           <div className="space-y-2">
             {schedule.map((slot, index) => {
               if (!slot.subject) return null;

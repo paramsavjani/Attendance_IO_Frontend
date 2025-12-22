@@ -28,6 +28,7 @@ export const API_CONFIG = {
     MARK_ATTENDANCE: `${API_BASE_URL}/api/attendance`,
     GET_MY_ATTENDANCE: `${API_BASE_URL}/api/attendance`,
     DELETE_ATTENDANCE: (attendanceId: string) => `${API_BASE_URL}/api/attendance/${attendanceId}`,
+    CLASSES_START_DATE: `${API_BASE_URL}/api/config/classes-start-date`,
   },
 } as const;
 
