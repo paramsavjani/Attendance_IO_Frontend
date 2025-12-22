@@ -1,80 +1,229 @@
-# Welcome to your Lovable project
+# Attendance IO
 
-## Project info
+A modern, feature-rich attendance tracking application for students. Track your daily attendance, manage your timetable, analyze your attendance trends, and stay on top of your academic performance.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![Attendance IO](public/logo.png)
 
-## How can I edit this code?
+## 🚀 Features
 
-There are several ways of editing your application.
+### 📅 Daily Attendance Tracking
+- **One-tap attendance marking** - Mark present, absent, or cancelled classes with a single tap
+- **Real-time sync** - Automatic synchronization with official institute records
+- **Smart timetable** - Auto-generated timetable based on your subject schedule
+- **Future date support** - Mark cancelled classes for future dates
 
-**Use Lovable**
+### 📊 Analytics & Insights
+- **Comprehensive analytics** - View attendance statistics across semesters
+- **Visual charts** - Interactive charts showing attendance distribution and trends
+- **Semester-wise breakdown** - Analyze performance by semester
+- **Attendance ranges** - See how many students fall in different attendance percentage ranges
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 🔍 Search & Discovery
+- **Search students** - Find any student by name or roll number
+- **Cross-semester view** - View attendance history across all semesters
+- **Quick access** - Fast and efficient search with real-time results
 
-Changes made via Lovable will be committed automatically to this repo.
+### ⏰ Smart Notifications
+- **Sleep reminders** - Get smart sleep notifications based on your first lecture
+- **Priority alerts** - Critical lectures get priority notifications
+- **Customizable settings** - Configure sleep duration and notification preferences
 
-**Use your preferred IDE**
+### 📋 Timetable Management
+- **Visual timetable** - Beautiful grid view of your weekly schedule
+- **Subject assignment** - Easily assign subjects to time slots
+- **Color coding** - Each subject has a unique color for easy identification
+- **Flexible editing** - Add, remove, or modify your timetable anytime
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### ⚠️ Smart Warnings
+- **Minimum criteria alerts** - Set minimum attendance thresholds per subject
+- **Risk notifications** - Get alerts when you're at risk of falling below requirements
+- **Visual indicators** - Color-coded warnings for subjects needing attention
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 💬 Feedback System
+- **Submit feedback** - Report bugs, provide feedback, or suggest improvements
+- **Multiple types** - Categorize feedback as bug, feedback, or suggestion
+- **Easy submission** - Simple form-based feedback submission
 
-Follow these steps:
+## 🛠️ Tech Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **React 18** - Modern React with hooks
+- **TypeScript** - Type-safe development
+- **Vite** - Fast build tool and dev server
+- **Capacitor** - Cross-platform mobile app framework
+- **Tailwind CSS** - Utility-first CSS framework
+- **Shadcn UI** - Beautiful, accessible component library
+- **React Router** - Client-side routing
+- **Recharts** - Chart library for analytics
+- **TanStack Query** - Data fetching and caching
+- **Sonner** - Toast notifications
+- **Capacitor Android** - Native Android integration
+- **Gradle** - Android build system
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📦 Installation
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Prerequisites
+- Node.js 18+ and npm
+- Android Studio (for Android development)
 
-# Step 4: Set up environment variables.
-# Create a .env file in the root directory with:
-# VITE_API_BASE_URL=http://localhost:8080
-# (Update the URL to match your backend server)
+### Frontend Setup
 
-# Step 5: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd attendance-io-frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables**
+   Create a `.env` file in the root directory:
+   ```env
+   VITE_API_BASE_URL=http://localhost:8081
+   ```
+
+4. **Run development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+### Android Setup
+
+1. **Sync Capacitor**
+   ```bash
+   npm run cap:sync
+   ```
+
+2. **Open Android Studio**
+   ```bash
+   npm run cap:open:android
+   ```
+
+3. **Build APK**
+   - Open the project in Android Studio
+   - Build → Build Bundle(s) / APK(s) → Build APK(s)
+   - Or use the GitHub Actions workflow for automated builds
+
+## 🚀 Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run build:dev` - Build in development mode
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run cap:sync` - Sync Capacitor native projects
+- `npm run cap:copy` - Copy web assets to native projects
+- `npm run cap:open:android` - Open Android project in Android Studio
+- `npm run android:build` - Build and sync Android project
+
+### Project Structure
+
 ```
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-read_lints
+attendance-io-frontend/
+├── src/
+│   ├── components/       # Reusable UI components
+│   │   ├── attendance/   # Attendance-related components
+│   │   ├── auth/         # Authentication components
+│   │   ├── subjects/     # Subject management components
+│   │   ├── timetable/    # Timetable components
+│   │   └── ui/           # Base UI components (Shadcn)
+│   ├── contexts/         # React contexts (Auth, Attendance)
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Utility functions and API config
+│   ├── pages/            # Page components
+│   │   ├── Dashboard.tsx
+│   │   ├── Attendance.tsx
+│   │   ├── DailyAttendance.tsx
+│   │   ├── Analytics.tsx
+│   │   ├── Timetable.tsx
+│   │   ├── Profile.tsx
+│   │   ├── Search.tsx
+│   │   └── ...
+│   └── types/            # TypeScript type definitions
+├── android/              # Android native project
+├── public/              # Static assets
+├── scripts/             # Build and utility scripts
+└── resources/           # App icons and logos
+```
 
-**Edit a file directly in GitHub**
+## 🔐 Authentication
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The app uses OAuth2 authentication. Users authenticate through their institute's OAuth provider and are automatically registered/logged in. The authentication is handled by the backend API.
 
-**Use GitHub Codespaces**
+## 📱 Mobile App
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Building Android APK
 
-## What technologies are used for this project?
+The Android APK is automatically built and released via GitHub Actions when changes are pushed to the `main` branch.
 
-This project is built with:
+**Manual Build:**
+1. Ensure you have Android Studio installed
+2. Run `npm run build` to build the web app
+3. Run `npm run cap:sync` to sync with native projects
+4. Open Android Studio and build the APK
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+**Automated Build:**
+- Push to `main` branch triggers GitHub Actions workflow
+- APK is automatically built and released
+- Version is automatically incremented based on Git tags
 
-## How can I deploy this project?
+### APK Naming
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+APKs are named: `AttendanceIo-{version}-{buildType}.apk`
 
-## Can I connect a custom domain to my Lovable project?
+Example: `AttendanceIo-1.0.0-release.apk`
 
-Yes, you can!
+## 🎨 UI/UX Features
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- **Dark theme** - Beautiful dark mode interface
+- **Responsive design** - Works on all screen sizes
+- **Smooth animations** - Polished transitions and interactions
+- **Accessibility** - Built with accessibility in mind
+- **Modern design** - Clean, minimalist interface
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📊 Performance Optimizations
+
+- **Lazy loading** - Components loaded on demand
+- **Code splitting** - Optimized bundle sizes
+- **React Query caching** - Efficient data fetching and caching
+- **Optimized re-renders** - Memoization and context optimization
+
+## 🧪 Testing
+
+```bash
+# Run linter
+npm run lint
+
+# Type checking (via TypeScript)
+npm run build
+```
+
+## 📝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is private and proprietary.
+
+## 📞 Support
+
+For issues, questions, or feedback, please use the in-app feedback feature or contact the development team.
+
+---
+
+Made with ❤️ for students
+
