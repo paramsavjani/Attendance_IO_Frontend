@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      artifacts: read
     
     steps:
       - name: Checkout code
