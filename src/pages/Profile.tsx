@@ -5,7 +5,8 @@ import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronRight, Moon } from "lucide-react";
+import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronRight, Moon, MessageSquare, Bug, Lightbulb, Send, Heart } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
@@ -37,6 +38,11 @@ export default function Profile() {
   const [isEditingSleepDuration, setIsEditingSleepDuration] = useState(false);
   const [editingSleepHours, setEditingSleepHours] = useState<string>("");
   const [isSavingSleepDuration, setIsSavingSleepDuration] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<'bug' | 'feedback' | 'suggestion'>('feedback');
+  const [feedbackTitle, setFeedbackTitle] = useState("");
+  const [feedbackDescription, setFeedbackDescription] = useState("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -222,6 +228,31 @@ export default function Profile() {
     }
   };
 
+  const handleSubmitFeedback = async () => {
+    if (!feedbackTitle.trim() || !feedbackDescription.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setIsSubmittingFeedback(true);
+    
+    // Simulate submission - in real app, this would send to an API
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    toast.success("Thank you for your feedback!");
+    setShowFeedbackModal(false);
+    setFeedbackTitle("");
+    setFeedbackDescription("");
+    setFeedbackType('feedback');
+    setIsSubmittingFeedback(false);
+  };
+
+  const feedbackTypes = [
+    { id: 'bug' as const, label: 'Bug', icon: Bug, color: 'text-red-500' },
+    { id: 'feedback' as const, label: 'Feedback', icon: MessageSquare, color: 'text-blue-500' },
+    { id: 'suggestion' as const, label: 'Suggestion', icon: Lightbulb, color: 'text-yellow-500' },
+  ];
+
   return (
     <AppLayout>
       <div className="space-y-5">
@@ -362,6 +393,21 @@ export default function Profile() {
           </button>
         )}
 
+        {/* Feedback & Bugs */}
+        <button
+          onClick={() => setShowFeedbackModal(true)}
+          className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4 text-left hover:bg-muted/50 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium">Feedback & Bugs</p>
+            <p className="text-sm text-muted-foreground">Help us improve the app</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+
         {/* Logout */}
         <Button
           variant="destructive"
@@ -371,6 +417,14 @@ export default function Profile() {
           <LogOut className="w-5 h-5 mr-2" />
           Logout
         </Button>
+
+        {/* Creator Credit */}
+        <div className="flex items-center justify-center gap-1.5 pt-4 pb-2">
+          <span className="text-xs text-muted-foreground">Made with</span>
+          <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse" />
+          <span className="text-xs text-muted-foreground">by</span>
+          <span className="text-xs font-medium text-foreground">Param Savjani</span>
+        </div>
 
         {/* Subject Editor Dialog */}
         <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
@@ -473,6 +527,95 @@ export default function Profile() {
             <div className="pt-3 border-t border-border flex justify-end">
               <Button variant="outline" onClick={() => setShowCriteriaModal(false)}>
                 Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Feedback Modal */}
+        <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
+            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  Send Feedback
+                </DialogTitle>
+              </DialogHeader>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              {/* Feedback Type Selector */}
+              <div className="flex gap-2">
+                {feedbackTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => setFeedbackType(type.id)}
+                    className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
+                      feedbackType === type.id
+                        ? 'border-primary bg-primary/10 shadow-sm'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <type.icon className={`w-5 h-5 ${feedbackType === type.id ? type.color : 'text-muted-foreground'}`} />
+                    <span className={`text-xs font-medium ${feedbackType === type.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {type.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Title Input */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Title</label>
+                <Input
+                  placeholder="Brief summary..."
+                  value={feedbackTitle}
+                  onChange={(e) => setFeedbackTitle(e.target.value)}
+                  maxLength={100}
+                  disabled={isSubmittingFeedback}
+                />
+                <p className="text-xs text-muted-foreground text-right">{feedbackTitle.length}/100</p>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  placeholder="Describe in detail..."
+                  value={feedbackDescription}
+                  onChange={(e) => setFeedbackDescription(e.target.value)}
+                  maxLength={500}
+                  rows={4}
+                  disabled={isSubmittingFeedback}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground text-right">{feedbackDescription.length}/500</p>
+              </div>
+            </div>
+
+            <div className="p-4 pt-0 flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFeedbackModal(false)}
+                disabled={isSubmittingFeedback}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitFeedback}
+                disabled={isSubmittingFeedback || !feedbackTitle.trim() || !feedbackDescription.trim()}
+                className="flex-1 gap-2"
+              >
+                {isSubmittingFeedback ? (
+                  <>Sending...</>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Submit
+                  </>
+                )}
               </Button>
             </div>
           </DialogContent>
