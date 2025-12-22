@@ -42,7 +42,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install frontend dependencies
-        run: npm ci --force
+        run: npm install --force
 
       - name: Build frontend
         run: npm run build
