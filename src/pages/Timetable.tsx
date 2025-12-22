@@ -163,14 +163,19 @@ export default function Timetable() {
 
   return (
     <AppLayout>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="p-1.5 -ml-1.5 hover:bg-muted/50 rounded-lg transition-colors">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="p-2 -ml-2 hover:bg-secondary/80 rounded-xl transition-all duration-200 active:scale-95"
+          >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold">My Timetable</h1>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+              My Timetable
+            </h1>
           </div>
 
           <AlertDialog>
@@ -178,36 +183,36 @@ export default function Timetable() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="gap-1 h-7 text-xs px-2"
+                className="gap-1.5 h-8 text-xs px-3 rounded-xl border-border/50 hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
                 disabled={isSaving}
               >
                 {isSaving ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-3 h-3" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                 )}
                 Reset
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="max-w-[calc(100vw-2rem)] mx-4 rounded-xl">
+            <AlertDialogContent className="max-w-[calc(100vw-2rem)] mx-4 rounded-2xl border-border/50 bg-card/95 backdrop-blur-xl">
               <AlertDialogHeader>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-destructive/20 to-destructive/10 flex items-center justify-center flex-shrink-0 border border-destructive/20">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
                   </div>
                   <div>
-                    <AlertDialogTitle className="text-base">Reset Timetable?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-sm mt-0.5">
+                    <AlertDialogTitle className="text-base font-semibold">Reset Timetable?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm mt-0.5 text-muted-foreground">
                       This will clear all scheduled classes.
                     </AlertDialogDescription>
                   </div>
                 </div>
               </AlertDialogHeader>
-              <AlertDialogFooter className="mt-3 gap-2">
-                <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+              <AlertDialogFooter className="mt-4 gap-2">
+                <AlertDialogCancel className="h-10 rounded-xl">Cancel</AlertDialogCancel>
                 <AlertDialogAction 
                   onClick={handleRegenerate}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 rounded-xl"
                 >
                   Reset All
                 </AlertDialogAction>
@@ -217,13 +222,16 @@ export default function Timetable() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground">Loading timetable...</p>
           </div>
         ) : (
           <>
             {/* Day Tabs */}
-            <div className="flex gap-0.5 p-0.5 bg-muted/30 rounded-lg">
+            <div className="flex gap-1 p-1 bg-secondary/50 rounded-2xl border border-border/30">
               {days.map((day, dayIndex) => {
                 const slotCount = getDaySlotCount(dayIndex);
                 return (
@@ -231,18 +239,18 @@ export default function Timetable() {
                     key={day}
                     onClick={() => setActiveDay(dayIndex)}
                     className={cn(
-                      "flex-1 py-1.5 px-0.5 rounded-md text-center transition-all relative",
+                      "flex-1 py-2.5 px-1 rounded-xl text-center transition-all duration-300 relative",
                       activeDay === dayIndex 
-                        ? "bg-primary text-primary-foreground shadow-sm" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        ? "bg-gradient-to-b from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
                     )}
                   >
-                    <span className="text-[11px] font-medium">{day.slice(0, 3)}</span>
+                    <span className="text-xs font-semibold">{day.slice(0, 3)}</span>
                     {slotCount > 0 && (
                       <span className={cn(
-                        "absolute -top-0.5 -right-0.5 w-3.5 h-3.5 text-[9px] font-medium rounded-full flex items-center justify-center",
+                        "absolute -top-1 -right-0.5 min-w-[18px] h-[18px] text-[10px] font-bold rounded-full flex items-center justify-center px-1",
                         activeDay === dayIndex 
-                          ? "bg-primary-foreground text-primary" 
+                          ? "bg-primary-foreground text-primary shadow-sm" 
                           : "bg-primary/20 text-primary"
                       )}>
                         {slotCount}
@@ -254,13 +262,15 @@ export default function Timetable() {
             </div>
 
             {/* Time Slots List */}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground px-0.5">
-                <Clock className="w-3 h-3" />
-                <span>{days[activeDay]}'s Schedule</span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <span className="text-sm font-medium text-foreground">{days[activeDay]}'s Schedule</span>
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {timeSlots.slice(0, 6).map((time, timeIndex) => {
                   const subject = getSlotSubject(activeDay, timeIndex);
                   const timeStart = time.split(" - ")[0];
@@ -271,24 +281,24 @@ export default function Timetable() {
                       key={timeIndex}
                       onClick={() => handleSlotClick(activeDay, timeIndex)}
                       className={cn(
-                        "w-full flex items-center gap-2 p-2 rounded-lg transition-all text-left group active:scale-[0.99]",
+                        "w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 text-left group active:scale-[0.98]",
                         subject
-                          ? "bg-card border border-border hover:border-primary/30"
-                          : "bg-muted/20 border border-dashed border-border/40 hover:border-primary/40 hover:bg-muted/30"
+                          ? "bg-gradient-to-r from-card to-card/80 border border-border/50 hover:border-primary/40 shadow-sm hover:shadow-md hover:shadow-primary/5"
+                          : "bg-secondary/30 border border-dashed border-border/30 hover:border-primary/40 hover:bg-secondary/50"
                       )}
                     >
                       {/* Time Column */}
-                      <div className="w-12 flex-shrink-0">
-                        <p className="text-xs font-semibold text-foreground">{timeStart}</p>
-                        <p className="text-[10px] text-muted-foreground">{timeEnd}</p>
+                      <div className="w-14 flex-shrink-0">
+                        <p className="text-sm font-bold text-foreground">{timeStart}</p>
+                        <p className="text-[11px] text-muted-foreground">{timeEnd}</p>
                       </div>
 
                       {/* Slot Number */}
                       <div className={cn(
-                        "w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-medium",
+                        "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold transition-all duration-200",
                         subject 
-                          ? "bg-primary/10 text-primary" 
-                          : "bg-muted/50 text-muted-foreground"
+                          ? "bg-gradient-to-br from-primary/20 to-primary/10 text-primary border border-primary/20" 
+                          : "bg-muted/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 border border-transparent"
                       )}>
                         {timeIndex + 1}
                       </div>
@@ -297,15 +307,17 @@ export default function Timetable() {
                       <div className="flex-1 min-w-0">
                         {subject ? (
                           <>
-                            <p className="text-xs font-medium text-foreground truncate">
+                            <p className="text-sm font-semibold text-foreground truncate">
                               {subject.name}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">{subject.code}</p>
+                            <p className="text-xs text-muted-foreground">{subject.code}</p>
                           </>
                         ) : (
-                          <div className="flex items-center gap-1.5">
-                            <Plus className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
-                            <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                              <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                               Add class
                             </span>
                           </div>
@@ -316,10 +328,10 @@ export default function Timetable() {
                       {subject && (
                         <button
                           onClick={(e) => handleClearSlot(activeDay, timeIndex, e)}
-                          className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                          className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all duration-200 flex-shrink-0 border border-transparent hover:border-destructive/20"
                           title="Clear slot"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-4 h-4" />
                         </button>
                       )}
                     </button>
@@ -329,16 +341,28 @@ export default function Timetable() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <div className="bg-card border border-border rounded-lg p-2.5">
-                <p className="text-[10px] text-muted-foreground mb-0.5">Today's Classes</p>
-                <p className="text-xl font-bold text-foreground">{getDaySlotCount(activeDay)}</p>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="bg-gradient-to-br from-card to-card/80 border border-border/50 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <BookOpen className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium">Today</p>
+                </div>
+                <p className="text-2xl font-bold text-foreground">{getDaySlotCount(activeDay)}</p>
+                <p className="text-[11px] text-muted-foreground">classes</p>
               </div>
-              <div className="bg-card border border-border rounded-lg p-2.5">
-                <p className="text-[10px] text-muted-foreground mb-0.5">Week Total</p>
-                <p className="text-xl font-bold text-foreground">
+              <div className="bg-gradient-to-br from-card to-card/80 border border-border/50 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-accent/10 flex items-center justify-center">
+                    <Clock className="w-3.5 h-3.5 text-accent" />
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium">Week</p>
+                </div>
+                <p className="text-2xl font-bold text-foreground">
                   {days.reduce((acc, _, idx) => acc + getDaySlotCount(idx), 0)}
                 </p>
+                <p className="text-[11px] text-muted-foreground">total classes</p>
               </div>
             </div>
           </>
@@ -346,16 +370,16 @@ export default function Timetable() {
 
         {/* Assignment Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-sm mx-auto rounded-xl">
-            <DialogHeader className="pb-1">
-              <DialogTitle className="text-sm flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-3.5 h-3.5 text-primary" />
+          <DialogContent className="max-w-sm mx-auto rounded-2xl border-border/50 bg-card/95 backdrop-blur-xl">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-base flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                  <BookOpen className="w-5 h-5 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold">Assign Subject</p>
+                  <p className="font-semibold text-foreground">Assign Subject</p>
                   {selectedSlot && (
-                    <p className="text-[11px] font-normal text-muted-foreground">
+                    <p className="text-xs font-normal text-muted-foreground mt-0.5">
                       {days[selectedSlot.day]} • Slot {selectedSlot.timeSlot + 1} • {timeSlots[selectedSlot.timeSlot].split(" - ")[0]}
                     </p>
                   )}
@@ -363,14 +387,14 @@ export default function Timetable() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-1 max-h-[45vh] overflow-y-auto">
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto py-1">
               {enrolledSubjects.length === 0 ? (
-                <div className="text-center py-5">
-                  <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-2">
-                    <BookOpen className="w-5 h-5 text-muted-foreground" />
+                <div className="text-center py-8">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 flex items-center justify-center mx-auto mb-3 border border-border/30">
+                    <BookOpen className="w-6 h-6 text-muted-foreground" />
                   </div>
-                  <p className="text-xs text-muted-foreground">No enrolled subjects</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Please enroll in subjects first</p>
+                  <p className="text-sm font-medium text-muted-foreground">No enrolled subjects</p>
+                  <p className="text-xs text-muted-foreground mt-1">Please enroll in subjects first</p>
                 </div>
               ) : (
                 <>
@@ -378,14 +402,14 @@ export default function Timetable() {
                     <button
                       key={subject.id}
                       onClick={() => handleAssignSubject(subject.id)}
-                      className="w-full flex items-center gap-2 p-2.5 rounded-lg border border-border active:scale-[0.98] transition-all text-left hover:bg-muted/30 hover:border-primary/30"
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/50 active:scale-[0.98] transition-all duration-200 text-left hover:bg-secondary/50 hover:border-primary/30 group"
                     >
-                      <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary text-[10px] font-medium flex-shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0 border border-primary/20 group-hover:from-primary/30 group-hover:to-primary/20 transition-all">
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-medium block truncate text-foreground">{subject.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{subject.code}</span>
+                        <span className="text-sm font-semibold block truncate text-foreground">{subject.name}</span>
+                        <span className="text-xs text-muted-foreground">{subject.code}</span>
                       </div>
                     </button>
                   ))}
