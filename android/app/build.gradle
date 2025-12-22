@@ -41,6 +41,16 @@ android {
             }
         }
     }
+    
+    // Configure APK output filename
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def versionName = variant.versionName
+            def versionCode = variant.versionCode
+            def buildType = variant.buildType.name
+            outputFileName = "AttendanceIo-${versionName}-${buildType}.apk"
+        }
+    }
 }
 
 repositories {
