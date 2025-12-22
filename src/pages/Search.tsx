@@ -44,6 +44,7 @@ interface StudentAttendanceData {
   studentId: string;
   studentName: string;
   rollNumber: string;
+  studentPictureUrl?: string;
   semester?: {
     id: string;
     year: number;
@@ -117,11 +118,78 @@ export default function Search() {
         });
       }
       // If students.length === 0, we might still be loading or haven't searched yet
-      // Don't clear the param in that case - wait for search to complete
+      // Don't clear the param in that case - wait for search to complete or fetch attendance
     } else {
       setSelectedStudent(null);
     }
   }, [studentIdParam, students, setSearchParams]);
+
+  // Fetch student info from attendance when studentIdParam exists but student not found in search results
+  useEffect(() => {
+    const fetchStudentFromAttendance = async () => {
+      if (!studentIdParam || selectedStudent || students.length > 0) {
+        return; // Don't fetch if student is already selected or if we have search results
+      }
+
+      setIsLoadingAttendance(true);
+      try {
+        const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(studentIdParam);
+        const response = await fetch(url, { credentials: 'include' });
+        
+        if (response.ok) {
+          const data: StudentAttendanceData = await response.json();
+          
+          // Create student object from attendance data
+          const student: Student = {
+            id: data.studentId,
+            name: data.studentName,
+            rollNumber: data.rollNumber,
+            pictureUrl: data.studentPictureUrl,
+          };
+          
+          setSelectedStudent(student);
+
+          // Convert hex colors to HSL format for subjects
+          if (data.subjects) {
+            data.subjects = data.subjects.map(subj => ({
+              ...subj,
+              color: hexToHslLightened(subj.color || "#3B82F6")
+            }));
+          }
+          
+          if (data.semesters) {
+            data.semesters = data.semesters.map(sem => ({
+              ...sem,
+              subjects: sem.subjects.map(subj => ({
+                ...subj,
+                color: hexToHslLightened(subj.color || "#3B82F6")
+              }))
+            }));
+          }
+          
+          setAttendanceData(data);
+        } else if (response.status === 404) {
+          // Student not found, clear the param
+          setSearchParams((prev) => {
+            const newParams = new URLSearchParams(prev);
+            newParams.delete("studentId");
+            return newParams;
+          });
+          toast.error('Student not found');
+        } else {
+          console.error('Failed to fetch attendance');
+          toast.error('Failed to load student data');
+        }
+      } catch (error) {
+        console.error('Error fetching attendance:', error);
+        toast.error('Error loading student data');
+      } finally {
+        setIsLoadingAttendance(false);
+      }
+    };
+
+    fetchStudentFromAttendance();
+  }, [studentIdParam, selectedStudent, students.length, setSearchParams]);
 
   // Fetch current semester on mount
   useEffect(() => {
@@ -184,6 +252,11 @@ export default function Search() {
     const fetchAttendance = async () => {
       if (!selectedStudent) {
         setAttendanceData(null);
+        return;
+      }
+
+      // Skip if we already have attendance data for this student
+      if (attendanceData && attendanceData.studentId === selectedStudent.id) {
         return;
       }
 
