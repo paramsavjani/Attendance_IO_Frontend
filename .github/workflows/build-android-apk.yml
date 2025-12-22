@@ -96,11 +96,37 @@ jobs:
       - name: Calculate version
         id: version
         run: |
-          # Fetch all tags
-          git fetch --tags --depth=1 origin +refs/tags/*:refs/tags/* || true
+          set -e  # Exit on error
           
-          # Get the latest version tag (format: v1.0.0 or 1.0.0)
-          LATEST_TAG=$(git tag -l "v*" | sort -V | tail -1 || echo "")
+          echo "=== Starting Version Calculation ==="
+          
+          # Fetch all tags (including existing ones)
+          echo "Fetching tags..."
+          git fetch --tags --depth=1 origin +refs/tags/*:refs/tags/* 2>/dev/null || true
+          
+          # List all tags for debugging
+          echo "All tags:"
+          git tag -l | head -20 || echo "No tags found"
+          
+          # Get the highest version tag (handle both v1.0.0 and 1.0-27 formats)
+          LATEST_TAG=""
+          
+          # First, try to find semantic version tags (v*.*.*)
+          SEMVER_TAG=$(git tag -l "v*.*.*" | sort -V | tail -1 || echo "")
+          if [ -n "$SEMVER_TAG" ]; then
+            LATEST_TAG="$SEMVER_TAG"
+            echo "Found semantic version tag: $LATEST_TAG"
+          else
+            # Try old format (1.0-27)
+            OLD_TAG=$(git tag -l | grep -E '^[0-9]+\.[0-9]+-[0-9]+$' | sort -V | tail -1 || echo "")
+            if [ -n "$OLD_TAG" ]; then
+              # Convert 1.0-27 to v1.0.27
+              VERSION_PART=$(echo "$OLD_TAG" | cut -d'-' -f1)
+              BUILD_PART=$(echo "$OLD_TAG" | cut -d'-' -f2)
+              LATEST_TAG="v${VERSION_PART}.0.${BUILD_PART}"
+              echo "Found old format tag: $OLD_TAG, converted to: $LATEST_TAG"
+            fi
+          fi
           
           if [ -z "$LATEST_TAG" ]; then
             # No tags found, start with v1.0.0
@@ -111,6 +137,7 @@ jobs:
             
             # Extract version numbers (remove 'v' prefix if present)
             VERSION_STRING=$(echo "$LATEST_TAG" | sed 's/^v//')
+            echo "Version string: $VERSION_STRING"
             
             # Parse version parts (major.minor.patch)
             IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_STRING"
@@ -118,9 +145,12 @@ jobs:
             MINOR=${MINOR:-0}
             PATCH=${PATCH:-0}
             
+            echo "Parsed: MAJOR=$MAJOR, MINOR=$MINOR, PATCH=$PATCH"
+            
             # Increment patch version for new build
             NEW_PATCH=$((PATCH + 1))
             NEW_VERSION_NAME="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+            echo "Incremented patch: $PATCH -> $NEW_PATCH"
           fi
           
           # Use GitHub run number as version code (increments with each build)
@@ -129,12 +159,24 @@ jobs:
           # Clean version name (without 'v' prefix) for gradle.properties
           VERSION_NAME_CLEAN=$(echo "$NEW_VERSION_NAME" | sed 's/^v//')
           
+          # Set outputs
           echo "version_name=$NEW_VERSION_NAME" >> $GITHUB_OUTPUT
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "version_name_clean=$VERSION_NAME_CLEAN" >> $GITHUB_OUTPUT
           
-          echo "Calculated version: $NEW_VERSION_NAME (code: $VERSION_CODE)"
-          echo "Version name for APK: $VERSION_NAME_CLEAN"
+          echo ""
+          echo "=== Version Calculation Result ==="
+          echo "Version Name (with v): $NEW_VERSION_NAME"
+          echo "Version Name (clean): $VERSION_NAME_CLEAN"
+          echo "Version Code: $VERSION_CODE"
+          echo "================================"
+          
+          # Verify outputs are set
+          echo ""
+          echo "=== Verifying Outputs ==="
+          echo "version_name output: $NEW_VERSION_NAME"
+          echo "version_code output: $VERSION_CODE"
+          echo "version_name_clean output: $VERSION_NAME_CLEAN"
 
       - name: Set version in gradle.properties
         working-directory: android
@@ -142,13 +184,29 @@ jobs:
           echo "VERSION_NAME=${{ steps.version.outputs.version_name_clean }}" >> gradle.properties
           echo "VERSION_CODE=${{ steps.version.outputs.version_code }}" >> gradle.properties
           echo "Version set in gradle.properties:"
-          grep -E "VERSION_" gradle.properties || echo "No VERSION_ properties found"
+          cat gradle.properties | grep -E "VERSION_" || echo "No VERSION_ properties found"
+
+      - name: Verify version before build
+        working-directory: android
+        run: |
+          echo "=== Version Verification ==="
+          echo "VERSION_NAME from step: ${{ steps.version.outputs.version_name_clean }}"
+          echo "VERSION_CODE from step: ${{ steps.version.outputs.version_code }}"
+          echo ""
+          echo "=== gradle.properties contents ==="
+          cat gradle.properties
+          echo ""
+          echo "=== Testing Gradle property access ==="
+          ./gradlew -q -P VERSION_NAME="${{ steps.version.outputs.version_name_clean }}" -P VERSION_CODE="${{ steps.version.outputs.version_code }}" printVersion || echo "printVersion task not found (this is OK)"
 
       - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: |
+          ./gradlew assembleRelease \
+            -P VERSION_NAME="${{ steps.version.outputs.version_name_clean }}" \
+            -P VERSION_CODE="${{ steps.version.outputs.version_code }}"
 
-      - name: Find APK file
+      - name: Find APK file and verify version
         id: find_apk
         working-directory: android/app/build/outputs/apk/release
         run: |
@@ -160,6 +218,19 @@ jobs:
           fi
           echo "apk_file=$APK_FILE" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_FILE"
+          
+          # Extract version from APK filename
+          APK_VERSION=$(echo "$APK_FILE" | sed -n 's/AttendanceIo-\(.*\)-release\.apk/\1/p')
+          echo "APK filename version: $APK_VERSION"
+          echo "Expected version: ${{ steps.version.outputs.version_name_clean }}"
+          
+          if [ "$APK_VERSION" != "${{ steps.version.outputs.version_name_clean }}" ]; then
+            echo "⚠️  WARNING: APK version mismatch!"
+            echo "   Expected: ${{ steps.version.outputs.version_name_clean }}"
+            echo "   Found: $APK_VERSION"
+          else
+            echo "✓ Version matches!"
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
