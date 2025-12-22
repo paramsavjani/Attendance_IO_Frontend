@@ -413,17 +413,26 @@ export default function Dashboard() {
                                   <p className="text-xs font-medium truncate">{slot.subject.name}</p>
                                   <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.lecturePlace || slot.subject.code}</p>
                                 </div>
-                                {/* Always show percentage - larger when marked present */}
-                                <span className={cn(
-                                  "px-1.5 py-0.5 rounded flex-shrink-0 font-bold",
-                                  status === 'present' 
-                                    ? "text-sm bg-emerald-500/15 text-emerald-600" 
-                                    : needsAttention 
-                                      ? "text-[9px] bg-destructive/10 text-destructive"
-                                      : "text-sm bg-primary/10 text-primary"
+                                {/* Attendance percentage badge */}
+                                <div className={cn(
+                                  "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full flex-shrink-0",
+                                  needsAttention 
+                                    ? "bg-gradient-to-r from-destructive/15 to-orange-500/15" 
+                                    : percent >= 85
+                                      ? "bg-gradient-to-r from-emerald-500/15 to-green-500/15"
+                                      : "bg-gradient-to-r from-primary/10 to-blue-500/10"
                                 )}>
-                                  {Math.round(percent)}%
-                                </span>
+                                  <span className={cn(
+                                    "text-xs font-bold tabular-nums",
+                                    needsAttention 
+                                      ? "text-destructive" 
+                                      : percent >= 85
+                                        ? "text-emerald-600"
+                                        : "text-primary"
+                                  )}>
+                                    {Math.round(percent)}%
+                                  </span>
+                                </div>
                               </div>
 
                               {/* Action buttons */}
