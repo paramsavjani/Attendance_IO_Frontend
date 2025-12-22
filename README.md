@@ -227,3 +227,5 @@ For issues, questions, or feedback, please use the in-app feedback feature or co
 
 Made with ❤️ for students
 
+**Author:** Param Savjani
+
