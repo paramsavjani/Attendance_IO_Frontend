@@ -408,7 +408,7 @@ export default function Dashboard() {
                               status === 'cancelled'
                                 ? "border border-dashed border-muted-foreground/30 bg-muted/30"
                                 : needsAttention 
-                                  ? "border-2 border-destructive/50 bg-destructive/5 shadow-[0_0_12px_-3px] shadow-destructive/30" 
+                                  ? "border-2 border-warning/40" 
                                   : isCurrent 
                                     ? "border border-primary/30" 
                                     : "border border-border"
