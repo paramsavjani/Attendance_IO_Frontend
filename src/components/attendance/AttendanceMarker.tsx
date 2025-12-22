@@ -58,7 +58,6 @@ export function AttendanceMarker({
         "relative flex flex-col rounded-2xl overflow-hidden",
         "bg-neutral-900/50 border border-white/5 backdrop-blur-sm",
         "transition-all duration-300 group",
-        isCurrent && "bg-primary/5 shadow-[0_0_30px_-10px_bg-primary/20]",
         needsAttention ? "ring-1 ring-warning/40" : 
         (isCurrent ? "ring-1 ring-primary/40" : "hover:bg-white/[0.02]")
       )}
