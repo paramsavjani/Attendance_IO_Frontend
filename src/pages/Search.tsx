@@ -304,33 +304,33 @@ export default function Search() {
             <>
               {/* Student Profile Card with Overall Attendance */}
               {overallAttendance && (
-                <div className="bg-card rounded-xl p-4 md:p-5 border border-border space-y-4 md:space-y-5">
+                <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
                   {/* Student Info */}
-                  <div className="flex items-center gap-3 md:gap-4">
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                       {selectedStudent.pictureUrl ? (
                         <img 
                           src={selectedStudent.pictureUrl} 
                           alt={selectedStudent.name}
-                          className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover"
+                          className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
                         />
                       ) : (
-                        <User className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+                        <User className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h1 className="text-lg md:text-xl font-bold truncate">{selectedStudent.name}</h1>
-                      <p className="text-xs md:text-sm text-muted-foreground">{selectedStudent.rollNumber}</p>
+                      <h1 className="text-base md:text-lg font-bold truncate">{selectedStudent.name}</h1>
+                      <p className="text-xs text-muted-foreground">{selectedStudent.rollNumber}</p>
                     </div>
                   </div>
 
                   {/* Overall Attendance */}
-                  <div className="space-y-3 md:space-y-4">
+                  <div className="space-y-2">
                     {/* Percentage Display */}
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground mb-1 md:mb-2">Overall Attendance</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Overall Attendance</p>
                       <p className={cn(
-                        "text-4xl md:text-5xl font-bold mb-1",
+                        "text-3xl md:text-4xl font-bold",
                         overallAttendance.percentage >= 75 ? "text-success" :
                         overallAttendance.percentage >= 60 ? "text-warning" : "text-destructive"
                       )}>
@@ -339,8 +339,8 @@ export default function Search() {
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="space-y-2">
-                      <div className="relative h-2.5 md:h-3 bg-muted rounded-full overflow-hidden">
+                    <div>
+                      <div className="relative h-2 md:h-2.5 bg-muted rounded-full overflow-hidden">
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
@@ -358,18 +358,18 @@ export default function Search() {
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-3 md:gap-4 pt-2">
+                    <div className="grid grid-cols-3 gap-2 md:gap-3 pt-1">
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">Present</p>
-                        <p className="text-xl md:text-2xl font-bold text-success">{overallAttendance.present}</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Present</p>
+                        <p className="text-lg md:text-xl font-bold text-success">{overallAttendance.present}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">Absent</p>
-                        <p className="text-xl md:text-2xl font-bold text-destructive">{overallAttendance.absent}</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Absent</p>
+                        <p className="text-lg md:text-xl font-bold text-destructive">{overallAttendance.absent}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">Total</p>
-                        <p className="text-xl md:text-2xl font-bold text-foreground">{overallAttendance.total}</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Total</p>
+                        <p className="text-lg md:text-xl font-bold text-foreground">{overallAttendance.total}</p>
                       </div>
                     </div>
                   </div>
