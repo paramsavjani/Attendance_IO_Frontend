@@ -52,9 +52,13 @@ jobs:
           if [ -f "key.jks" ]; then
             echo "Using keystore from repository"
             cp key.jks android/app/key.jks
+            echo "Keystore copied to android/app/key.jks"
+            ls -lh android/app/key.jks
           elif [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "Using keystore from GitHub Secrets"
             echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/key.jks
+            echo "Keystore created from secret"
+            ls -lh android/app/key.jks
           else
             echo "Error: No keystore file found. Either commit key.jks or set KEYSTORE_BASE64 secret."
             exit 1
@@ -63,10 +67,24 @@ jobs:
       - name: Setup signing properties
         working-directory: android
         run: |
-          echo "MYAPP_RELEASE_STORE_FILE=app/key.jks" >> gradle.properties
+          KEYSTORE_PATH="$(pwd)/app/key.jks"
+          echo "Setting keystore path to: $KEYSTORE_PATH"
+          echo "Verifying keystore exists..."
+          if [ -f "app/key.jks" ]; then
+            echo "✓ Keystore file found"
+            ls -lh app/key.jks
+          else
+            echo "✗ ERROR: Keystore file not found at app/key.jks"
+            echo "Current directory: $(pwd)"
+            echo "Contents of app directory:"
+            ls -la app/ || echo "app directory not found"
+            exit 1
+          fi
+          echo "MYAPP_RELEASE_STORE_FILE=$KEYSTORE_PATH" >> gradle.properties
           echo "MYAPP_RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> gradle.properties
           echo "MYAPP_RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> gradle.properties
           echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> gradle.properties
+          echo "Signing properties configured"
 
       - name: Sync Capacitor
         run: npx cap sync android
