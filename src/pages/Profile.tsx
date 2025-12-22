@@ -280,69 +280,69 @@ export default function Profile() {
           </button>
         </div>
 
-        {/* Sleep Duration */}
+        {/* Sleep Duration - Compact Mobile Optimized */}
         <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Moon className="w-5 h-5 text-primary" />
             </div>
-            <div className="flex-1">
-              <p className="font-medium">Sleep Duration</p>
-              <p className="text-sm text-muted-foreground">Set your preferred sleep hours</p>
-            </div>
-          </div>
-          {isLoadingSleepDuration ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : isEditingSleepDuration ? (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min="4"
-                max="16"
-                value={editingSleepHours}
-                onChange={(e) => setEditingSleepHours(e.target.value)}
-                placeholder="8"
-                className="w-24"
-                disabled={isSavingSleepDuration}
-              />
-              <span className="text-sm text-muted-foreground">hours</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleSaveSleepDuration}
-                disabled={isSavingSleepDuration}
-                className="ml-auto"
-              >
-                <Save className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleCancelEditSleepDuration}
-                disabled={isSavingSleepDuration}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">
-                  {sleepDuration !== null ? `${sleepDuration} hours` : "8 hours (default)"}
-                </p>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">Sleep Duration</p>
+              {isLoadingSleepDuration ? (
+                <p className="text-xs text-muted-foreground">Loading...</p>
+              ) : isEditingSleepDuration ? (
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-2 py-1">
+                    <Input
+                      type="number"
+                      min="4"
+                      max="16"
+                      value={editingSleepHours}
+                      onChange={(e) => setEditingSleepHours(e.target.value)}
+                      placeholder="8"
+                      className="w-12 h-7 text-center text-sm font-semibold border-0 bg-transparent p-0 focus-visible:ring-0"
+                      disabled={isSavingSleepDuration}
+                    />
+                    <span className="text-xs text-muted-foreground">hrs</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleSaveSleepDuration}
+                      disabled={isSavingSleepDuration}
+                      className="h-7 w-7 p-0 text-primary hover:bg-primary/10"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCancelEditSleepDuration}
+                      disabled={isSavingSleepDuration}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:bg-muted"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
                 <p className="text-xs text-muted-foreground">
-                  We'll remind you to sleep before important lectures
+                  {sleepDuration !== null ? `${sleepDuration} hours` : "8 hours"} · Reminders enabled
                 </p>
-              </div>
+              )}
+            </div>
+            {!isLoadingSleepDuration && !isEditingSleepDuration && (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={handleEditSleepDuration}
+                className="h-8 w-8 p-0 flex-shrink-0"
               >
-                <Edit className="w-4 h-4" />
+                <Edit className="w-4 h-4 text-muted-foreground" />
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Minimum Criteria (Modal) */}
