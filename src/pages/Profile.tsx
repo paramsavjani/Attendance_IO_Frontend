@@ -236,15 +236,37 @@ export default function Profile() {
 
     setIsSubmittingFeedback(true);
     
-    // Simulate submission - in real app, this would send to an API
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    toast.success("Thank you for your feedback!");
-    setShowFeedbackModal(false);
-    setFeedbackTitle("");
-    setFeedbackDescription("");
-    setFeedbackType('feedback');
-    setIsSubmittingFeedback(false);
+    try {
+      const response = await fetch(API_CONFIG.ENDPOINTS.SUBMIT_FEEDBACK, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          type: feedbackType,
+          title: feedbackTitle.trim(),
+          description: feedbackDescription.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Failed to submit feedback' }));
+        throw new Error(error.message || 'Failed to submit feedback');
+      }
+
+      const result = await response.json();
+      toast.success(result.message || "Thank you for your feedback!");
+      setShowFeedbackModal(false);
+      setFeedbackTitle("");
+      setFeedbackDescription("");
+      setFeedbackType('feedback');
+    } catch (error: any) {
+      console.error('Error submitting feedback:', error);
+      toast.error(error.message || 'Failed to submit feedback');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
   };
 
   const feedbackTypes = [
