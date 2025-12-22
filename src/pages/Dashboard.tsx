@@ -404,39 +404,61 @@ export default function Dashboard() {
                           {/* Content */}
                           <div className="flex-1 min-w-0 py-1">
                             <div className={cn(
-                              "bg-card rounded-lg p-2 h-full transition-all",
-                              needsAttention 
-                                ? "border-2 border-destructive/50 bg-destructive/5 shadow-[0_0_12px_-3px] shadow-destructive/30" 
-                                : isCurrent 
-                                  ? "border border-primary/30" 
-                                  : "border border-border"
+                              "bg-card rounded-lg p-2 h-full transition-all relative overflow-hidden",
+                              status === 'cancelled'
+                                ? "border border-dashed border-muted-foreground/30 bg-muted/30"
+                                : needsAttention 
+                                  ? "border-2 border-destructive/50 bg-destructive/5 shadow-[0_0_12px_-3px] shadow-destructive/30" 
+                                  : isCurrent 
+                                    ? "border border-primary/30" 
+                                    : "border border-border"
                             )}>
+                              {/* Cancelled overlay */}
+                              {status === 'cancelled' && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <div className="w-full h-[1px] bg-muted-foreground/40 rotate-[-8deg]" />
+                                </div>
+                              )}
+                              
                               {/* Subject info */}
-                              <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                              <div className={cn(
+                                "flex items-start justify-between gap-1.5 mb-1.5",
+                                status === 'cancelled' && "opacity-50"
+                              )}>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium truncate">{slot.subject.name}</p>
+                                  <p className={cn(
+                                    "text-xs font-medium truncate",
+                                    status === 'cancelled' && "line-through decoration-muted-foreground/50"
+                                  )}>{slot.subject.name}</p>
                                   <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.lecturePlace || slot.subject.code}</p>
                                 </div>
-                                {/* Attendance percentage badge */}
-                                <div className={cn(
-                                  "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full flex-shrink-0",
-                                  needsAttention 
-                                    ? "bg-gradient-to-r from-destructive/15 to-orange-500/15" 
-                                    : percent >= 85
-                                      ? "bg-gradient-to-r from-emerald-500/15 to-green-500/15"
-                                      : "bg-gradient-to-r from-primary/10 to-blue-500/10"
-                                )}>
-                                  <span className={cn(
-                                    "text-xs font-bold tabular-nums",
+                                {/* Cancelled badge or Attendance percentage badge */}
+                                {status === 'cancelled' ? (
+                                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted-foreground/10 flex-shrink-0">
+                                    <Ban className="w-2.5 h-2.5 text-muted-foreground" />
+                                    <span className="text-[10px] font-medium text-muted-foreground">Cancelled</span>
+                                  </div>
+                                ) : (
+                                  <div className={cn(
+                                    "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full flex-shrink-0",
                                     needsAttention 
-                                      ? "text-destructive" 
+                                      ? "bg-gradient-to-r from-destructive/15 to-orange-500/15" 
                                       : percent >= 85
-                                        ? "text-emerald-600"
-                                        : "text-primary"
+                                        ? "bg-gradient-to-r from-emerald-500/15 to-green-500/15"
+                                        : "bg-gradient-to-r from-primary/10 to-blue-500/10"
                                   )}>
-                                    {Math.round(percent)}%
-                                  </span>
-                                </div>
+                                    <span className={cn(
+                                      "text-xs font-bold tabular-nums",
+                                      needsAttention 
+                                        ? "text-destructive" 
+                                        : percent >= 85
+                                          ? "text-emerald-600"
+                                          : "text-primary"
+                                    )}>
+                                      {Math.round(percent)}%
+                                    </span>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Action buttons */}
