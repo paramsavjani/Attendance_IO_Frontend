@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ChevronLeft, Loader2, Plus, BookOpen, X, Save } from "lucide-react";
-import { useNavigate, useBlocker } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { toast } from "sonner";
@@ -34,6 +34,8 @@ export default function Timetable() {
   const [originalTimetable, setOriginalTimetable] = useState<TimetableSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<{ day: number; timeSlot: number } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeDay, setActiveDay] = useState(() => {
@@ -58,11 +60,28 @@ export default function Timetable() {
     });
   }, [timetable, originalTimetable]);
 
-  // Block navigation when there are unsaved changes
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      hasUnsavedChanges() && currentLocation.pathname !== nextLocation.pathname
-  );
+  // Handle browser back/refresh with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Custom back navigation handler
+  const handleBack = () => {
+    if (hasUnsavedChanges()) {
+      setShowUnsavedDialog(true);
+      setPendingNavigation('back');
+    } else {
+      navigate(-1);
+    }
+  };
 
   useEffect(() => {
     const fetchTimetable = async () => {
@@ -182,11 +201,28 @@ export default function Timetable() {
 
   const discardChanges = () => {
     setTimetable([...originalTimetable]);
-    blocker.reset?.();
+    setShowUnsavedDialog(false);
+    if (pendingNavigation === 'back') {
+      navigate(-1);
+    }
+    setPendingNavigation(null);
   };
 
   const proceedWithoutSaving = () => {
-    blocker.proceed?.();
+    setShowUnsavedDialog(false);
+    if (pendingNavigation === 'back') {
+      navigate(-1);
+    }
+    setPendingNavigation(null);
+  };
+
+  const saveAndProceed = async () => {
+    await saveTimetable();
+    setShowUnsavedDialog(false);
+    if (pendingNavigation === 'back') {
+      navigate(-1);
+    }
+    setPendingNavigation(null);
   };
 
   return (
@@ -196,7 +232,7 @@ export default function Timetable() {
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => navigate(-1)} 
+              onClick={handleBack} 
               className="p-1.5 hover:bg-muted rounded-lg transition-colors"
             >
               <ChevronLeft className="w-5 h-5 text-muted-foreground" />
@@ -408,7 +444,7 @@ export default function Timetable() {
         </Dialog>
 
         {/* Unsaved Changes Warning Dialog */}
-        <AlertDialog open={blocker.state === "blocked"}>
+        <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
           <AlertDialogContent className="max-w-[90vw] rounded-xl">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-base">Unsaved Changes</AlertDialogTitle>
@@ -427,10 +463,7 @@ export default function Timetable() {
                 Leave anyway
               </AlertDialogAction>
               <AlertDialogAction 
-                onClick={async () => {
-                  await saveTimetable();
-                  blocker.proceed?.();
-                }}
+                onClick={saveAndProceed}
                 className="h-9 text-sm"
               >
                 Save & Leave
