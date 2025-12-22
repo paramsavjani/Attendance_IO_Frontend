@@ -344,9 +344,9 @@ export default function Dashboard() {
                       const isCurrent = isSelectedToday && startHour === currentHour;
                       
                       if (!slot.subject) {
-                        // Empty slot - more compact
+                        // Empty slot - same height as lecture slots
                         return (
-                          <div key={index} className="relative flex items-stretch gap-2 min-h-[44px]">
+                          <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
                             <div className="flex flex-col items-center w-2.5 flex-shrink-0">
                               <div className="flex-1" />
                               <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />
@@ -426,7 +426,7 @@ export default function Dashboard() {
                                   onClick={() => handleMarkAttendance(index, slot.subject!.id, "present")}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
-                                    "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
+                                    "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-1",
                                     status === 'present'
                                       ? "bg-emerald-500 text-white"
                                       : "bg-secondary hover:bg-emerald-500/20 hover:text-emerald-600 disabled:opacity-40 disabled:hover:bg-secondary"
@@ -437,7 +437,11 @@ export default function Dashboard() {
                                   ) : (
                                     <Check className="w-2.5 h-2.5" />
                                   )}
-                                  Present
+                                  {status === 'present' ? (
+                                    <span className="text-xs font-semibold">{Math.round(percent)}%</span>
+                                  ) : (
+                                    "Present"
+                                  )}
                                 </button>
                                 <button
                                   onClick={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
