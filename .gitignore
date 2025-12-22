@@ -17,6 +17,16 @@ dist-ssr
 ios
 .capacitor
 
+# Android signing keys - NEVER commit these!
+*.jks
+*.keystore
+key.jks
+android/app/key.jks
+
+# Android local properties
+android/local.properties
+local.properties
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
