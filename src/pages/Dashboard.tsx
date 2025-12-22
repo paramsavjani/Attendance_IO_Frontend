@@ -234,20 +234,7 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="schedule" className="mt-4 space-y-4">
-            {/* Stats Row - matching timetable */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="text-2xl font-bold">{todayClasses}</span>
-                <span className="text-xs text-muted-foreground">classes</span>
-              </div>
-              <div className="w-px h-4 bg-border" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-2xl font-bold text-muted-foreground">{markedClasses}</span>
-                <span className="text-xs text-muted-foreground">marked</span>
-              </div>
-            </div>
-
+          <TabsContent value="schedule" className="mt-3 space-y-3">
             {/* Date Navigation - matching timetable pill style */}
             <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-1">
               <button
@@ -329,22 +316,22 @@ export default function Dashboard() {
 
                 <div className="space-y-0">
                   {isLoadingAttendance ? (
-                    // Loading skeleton
+                    // Loading skeleton - compact
                     schedule.map((slot, index) => (
-                      <div key={index} className="relative flex items-stretch gap-3 min-h-[72px]">
-                        <div className="flex flex-col items-center w-3 flex-shrink-0">
+                      <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
+                        <div className="flex flex-col items-center w-2.5 flex-shrink-0">
                           <div className="flex-1" />
-                          <div className="w-3 h-3 rounded-full bg-muted-foreground/30 animate-pulse" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30 animate-pulse" />
                           <div className="flex-1" />
                         </div>
-                        <div className="w-10 flex-shrink-0 flex flex-col justify-center">
-                          <div className="h-4 w-10 bg-muted rounded animate-pulse" />
-                          <div className="h-2.5 w-8 bg-muted rounded mt-1 animate-pulse" />
+                        <div className="w-9 flex-shrink-0 flex flex-col justify-center">
+                          <div className="h-3 w-8 bg-muted rounded animate-pulse" />
+                          <div className="h-2 w-6 bg-muted rounded mt-0.5 animate-pulse" />
                         </div>
-                        <div className="flex-1 py-1.5">
-                          <div className="bg-card border border-border rounded-xl p-3 h-full animate-pulse">
-                            <div className="h-4 w-24 bg-muted rounded mb-1" />
-                            <div className="h-3 w-16 bg-muted rounded" />
+                        <div className="flex-1 py-1">
+                          <div className="bg-card border border-border rounded-lg p-2 h-full animate-pulse">
+                            <div className="h-3 w-20 bg-muted rounded mb-1" />
+                            <div className="h-2 w-12 bg-muted rounded" />
                           </div>
                         </div>
                       </div>
@@ -357,20 +344,20 @@ export default function Dashboard() {
                       const isCurrent = isSelectedToday && startHour === currentHour;
                       
                       if (!slot.subject) {
-                        // Empty slot
+                        // Empty slot - more compact
                         return (
-                          <div key={index} className="relative flex items-stretch gap-3 min-h-[56px]">
-                            <div className="flex flex-col items-center w-3 flex-shrink-0">
+                          <div key={index} className="relative flex items-stretch gap-2 min-h-[44px]">
+                            <div className="flex flex-col items-center w-2.5 flex-shrink-0">
                               <div className="flex-1" />
-                              <div className="w-3 h-3 rounded-full bg-muted-foreground/20" />
+                              <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />
                               <div className="flex-1" />
                             </div>
-                            <div className="w-10 flex-shrink-0 flex flex-col justify-center">
-                              <p className="text-sm font-semibold leading-none text-muted-foreground/50">{timeStart}</p>
-                              <p className="text-[10px] text-muted-foreground/40 mt-0.5">{timeEnd}</p>
+                            <div className="w-9 flex-shrink-0 flex flex-col justify-center">
+                              <p className="text-xs font-semibold leading-none text-muted-foreground/50">{timeStart}</p>
+                              <p className="text-[9px] text-muted-foreground/40">{timeEnd}</p>
                             </div>
-                            <div className="flex-1 py-1.5 flex items-center">
-                              <p className="text-xs text-muted-foreground/50">Free period</p>
+                            <div className="flex-1 py-1 flex items-center">
+                              <p className="text-[10px] text-muted-foreground/50">Free</p>
                             </div>
                           </div>
                         );
@@ -385,16 +372,16 @@ export default function Dashboard() {
                         <div 
                           key={index} 
                           className={cn(
-                            "relative flex items-stretch gap-3 min-h-[72px]",
-                            isCurrent && "bg-primary/5 -mx-4 px-4 rounded-xl"
+                            "relative flex items-stretch gap-2 min-h-[64px]",
+                            isCurrent && "bg-primary/5 -mx-4 px-4 rounded-lg"
                           )}
                         >
                           {/* Dot */}
-                          <div className="flex flex-col items-center w-3 flex-shrink-0">
+                          <div className="flex flex-col items-center w-2.5 flex-shrink-0">
                             <div className="flex-1" />
                             <div 
                               className={cn(
-                                "w-3 h-3 rounded-full flex-shrink-0",
+                                "w-2.5 h-2.5 rounded-full flex-shrink-0",
                                 status === 'present' ? "bg-emerald-500" :
                                 status === 'absent' ? "bg-destructive" :
                                 status === 'cancelled' ? "bg-muted-foreground" :
@@ -406,49 +393,49 @@ export default function Dashboard() {
                           </div>
 
                           {/* Time */}
-                          <div className="w-10 flex-shrink-0 flex flex-col justify-center">
+                          <div className="w-9 flex-shrink-0 flex flex-col justify-center">
                             <p className={cn(
-                              "text-sm font-semibold leading-none",
+                              "text-xs font-semibold leading-none",
                               isCurrent && "text-primary"
                             )}>{timeStart}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{timeEnd}</p>
+                            <p className="text-[9px] text-muted-foreground">{timeEnd}</p>
                           </div>
 
                           {/* Content */}
-                          <div className="flex-1 min-w-0 py-1.5">
+                          <div className="flex-1 min-w-0 py-1">
                             <div className={cn(
-                              "bg-card border rounded-xl p-3 h-full",
+                              "bg-card border rounded-lg p-2 h-full",
                               isCurrent ? "border-primary/30" : "border-border"
                             )}>
                               {/* Subject info */}
-                              <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex items-start justify-between gap-1.5 mb-1.5">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{slot.subject.name}</p>
-                                  <p className="text-xs text-muted-foreground">{slot.subject.lecturePlace || slot.subject.code}</p>
+                                  <p className="text-xs font-medium truncate">{slot.subject.name}</p>
+                                  <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.lecturePlace || slot.subject.code}</p>
                                 </div>
                                 {needsAttention && (
-                                  <span className="text-[10px] px-1.5 py-0.5 bg-destructive/10 text-destructive rounded-md flex-shrink-0">
+                                  <span className="text-[9px] px-1 py-0.5 bg-destructive/10 text-destructive rounded flex-shrink-0">
                                     {Math.round(percent)}%
                                   </span>
                                 )}
                               </div>
 
                               {/* Action buttons */}
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleMarkAttendance(index, slot.subject!.id, "present")}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
-                                    "flex-1 h-8 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1",
+                                    "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
                                     status === 'present'
                                       ? "bg-emerald-500 text-white"
                                       : "bg-secondary hover:bg-emerald-500/20 hover:text-emerald-600 disabled:opacity-40 disabled:hover:bg-secondary"
                                   )}
                                 >
                                   {isSaving && savingState?.action === 'present' ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
                                   ) : (
-                                    <Check className="w-3 h-3" />
+                                    <Check className="w-2.5 h-2.5" />
                                   )}
                                   Present
                                 </button>
@@ -456,16 +443,16 @@ export default function Dashboard() {
                                   onClick={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
-                                    "flex-1 h-8 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1",
+                                    "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
                                     status === 'absent'
                                       ? "bg-destructive text-white"
                                       : "bg-secondary hover:bg-destructive/20 hover:text-destructive disabled:opacity-40 disabled:hover:bg-secondary"
                                   )}
                                 >
                                   {isSaving && savingState?.action === 'absent' ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
                                   ) : (
-                                    <X className="w-3 h-3" />
+                                    <X className="w-2.5 h-2.5" />
                                   )}
                                   Absent
                                 </button>
@@ -473,7 +460,7 @@ export default function Dashboard() {
                                   onClick={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
                                   disabled={isSaving}
                                   className={cn(
-                                    "h-8 w-8 rounded-lg text-xs font-medium transition-all flex items-center justify-center",
+                                    "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
                                     status === 'cancelled'
                                       ? "bg-muted-foreground text-white"
                                       : "bg-secondary hover:bg-muted-foreground/20 hover:text-muted-foreground"
@@ -481,9 +468,9 @@ export default function Dashboard() {
                                   title="Cancelled"
                                 >
                                   {isSaving && savingState?.action === 'cancelled' ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
                                   ) : (
-                                    <Ban className="w-3 h-3" />
+                                    <Ban className="w-2.5 h-2.5" />
                                   )}
                                 </button>
                               </div>
