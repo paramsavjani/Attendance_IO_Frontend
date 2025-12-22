@@ -413,13 +413,6 @@ export default function Dashboard() {
                                     ? "border border-primary/30" 
                                     : "border border-border"
                             )}>
-                              {/* Cancelled overlay */}
-                              {status === 'cancelled' && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <div className="w-full h-[1px] bg-muted-foreground/40 rotate-[-8deg]" />
-                                </div>
-                              )}
-                              
                               {/* Subject info */}
                               <div className={cn(
                                 "flex items-start justify-between gap-1.5 mb-1.5",
