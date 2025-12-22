@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots, days } from "@/data/mockData";
-import { TimetableSlot, Subject } from "@/types/attendance";
+import { TimetableSlot } from "@/types/attendance";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, X, ChevronLeft, Loader2, AlertTriangle, Calendar } from "lucide-react";
+import { RefreshCw, ChevronLeft, Loader2, AlertTriangle, Clock, Plus, BookOpen, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
@@ -35,7 +35,11 @@ export default function Timetable() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeDay, setActiveDay] = useState(0);
+  const [activeDay, setActiveDay] = useState(() => {
+    const today = new Date().getDay();
+    // Convert Sunday (0) to Monday (0), Monday (1) to Monday (0), etc.
+    return today === 0 ? 0 : Math.min(today - 1, 4);
+  });
 
   // Fetch timetable from backend
   useEffect(() => {
@@ -149,14 +153,15 @@ export default function Timetable() {
 
   return (
     <AppLayout>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-muted/50 rounded-lg transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold">Timetable</h1>
+            <h1 className="text-xl font-bold">My Timetable</h1>
+            <p className="text-xs text-muted-foreground">Tap any slot to assign a subject</p>
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -207,109 +212,117 @@ export default function Timetable() {
           </div>
         ) : (
           <>
-
-            {/* Time Slots for Active Day - Compact List */}
-            <div className="space-y-1.5">
-              {timeSlots.slice(0, 6).map((time, timeIndex) => {
-                const subject = getSlotSubject(activeDay, timeIndex);
-                const timeStart = time.split(" - ")[0];
-                const timeEnd = time.split(" - ")[1];
-                
+            {/* Day Tabs */}
+            <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
+              {days.map((day, dayIndex) => {
+                const slotCount = getDaySlotCount(dayIndex);
                 return (
                   <button
-                    key={timeIndex}
-                    onClick={() => handleSlotClick(activeDay, timeIndex)}
+                    key={day}
+                    onClick={() => setActiveDay(dayIndex)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left",
-                      subject
-                        ? "border"
-                        : "bg-muted/30 border border-dashed border-border/50"
+                      "flex-1 py-2 px-1 rounded-lg text-center transition-all relative",
+                      activeDay === dayIndex 
+                        ? "bg-primary text-primary-foreground shadow-sm" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
-                    style={
-                      subject
-                        ? {
-                            backgroundColor: `hsl(${subject.color} / 0.1)`,
-                            borderColor: `hsl(${subject.color} / 0.25)`,
-                          }
-                        : undefined
-                    }
                   >
-                    {/* Time Column */}
-                    <div className="w-14 flex-shrink-0 text-center">
-                      <p className="text-xs font-medium">{timeStart}</p>
-                      <p className="text-[10px] text-muted-foreground">{timeEnd}</p>
-                    </div>
-
-                    {/* Divider */}
-                    <div 
-                      className="w-1 h-8 rounded-full flex-shrink-0"
-                      style={{ 
-                        backgroundColor: subject 
-                          ? `hsl(${subject.color})` 
-                          : 'hsl(var(--muted))' 
-                      }}
-                    />
-
-                    {/* Subject Info */}
-                    <div className="flex-1 min-w-0">
-                      {subject ? (
-                        <>
-                          <p 
-                            className="text-sm font-medium truncate"
-                            style={{ color: `hsl(${subject.color})` }}
-                          >
-                            {subject.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{subject.code}</p>
-                        </>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Free slot</p>
-                      )}
-                    </div>
+                    <span className="text-xs font-medium">{day.slice(0, 3)}</span>
+                    {slotCount > 0 && (
+                      <span className={cn(
+                        "absolute -top-1 -right-1 w-4 h-4 text-[10px] font-medium rounded-full flex items-center justify-center",
+                        activeDay === dayIndex 
+                          ? "bg-primary-foreground text-primary" 
+                          : "bg-primary/20 text-primary"
+                      )}>
+                        {slotCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Quick Overview - All Days Mini Grid */}
-            <div className="pt-3 border-t border-border/50">
-              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
-                Week Overview
-              </p>
-              <div className="grid grid-cols-5 gap-1">
-                {days.map((day, dayIndex) => (
-                  <button
-                    key={day}
-                    onClick={() => setActiveDay(dayIndex)}
-                    className={cn(
-                      "rounded-lg p-1.5 transition-all",
-                      activeDay === dayIndex 
-                        ? "bg-primary/10 ring-1 ring-primary/30" 
-                        : "bg-muted/30"
-                    )}
-                  >
-                    <p className="text-[10px] text-center text-muted-foreground mb-1">
-                      {day.slice(0, 2)}
-                    </p>
-                    <div className="grid grid-cols-1 gap-0.5">
-                      {timeSlots.slice(0, 6).map((_, timeIndex) => {
-                        const subject = getSlotSubject(dayIndex, timeIndex);
-                        return (
-                          <div
-                            key={timeIndex}
-                            className="h-1.5 rounded-sm"
-                            style={{
-                              backgroundColor: subject 
-                                ? `hsl(${subject.color})` 
-                                : 'hsl(var(--muted))'
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </button>
-                ))}
+            {/* Time Slots List */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{days[activeDay]}'s Schedule</span>
+              </div>
+              
+              <div className="space-y-1.5">
+                {timeSlots.slice(0, 6).map((time, timeIndex) => {
+                  const subject = getSlotSubject(activeDay, timeIndex);
+                  const timeStart = time.split(" - ")[0];
+                  const timeEnd = time.split(" - ")[1];
+                  
+                  return (
+                    <button
+                      key={timeIndex}
+                      onClick={() => handleSlotClick(activeDay, timeIndex)}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group",
+                        subject
+                          ? "bg-card border border-border hover:border-primary/30"
+                          : "bg-muted/20 border border-dashed border-border/40 hover:border-primary/40 hover:bg-muted/30"
+                      )}
+                    >
+                      {/* Time Column */}
+                      <div className="w-16 flex-shrink-0">
+                        <p className="text-sm font-semibold text-foreground">{timeStart}</p>
+                        <p className="text-[11px] text-muted-foreground">{timeEnd}</p>
+                      </div>
+
+                      {/* Slot Number */}
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-medium",
+                        subject 
+                          ? "bg-primary/10 text-primary" 
+                          : "bg-muted/50 text-muted-foreground"
+                      )}>
+                        {timeIndex + 1}
+                      </div>
+
+                      {/* Subject Info */}
+                      <div className="flex-1 min-w-0">
+                        {subject ? (
+                          <>
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {subject.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{subject.code}</p>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Plus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                              Add class
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Status indicator */}
+                      {subject && (
+                        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="bg-card border border-border rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Today's Classes</p>
+                <p className="text-2xl font-bold text-foreground">{getDaySlotCount(activeDay)}</p>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Week Total</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {days.reduce((acc, _, idx) => acc + getDaySlotCount(idx), 0)}
+                </p>
               </div>
             </div>
           </>
@@ -318,46 +331,64 @@ export default function Timetable() {
         {/* Assignment Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-sm mx-4">
-            <DialogHeader>
-              <DialogTitle className="text-base">
-                {selectedSlot
-                  ? `${days[selectedSlot.day]} • ${timeSlots[selectedSlot.timeSlot].split(" - ")[0]}`
-                  : "Assign Subject"}
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-base flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">Assign Subject</p>
+                  {selectedSlot && (
+                    <p className="text-xs font-normal text-muted-foreground">
+                      {days[selectedSlot.day]} • Slot {selectedSlot.timeSlot + 1} • {timeSlots[selectedSlot.timeSlot].split(" - ")[0]}
+                    </p>
+                  )}
+                </div>
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-1.5 pt-2 max-h-[50vh] overflow-y-auto">
+            <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
               {enrolledSubjects.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No enrolled subjects. Please enroll in subjects first.
-                </p>
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <BookOpen className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No enrolled subjects</p>
+                  <p className="text-xs text-muted-foreground mt-1">Please enroll in subjects first</p>
+                </div>
               ) : (
-                enrolledSubjects.map((subject) => (
-                  <button
-                    key={subject.id}
-                    onClick={() => handleAssignSubject(subject.id)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-border active:scale-98 transition-all text-left hover:bg-muted/30"
-                  >
-                    <div
-                      className="w-2.5 h-6 rounded-full"
-                      style={{ backgroundColor: `hsl(${subject.color})` }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium block truncate">{subject.name}</span>
-                      <span className="text-xs text-muted-foreground">{subject.code}</span>
+                <>
+                  {enrolledSubjects.map((subject, index) => (
+                    <button
+                      key={subject.id}
+                      onClick={() => handleAssignSubject(subject.id)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border active:scale-[0.98] transition-all text-left hover:bg-muted/30 hover:border-primary/30"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium block truncate text-foreground">{subject.name}</span>
+                        <span className="text-xs text-muted-foreground">{subject.code}</span>
+                      </div>
+                    </button>
+                  ))}
+                  
+                  {/* Clear slot option */}
+                  {selectedSlot && getSlotSubject(selectedSlot.day, selectedSlot.timeSlot) && (
+                    <div className="pt-2 mt-2 border-t border-border">
+                      <Button
+                        variant="ghost"
+                        className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleAssignSubject(null)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Remove from slot
+                      </Button>
                     </div>
-                  </button>
-                ))
+                  )}
+                </>
               )}
-
-              <Button
-                variant="ghost"
-                className="w-full gap-2 text-destructive mt-2"
-                onClick={() => handleAssignSubject(null)}
-              >
-                <X className="w-4 h-4" />
-                Clear Slot
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
