@@ -21,13 +21,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, ChevronLeft, Loader2, AlertTriangle, Clock, Plus, BookOpen, Trash2, LayoutGrid, List } from "lucide-react";
+import { RefreshCw, ChevronLeft, Loader2, AlertTriangle, Clock, Plus, BookOpen, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { toast } from "sonner";
-
-type ViewMode = 'list' | 'grid';
 
 export default function Timetable() {
   const navigate = useNavigate();
@@ -37,7 +35,6 @@ export default function Timetable() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [activeDay, setActiveDay] = useState(() => {
     const today = new Date().getDay();
     return today === 0 ? 0 : Math.min(today - 1, 4);
@@ -104,6 +101,18 @@ export default function Timetable() {
 
     setTimetable(updatedTimetable);
     setDialogOpen(false);
+    setSelectedSlot(null);
+    await saveTimetable(updatedTimetable);
+  };
+
+  const handleClearSlot = async (day: number, timeSlot: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent slot click from firing
+    
+    const updatedTimetable = timetable.filter(
+      (slot) => !(slot.day === day && slot.timeSlot === timeSlot)
+    );
+
+    setTimetable(updatedTimetable);
     await saveTimetable(updatedTimetable);
   };
 
@@ -152,10 +161,6 @@ export default function Timetable() {
     return timetable.filter(s => s.day === dayIndex && s.subjectId).length;
   };
 
-  const getSubjectAbbreviation = (name: string) => {
-    return name.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase();
-  };
-
   return (
     <AppLayout>
       <div className="space-y-3">
@@ -166,28 +171,6 @@ export default function Timetable() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold">My Timetable</h1>
-          </div>
-          
-          {/* View Toggle */}
-          <div className="flex items-center bg-muted/30 rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode('list')}
-              className={cn(
-                "p-1.5 rounded-md transition-all",
-                viewMode === 'list' ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-              )}
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={cn(
-                "p-1.5 rounded-md transition-all",
-                viewMode === 'grid' ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-              )}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
           </div>
 
           <AlertDialog>
@@ -237,8 +220,7 @@ export default function Timetable() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
-        ) : viewMode === 'list' ? (
-          /* LIST VIEW */
+        ) : (
           <>
             {/* Day Tabs */}
             <div className="flex gap-0.5 p-0.5 bg-muted/30 rounded-lg">
@@ -330,8 +312,15 @@ export default function Timetable() {
                         )}
                       </div>
 
+                      {/* Clear button for assigned slots */}
                       {subject && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                        <button
+                          onClick={(e) => handleClearSlot(activeDay, timeIndex, e)}
+                          className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                          title="Clear slot"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </button>
                   );
@@ -353,117 +342,11 @@ export default function Timetable() {
               </div>
             </div>
           </>
-        ) : (
-          /* GRID VIEW */
-          <div className="space-y-2">
-            {/* Grid Header - Days */}
-            <div className="grid grid-cols-[40px_repeat(5,1fr)] gap-0.5">
-              <div className="text-[10px] text-muted-foreground text-center py-1">Time</div>
-              {days.map((day) => (
-                <div key={day} className="text-[10px] font-medium text-center py-1 text-muted-foreground">
-                  {day.slice(0, 3)}
-                </div>
-              ))}
-            </div>
-
-            {/* Grid Body */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-              {timeSlots.slice(0, 6).map((time, timeIndex) => {
-                const timeStart = time.split(" - ")[0];
-                
-                return (
-                  <div 
-                    key={timeIndex} 
-                    className={cn(
-                      "grid grid-cols-[40px_repeat(5,1fr)] gap-0.5",
-                      timeIndex !== 5 && "border-b border-border/50"
-                    )}
-                  >
-                    {/* Time Label */}
-                    <div className="flex items-center justify-center py-2 px-1 bg-muted/30">
-                      <span className="text-[9px] font-medium text-muted-foreground leading-tight text-center">
-                        {timeStart}
-                      </span>
-                    </div>
-
-                    {/* Day Slots */}
-                    {days.map((_, dayIndex) => {
-                      const subject = getSlotSubject(dayIndex, timeIndex);
-                      
-                      return (
-                        <button
-                          key={dayIndex}
-                          onClick={() => handleSlotClick(dayIndex, timeIndex)}
-                          className={cn(
-                            "min-h-[48px] p-1 flex items-center justify-center transition-all active:scale-95",
-                            subject
-                              ? "bg-primary/10 hover:bg-primary/20"
-                              : "bg-transparent hover:bg-muted/30",
-                            dayIndex !== 4 && "border-r border-border/30"
-                          )}
-                        >
-                          {subject ? (
-                            <div className="text-center w-full">
-                              <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center mx-auto mb-0.5">
-                                <span className="text-[9px] font-bold text-primary">
-                                  {getSubjectAbbreviation(subject.name)}
-                                </span>
-                              </div>
-                              <p className="text-[8px] text-muted-foreground truncate px-0.5 leading-tight">
-                                {subject.code}
-                              </p>
-                            </div>
-                          ) : (
-                            <Plus className="w-3 h-3 text-muted-foreground/40" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-4 pt-1">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-primary/20" />
-                <span className="text-[10px] text-muted-foreground">Scheduled</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-muted/30 border border-dashed border-border/50" />
-                <span className="text-[10px] text-muted-foreground">Free slot</span>
-              </div>
-            </div>
-
-            {/* Weekly Summary in Grid View */}
-            <div className="bg-card border border-border rounded-lg p-2.5">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] text-muted-foreground">Weekly Classes</p>
-                <p className="text-lg font-bold text-foreground">
-                  {days.reduce((acc, _, idx) => acc + getDaySlotCount(idx), 0)}
-                </p>
-              </div>
-              <div className="flex gap-1 mt-2">
-                {days.map((day, idx) => (
-                  <div key={day} className="flex-1 text-center">
-                    <div className={cn(
-                      "text-xs font-bold mb-0.5",
-                      getDaySlotCount(idx) > 0 ? "text-primary" : "text-muted-foreground"
-                    )}>
-                      {getDaySlotCount(idx)}
-                    </div>
-                    <div className="text-[9px] text-muted-foreground">{day.slice(0, 2)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         )}
 
         {/* Assignment Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-[calc(100vw-2rem)] mx-4 rounded-xl">
+          <DialogContent className="max-w-sm mx-auto rounded-xl">
             <DialogHeader className="pb-1">
               <DialogTitle className="text-sm flex items-center gap-2">
                 <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
