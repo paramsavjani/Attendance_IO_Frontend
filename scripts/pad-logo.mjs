@@ -10,6 +10,7 @@ const projectRoot = dirname(__dirname);
 const inputPath = join(projectRoot, 'public', 'logo.png');
 const outputDir = join(projectRoot, 'resources');
 const outputLogoPath = join(outputDir, 'logo.png');
+
 const outputIconPath = join(outputDir, 'icon.png');
 
 function parseOffset(value, canvasSize) {
