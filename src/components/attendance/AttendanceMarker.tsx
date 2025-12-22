@@ -58,12 +58,13 @@ export function AttendanceMarker({
         "relative flex flex-col rounded-2xl overflow-hidden",
         "bg-neutral-900/50 border border-white/5 backdrop-blur-sm",
         "transition-all duration-300 group",
-        isCurrent ? "ring-1 ring-primary/40 bg-primary/5 shadow-[0_0_30px_-10px_bg-primary/20]" : "hover:bg-white/[0.02]",
-        needsAttention && !isCurrent && "ring-1 ring-warning/40"
+        isCurrent && "bg-primary/5 shadow-[0_0_30px_-10px_bg-primary/20]",
+        needsAttention ? "ring-1 ring-warning/40" : 
+        (isCurrent ? "ring-1 ring-primary/40" : "hover:bg-white/[0.02]")
       )}
     >
 
-      {/* Top Row: Color Dot + Subject Name + Time */}
+      {/* Top Row: Color Dot + Subject Name + LIVE + Percentage (same row) */}
       <div className="flex items-start justify-between px-3 py-2 pb-0.5">
         <div className="flex items-start gap-3 min-w-0">
           {/* Color Dot */}
@@ -80,12 +81,6 @@ export function AttendanceMarker({
               )}>
                 {subjectName}
               </h3>
-              {isCurrent && (
-                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold tracking-wider animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                  LIVE
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-2 mt-0.5 text-xs text-neutral-400 font-medium">
@@ -96,17 +91,26 @@ export function AttendanceMarker({
           </div>
         </div>
 
-        {/* Percentage Badge */}
-        {attendancePercent !== undefined && (
-          <div className="flex flex-col items-end pl-3 pt-1">
+        {/* Right Side: LIVE + Percentage (same row) */}
+        <div className="flex items-center gap-2 pl-3 pt-1 flex-shrink-0">
+          {/* LIVE Badge - Inline with percentage */}
+          {isCurrent && (
+            <span className="flex items-center mr-2 gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold tracking-wider whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              LIVE
+            </span>
+          )}
+          
+          {/* Percentage Badge */}
+          {attendancePercent !== undefined && (
             <div className={cn(
-              "text-lg font-bold tabular-nums leading-none tracking-tight",
+              "text-lg font-bold tabular-nums leading-none tracking-tight whitespace-nowrap",
               getPercentColor(attendancePercent)
             )}>
               {displayPercent}<span className="text-xs opacity-60 ml-0.5">%</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Actions Section */}
