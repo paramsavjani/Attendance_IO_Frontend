@@ -404,8 +404,12 @@ export default function Dashboard() {
                           {/* Content */}
                           <div className="flex-1 min-w-0 py-1">
                             <div className={cn(
-                              "bg-card border rounded-lg p-2 h-full",
-                              isCurrent ? "border-primary/30" : "border-border"
+                              "bg-card rounded-lg p-2 h-full transition-all",
+                              needsAttention 
+                                ? "border-2 border-destructive/50 bg-destructive/5 shadow-[0_0_12px_-3px] shadow-destructive/30" 
+                                : isCurrent 
+                                  ? "border border-primary/30" 
+                                  : "border border-border"
                             )}>
                               {/* Subject info */}
                               <div className="flex items-start justify-between gap-1.5 mb-1.5">
