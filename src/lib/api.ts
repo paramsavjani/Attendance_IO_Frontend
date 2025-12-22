@@ -30,6 +30,9 @@ export const API_CONFIG = {
     DELETE_ATTENDANCE: (attendanceId: string) => `${API_BASE_URL}/api/attendance/${attendanceId}`,
     CLASSES_START_DATE: `${API_BASE_URL}/api/config/classes-start-date`,
     SUBMIT_FEEDBACK: `${API_BASE_URL}/api/feedback`,
+    ANALYTICS: `${API_BASE_URL}/api/analytics`,
+    ANALYTICS_SEMESTER: (semesterId: string) => `${API_BASE_URL}/api/analytics/semester/${semesterId}`,
+    ANALYTICS_SEMESTERS: `${API_BASE_URL}/api/analytics/semesters`,
   },
 } as const;
 
