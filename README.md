@@ -78,8 +78,9 @@ A modern, feature-rich attendance tracking application for students. Track your 
    npm install
    ```
 
-3. **Configure environment variables**
-   Create a `.env` file in the root directory:
+3. **Configure environment variables (Optional)**
+   The app uses `https://api.attendanceio.paramsavjani.in` as the default API URL.
+   For local development, create a `.env` file in the root directory:
    ```env
    VITE_API_BASE_URL=http://localhost:8081
    ```
