@@ -2,13 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
-import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Search as SearchIcon, User, ChevronLeft } from "lucide-react";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
-import { hexToHslLightened } from "@/lib/utils";
+import { hexToHslLightened, cn } from "@/lib/utils";
 import { Capacitor } from "@capacitor/core";
 
 interface Student {
@@ -65,7 +63,6 @@ export default function Search() {
   const [isSearching, setIsSearching] = useState(false);
   const [attendanceData, setAttendanceData] = useState<StudentAttendanceData | null>(null);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
-  const [currentSemester, setCurrentSemester] = useState<{ year: number; type: string } | null>(null);
 
   // Handle browser/Capacitor back button
   useEffect(() => {
@@ -122,24 +119,6 @@ export default function Search() {
       setSelectedStudent(null);
     }
   }, [studentIdParam, students, setSearchParams]);
-
-  // Fetch current semester on mount
-  useEffect(() => {
-    const fetchCurrentSemester = async () => {
-      try {
-        const response = await fetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentSemester(data);
-        }
-      } catch (error) {
-        console.error('Error fetching current semester:', error);
-      }
-    };
-    fetchCurrentSemester();
-  }, []);
 
   // Search students when query changes
   useEffect(() => {
@@ -227,27 +206,45 @@ export default function Search() {
     };
 
     fetchAttendance();
-  }, [selectedStudent, selectedSemester]);
+  }, [selectedStudent]);
 
-  // Filter semesters based on selected semester
-  const filteredSemesters = useMemo(() => {
-    if (!attendanceData?.semesters || !selectedSemester) {
-      return attendanceData?.semesters || [];
+  // Calculate overall attendance across all semesters
+  const overallAttendance = useMemo(() => {
+    if (!attendanceData) return null;
+
+    let totalPresent = 0;
+    let totalAbsent = 0;
+    let totalClasses = 0;
+
+    // Sum up attendance from all semesters
+    if (attendanceData.semesters) {
+      attendanceData.semesters.forEach(sem => {
+        sem.subjects.forEach(subject => {
+          totalPresent += subject.present;
+          totalAbsent += subject.absent;
+          totalClasses += subject.total;
+        });
+      });
     }
-    return attendanceData.semesters.filter(sem => 
-      sem.semester.year === selectedSemester.year &&
-      sem.semester.type.toLowerCase() === selectedSemester.term.toLowerCase()
-    );
-  }, [attendanceData, selectedSemester]);
 
-  // Find current semester data
-  const currentSemesterData = useMemo(() => {
-    if (!attendanceData?.semesters || !currentSemester) return null;
-    return attendanceData.semesters.find(sem => 
-      sem.semester.year === currentSemester.year &&
-      sem.semester.type.toLowerCase() === currentSemester.type.toLowerCase()
-    );
-  }, [attendanceData, currentSemester]);
+    // Also include direct subjects if available
+    if (attendanceData.subjects) {
+      attendanceData.subjects.forEach(subject => {
+        totalPresent += subject.present;
+        totalAbsent += subject.absent;
+        totalClasses += subject.total;
+      });
+    }
+
+    const percentage = totalClasses > 0 ? (totalPresent / totalClasses) * 100 : 0;
+
+    return {
+      present: totalPresent,
+      absent: totalAbsent,
+      total: totalClasses,
+      percentage: percentage,
+    };
+  }, [attendanceData]);
 
   if (selectedStudent) {
     return (
@@ -263,7 +260,6 @@ export default function Search() {
                 newParams.delete("studentId");
                 return newParams;
               });
-              setSelectedSemester(null);
             }}
             className="flex items-center gap-2 text-muted-foreground text-sm"
           >
@@ -271,136 +267,86 @@ export default function Search() {
             Back
           </button>
 
-          {/* Student Header */}
-          <div className="pb-2 border-b border-border">
-            <h1 className="text-lg font-bold">{selectedStudent.name}</h1>
-            <p className="text-sm text-muted-foreground">{selectedStudent.rollNumber}</p>
-            {selectedSemester && (
-              <p className="text-xs text-primary mt-1">
-                Showing data for {selectedSemester.label}
-              </p>
-            )}
-          </div>
-
           {isLoadingAttendance ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">Loading attendance data...</p>
             </div>
-          ) : (
-            <>
-          {/* Current Semester - Only if no filter applied */}
-              {!selectedSemester && currentSemesterData && (
-            <div>
-              <h3 className="font-semibold text-sm mb-2">
-                    Current Semester ({currentSemesterData.semester.type} {currentSemesterData.semester.year})
-              </h3>
-              <div className="space-y-2">
-                    {currentSemesterData.subjects.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No attendance data for current semester
-                      </p>
-                    ) : (
-                      currentSemesterData.subjects.map((subject) => (
-                  <SubjectCard
-                          key={subject.subjectId}
-                          name={subject.subjectName}
-                          code={subject.subjectCode}
-                    color={subject.color}
-                    present={subject.present}
-                    absent={subject.absent}
-                    total={subject.total}
-                    minRequired={70}
-                    defaultExpanded={true}
-                  />
-                      ))
-                    )}
-              </div>
-            </div>
-          )}
-
-          {/* Filtered Semester Data */}
-          {selectedSemester && (
-            <div>
-              <h3 className="font-semibold text-sm mb-2">
-                {selectedSemester.label} Attendance
-              </h3>
-              <div className="space-y-2">
-                    {filteredSemesters.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No data for {selectedSemester.label}
-                  </p>
-                    ) : (
-                      filteredSemesters.map((sem) => (
-                        <div key={`${sem.semester.year}-${sem.semester.type}`} className="space-y-2">
-                          {sem.subjects.map((subject) => (
-                      <SubjectCard
-                              key={subject.subjectId}
-                              name={subject.subjectName}
-                              code={subject.subjectCode}
-                        color={subject.color}
-                        present={subject.present}
-                        absent={subject.absent}
-                        total={subject.total}
-                        minRequired={75}
-                      />
-                    ))}
-                  </div>
-                      ))
-                    )}
-              </div>
-            </div>
-          )}
-
-          {/* Previous Semesters - Collapsed view without filter */}
-              {!selectedSemester && attendanceData?.semesters && (
-            <div>
-              <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
-              <div className="space-y-2">
-                    {attendanceData.semesters
-                      .filter(sem => 
-                        !currentSemester || 
-                        sem.semester.year !== currentSemester.year ||
-                        sem.semester.type.toLowerCase() !== currentSemester.type.toLowerCase()
-                      )
-                      .map((sem) => (
-                        <Collapsible key={`${sem.semester.year}-${sem.semester.type}`}>
-                    <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
-                      <div>
-                              <p className="font-medium text-sm">
-                                {sem.semester.type} {sem.semester.year}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {sem.subjects.length} subject{sem.subjects.length !== 1 ? 's' : ''}
-                              </p>
-                      </div>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pt-2 space-y-2">
-                            {sem.subjects.map((subject) => (
-                        <SubjectCard
-                                key={subject.subjectId}
-                                name={subject.subjectName}
-                                lecturePlace={subject.lecturePlace}
-                          color={subject.color}
-                          present={subject.present}
-                          absent={subject.absent}
-                          total={subject.total}
-                          minRequired={75}
-                        />
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </div>
-            </div>
-              )}
-
-              {!attendanceData?.semesters && !attendanceData?.subjects && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">No attendance data available</p>
+          ) : overallAttendance ? (
+            /* Student Profile Card with Overall Attendance */
+            <div className="bg-card rounded-xl p-6 border border-border space-y-6">
+              {/* Student Info */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  {selectedStudent.pictureUrl ? (
+                    <img 
+                      src={selectedStudent.pictureUrl} 
+                      alt={selectedStudent.name}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-8 h-8 text-primary" />
+                  )}
                 </div>
-              )}
-            </>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl font-bold truncate">{selectedStudent.name}</h1>
+                  <p className="text-sm text-muted-foreground">{selectedStudent.rollNumber}</p>
+                </div>
+              </div>
+
+              {/* Overall Attendance */}
+              <div className="space-y-4">
+                {/* Percentage Display */}
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-2">Overall Attendance</p>
+                  <p className={cn(
+                    "text-5xl font-bold mb-1",
+                    overallAttendance.percentage >= 75 ? "text-success" :
+                    overallAttendance.percentage >= 60 ? "text-warning" : "text-destructive"
+                  )}>
+                    {overallAttendance.percentage.toFixed(1)}%
+                  </p>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all",
+                        overallAttendance.percentage >= 75 ? "bg-success" :
+                        overallAttendance.percentage >= 60 ? "bg-warning" : "bg-destructive"
+                      )}
+                      style={{ width: `${Math.min(overallAttendance.percentage, 100)}%` }}
+                    />
+                    {/* 75% threshold marker */}
+                    <div
+                      className="absolute top-0 w-0.5 h-full bg-foreground/30"
+                      style={{ left: "75%" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Present</p>
+                    <p className="text-2xl font-bold text-success">{overallAttendance.present}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Absent</p>
+                    <p className="text-2xl font-bold text-destructive">{overallAttendance.absent}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Total</p>
+                    <p className="text-2xl font-bold text-foreground">{overallAttendance.total}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">No attendance data available</p>
+            </div>
           )}
         </div>
       </AppLayout>
