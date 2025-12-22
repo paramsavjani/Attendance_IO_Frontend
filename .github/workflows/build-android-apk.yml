@@ -108,42 +108,45 @@ jobs:
           echo "All tags:"
           git tag -l | head -20 || echo "No tags found"
           
-          # Get the highest version tag (handle both v1.0.0 and 1.0-27 formats)
-          LATEST_TAG=""
+          # Only look for proper semantic version tags: vX.Y.Z where X, Y, Z are numbers
+          # This regex ensures: v + number + . + number + . + number (nothing else)
+          SEMVER_TAG=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || echo "")
           
-          # First, try to find semantic version tags (v*.*.*)
-          SEMVER_TAG=$(git tag -l "v*.*.*" | sort -V | tail -1 || echo "")
           if [ -n "$SEMVER_TAG" ]; then
             LATEST_TAG="$SEMVER_TAG"
             echo "Found semantic version tag: $LATEST_TAG"
           else
-            # Try old format (1.0-27)
+            # Check for old format tags (1.0-27) and convert the highest one
             OLD_TAG=$(git tag -l | grep -E '^[0-9]+\.[0-9]+-[0-9]+$' | sort -V | tail -1 || echo "")
             if [ -n "$OLD_TAG" ]; then
-              # Convert 1.0-27 to v1.0.27
+              # Convert 1.0-27 to v1.0.27 (use build number as patch)
               VERSION_PART=$(echo "$OLD_TAG" | cut -d'-' -f1)
               BUILD_PART=$(echo "$OLD_TAG" | cut -d'-' -f2)
-              LATEST_TAG="v${VERSION_PART}.0.${BUILD_PART}"
+              # Extract major.minor from version part
+              IFS='.' read -r MAJOR MINOR <<< "$VERSION_PART"
+              LATEST_TAG="v${MAJOR}.${MINOR}.${BUILD_PART}"
               echo "Found old format tag: $OLD_TAG, converted to: $LATEST_TAG"
             fi
           fi
           
           if [ -z "$LATEST_TAG" ]; then
-            # No tags found, start with v1.0.0
+            # No valid tags found, start with v1.0.0
             NEW_VERSION_NAME="v1.0.0"
             echo "No existing tags found, starting with $NEW_VERSION_NAME"
           else
-            echo "Latest tag: $LATEST_TAG"
+            echo "Latest valid tag: $LATEST_TAG"
             
-            # Extract version numbers (remove 'v' prefix if present)
+            # Extract version numbers (remove 'v' prefix)
             VERSION_STRING=$(echo "$LATEST_TAG" | sed 's/^v//')
             echo "Version string: $VERSION_STRING"
             
-            # Parse version parts (major.minor.patch)
+            # Parse version parts (major.minor.patch) - ensure all are numbers
             IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_STRING"
-            MAJOR=${MAJOR:-1}
-            MINOR=${MINOR:-0}
-            PATCH=${PATCH:-0}
+            
+            # Validate and set defaults if empty
+            if ! [[ "$MAJOR" =~ ^[0-9]+$ ]]; then MAJOR=1; fi
+            if ! [[ "$MINOR" =~ ^[0-9]+$ ]]; then MINOR=0; fi
+            if ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then PATCH=0; fi
             
             echo "Parsed: MAJOR=$MAJOR, MINOR=$MINOR, PATCH=$PATCH"
             
@@ -151,6 +154,13 @@ jobs:
             NEW_PATCH=$((PATCH + 1))
             NEW_VERSION_NAME="v${MAJOR}.${MINOR}.${NEW_PATCH}"
             echo "Incremented patch: $PATCH -> $NEW_PATCH"
+          fi
+          
+          # Validate the final version format (must be vX.Y.Z)
+          if ! [[ "$NEW_VERSION_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: Invalid version format: $NEW_VERSION_NAME"
+            echo "Falling back to v1.0.0"
+            NEW_VERSION_NAME="v1.0.0"
           fi
           
           # Use GitHub run number as version code (increments with each build)
