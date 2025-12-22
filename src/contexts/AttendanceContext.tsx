@@ -370,6 +370,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [fetchTimetable]);
 
   // Helper to calculate new stats logic (reused for both Today and All-Time stats)
+  // NOTE: Total class count is NOT modified during live updates - only present/absent counts change
+  // The total comes from the backend and should remain constant during optimistic updates
   const calculateNewStats = (
     currentStats: SubjectStats,
     previousStatus: 'present' | 'absent' | 'cancelled' | null,
@@ -377,30 +379,27 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   ) => {
     let newPresent = currentStats.present;
     let newAbsent = currentStats.absent;
-    let newTotal = currentStats.total;
+    // Keep total unchanged - it comes from backend and should not be modified locally
+    const newTotal = currentStats.total;
 
     // Handle deletion (unmarking)
     if (newStatus === null) {
       if (previousStatus === 'present') {
         newPresent = Math.max(0, newPresent - 1);
-        newTotal = Math.max(0, newTotal - 1);
       } else if (previousStatus === 'absent') {
         newAbsent = Math.max(0, newAbsent - 1);
-        newTotal = Math.max(0, newTotal - 1);
       }
-      // Cancelled classes don't count in total, so no change needed
+      // Total remains unchanged - backend will handle total updates
     } else {
       // Handle marking new attendance or changing status
       if (previousStatus === null) {
         // New attendance mark
         if (newStatus === 'present') {
           newPresent += 1;
-          newTotal += 1;
         } else if (newStatus === 'absent') {
           newAbsent += 1;
-          newTotal += 1;
         }
-        // Cancelled classes don't count in total
+        // Total remains unchanged - backend will handle total updates
       } else if (previousStatus === newStatus) {
         // Clicking the same status again - should not change stats
         // This is a no-op, stats remain the same
@@ -411,21 +410,15 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           newPresent = Math.max(0, newPresent - 1);
         } else if (previousStatus === 'absent') {
           newAbsent = Math.max(0, newAbsent - 1);
-        } else if (previousStatus === 'cancelled') {
-          // Was cancelled (not counted), now counting
-          newTotal += 1;
         }
+        // Total remains unchanged regardless of status changes
 
         if (newStatus === 'present') {
           newPresent += 1;
         } else if (newStatus === 'absent') {
           newAbsent += 1;
-        } else if (newStatus === 'cancelled') {
-          // Now cancelled (not counted), remove from total if previously counted
-          if (previousStatus === 'present' || previousStatus === 'absent') {
-            newTotal = Math.max(0, newTotal - 1);
-          }
         }
+        // Total remains unchanged - cancelled or not, total stays the same
       }
     }
 
@@ -433,7 +426,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       ...currentStats,
       present: newPresent,
       absent: newAbsent,
-      total: newTotal
+      total: newTotal // Total remains constant during live updates
     };
   };
 
