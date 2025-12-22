@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      artifacts: read
     
     steps:
       - name: Checkout code
@@ -127,6 +130,7 @@ jobs:
             Download the APK from the assets below.
           draft: false
           prerelease: false
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
