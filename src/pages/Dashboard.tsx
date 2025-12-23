@@ -319,9 +319,9 @@ export default function Dashboard() {
                     // Loading skeleton - compact
                     schedule.map((slot, index) => (
                       <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
-                        <div className="flex flex-col items-center w-2.5 flex-shrink-0">
+                        <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                           <div className="flex-1" />
-                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30 animate-pulse" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30 animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                           <div className="flex-1" />
                         </div>
                         <div className="w-9 flex-shrink-0 flex flex-col justify-center">
@@ -347,9 +347,9 @@ export default function Dashboard() {
                         // Empty slot - same height as lecture slots
                         return (
                           <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
-                            <div className="flex flex-col items-center w-2.5 flex-shrink-0">
+                            <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                               <div className="flex-1" />
-                              <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />
+                              <div className="w-2 h-2 rounded-full bg-muted-foreground/20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                               <div className="flex-1" />
                             </div>
                             <div className="w-9 flex-shrink-0 flex flex-col justify-center">
@@ -377,11 +377,11 @@ export default function Dashboard() {
                           )}
                         >
                           {/* Dot */}
-                          <div className="flex flex-col items-center w-2.5 flex-shrink-0">
+                          <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                             <div className="flex-1" />
                             <div 
                               className={cn(
-                                "w-2.5 h-2.5 rounded-full flex-shrink-0",
+                                "w-2.5 h-2.5 rounded-full flex-shrink-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
                                 status === 'present' ? "bg-emerald-500" :
                                 status === 'absent' ? "bg-destructive" :
                                 status === 'cancelled' ? "bg-muted-foreground" :
