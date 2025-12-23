@@ -178,40 +178,45 @@ export function AttendanceMarkerSkeleton() {
         "bg-neutral-900/50 border border-white/5 backdrop-blur-sm"
       )}
     >
-      {/* Top Row: Color Dot + Subject Name + Percentage (same row) */}
+      {/* Top Row: Color Dot + Subject Name + Percentage (same row) - matches real component */}
       <div className="flex items-start justify-between px-3 py-2 pb-0.5">
         <div className="flex items-start gap-3 min-w-0">
-          {/* Color Dot */}
+          {/* Color Dot - matches w-2.5 h-2.5 mt-1.5 */}
           <Skeleton className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 bg-neutral-700" />
 
           <div className="min-w-0">
+            {/* Subject name - matches text-base leading-none pt-1 */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Skeleton className="h-4 w-36 bg-neutral-800 mt-1" />
+              <Skeleton className="h-4 w-32 bg-neutral-800 rounded mt-1" />
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <Skeleton className="h-3 w-16 bg-neutral-800" />
+            {/* Subject code - matches text-xs mt-0.5 */}
+            <div className="flex items-center gap-2 mt-0.5">
+              <Skeleton className="h-3 w-14 bg-neutral-800 rounded" />
             </div>
           </div>
         </div>
 
-        {/* Right Side: Percentage */}
+        {/* Right Side: Percentage - matches text-lg leading-none */}
         <div className="flex items-center gap-2 pl-3 pt-1 flex-shrink-0">
-          <Skeleton className="h-5 w-10 bg-neutral-800 rounded" />
+          <Skeleton className="h-5 w-12 bg-neutral-800 rounded" />
         </div>
       </div>
 
-      {/* Actions Section */}
+      {/* Actions Section - matches real component structure */}
       <div className="flex items-center justify-between px-3 py-2 pt-1 pb-1.5 bg-gradient-to-t from-black/20 to-transparent">
-        {/* Lecture Place & Time */}
+        {/* Lecture Place & Time - matches pl-[1.375rem] */}
         <div className="flex-1 flex flex-col justify-center min-w-0 pr-3 pl-[1.375rem]">
-          <Skeleton className="h-3 w-16 bg-neutral-800" />
+          {/* Lecture place - text-xs */}
+          <Skeleton className="h-3 w-14 bg-neutral-800 rounded" />
+          {/* Time - text-[10px] mt-0.5 with dot */}
           <div className="flex items-center gap-1.5 mt-0.5">
-            <Skeleton className="w-1 h-1 rounded-full bg-neutral-700" />
-            <Skeleton className="h-2.5 w-24 bg-neutral-800" />
+            <Skeleton className="w-1 h-1 rounded-full bg-neutral-600" />
+            <Skeleton className="h-2.5 w-20 bg-neutral-800 rounded" />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-1 ml-auto">
+        {/* Action buttons - matches h-9 w-9 lg:h-11 lg:w-11 gap-2 */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
           <Skeleton className="h-9 w-9 lg:h-11 lg:w-11 rounded-xl bg-neutral-800" />
           <Skeleton className="h-9 w-9 lg:h-11 lg:w-11 rounded-xl bg-neutral-800" />
           <Skeleton className="h-9 w-9 lg:h-11 lg:w-11 rounded-xl bg-neutral-800" />
