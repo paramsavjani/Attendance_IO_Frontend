@@ -42,8 +42,8 @@ export function SleepDurationDialog({
     const hoursNum = parseInt(hours, 10);
     
     // Validate input
-    if (isNaN(hoursNum) || hoursNum < 4 || hoursNum > 16) {
-      toast.error("Sleep duration must be between 4 and 16 hours");
+    if (isNaN(hoursNum) || hoursNum < 1 || hoursNum >= 20) {
+      toast.error("Sleep duration must be less than 20 hours");
       return;
     }
 
@@ -129,12 +129,12 @@ export function SleepDurationDialog({
               <Input
                 id="sleep-hours"
                 type="number"
-                min="4"
-                max="16"
+                min="1"
+                max="19"
                 value={hours}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === "" || (parseInt(val) >= 4 && parseInt(val) <= 16)) {
+                  if (val === "" || (parseInt(val) >= 1 && parseInt(val) < 20)) {
                     setHours(val);
                   }
                 }}
@@ -153,7 +153,7 @@ export function SleepDurationDialog({
           <Button
             onClick={handleSave}
             className="flex-1 h-11 sm:h-10 rounded-xl font-semibold shadow-md"
-            disabled={isSaving || !hours || parseInt(hours) < 4 || parseInt(hours) > 16}
+            disabled={isSaving || !hours || parseInt(hours) < 1 || parseInt(hours) >= 20}
           >
             {isSaving ? (
               <>
