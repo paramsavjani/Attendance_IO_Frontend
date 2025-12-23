@@ -111,10 +111,7 @@ export default function DeleteAccount() {
                     </ul>
                     <div className="mt-4 bg-muted/50 rounded-lg p-4">
                       <p className="text-sm text-muted-foreground mb-2">
-                        <strong>Email:</strong> [Your support email address]
-                      </p>
-                      <p className="text-xs text-muted-foreground/80">
-                        Please replace this with your actual support email address
+                        <strong>Email:</strong> parmsavjani3010@gmail.com
                       </p>
                     </div>
                   </div>
