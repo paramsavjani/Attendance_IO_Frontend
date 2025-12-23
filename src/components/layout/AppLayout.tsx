@@ -46,48 +46,107 @@ export function AppLayout({ children }: AppLayoutProps) {
     shouldRefresh,
   } = usePullToRefresh({
     onRefresh: handleRefresh,
-    threshold: 80,
-    maxPull: 120,
+    threshold: 70,
+    maxPull: 100,
   });
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
+  // Calculate dynamic values for smooth animation
+  const indicatorScale = 0.3 + progress * 0.7;
+  const indicatorOpacity = Math.min(progress * 1.5, 1);
+  const rotation = progress * 180;
+
   return (
-    <div ref={containerRef} className="min-h-screen bg-background flex flex-col overflow-hidden">
+    <div ref={containerRef} className="min-h-screen bg-background flex flex-col overflow-hidden touch-pan-y">
       {/* Pull to Refresh Indicator */}
       <div 
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center overflow-hidden transition-all duration-200"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center pointer-events-none"
         style={{ 
-          height: pullDistance,
-          opacity: progress,
+          height: Math.max(pullDistance, 0),
+          transition: pullDistance === 0 ? 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
         }}
       >
         <div 
           className={cn(
-            "flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20 shadow-lg",
-            isRefreshing && "animate-pulse"
+            "flex items-center justify-center w-10 h-10 rounded-full",
+            "bg-gradient-to-br from-primary/20 to-primary/10",
+            "border border-primary/30 shadow-lg shadow-primary/10",
+            "backdrop-blur-sm",
+            isRefreshing && "shadow-primary/30"
           )}
           style={{
-            transform: `rotate(${progress * 360}deg) scale(${0.5 + progress * 0.5})`,
+            transform: `scale(${indicatorScale})`,
+            opacity: indicatorOpacity,
+            transition: 'transform 0.15s ease-out, box-shadow 0.2s ease',
           }}
         >
+          {/* Outer ring progress indicator */}
+          <svg 
+            className="absolute w-12 h-12" 
+            viewBox="0 0 48 48"
+            style={{ transform: `rotate(-90deg)` }}
+          >
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="none"
+              stroke="hsl(var(--primary) / 0.2)"
+              strokeWidth="2"
+            />
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="none"
+              stroke="hsl(var(--primary))"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeDasharray={`${progress * 126} 126`}
+              className="transition-all duration-100"
+            />
+          </svg>
+          
           <RefreshCw 
             className={cn(
-              "w-5 h-5 text-primary transition-all",
+              "w-4 h-4 text-primary transition-all duration-150",
               isRefreshing && "animate-spin",
-              shouldRefresh && !isRefreshing && "text-primary scale-110"
-            )} 
+              shouldRefresh && !isRefreshing && "text-primary"
+            )}
+            style={{
+              transform: `rotate(${rotation}deg)`,
+              transition: isRefreshing ? 'none' : 'transform 0.1s ease-out',
+            }}
           />
         </div>
+        
+        {/* Release text indicator */}
+        {shouldRefresh && !isRefreshing && (
+          <span 
+            className="absolute bottom-1 text-[10px] font-medium text-primary/80 animate-fade-in"
+          >
+            Release to refresh
+          </span>
+        )}
+        
+        {isRefreshing && (
+          <span 
+            className="absolute bottom-1 text-[10px] font-medium text-primary/80 animate-fade-in"
+          >
+            Refreshing...
+          </span>
+        )}
       </div>
 
       {/* Main Content */}
       <main 
-        className="flex-1 pb-20 overflow-auto transition-transform duration-200"
+        className="flex-1 pb-20 overflow-auto"
         style={{ 
           transform: `translateY(${pullDistance}px)`,
+          transition: pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
         }}
       >
         <div className="p-4 max-w-lg mx-auto">
