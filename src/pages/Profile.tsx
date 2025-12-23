@@ -331,69 +331,108 @@ export default function Profile() {
           <Edit className="w-4 h-4 text-muted-foreground" />
         </button>
 
-        {/* Sleep Duration - Compact Mobile Optimized */}
-        <div className="bg-card rounded-xl p-3 border border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Moon className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">Sleep Duration</p>
-              {isLoadingSleepDuration ? (
-                <p className="text-xs text-muted-foreground">Loading...</p>
-              ) : isEditingSleepDuration ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-2 py-0.5">
-                    <Input
-                      type="number"
-                      min="4"
-                      max="16"
-                      value={editingSleepHours}
-                      onChange={(e) => setEditingSleepHours(e.target.value)}
-                      placeholder="8"
-                      className="w-10 h-6 text-center text-sm font-semibold border-0 bg-transparent p-0 focus-visible:ring-0"
-                      disabled={isSavingSleepDuration}
-                    />
-                    <span className="text-xs text-muted-foreground">hrs</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleSaveSleepDuration}
-                      disabled={isSavingSleepDuration}
-                      className="h-6 w-6 p-0 text-primary hover:bg-primary/10"
-                    >
-                      <Save className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleCancelEditSleepDuration}
-                      disabled={isSavingSleepDuration}
-                      className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted"
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
+        {/* Sleep Duration - Premium Design */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          {isEditingSleepDuration ? (
+            <div className="p-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                  <Moon className="w-5 h-5 text-primary" />
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {sleepDuration !== null ? `${sleepDuration} hours` : "8 hours"} · Reminders enabled
-                </p>
+                <div>
+                  <p className="font-semibold text-sm">Sleep Duration</p>
+                  <p className="text-xs text-muted-foreground">How many hours do you sleep?</p>
+                </div>
+              </div>
+              
+              {/* Quick Select Chips */}
+              <div className="flex gap-2 justify-center">
+                {[6, 7, 8, 9].map((hours) => (
+                  <button
+                    key={hours}
+                    onClick={() => setEditingSleepHours(hours.toString())}
+                    disabled={isSavingSleepDuration}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                      editingSleepHours === hours.toString()
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
+                    }`}
+                  >
+                    {hours}h
+                  </button>
+                ))}
+              </div>
+              
+              {/* Custom Input */}
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xs text-muted-foreground">or</span>
+                <div className="flex items-center gap-1 bg-muted/30 rounded-lg px-3 py-1.5 border border-border">
+                  <Input
+                    type="number"
+                    min="4"
+                    max="16"
+                    value={editingSleepHours}
+                    onChange={(e) => setEditingSleepHours(e.target.value)}
+                    placeholder="8"
+                    className="w-12 h-6 text-center text-sm font-bold border-0 bg-transparent p-0 focus-visible:ring-0"
+                    disabled={isSavingSleepDuration}
+                  />
+                  <span className="text-xs text-muted-foreground font-medium">hours</span>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelEditSleepDuration}
+                  disabled={isSavingSleepDuration}
+                  className="flex-1 h-10 rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveSleepDuration}
+                  disabled={isSavingSleepDuration}
+                  className="flex-1 h-10 rounded-xl gap-2"
+                >
+                  {isSavingSleepDuration ? (
+                    "Saving..."
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 p-3">
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Moon className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">Sleep Duration</p>
+                {isLoadingSleepDuration ? (
+                  <p className="text-xs text-muted-foreground">Loading...</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {sleepDuration !== null ? `${sleepDuration} hours` : "8 hours"} · Reminders enabled
+                  </p>
+                )}
+              </div>
+              {!isLoadingSleepDuration && (
+                <button
+                  onClick={handleEditSleepDuration}
+                  className="h-8 px-3 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                >
+                  <Edit className="w-3 h-3" />
+                  Edit
+                </button>
               )}
             </div>
-            {!isLoadingSleepDuration && !isEditingSleepDuration && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleEditSleepDuration}
-                className="h-7 w-7 p-0 flex-shrink-0"
-              >
-                <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Minimum Criteria (Modal) */}
@@ -462,91 +501,142 @@ export default function Profile() {
           </DialogContent>
         </Dialog>
 
-        {/* Minimum Criteria Modal */}
+        {/* Minimum Criteria Modal - Premium Design */}
         <Dialog open={showCriteriaModal} onOpenChange={setShowCriteriaModal}>
-          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 flex flex-col">
-            <DialogHeader>
-              <DialogTitle>Minimum Criteria</DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
+          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  Minimum Criteria
+                </DialogTitle>
+              </DialogHeader>
+              <p className="text-xs text-muted-foreground mt-1">Set attendance targets for each subject</p>
+            </div>
+            
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
               {enrolledSubjects.map((subject) => {
                 const isEditing = Object.prototype.hasOwnProperty.call(editingCriteria, subject.id);
                 const isSaving = isSavingCriteria[subject.id] || false;
                 const currentValue = subject.minimumCriteria;
+                const displayValue = currentValue !== null && currentValue !== undefined ? currentValue : 70;
 
                 return (
                   <div
                     key={subject.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30"
+                    className={`rounded-xl border transition-all ${
+                      isEditing 
+                        ? 'border-primary/30 bg-primary/5 p-4' 
+                        : 'border-border bg-muted/30 p-3'
+                    }`}
                   >
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: subject.color }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{subject.name}</p>
-                      <p className="text-xs text-muted-foreground">{subject.code}</p>
-                    </div>
-                    {isEditing ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={editingCriteria[subject.id]}
-                          onChange={(e) =>
-                            setEditingCriteria((prev) => ({
-                              ...prev,
-                              [subject.id]: e.target.value,
-                            }))
-                          }
-                          placeholder="70"
-                          className="w-20 h-8 text-sm"
-                          disabled={isSaving}
-                        />
-                        <span className="text-sm text-muted-foreground">%</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleSaveCriteria(subject.id)}
-                          disabled={isSaving}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Save className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleCancelEdit(subject.id)}
-                          disabled={isSaving}
-                          className="h-8 w-8 p-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0 shadow-lg"
+                        style={{ backgroundColor: subject.color, boxShadow: `0 0 8px ${subject.color}40` }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{subject.name}</p>
+                        <p className="text-xs text-muted-foreground">{subject.code}</p>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          {currentValue !== null && currentValue !== undefined ? `${currentValue}%` : "70%"}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEditCriteria(subject.id, currentValue)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                      {!isEditing && (
+                        <div className="flex items-center gap-2">
+                          <span className={`text-base font-bold tabular-nums ${
+                            displayValue >= 75 ? 'text-emerald-500' : displayValue >= 65 ? 'text-yellow-500' : 'text-red-500'
+                          }`}>
+                            {displayValue}%
+                          </span>
+                          <button
+                            onClick={() => handleEditCriteria(subject.id, currentValue)}
+                            className="h-8 px-2.5 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {isEditing && (
+                      <div className="mt-4 space-y-3">
+                        {/* Quick Select Chips */}
+                        <div className="flex gap-2 justify-center flex-wrap">
+                          {[65, 70, 75, 80, 85].map((percent) => (
+                            <button
+                              key={percent}
+                              onClick={() => setEditingCriteria(prev => ({ ...prev, [subject.id]: percent.toString() }))}
+                              disabled={isSaving}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                editingCriteria[subject.id] === percent.toString()
+                                  ? 'bg-primary text-primary-foreground shadow-md scale-105'
+                                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
+                              }`}
+                            >
+                              {percent}%
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {/* Custom Input */}
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-xs text-muted-foreground">or</span>
+                          <div className="flex items-center gap-1 bg-muted/30 rounded-lg px-3 py-1.5 border border-border">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              value={editingCriteria[subject.id]}
+                              onChange={(e) => setEditingCriteria(prev => ({ ...prev, [subject.id]: e.target.value }))}
+                              placeholder="70"
+                              className="w-12 h-6 text-center text-sm font-bold border-0 bg-transparent p-0 focus-visible:ring-0"
+                              disabled={isSaving}
+                            />
+                            <span className="text-xs text-muted-foreground font-medium">%</span>
+                          </div>
+                        </div>
+                        
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelEdit(subject.id)}
+                            disabled={isSaving}
+                            className="flex-1 h-9 rounded-lg"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveCriteria(subject.id)}
+                            disabled={isSaving}
+                            className="flex-1 h-9 rounded-lg gap-1.5"
+                          >
+                            {isSaving ? (
+                              "Saving..."
+                            ) : (
+                              <>
+                                <Save className="w-3.5 h-3.5" />
+                                Save
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
                 );
               })}
             </div>
-            <div className="pt-3 border-t border-border flex justify-end">
-              <Button variant="outline" onClick={() => setShowCriteriaModal(false)}>
-                Close
+            
+            <div className="p-4 pt-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCriteriaModal(false)}
+                className="w-full h-10 rounded-xl"
+              >
+                Done
               </Button>
             </div>
           </DialogContent>
