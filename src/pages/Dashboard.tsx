@@ -282,7 +282,7 @@ export default function Dashboard() {
             onTouchMove={swipeHandlers.onTouchMove}
             onTouchEnd={swipeHandlers.onTouchEnd}
           >
-            <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-1">
+            <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-0">
               <button
                 onClick={() => navigateDate("prev")}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
@@ -308,7 +308,7 @@ export default function Dashboard() {
 
             {/* Compact Notices */}
             {isSelectedTomorrow && showingTomorrowByDefault && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/20">
+              <div className="flex items-center gap-2 px-3 py-1 bg-primary/5 rounded-xl border border-primary/20">
                 <Sunrise className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
                   Today's done — showing tomorrow's schedule
