@@ -403,7 +403,7 @@ export function SubjectSelector({
       </div>
 
       {/* Subject List - Fixed scrollable area */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 mb-3 pr-1" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '150px' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 mb-3 pr-1 pb-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
