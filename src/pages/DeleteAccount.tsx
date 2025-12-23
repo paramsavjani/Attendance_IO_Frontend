@@ -233,7 +233,7 @@ export default function DeleteAccount() {
               </p>
               <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 sm:p-6">
                 <p className="text-muted-foreground mb-2">
-                  <strong className="text-foreground">Email:</strong> [Your support email address]
+                  <strong className="text-foreground">Email:</strong> parmsavjani3010@gmail.com
                 </p>
                 <p className="text-muted-foreground">
                   <strong className="text-foreground">Response Time:</strong> We aim to respond to deletion requests within 5-7 business days
