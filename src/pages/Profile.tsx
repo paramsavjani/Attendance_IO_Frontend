@@ -4,13 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, X, ChevronRight, Moon, MessageSquare, Bug, Lightbulb, Send, Heart } from "lucide-react";
+import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, ChevronRight, Moon, MessageSquare, Bug, Lightbulb, Send, Heart } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 import { API_CONFIG } from "@/lib/api";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -334,7 +335,7 @@ export default function Profile() {
         {/* Sleep Duration - Premium Design */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           {isEditingSleepDuration ? (
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                   <Moon className="w-5 h-5 text-primary" />
@@ -345,39 +346,27 @@ export default function Profile() {
                 </div>
               </div>
               
-              {/* Quick Select Chips */}
-              <div className="flex gap-2 justify-center">
-                {[6, 7, 8, 9].map((hours) => (
-                  <button
-                    key={hours}
-                    onClick={() => setEditingSleepHours(hours.toString())}
-                    disabled={isSavingSleepDuration}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                      editingSleepHours === hours.toString()
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105'
-                        : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
-                    }`}
-                  >
-                    {hours}h
-                  </button>
-                ))}
+              {/* Value Display */}
+              <div className="text-center">
+                <span className="text-4xl font-bold text-primary tabular-nums">{editingSleepHours}</span>
+                <span className="text-lg text-muted-foreground ml-1">hours</span>
               </div>
               
-              {/* Custom Input */}
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xs text-muted-foreground">or</span>
-                <div className="flex items-center gap-1 bg-muted/30 rounded-lg px-3 py-1.5 border border-border">
-                  <Input
-                    type="number"
-                    min="4"
-                    max="16"
-                    value={editingSleepHours}
-                    onChange={(e) => setEditingSleepHours(e.target.value)}
-                    placeholder="8"
-                    className="w-12 h-6 text-center text-sm font-bold border-0 bg-transparent p-0 focus-visible:ring-0"
-                    disabled={isSavingSleepDuration}
-                  />
-                  <span className="text-xs text-muted-foreground font-medium">hours</span>
+              {/* Slider */}
+              <div className="px-2">
+                <Slider
+                  value={[parseInt(editingSleepHours) || 8]}
+                  onValueChange={(value) => setEditingSleepHours(value[0].toString())}
+                  min={1}
+                  max={20}
+                  step={1}
+                  disabled={isSavingSleepDuration}
+                  className="w-full"
+                />
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  <span>1h</span>
+                  <span>10h</span>
+                  <span>20h</span>
                 </div>
               </div>
               
@@ -558,41 +547,33 @@ export default function Profile() {
                     </div>
                     
                     {isEditing && (
-                      <div className="mt-4 space-y-3">
-                        {/* Quick Select Chips */}
-                        <div className="flex gap-2 justify-center flex-wrap">
-                          {[65, 70, 75, 80, 85].map((percent) => (
-                            <button
-                              key={percent}
-                              onClick={() => setEditingCriteria(prev => ({ ...prev, [subject.id]: percent.toString() }))}
-                              disabled={isSaving}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                editingCriteria[subject.id] === percent.toString()
-                                  ? 'bg-primary text-primary-foreground shadow-md scale-105'
-                                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
-                              }`}
-                            >
-                              {percent}%
-                            </button>
-                          ))}
+                      <div className="mt-4 space-y-4">
+                        {/* Value Display */}
+                        <div className="text-center">
+                          <span className={`text-3xl font-bold tabular-nums ${
+                            parseInt(editingCriteria[subject.id]) >= 75 ? 'text-emerald-500' : 
+                            parseInt(editingCriteria[subject.id]) >= 65 ? 'text-yellow-500' : 'text-red-500'
+                          }`}>
+                            {editingCriteria[subject.id] || 0}
+                          </span>
+                          <span className="text-lg text-muted-foreground ml-1">%</span>
                         </div>
                         
-                        {/* Custom Input */}
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-xs text-muted-foreground">or</span>
-                          <div className="flex items-center gap-1 bg-muted/30 rounded-lg px-3 py-1.5 border border-border">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="1"
-                              value={editingCriteria[subject.id]}
-                              onChange={(e) => setEditingCriteria(prev => ({ ...prev, [subject.id]: e.target.value }))}
-                              placeholder="70"
-                              className="w-12 h-6 text-center text-sm font-bold border-0 bg-transparent p-0 focus-visible:ring-0"
-                              disabled={isSaving}
-                            />
-                            <span className="text-xs text-muted-foreground font-medium">%</span>
+                        {/* Slider */}
+                        <div className="px-1">
+                          <Slider
+                            value={[parseInt(editingCriteria[subject.id]) || 0]}
+                            onValueChange={(value) => setEditingCriteria(prev => ({ ...prev, [subject.id]: value[0].toString() }))}
+                            min={0}
+                            max={100}
+                            step={5}
+                            disabled={isSaving}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                            <span>0%</span>
+                            <span>50%</span>
+                            <span>100%</span>
                           </div>
                         </div>
                         

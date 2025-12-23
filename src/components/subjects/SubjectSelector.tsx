@@ -403,7 +403,7 @@ export function SubjectSelector({
       </div>
 
       {/* Subject List - Fixed scrollable area */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 mb-3 pr-1" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '150px' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 mb-3 pr-1" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '150px' }}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -417,29 +417,29 @@ export function SubjectSelector({
                   key={subject.id}
                   onClick={() => toggleSubject(subject)}
                   className={cn(
-                    "w-full flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-lg sm:rounded-xl border transition-all text-left",
+                    "w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left",
                     checked
-                      ? "bg-primary/10 border-primary/30"
+                      ? "bg-primary/10 border-primary/40 shadow-sm"
                       : "bg-card border-border hover:bg-muted/50 active:scale-[0.98]"
                   )}
                 >
                   <div
-                    className="w-1.5 sm:w-2 h-7 sm:h-8 rounded-full flex-shrink-0"
+                    className="w-2 h-10 rounded-full flex-shrink-0"
                     style={{ backgroundColor: `hsl(${subject.color})` }}
                   />
                   <div className="flex-1 min-w-0 pr-1">
                     <p className="font-medium text-sm sm:text-base truncate leading-tight">{subject.name}</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{subject.code}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">{subject.code}</p>
                   </div>
                   <div
                     className={cn(
-                      "w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                      "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                       checked
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted border border-border"
                     )}
                   >
-                    {checked && <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+                    {checked && <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                   </div>
                 </button>
               );
