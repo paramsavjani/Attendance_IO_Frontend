@@ -5,9 +5,12 @@ import {
   CalendarDays,
   Search,
   BarChart3,
-  User
+  User,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
+import { Capacitor } from "@capacitor/core";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -25,14 +28,68 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const handleRefresh = async () => {
+    // For Capacitor, reload the page
+    if (Capacitor.isNativePlatform()) {
+      window.location.reload();
+    } else {
+      // For web, also reload
+      window.location.reload();
+    }
+  };
+
+  const {
+    containerRef,
+    pullDistance,
+    isRefreshing,
+    progress,
+    shouldRefresh,
+  } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 80,
+    maxPull: 120,
+  });
+
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div ref={containerRef} className="min-h-screen bg-background flex flex-col overflow-hidden">
+      {/* Pull to Refresh Indicator */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center overflow-hidden transition-all duration-200"
+        style={{ 
+          height: pullDistance,
+          opacity: progress,
+        }}
+      >
+        <div 
+          className={cn(
+            "flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20 shadow-lg",
+            isRefreshing && "animate-pulse"
+          )}
+          style={{
+            transform: `rotate(${progress * 360}deg) scale(${0.5 + progress * 0.5})`,
+          }}
+        >
+          <RefreshCw 
+            className={cn(
+              "w-5 h-5 text-primary transition-all",
+              isRefreshing && "animate-spin",
+              shouldRefresh && !isRefreshing && "text-primary scale-110"
+            )} 
+          />
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="flex-1 pb-20 overflow-auto">
+      <main 
+        className="flex-1 pb-20 overflow-auto transition-transform duration-200"
+        style={{ 
+          transform: `translateY(${pullDistance}px)`,
+        }}
+      >
         <div className="p-4 max-w-lg mx-auto">
           {children}
         </div>
