@@ -238,9 +238,6 @@ export default function DeleteAccount() {
                 <p className="text-muted-foreground">
                   <strong className="text-foreground">Response Time:</strong> We aim to respond to deletion requests within 5-7 business days
                 </p>
-                <p className="text-xs text-muted-foreground/80 mt-3">
-                  Please replace the email address above with your actual support email address
-                </p>
               </div>
             </section>
 
