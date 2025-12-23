@@ -328,7 +328,7 @@ export default function Timetable() {
                         "ml-0.5 text-xs",
                         isActive ? "text-background/70" : "text-muted-foreground"
                       )}>
-                        ·{slotCount}
+                        · {slotCount}
                       </span>
                     )}
                   </button>
