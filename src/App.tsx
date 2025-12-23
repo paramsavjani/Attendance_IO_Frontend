@@ -17,6 +17,7 @@ import SubjectOnboarding from "./pages/SubjectOnboarding";
 import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import DeleteAccount from "./pages/DeleteAccount";
 import { Capacitor } from "@capacitor/core";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ function AppRoutes() {
       />
       <Route path="/login" element={<Login />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/delete-account" element={<DeleteAccount />} />
       <Route
         path="/intro"
         element={
