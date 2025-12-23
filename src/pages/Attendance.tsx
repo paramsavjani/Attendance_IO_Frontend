@@ -1,14 +1,15 @@
-import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { getTodaySchedule, subjects, officialLastDate } from "@/data/mockData";
 import { format } from "date-fns";
 import { AttendanceMarker } from "@/components/attendance/AttendanceMarker";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
+import { AttendanceSummary } from "@/components/attendance/AttendanceSummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
 
 export default function Attendance() {
-  const { subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin } = useAttendance();
+  const { subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, enrolledSubjects } = useAttendance();
   const schedule = getTodaySchedule();
   const now = new Date();
   const currentHour = now.getHours();
@@ -17,6 +18,49 @@ export default function Attendance() {
   const handleMarkAttendance = (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
     markAttendance(subjectId, todayKey, status);
   };
+
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    let totalPresent = 0;
+    let totalAbsent = 0;
+    let totalClasses = 0;
+    let totalBunkable = 0;
+    let subjectsAtRisk = 0;
+    const percentages: number[] = [];
+
+    Object.values(subjectStatsToday).forEach((stats) => {
+      totalPresent += stats.present;
+      totalAbsent += stats.absent;
+      totalClasses += stats.total;
+      if (stats.bunkableClasses) {
+        totalBunkable += stats.bunkableClasses;
+      }
+      
+      const percentage = stats.percentage !== undefined ? stats.percentage : (stats.total > 0 ? (stats.present / stats.total) * 100 : 0);
+      percentages.push(percentage);
+      
+      // Find subject's min required
+      const subject = enrolledSubjects.find(s => s.id === stats.subjectId);
+      const minRequired = subjectMinAttendance[stats.subjectId] || subject?.minimumCriteria || 75;
+      
+      if (percentage < minRequired) {
+        subjectsAtRisk++;
+      }
+    });
+
+    const averagePercentage = percentages.length > 0 
+      ? percentages.reduce((sum, p) => sum + p, 0) / percentages.length 
+      : 0;
+
+    return {
+      totalPresent,
+      totalAbsent,
+      totalClasses,
+      averagePercentage,
+      subjectsAtRisk,
+      totalBunkable,
+    };
+  }, [subjectStatsToday, subjectMinAttendance, enrolledSubjects]);
 
   return (
     <AppLayout>
@@ -48,8 +92,10 @@ export default function Attendance() {
               // Always show percentage, even if it's 0% or nothing is marked
               const stats = subjectStatsToday[slot.subject!.id];
               let attendancePercent = 0;
-              if (stats && stats.total > 0) {
-                attendancePercent = (stats.present / stats.total) * 100;
+              if (stats) {
+                attendancePercent = stats.percentage !== undefined 
+                  ? stats.percentage 
+                  : (stats.total > 0 ? (stats.present / stats.total) * 100 : 0);
               }
 
               return (
@@ -71,28 +117,45 @@ export default function Attendance() {
             })}
           </TabsContent>
 
-          <TabsContent value="subjects" className="mt-4 space-y-2">
-            {subjects.map((subject) => {
-              // Always use today's stats to show final attendance up to now
-              const stats = subjectStatsToday[subject.id];
-              if (!stats) return null;
+          <TabsContent value="subjects" className="mt-4 space-y-4">
+            {/* Summary Statistics */}
+            <AttendanceSummary
+              totalPresent={summaryStats.totalPresent}
+              totalAbsent={summaryStats.totalAbsent}
+              totalClasses={summaryStats.totalClasses}
+              averagePercentage={summaryStats.averagePercentage}
+              subjectsAtRisk={summaryStats.subjectsAtRisk}
+              totalBunkable={summaryStats.totalBunkable}
+            />
 
-              const minRequired = subjectMinAttendance[subject.id] || 75;
+            {/* Subject Cards */}
+            <div className="space-y-2">
+              {subjects.map((subject) => {
+                // Always use today's stats to show final attendance up to now
+                const stats = subjectStatsToday[subject.id];
+                if (!stats) return null;
 
-              return (
-                <SubjectCard
-                  key={subject.id}
-                  name={subject.name}
-                  lecturePlace={subject.lecturePlace}
-                  color={subject.color}
+                const minRequired = subjectMinAttendance[subject.id] || 75;
+
+                return (
+                  <SubjectCard
+                    key={subject.id}
+                    name={subject.name}
+                    lecturePlace={subject.lecturePlace}
+                    color={subject.color}
                   present={stats.present}
                   absent={stats.absent}
                   total={stats.total}
+                  totalUntilEndDate={stats.totalUntilEndDate}
                   minRequired={minRequired}
-                  onMinChange={(val) => setSubjectMin(subject.id, val)}
-                />
-              );
-            })}
+                  percentage={stats.percentage}
+                  classesNeeded={stats.classesNeeded}
+                  bunkableClasses={stats.bunkableClasses}
+                    onMinChange={(val) => setSubjectMin(subject.id, val)}
+                  />
+                );
+              })}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
