@@ -210,10 +210,10 @@ jobs:
           echo "=== Testing Gradle property access ==="
           ./gradlew -q -P VERSION_NAME="${{ steps.version.outputs.version_name_clean }}" -P VERSION_CODE="${{ steps.version.outputs.version_code }}" printVersion || echo "printVersion task not found (this is OK)"
 
-      - name: Build release APK
+      - name: Build release APK and AAB
         working-directory: android
         run: |
-          ./gradlew assembleRelease \
+          ./gradlew assembleRelease bundleRelease \
             -P VERSION_NAME="${{ steps.version.outputs.version_name_clean }}" \
             -P VERSION_CODE="${{ steps.version.outputs.version_code }}"
 
@@ -243,6 +243,23 @@ jobs:
             echo "✓ Version matches!"
           fi
 
+      - name: Find AAB file and verify version
+        id: find_aab
+        working-directory: android/app/build/outputs/bundle/release
+        run: |
+          AAB_FILE=$(ls -1 app-release.aab 2>/dev/null | head -n 1)
+          if [ -z "$AAB_FILE" ]; then
+            echo "Error: AAB file not found"
+            ls -la
+            exit 1
+          fi
+          echo "aab_file=$AAB_FILE" >> $GITHUB_OUTPUT
+          echo "Found AAB: $AAB_FILE"
+          
+          # AAB files don't have version in filename, but we can verify it exists
+          AAB_SIZE=$(du -h "$AAB_FILE" | cut -f1)
+          echo "AAB Size: $AAB_SIZE"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -250,22 +267,35 @@ jobs:
           path: android/app/build/outputs/apk/release/${{ steps.find_apk.outputs.apk_file }}
           retention-days: 30
 
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: android/app/build/outputs/bundle/release/${{ steps.find_aab.outputs.aab_file }}
+          retention-days: 30
+
       - name: Create Release and Tag
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         uses: softprops/action-gh-release@v1
         with:
-          files: android/app/build/outputs/apk/release/${{ steps.find_apk.outputs.apk_file }}
+          files: |
+            android/app/build/outputs/apk/release/${{ steps.find_apk.outputs.apk_file }}
+            android/app/build/outputs/bundle/release/${{ steps.find_aab.outputs.aab_file }}
           tag_name: ${{ steps.version.outputs.version_name }}
           name: Release ${{ steps.version.outputs.version_name }}
           body: |
-            Android APK Release
+            Android Release
             
             **Version:** ${{ steps.version.outputs.version_name }}
             **Version Code:** ${{ steps.version.outputs.version_code }}
             **Build Number:** ${{ github.run_number }}
             **Commit:** ${{ github.sha }}
             
-            Download the APK from the assets below.
+            ### Downloads
+            - **APK**: For direct installation (use for testing or sideloading)
+            - **AAB**: For Google Play Store upload (recommended for production)
+            
+            Download the files from the assets below.
           draft: false
           prerelease: false
           fail_on_unmatched_files: false
