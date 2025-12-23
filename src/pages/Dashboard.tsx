@@ -395,15 +395,15 @@ export default function Dashboard() {
                           <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
                             <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                               <div className="flex-1" />
-                              <div className="w-2 h-2 rounded-full bg-muted-foreground/20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                              <div className="w-2 h-2 rounded-full bg-muted-foreground/70 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                               <div className="flex-1" />
                             </div>
                             <div className="w-9 flex-shrink-0 flex flex-col justify-center">
-                              <p className="text-xs font-semibold leading-none text-muted-foreground/50">{timeStart}</p>
-                              <p className="text-[9px] text-muted-foreground/40">{timeEnd}</p>
+                              <p className="text-xs font-semibold leading-none text-muted-foreground/70">{timeStart}</p>
+                              <p className="text-[9px] text-muted-foreground/70">{timeEnd}</p>
                             </div>
                             <div className="flex-1 py-1 flex items-center">
-                              <p className="text-[10px] text-muted-foreground/50">Free</p>
+                              <p className="text-[10px] text-muted-foreground/70">Free</p>
                             </div>
                           </div>
                         );
