@@ -460,7 +460,7 @@ export function SubjectSelector({
       <div
         className={cn(
           "flex gap-2 pt-3 mt-auto border-t border-border flex-shrink-0",
-          "sticky bottom-0 bg-card/95 backdrop-blur",
+          "sticky bottom-0 backdrop-blur",
           "px-1 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
         )}
       >
