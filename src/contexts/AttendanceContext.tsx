@@ -14,6 +14,10 @@ interface SubjectStats {
   present: number;
   absent: number;
   total: number;
+  totalUntilEndDate?: number;
+  percentage?: number;
+  classesNeeded?: number;
+  bunkableClasses?: number;
 }
 
 interface AttendanceContextType {
@@ -216,8 +220,26 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
             present: stat.present,
             absent: stat.absent,
             total: stat.total,
+            totalUntilEndDate: stat.totalUntilEndDate,
+            percentage: stat.percentage,
+            classesNeeded: stat.classesNeeded,
+            bunkableClasses: stat.bunkableClasses,
           };
         });
+        
+        // Debug: Log first subject stats to verify new fields are present
+        if (data.subjectStats && data.subjectStats.length > 0) {
+          const firstStat = data.subjectStats[0];
+          console.log('📊 Attendance API Response Sample:', {
+            subjectId: firstStat.subjectId,
+            hasPercentage: firstStat.percentage !== undefined,
+            hasClassesNeeded: firstStat.classesNeeded !== undefined,
+            hasBunkableClasses: firstStat.bunkableClasses !== undefined,
+            percentage: firstStat.percentage,
+            classesNeeded: firstStat.classesNeeded,
+            bunkableClasses: firstStat.bunkableClasses,
+          });
+        }
         setSubjectStats(statsMap);
 
         // Convert attendance records to the format expected by the frontend
@@ -279,8 +301,26 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
             present: stat.present,
             absent: stat.absent,
             total: stat.total,
+            totalUntilEndDate: stat.totalUntilEndDate,
+            percentage: stat.percentage,
+            classesNeeded: stat.classesNeeded,
+            bunkableClasses: stat.bunkableClasses,
           };
         });
+        
+        // Debug: Log first subject stats to verify new fields are present
+        if (data.subjectStats && data.subjectStats.length > 0) {
+          const firstStat = data.subjectStats[0];
+          console.log('📊 Attendance API Response Sample:', {
+            subjectId: firstStat.subjectId,
+            hasPercentage: firstStat.percentage !== undefined,
+            hasClassesNeeded: firstStat.classesNeeded !== undefined,
+            hasBunkableClasses: firstStat.bunkableClasses !== undefined,
+            percentage: firstStat.percentage,
+            classesNeeded: firstStat.classesNeeded,
+            bunkableClasses: firstStat.bunkableClasses,
+          });
+        }
         setSubjectStatsToday(statsMap);
       }
     } catch (error) {
