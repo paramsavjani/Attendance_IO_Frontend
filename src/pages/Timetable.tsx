@@ -227,7 +227,7 @@ export default function Timetable() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen pb-6">
+      <div className="h-full flex flex-col overflow-hidden pb-2">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -292,9 +292,9 @@ export default function Timetable() {
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <>
+          <div className="flex-1 flex flex-col overflow-hidden">
             {/* Stats Row */}
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex items-center gap-3 mb-5 flex-shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-2xl font-bold">{getDaySlotCount(activeDay)}</span>
                 <span className="text-xs text-muted-foreground">today</span>
@@ -307,7 +307,7 @@ export default function Timetable() {
             </div>
 
             {/* Day Pills - No scroll, evenly distributed */}
-            <div className="grid grid-cols-5 gap-1.5 mb-6">
+            <div className="grid grid-cols-5 gap-1.5 mb-6 flex-shrink-0">
               {days.map((day, dayIndex) => {
                 const slotCount = getDaySlotCount(dayIndex);
                 const isActive = activeDay === dayIndex;
@@ -336,8 +336,8 @@ export default function Timetable() {
               })}
             </div>
 
-            {/* Timeline */}
-            <div className="relative">
+            {/* Timeline - Scrollable */}
+            <div className="flex-1 overflow-y-auto relative">
               {/* Vertical line - aligned with dots */}
               <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
 
@@ -401,7 +401,7 @@ export default function Timetable() {
                 })}
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Dialog */}
