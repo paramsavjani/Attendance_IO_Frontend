@@ -471,7 +471,14 @@ export default function Profile() {
           <span className="text-xs text-muted-foreground">Made with</span>
           <Heart className="w-3 h-3 text-red-500 fill-red-500 animate-pulse" />
           <span className="text-xs text-muted-foreground">by</span>
-          <span className="text-xs font-medium text-foreground">Param Savjani</span>
+          <a 
+            href="https://paramsavjani.in" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Param Savjani
+          </a>
         </div>
 
         {/* Subject Editor Dialog */}
