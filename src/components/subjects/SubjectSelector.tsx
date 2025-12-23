@@ -403,7 +403,7 @@ export function SubjectSelector({
       </div>
 
       {/* Subject List - Fixed scrollable area */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 mb-3 pr-1" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '150px' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 mb-3 pr-1 pb-24 sm:pb-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -457,7 +457,13 @@ export function SubjectSelector({
       </div>
 
       {/* Actions - Always visible at bottom */}
-      <div className="flex gap-2 pt-3 mt-auto border-t border-border flex-shrink-0 bg-card">
+      <div
+        className={cn(
+          "flex gap-2 pt-3 mt-auto border-t border-border flex-shrink-0",
+          "sticky bottom-0 bg-card/95 backdrop-blur",
+          "px-1 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
+        )}
+      >
         {onCancel && (
           <Button
             variant="outline"
