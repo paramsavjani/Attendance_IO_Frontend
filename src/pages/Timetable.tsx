@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots, days } from "@/data/mockData";
 import { TimetableSlot } from "@/types/attendance";
@@ -26,6 +26,134 @@ import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+
+// Swipe navigation hook for days
+function useSwipeDayNavigation(activeDay: number, setActiveDay: (day: number) => void, totalDays: number) {
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && activeDay < totalDays - 1) {
+      setActiveDay(activeDay + 1); // Navigate to next day
+    } else if (isRightSwipe && activeDay > 0) {
+      setActiveDay(activeDay - 1); // Navigate to previous day
+    }
+    
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [activeDay, setActiveDay, totalDays]);
+
+  return { onTouchStart, onTouchMove, onTouchEnd };
+}
+
+// Timeline content component with swipe support
+interface TimelineContentProps {
+  activeDay: number;
+  setActiveDay: (day: number) => void;
+  totalDays: number;
+  getSlotSubject: (day: number, timeSlot: number) => any;
+  handleSlotClick: (day: number, timeSlot: number) => void;
+  handleClearSlot: (day: number, timeSlot: number, e: React.MouseEvent) => void;
+}
+
+function TimelineContent({
+  activeDay,
+  setActiveDay,
+  totalDays,
+  getSlotSubject,
+  handleSlotClick,
+  handleClearSlot,
+}: TimelineContentProps) {
+  const swipeHandlers = useSwipeDayNavigation(activeDay, setActiveDay, totalDays);
+
+  return (
+    <div 
+      className="flex-1 overflow-y-auto relative"
+      onTouchStart={swipeHandlers.onTouchStart}
+      onTouchMove={swipeHandlers.onTouchMove}
+      onTouchEnd={swipeHandlers.onTouchEnd}
+    >
+      {/* Vertical line - aligned with dots */}
+      <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
+
+      <div className="space-y-0">
+        {timeSlots.slice(0, 6).map((time, timeIndex) => {
+          const subject = getSlotSubject(activeDay, timeIndex);
+          const timeStart = time.split(" - ")[0];
+          const timeEnd = time.split(" - ")[1];
+          
+          return (
+            <div key={timeIndex} className="relative flex items-stretch gap-3 min-h-[72px]">
+              {/* Dot - centered vertically in its container */}
+              <div className="flex flex-col items-center w-3 flex-shrink-0">
+                <div className="flex-1" />
+                <div 
+                  className={cn(
+                    "w-3 h-3 rounded-full flex-shrink-0",
+                    subject 
+                      ? "bg-primary" 
+                      : "bg-muted-foreground/30"
+                  )} 
+                />
+                <div className="flex-1" />
+              </div>
+
+              {/* Time */}
+              <div className="w-10 flex-shrink-0 flex flex-col justify-center">
+                <p className="text-sm font-semibold leading-none">{timeStart}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{timeEnd}</p>
+              </div>
+
+              {/* Content */}
+              <button
+                onClick={() => handleSlotClick(activeDay, timeIndex)}
+                className="flex-1 min-w-0 text-left group py-1.5"
+              >
+                {subject ? (
+                  <div className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 h-full">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{subject.code}</p>
+                    </div>
+                    <button
+                      onClick={(e) => handleClearSlot(activeDay, timeIndex, e)}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-border rounded-xl p-3 group-hover:border-muted-foreground/50 transition-colors h-full flex items-center">
+                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                      <Plus className="w-3.5 h-3.5" />
+                      <span className="text-sm">Add class</span>
+                    </div>
+                  </div>
+                )}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function Timetable() {
   const navigate = useNavigate();
@@ -336,71 +464,15 @@ export default function Timetable() {
               })}
             </div>
 
-            {/* Timeline - Scrollable */}
-            <div className="flex-1 overflow-y-auto relative">
-              {/* Vertical line - aligned with dots */}
-              <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
-
-              <div className="space-y-0">
-                {timeSlots.slice(0, 6).map((time, timeIndex) => {
-                  const subject = getSlotSubject(activeDay, timeIndex);
-                  const timeStart = time.split(" - ")[0];
-                  const timeEnd = time.split(" - ")[1];
-                  
-                  return (
-                    <div key={timeIndex} className="relative flex items-stretch gap-3 min-h-[72px]">
-                      {/* Dot - centered vertically in its container */}
-                      <div className="flex flex-col items-center w-3 flex-shrink-0">
-                        <div className="flex-1" />
-                        <div 
-                          className={cn(
-                            "w-3 h-3 rounded-full flex-shrink-0",
-                            subject 
-                              ? "bg-primary" 
-                              : "bg-muted-foreground/30"
-                          )} 
-                        />
-                        <div className="flex-1" />
-                      </div>
-
-                      {/* Time */}
-                      <div className="w-10 flex-shrink-0 flex flex-col justify-center">
-                        <p className="text-sm font-semibold leading-none">{timeStart}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{timeEnd}</p>
-                      </div>
-
-                      {/* Content */}
-                      <button
-                        onClick={() => handleSlotClick(activeDay, timeIndex)}
-                        className="flex-1 min-w-0 text-left group py-1.5"
-                      >
-                        {subject ? (
-                          <div className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 h-full">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{subject.name}</p>
-                              <p className="text-xs text-muted-foreground">{subject.code}</p>
-                            </div>
-                            <button
-                              onClick={(e) => handleClearSlot(activeDay, timeIndex, e)}
-                              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="border border-dashed border-border rounded-xl p-3 group-hover:border-muted-foreground/50 transition-colors h-full flex items-center">
-                            <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
-                              <Plus className="w-3.5 h-3.5" />
-                              <span className="text-sm">Add class</span>
-                            </div>
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Timeline - Scrollable with swipe navigation */}
+            <TimelineContent
+              activeDay={activeDay}
+              setActiveDay={setActiveDay}
+              totalDays={days.length}
+              getSlotSubject={getSlotSubject}
+              handleSlotClick={handleSlotClick}
+              handleClearSlot={handleClearSlot}
+            />
           </div>
         )}
 

@@ -204,8 +204,11 @@ export function AttendanceMarkerSkeleton() {
       <div className="flex items-center justify-between px-3 py-2 pt-1 pb-1.5 bg-gradient-to-t from-black/20 to-transparent">
         {/* Lecture Place & Time */}
         <div className="flex-1 flex flex-col justify-center min-w-0 pr-3 pl-[1.375rem]">
-          <Skeleton className="h-3 w-12 bg-neutral-800" />
-          <Skeleton className="h-2 w-20 bg-neutral-800 mt-1" />
+          <Skeleton className="h-3 w-16 bg-neutral-800" />
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <Skeleton className="w-1 h-1 rounded-full bg-neutral-700" />
+            <Skeleton className="h-2.5 w-24 bg-neutral-800" />
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-1 ml-auto">

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -22,6 +22,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Swipe navigation hook
+function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      onSwipeLeft(); // Navigate to next day
+    } else if (isRightSwipe) {
+      onSwipeRight(); // Navigate to previous day
+    }
+    
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [onSwipeLeft, onSwipeRight]);
+
+  return { onTouchStart, onTouchMove, onTouchEnd };
+}
 
 export default function Dashboard() {
   const { student } = useAuth();
@@ -113,11 +148,17 @@ export default function Dashboard() {
     return { percent, needsAttention };
   };
 
-  const navigateDate = (direction: "prev" | "next") => {
+  const navigateDate = useCallback((direction: "prev" | "next") => {
     setSelectedDate((prev) => 
       direction === "prev" ? subDays(prev, 1) : addDays(prev, 1)
     );
-  };
+  }, []);
+
+  // Swipe navigation handlers
+  const swipeHandlers = useSwipeNavigation(
+    () => navigateDate("next"), // Swipe left = next day
+    () => navigateDate("prev")  // Swipe right = previous day
+  );
 
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
   const [pendingAttendance, setPendingAttendance] = useState<{subjectId: string; status: 'present' | 'absent' | 'cancelled'} | null>(null);
@@ -234,7 +275,13 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="schedule" className="mt-3 flex-1 overflow-y-auto space-y-3">
+          <TabsContent 
+            value="schedule" 
+            className="mt-3 flex-1 overflow-y-auto space-y-3"
+            onTouchStart={swipeHandlers.onTouchStart}
+            onTouchMove={swipeHandlers.onTouchMove}
+            onTouchEnd={swipeHandlers.onTouchEnd}
+          >
             <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-1">
               <button
                 onClick={() => navigateDate("prev")}
