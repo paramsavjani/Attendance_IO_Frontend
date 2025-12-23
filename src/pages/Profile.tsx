@@ -194,8 +194,8 @@ export default function Profile() {
     const hoursNum = parseInt(editingSleepHours, 10);
     
     // Validate value
-    if (isNaN(hoursNum) || hoursNum < 4 || hoursNum > 16) {
-      toast.error("Sleep duration must be between 4 and 16 hours");
+    if (isNaN(hoursNum) || hoursNum < 1 || hoursNum >= 20) {
+      toast.error("Sleep duration must be less than 20 hours");
       return;
     }
 
