@@ -110,14 +110,14 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main 
         data-scroll-container
         className={cn(
-          "flex-1 pb-20 overflow-y-auto overscroll-y-contain",
+          "flex-1 pb-20 flex flex-col overflow-hidden",
           "transition-transform duration-300 ease-out"
         )}
         style={{ 
           transform: `translateY(${pullDistance}px)`,
         }}
       >
-        <div className="p-4 max-w-lg mx-auto">
+        <div className="p-4 max-w-lg mx-auto flex-1 flex flex-col overflow-hidden w-full">
           {children}
         </div>
       </main>
