@@ -235,7 +235,6 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="schedule" className="mt-3 space-y-3">
-            {/* Date Navigation - matching timetable pill style */}
             <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-1">
               <button
                 onClick={() => navigateDate("prev")}
@@ -371,46 +370,47 @@ export default function Dashboard() {
                       return (
                         <div 
                           key={index} 
-                          className={cn(
-                            "relative flex items-stretch gap-2 min-h-[64px]",
-                            isCurrent && "bg-primary/5 -mx-4 px-4 rounded-lg"
-                          )}
+                          className="relative flex items-stretch gap-2 min-h-[64px] transition-all duration-300"
                         >
+                     
+                          
                           {/* Dot */}
                           <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                             <div className="flex-1" />
                             <div 
                               className={cn(
-                                "w-2.5 h-2.5 rounded-full flex-shrink-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
-                                status === 'present' ? "bg-emerald-500" :
-                                status === 'absent' ? "bg-destructive" :
-                                status === 'cancelled' ? "bg-muted-foreground" :
-                                isCurrent ? "bg-primary animate-pulse" :
-                                "bg-primary/40"
+                                "flex-shrink-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all",
+                                status === 'present' ? "w-2.5 h-2.5 rounded-full bg-emerald-500" :
+                                status === 'absent' ? "w-2.5 h-2.5 rounded-full bg-destructive" :
+                                status === 'cancelled' ? "w-2.5 h-2.5 rounded-full bg-muted-foreground" :
+                                isCurrent ? "w-3 h-3 rounded-full bg-primary" :
+                                "w-2.5 h-2.5 rounded-full bg-neutral-500"
                               )} 
-                            />
+                            >
+                            </div>
                             <div className="flex-1" />
                           </div>
 
                           {/* Time */}
                           <div className="w-9 flex-shrink-0 flex flex-col justify-center">
                             <p className={cn(
-                              "text-xs font-semibold leading-none",
+                              "text-xs font-semibold leading-none transition-colors",
                               isCurrent && "text-primary"
                             )}>{timeStart}</p>
                             <p className="text-[9px] text-muted-foreground">{timeEnd}</p>
                           </div>
 
                           {/* Content */}
-                          <div className="flex-1 min-w-0 py-1">
+                          <div className="flex-1 min-w-0 py-1 relative">
                             <div className={cn(
                               "bg-card rounded-lg p-2 h-full transition-all relative overflow-hidden",
                               status === 'cancelled'
                                 ? "border border-dashed border-muted-foreground/30 bg-muted/30"
-                                : needsAttention 
+                                : isCurrent 
+                                 ? "border-2 border-primary/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                                  : needsAttention 
                                   ? "border-2 border-warning/40" 
-                                  : isCurrent 
-                                    ? "border border-primary/30" 
+                                     
                                     : "border border-border"
                             )}>
                               {/* Subject info */}
