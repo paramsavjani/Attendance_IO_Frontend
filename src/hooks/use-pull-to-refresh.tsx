@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 
 interface UsePullToRefreshOptions {
   onRefresh: () => void | Promise<void>;
@@ -8,129 +8,82 @@ interface UsePullToRefreshOptions {
 
 export function usePullToRefresh({
   onRefresh,
-  threshold = 70,
+  threshold = 60,
   maxPull = 100,
 }: UsePullToRefreshOptions) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isPulling, setIsPulling] = useState(false);
-  const [isReleasing, setIsReleasing] = useState(false);
-  const startY = useRef(0);
-  const currentY = useRef(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const animationFrame = useRef<number>();
+  const startY = useRef<number | null>(null);
+  const scrollableRef = useRef<HTMLElement | null>(null);
 
-  const smoothSetPullDistance = useCallback((target: number, duration: number = 200) => {
-    const start = pullDistance;
-    const startTime = performance.now();
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Find the scrollable container
+    const target = e.target as HTMLElement;
+    scrollableRef.current = target.closest('[data-scroll-container]') as HTMLElement;
     
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = start + (target - start) * eased;
-      
-      setPullDistance(current);
-      
-      if (progress < 1) {
-        animationFrame.current = requestAnimationFrame(animate);
-      }
-    };
+    // Check if we're at the top of the scrollable area
+    const scrollTop = scrollableRef.current?.scrollTop ?? window.scrollY;
     
-    if (animationFrame.current) {
-      cancelAnimationFrame(animationFrame.current);
-    }
-    animationFrame.current = requestAnimationFrame(animate);
-  }, [pullDistance]);
-
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (window.scrollY === 0 && !isRefreshing && !isReleasing) {
+    if (scrollTop <= 0 && !isRefreshing) {
       startY.current = e.touches[0].clientY;
-      setIsPulling(true);
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-      }
     }
-  }, [isRefreshing, isReleasing]);
+  }, [isRefreshing]);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isPulling || isRefreshing) return;
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (startY.current === null || isRefreshing) return;
 
-    currentY.current = e.touches[0].clientY;
-    const diff = currentY.current - startY.current;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY.current;
+    
+    // Check scroll position again
+    const scrollTop = scrollableRef.current?.scrollTop ?? window.scrollY;
 
-    if (diff > 0 && window.scrollY === 0) {
-      e.preventDefault();
-      // Exponential resistance for natural feel
-      const resistance = 1 - Math.pow(diff / (maxPull * 3), 0.5);
-      const pullValue = Math.min(diff * resistance * 0.6, maxPull);
+    // Only activate pull-to-refresh when at top and pulling down
+    if (diff > 0 && scrollTop <= 0) {
+      // Apply resistance curve for natural feel
+      const resistance = Math.max(0.4, 1 - (diff / 300));
+      const pullValue = Math.min(diff * resistance, maxPull);
       setPullDistance(pullValue);
+    } else if (diff <= 0) {
+      // User is scrolling up, reset
+      startY.current = null;
+      setPullDistance(0);
     }
-  }, [isPulling, isRefreshing, maxPull]);
+  }, [isRefreshing, maxPull]);
 
   const handleTouchEnd = useCallback(async () => {
-    if (!isPulling) return;
+    if (startY.current === null) return;
 
-    setIsPulling(false);
-    setIsReleasing(true);
+    const shouldTrigger = pullDistance >= threshold;
+    startY.current = null;
 
-    if (pullDistance >= threshold && !isRefreshing) {
+    if (shouldTrigger && !isRefreshing) {
       setIsRefreshing(true);
-      
-      // Animate to threshold position
-      smoothSetPullDistance(50, 150);
+      setPullDistance(40); // Hold at smaller distance during refresh
       
       try {
         await onRefresh();
       } finally {
-        // Smooth release animation
-        setTimeout(() => {
-          smoothSetPullDistance(0, 300);
-          setTimeout(() => {
-            setIsRefreshing(false);
-            setIsReleasing(false);
-          }, 300);
-        }, 200);
+        setPullDistance(0);
+        setIsRefreshing(false);
       }
     } else {
-      // Bounce back smoothly
-      smoothSetPullDistance(0, 250);
-      setTimeout(() => {
-        setIsReleasing(false);
-      }, 250);
+      setPullDistance(0);
     }
-  }, [isPulling, pullDistance, threshold, isRefreshing, onRefresh, smoothSetPullDistance]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    container.addEventListener("touchstart", handleTouchStart, { passive: true });
-    container.addEventListener("touchmove", handleTouchMove, { passive: false });
-    container.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-    return () => {
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchmove", handleTouchMove);
-      container.removeEventListener("touchend", handleTouchEnd);
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-      }
-    };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [pullDistance, threshold, isRefreshing, onRefresh]);
 
   const progress = Math.min(pullDistance / threshold, 1);
   const shouldRefresh = pullDistance >= threshold;
 
   return {
-    containerRef,
     pullDistance,
     isRefreshing,
-    isPulling,
-    isReleasing,
     progress,
     shouldRefresh,
+    handlers: {
+      onTouchStart: handleTouchStart,
+      onTouchMove: handleTouchMove,
+      onTouchEnd: handleTouchEnd,
+    },
   };
 }
