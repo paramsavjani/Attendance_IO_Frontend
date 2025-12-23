@@ -120,7 +120,7 @@ export default function Login() {
             <Button
               type="button"
               onClick={handleGoogleSignIn}
-              className="w-full h-12 sm:h-14 text-sm sm:text-base font-medium hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50 bg-background hover:bg-accent/50"
+              className="w-full h-12 sm:h-14 text-sm sm:text-base font-medium transition-all duration-200 border-2 bg-background"
               disabled={isLoading}
               variant="outline"
             >
