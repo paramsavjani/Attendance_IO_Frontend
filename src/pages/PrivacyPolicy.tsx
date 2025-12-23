@@ -171,6 +171,16 @@ export default function PrivacyPolicy() {
               <p className="text-muted-foreground leading-relaxed mb-4">
                 To exercise these rights, please contact us using the information provided in the "Contact Us" section below.
               </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                To request account deletion, please visit our{" "}
+                <Link
+                  to={Capacitor.isNativePlatform() ? "#/delete-account" : "/delete-account"}
+                  className="text-primary hover:text-primary/80 underline transition-colors"
+                >
+                  Account Deletion page
+                </Link>
+                .
+              </p>
             </section>
 
             <section className="mb-8">
