@@ -10,7 +10,11 @@ interface SubjectCardProps {
   present: number;
   absent: number;
   total: number;
+  totalUntilEndDate?: number;
   minRequired: number;
+  percentage?: number;
+  classesNeeded?: number;
+  bunkableClasses?: number;
   onMinChange?: (value: number) => void;
   defaultExpanded?: boolean;
 }
@@ -24,46 +28,25 @@ export function SubjectCard({
   present,
   absent,
   total,
+  totalUntilEndDate,
   color,
   minRequired,
+  percentage: backendPercentage,
+  classesNeeded: backendClassesNeeded,
+  bunkableClasses: backendBunkableClasses,
   onMinChange,
   defaultExpanded = false,
 }: SubjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showSettings, setShowSettings] = useState(false);
 
-  const percentage = total > 0 ? (present / total) * 100 : 0;
+  // Use backend-calculated values if available, otherwise calculate locally
+  const percentage = backendPercentage !== undefined ? backendPercentage : (total > 0 ? (present / total) * 100 : 0);
+  const classesNeeded = backendClassesNeeded !== undefined ? backendClassesNeeded : 0;
+  const bunkable = backendBunkableClasses !== undefined ? backendBunkableClasses : 0;
+  
   const isSafe = percentage >= minRequired;
   const isWarning = percentage >= minRequired - 10 && percentage < minRequired;
-
-  // Calculate classes needed to reach minRequired
-  const calculateClassesNeeded = () => {
-    if (percentage >= minRequired) return 0;
-    let needed = 0;
-    let newPresent = present;
-    let newTotal = total;
-    while ((newPresent / newTotal) * 100 < minRequired && needed < 100) {
-      newPresent++;
-      newTotal++;
-      needed++;
-    }
-    return needed;
-  };
-
-  // Calculate classes that can be bunked
-  const calculateBunkable = () => {
-    if (percentage < minRequired) return 0;
-    let bunkable = 0;
-    let newTotal = total;
-    while ((present / (newTotal + 1)) * 100 >= minRequired && bunkable < 100) {
-      newTotal++;
-      bunkable++;
-    }
-    return bunkable;
-  };
-
-  const classesNeeded = calculateClassesNeeded();
-  const bunkable = calculateBunkable();
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -153,6 +136,25 @@ export function SubjectCard({
             <div>
               <p className="text-xs text-muted-foreground">Total</p>
               <p className="text-lg font-bold text-foreground">{total}</p>
+            </div>
+          </div>
+
+          {/* Bunkable classes and Total classes info */}
+          <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/50">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">Can Bunk</p>
+              <p className={cn(
+                "text-lg font-bold",
+                bunkable > 0 ? "text-success" : "text-muted-foreground"
+              )}>
+                {bunkable}
+              </p>
+              <p className="text-xs text-muted-foreground">classes</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">Total Classes</p>
+              <p className="text-lg font-bold text-foreground">{totalUntilEndDate ?? total}</p>
+              <p className="text-xs text-muted-foreground">till end date</p>
             </div>
           </div>
 
