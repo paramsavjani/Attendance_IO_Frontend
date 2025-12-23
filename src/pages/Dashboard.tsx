@@ -192,7 +192,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                <button className="p-2 rounded-lg bg-secondary/50 transition-colors">
                   <CalendarSearch className="w-4 h-4 text-muted-foreground" />
                 </button>
               </PopoverTrigger>
@@ -239,7 +239,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-1">
               <button
                 onClick={() => navigateDate("prev")}
-                className="w-9 h-9 rounded-full hover:bg-secondary flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -254,7 +254,7 @@ export default function Dashboard() {
               
               <button
                 onClick={() => navigateDate("next")}
-                className="w-9 h-9 rounded-full hover:bg-secondary flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -463,7 +463,7 @@ export default function Dashboard() {
                                     "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
                                     status === 'present'
                                       ? "bg-emerald-500 text-white"
-                                      : "bg-secondary hover:bg-emerald-500/20 hover:text-emerald-600 disabled:opacity-40 disabled:hover:bg-secondary"
+                                      : "bg-secondary disabled:opacity-40"
                                   )}
                                 >
                                   {isSaving && savingState?.action === 'present' ? (
@@ -480,7 +480,7 @@ export default function Dashboard() {
                                     "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
                                     status === 'absent'
                                       ? "bg-destructive text-white"
-                                      : "bg-secondary hover:bg-destructive/20 hover:text-destructive disabled:opacity-40 disabled:hover:bg-secondary"
+                                      : "bg-secondary disabled:opacity-40"
                                   )}
                                 >
                                   {isSaving && savingState?.action === 'absent' ? (
@@ -497,7 +497,7 @@ export default function Dashboard() {
                                     "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
                                     status === 'cancelled'
                                       ? "bg-muted-foreground text-white"
-                                      : "bg-secondary hover:bg-muted-foreground/20 hover:text-muted-foreground"
+                                      : "bg-secondary"
                                   )}
                                   title="Cancelled"
                                 >
