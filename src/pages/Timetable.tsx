@@ -26,6 +26,7 @@ import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { LiveLectureIndicator } from "@/components/attendance/LiveLectureIndicator";
 
 export default function Timetable() {
   const navigate = useNavigate();
@@ -228,6 +229,8 @@ export default function Timetable() {
   return (
     <AppLayout>
       <div className="min-h-screen pb-6">
+        {/* Live Lecture Indicator - Sticky on mobile */}
+        <LiveLectureIndicator className="mb-4 -mx-4 px-4 md:mx-0 md:px-0" />
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -347,25 +350,58 @@ export default function Timetable() {
                   const timeStart = time.split(" - ")[0];
                   const timeEnd = time.split(" - ")[1];
                   
+                  // Check if this is the current live slot
+                  const now = new Date();
+                  const todayDayIndex = now.getDay() === 0 ? -1 : now.getDay() - 1;
+                  const currentHour = now.getHours();
+                  const currentMinutes = now.getMinutes();
+                  
+                  const [startHour, startMin] = timeStart.split(":").map(Number);
+                  const [endHour, endMin] = timeEnd.split(":").map(Number);
+                  const startHour24 = startHour < 8 ? startHour + 12 : startHour;
+                  const endHour24 = endHour < 8 ? endHour + 12 : endHour;
+                  const startTotalMinutes = startHour24 * 60 + startMin;
+                  const endTotalMinutes = endHour24 * 60 + endMin;
+                  const currentTotalMinutes = currentHour * 60 + currentMinutes;
+                  
+                  const isLiveSlot = activeDay === todayDayIndex && 
+                    currentTotalMinutes >= startTotalMinutes && 
+                    currentTotalMinutes < endTotalMinutes;
+                  
                   return (
-                    <div key={timeIndex} className="relative flex items-stretch gap-3 min-h-[72px]">
+                    <div 
+                      key={timeIndex} 
+                      className={cn(
+                        "relative flex items-stretch gap-3 min-h-[72px] transition-all duration-300",
+                        isLiveSlot && subject && "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent -mx-4 px-4 rounded-xl"
+                      )}
+                    >
                       {/* Dot - centered vertically in its container */}
                       <div className="flex flex-col items-center w-3 flex-shrink-0">
                         <div className="flex-1" />
                         <div 
                           className={cn(
-                            "w-3 h-3 rounded-full flex-shrink-0",
+                            "rounded-full flex-shrink-0 transition-all",
                             subject 
-                              ? "bg-primary" 
-                              : "bg-muted-foreground/30"
+                              ? isLiveSlot 
+                                ? "w-3.5 h-3.5 bg-primary shadow-[0_0_12px_rgba(99,102,241,0.6)]" 
+                                : "w-3 h-3 bg-primary"
+                              : "w-3 h-3 bg-muted-foreground/30"
                           )} 
-                        />
+                        >
+                          {isLiveSlot && subject && (
+                            <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-40" />
+                          )}
+                        </div>
                         <div className="flex-1" />
                       </div>
 
                       {/* Time */}
                       <div className="w-10 flex-shrink-0 flex flex-col justify-center">
-                        <p className="text-sm font-semibold leading-none">{timeStart}</p>
+                        <p className={cn(
+                          "text-sm font-semibold leading-none transition-colors",
+                          isLiveSlot && "text-primary"
+                        )}>{timeStart}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">{timeEnd}</p>
                       </div>
 
@@ -375,9 +411,22 @@ export default function Timetable() {
                         className="flex-1 min-w-0 text-left group py-1.5"
                       >
                         {subject ? (
-                          <div className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 h-full">
+                          <div className={cn(
+                            "bg-card rounded-xl p-3 flex items-center gap-3 h-full transition-all",
+                            isLiveSlot 
+                              ? "border-2 border-primary/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]" 
+                              : "border border-border"
+                          )}>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{subject.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium truncate">{subject.name}</p>
+                                {isLiveSlot && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[9px] font-semibold uppercase">
+                                    <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                                    Live
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">{subject.code}</p>
                             </div>
                             <button
