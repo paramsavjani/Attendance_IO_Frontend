@@ -24,6 +24,7 @@ export const API_CONFIG = {
     GET_MY_ATTENDANCE: `${API_BASE_URL}/api/attendance`,
     DELETE_ATTENDANCE: (attendanceId: string) => `${API_BASE_URL}/api/attendance/${attendanceId}`,
     CLASSES_START_DATE: `${API_BASE_URL}/api/config/classes-start-date`,
+    CLASSES_END_DATE: `${API_BASE_URL}/api/config/classes-end-date`,
     SUBMIT_FEEDBACK: `${API_BASE_URL}/api/feedback`,
     ANALYTICS: `${API_BASE_URL}/api/analytics`,
     ANALYTICS_SEMESTER: (semesterId: string) => `${API_BASE_URL}/api/analytics/semester/${semesterId}`,

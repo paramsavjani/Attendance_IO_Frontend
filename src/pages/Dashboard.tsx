@@ -548,7 +548,11 @@ export default function Dashboard() {
                     present={stats.present}
                     absent={stats.absent}
                     total={stats.total}
+                    totalUntilEndDate={stats.totalUntilEndDate}
                     minRequired={minRequired}
+                    percentage={stats.percentage}
+                    classesNeeded={stats.classesNeeded}
+                    bunkableClasses={stats.bunkableClasses}
                     onMinChange={(val) => setSubjectMin(subject.id, val)}
                   />
                 );
