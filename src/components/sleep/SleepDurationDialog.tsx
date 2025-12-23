@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Moon, Sparkles } from "lucide-react";
+import { Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 interface SleepDurationDialogProps {
   open: boolean;
@@ -20,30 +19,26 @@ interface SleepDurationDialogProps {
   defaultHours?: number;
 }
 
-const QUICK_HOURS = [6, 7, 8, 9, 10];
-
 export function SleepDurationDialog({
   open,
   onClose,
   onSave,
   defaultHours = 8,
 }: SleepDurationDialogProps) {
-  const [hours, setHours] = useState(defaultHours.toString());
+  const [hours, setHours] = useState(defaultHours);
   const [isSaving, setIsSaving] = useState(false);
 
   // Reset to default when dialog opens
   useEffect(() => {
     if (open) {
-      setHours(defaultHours.toString());
+      setHours(defaultHours);
     }
   }, [open, defaultHours]);
 
   const handleSave = async () => {
-    const hoursNum = parseInt(hours, 10);
-    
     // Validate input
-    if (isNaN(hoursNum) || hoursNum < 1 || hoursNum >= 20) {
-      toast.error("Sleep duration must be less than 20 hours");
+    if (hours < 1 || hours >= 20) {
+      toast.error("Sleep duration must be between 1 and 19 hours");
       return;
     }
 
@@ -56,7 +51,7 @@ export function SleepDurationDialog({
         },
         credentials: 'include',
         body: JSON.stringify({
-          sleepDurationHours: hoursNum,
+          sleepDurationHours: hours,
         }),
       });
 
@@ -94,56 +89,28 @@ export function SleepDurationDialog({
         </div>
 
         {/* Content */}
-        <div className="px-4 sm:px-6 py-5 sm:py-6 space-y-5">
-          {/* Quick selection buttons */}
-          <div>
-            <div className="grid grid-cols-5 gap-2">
-              {QUICK_HOURS.map((hour) => {
-                const isSelected = hours === hour.toString();
-                return (
-                  <button
-                    key={hour}
-                    type="button"
-                    onClick={() => setHours(hour.toString())}
-                    className={cn(
-                      "py-3 sm:py-2.5 rounded-xl text-sm font-semibold transition-all",
-                      "active:scale-95",
-                      isSelected
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    )}
-                  >
-                    {hour}h
-                  </button>
-                );
-              })}
-            </div>
+        <div className="px-4 sm:px-6 py-5 sm:py-6 space-y-6">
+          {/* Value Display */}
+          <div className="text-center">
+            <span className="text-5xl font-bold text-primary tabular-nums">{hours}</span>
+            <span className="text-xl text-muted-foreground ml-2">hours</span>
           </div>
-
-          {/* Custom input */}
-          <div>
-            <label htmlFor="sleep-hours" className="text-sm font-medium text-foreground mb-2 block">
-              Or enter custom hours
-            </label>
-            <div className="relative">
-              <Input
-                id="sleep-hours"
-                type="number"
-                min="1"
-                max="19"
-                value={hours}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "" || (parseInt(val) >= 1 && parseInt(val) < 20)) {
-                    setHours(val);
-                  }
-                }}
-                placeholder="8"
-                className="text-center text-2xl sm:text-xl font-bold h-14 sm:h-12 pr-12"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-                hours
-              </span>
+          
+          {/* Slider */}
+          <div className="px-2">
+            <Slider
+              value={[hours]}
+              onValueChange={(value) => setHours(value[0])}
+              min={1}
+              max={20}
+              step={1}
+              disabled={isSaving}
+              className="w-full"
+            />
+            <div className="flex justify-between mt-3 text-xs text-muted-foreground">
+              <span>1h</span>
+              <span>10h</span>
+              <span>20h</span>
             </div>
           </div>
         </div>
@@ -153,12 +120,10 @@ export function SleepDurationDialog({
           <Button
             onClick={handleSave}
             className="flex-1 h-11 sm:h-10 rounded-xl font-semibold shadow-md"
-            disabled={isSaving || !hours || parseInt(hours) < 1 || parseInt(hours) >= 20}
+            disabled={isSaving || hours < 1 || hours >= 20}
           >
             {isSaving ? (
-              <>
-                <span className="animate-pulse">Saving...</span>
-              </>
+              <span className="animate-pulse">Saving...</span>
             ) : (
               "Save & Continue"
             )}
@@ -168,4 +133,3 @@ export function SleepDurationDialog({
     </Dialog>
   );
 }
-
