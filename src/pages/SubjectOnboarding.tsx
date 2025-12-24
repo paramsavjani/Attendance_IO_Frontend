@@ -64,7 +64,7 @@ export default function SubjectOnboarding() {
         <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
-      <div className="w-full max-w-md relative z-10 flex flex-col" style={{ maxHeight: 'calc(100vh - 48px)' }}>
+      <div className="w-full max-w-md relative z-10 flex flex-col h-full max-h-[calc(100vh-2rem)]">
         {/* Welcome message */}
         {student && (
           <div className="text-center mb-3 animate-fade-in flex-shrink-0">
@@ -81,7 +81,7 @@ export default function SubjectOnboarding() {
         </div>
 
         {/* Selector Card - Fixed height issues */}
-        <div className="bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-xl animate-slide-up flex-1 min-h-0 overflow-hidden">
+        <div className="bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-xl animate-slide-up flex-1 min-h-0 flex flex-col overflow-hidden">
           <SubjectSelector
             selectedSubjects={[]}
             onSave={handleSubjectsSave}
