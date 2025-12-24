@@ -200,7 +200,7 @@ export default function Intro() {
       </div>
 
       {/* Modal */}
-      <div className="relative w-full max-w-md h-[90vh] max-h-[90vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-md h-[calc(100vh-1rem)] max-h-[calc(100vh-1rem)] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         
 
         {!assetsReady ? (
@@ -250,33 +250,33 @@ export default function Intro() {
                 <div 
                   key={currentSlide}
                   className={cn(
-                    "flex flex-col flex-1 min-h-0 overflow-y-auto pr-1",
+                    "flex flex-col flex-1 min-h-0 overflow-y-auto pr-1 pb-2",
                     direction === 'right' ? "animate-slide-in-right" : "animate-slide-in-left"
                   )}
                 >
                   {/* Large Icon */}
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 mx-auto text-primary flex-shrink-0">
-                    <BookOpen className="w-8 h-8" />
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4 mx-auto text-primary flex-shrink-0">
+                    <BookOpen className="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
 
                   {/* Large Title */}
-                  <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center text-foreground flex-shrink-0">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-center text-foreground flex-shrink-0 px-2">
                     {slide.title}
                   </h2>
 
                   {/* Content Cards */}
-                  <div className="space-y-3 mb-4 flex-shrink-0">
+                  <div className="space-y-2.5 sm:space-y-3 mb-2 flex-shrink-0">
                     {/* Step 1 Card */}
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-2.5 sm:p-3 md:p-4">
+                      <div className="flex items-start gap-2.5 sm:gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">
+                          <h3 className="text-sm sm:text-base md:text-lg font-bold text-foreground mb-0.5 sm:mb-1">
                             Choose Your Subjects
                           </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                          <p className="text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed">
                             Select the subjects you're enrolled in for this semester
                           </p>
                         </div>
@@ -284,16 +284,16 @@ export default function Intro() {
                     </div>
 
                     {/* Step 2 Card */}
-                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-3 sm:p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Clock className="w-5 h-5 text-accent-foreground" />
+                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-2.5 sm:p-3 md:p-4">
+                      <div className="flex items-start gap-2.5 sm:gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-accent-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">
+                          <h3 className="text-sm sm:text-base md:text-lg font-bold text-foreground mb-0.5 sm:mb-1">
                             Auto-Generated Timetable
                           </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                          <p className="text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed">
                             A timetable will be automatically created based on default schedules
                           </p>
                         </div>
@@ -301,16 +301,16 @@ export default function Intro() {
                     </div>
 
                     {/* Warning Card */}
-                    <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 sm:p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <AlertCircle className="w-5 h-5 text-destructive" />
+                    <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-2.5 sm:p-3 md:p-4">
+                      <div className="flex items-start gap-2.5 sm:gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-destructive" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">
+                          <h3 className="text-sm sm:text-base md:text-lg font-bold text-foreground mb-0.5 sm:mb-1">
                             Important Notice
                           </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-semibold">
+                          <p className="text-xs sm:text-sm md:text-base text-muted-foreground leading-relaxed font-semibold">
                             There may be errors in the auto-generated timetable. Please review and adjust it as needed to ensure accuracy.
                           </p>
                         </div>
@@ -361,13 +361,13 @@ export default function Intro() {
             </div>
 
             {/* Navigation */}
-            <div className="px-4 pb-4 pt-2 flex items-center gap-2">
+            <div className="px-4 pb-3 sm:pb-4 pt-2 flex items-center gap-2 flex-shrink-0 border-t border-border/50 bg-card">
               {!isFirstSlide && (
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={handlePrev}
-                  className="rounded-lg h-10 w-10 border-border/50"
+                  className="rounded-lg h-9 sm:h-10 w-9 sm:w-10 border-border/50 flex-shrink-0"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -377,18 +377,18 @@ export default function Intro() {
                 <Button
                   onClick={handleGetStarted}
                   disabled={isButtonDisabled}
-                  className="flex-1 h-10 rounded-lg text-sm font-semibold"
+                  className="flex-1 h-9 sm:h-10 rounded-lg text-xs sm:text-sm font-semibold"
                 >
                   {isButtonDisabled ? `Get Started (${countdown}s)` : "Get Started"}
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
                 </Button>
               ) : (
                 <Button
                   onClick={handleNext}
-                  className="flex-1 h-10 rounded-lg text-sm font-semibold"
+                  className="flex-1 h-9 sm:h-10 rounded-lg text-xs sm:text-sm font-semibold"
                 >
                   Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
                 </Button>
               )}
             </div>
