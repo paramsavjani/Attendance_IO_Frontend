@@ -8,46 +8,118 @@
   "theme_color": "#0a0a0a",
   "icons": [
     {
-      "src": "/logo.png",
-      "type": "image/png",
+      "src": "/icon-48.webp",
+      "type": "image/webp",
       "sizes": "48x48",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
-      "type": "image/png",
+      "src": "/icon-48.webp",
+      "type": "image/webp",
+      "sizes": "48x48",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-72.webp",
+      "type": "image/webp",
       "sizes": "72x72",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
-      "type": "image/png",
+      "src": "/icon-72.webp",
+      "type": "image/webp",
+      "sizes": "72x72",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-96.webp",
+      "type": "image/webp",
       "sizes": "96x96",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
-      "type": "image/png",
+      "src": "/icon-96.webp",
+      "type": "image/webp",
+      "sizes": "96x96",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-128.webp",
+      "type": "image/webp",
       "sizes": "128x128",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
-      "type": "image/png",
+      "src": "/icon-128.webp",
+      "type": "image/webp",
+      "sizes": "128x128",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-192.webp",
+      "type": "image/webp",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
-      "type": "image/png",
+      "src": "/icon-192.webp",
+      "type": "image/webp",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-256.webp",
+      "type": "image/webp",
       "sizes": "256x256",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
-      "type": "image/png",
+      "src": "/icon-256.webp",
+      "type": "image/webp",
+      "sizes": "256x256",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.webp",
+      "type": "image/webp",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.webp",
+      "type": "image/webp",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/demo/daily_attendance.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "form_factor": "wide",
+      "label": "Daily Attendance View"
+    },
+    {
+      "src": "/demo/analytics.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "form_factor": "wide",
+      "label": "Analytics Dashboard"
+    },
+    {
+      "src": "/demo/daily_attendance.png",
+      "type": "image/png",
+      "sizes": "720x1280",
+      "form_factor": "narrow",
+      "label": "Daily Attendance View"
+    },
+    {
+      "src": "/demo/analytics.png",
+      "type": "image/png",
+      "sizes": "720x1280",
+      "form_factor": "narrow",
+      "label": "Analytics Dashboard"
     }
   ]
 }
