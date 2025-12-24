@@ -91,35 +91,5 @@
       "sizes": "512x512",
       "purpose": "maskable"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/demo/daily_attendance.png",
-      "type": "image/png",
-      "sizes": "1280x720",
-      "form_factor": "wide",
-      "label": "Daily Attendance View"
-    },
-    {
-      "src": "/demo/analytics.png",
-      "type": "image/png",
-      "sizes": "1280x720",
-      "form_factor": "wide",
-      "label": "Analytics Dashboard"
-    },
-    {
-      "src": "/demo/daily_attendance.png",
-      "type": "image/png",
-      "sizes": "720x1280",
-      "form_factor": "narrow",
-      "label": "Daily Attendance View"
-    },
-    {
-      "src": "/demo/analytics.png",
-      "type": "image/png",
-      "sizes": "720x1280",
-      "form_factor": "narrow",
-      "label": "Analytics Dashboard"
-    }
   ]
 }
