@@ -245,38 +245,38 @@ export default function Intro() {
             </div>
 
             {/* Slide content */}
-            <div className="px-4 py-3 flex-1 min-h-0 flex flex-col">
+            <div className="px-4 py-3 flex-1 min-h-0 flex flex-col overflow-hidden">
               {isLastSlide ? (
                 <div 
                   key={currentSlide}
                   className={cn(
-                    "flex flex-col flex-1 min-h-0 justify-center",
+                    "flex flex-col flex-1 min-h-0 overflow-y-auto pr-1",
                     direction === 'right' ? "animate-slide-in-right" : "animate-slide-in-left"
                   )}
                 >
                   {/* Large Icon */}
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 mx-auto text-primary">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 mx-auto text-primary flex-shrink-0">
                     <BookOpen className="w-8 h-8" />
                   </div>
 
                   {/* Large Title */}
-                  <h2 className="text-2xl font-bold mb-6 text-center text-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center text-foreground flex-shrink-0">
                     {slide.title}
                   </h2>
 
                   {/* Content Cards */}
-                  <div className="space-y-4 mb-6">
+                  <div className="space-y-3 mb-4 flex-shrink-0">
                     {/* Step 1 Card */}
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <CheckCircle2 className="w-5 h-5 text-primary" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">
                             Choose Your Subjects
                           </h3>
-                          <p className="text-base text-muted-foreground leading-relaxed">
+                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                             Select the subjects you're enrolled in for this semester
                           </p>
                         </div>
@@ -284,16 +284,16 @@ export default function Intro() {
                     </div>
 
                     {/* Step 2 Card */}
-                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
+                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-3 sm:p-4">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Clock className="w-5 h-5 text-accent-foreground" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">
                             Auto-Generated Timetable
                           </h3>
-                          <p className="text-base text-muted-foreground leading-relaxed">
+                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                             A timetable will be automatically created based on default schedules
                           </p>
                         </div>
@@ -301,16 +301,16 @@ export default function Intro() {
                     </div>
 
                     {/* Warning Card */}
-                    <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+                    <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 sm:p-4">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <AlertCircle className="w-5 h-5 text-destructive" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">
                             Important Notice
                           </h3>
-                          <p className="text-base text-muted-foreground leading-relaxed font-semibold">
+                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-semibold">
                             There may be errors in the auto-generated timetable. Please review and adjust it as needed to ensure accuracy.
                           </p>
                         </div>
