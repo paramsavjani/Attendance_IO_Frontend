@@ -381,15 +381,14 @@ export default function Search() {
                   {/* Student Info */}
                   <div className="flex items-center gap-2 md:gap-3">
                     <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                      {selectedStudent.pictureUrl ? (
-                        <img 
-                          src={selectedStudent.pictureUrl} 
-                          alt={selectedStudent.name}
-                          className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                      )}
+                      <img 
+                        src={selectedStudent.pictureUrl || "/user-icons/user2.png"} 
+                        alt={selectedStudent.name}
+                        className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/user-icons/user2.png";
+                        }}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h1 className="text-base md:text-lg font-bold truncate">{selectedStudent.name}</h1>
@@ -636,16 +635,15 @@ export default function Search() {
                 }}
                 className="bg-card rounded-xl p-4 border border-border flex items-center gap-3 text-left w-full active:scale-98 transition-transform"
               >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  {student.pictureUrl ? (
-                    <img 
-                      src={student.pictureUrl} 
-                      alt={student.name}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                  <User className="w-5 h-5 text-primary" />
-                  )}
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  <img 
+                    src={student.pictureUrl || "/user-icons/user2.png"} 
+                    alt={student.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/user-icons/user2.png";
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{student.name}</p>
