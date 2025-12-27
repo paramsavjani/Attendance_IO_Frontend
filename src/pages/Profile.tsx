@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Calendar, BookOpen, Edit, Target, Save, ChevronRight, Moon, MessageSquare, Bug, Lightbulb, Send, Heart } from "lucide-react";
+import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -279,199 +279,165 @@ export default function Profile() {
 
   return (
     <AppLayout>
-      <div className="space-y-3">
-        {/* Profile Header */}
-        <div className="flex flex-col items-center text-center pt-2">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2 overflow-hidden">
-            {student?.pictureUrl ? (
-              <img 
-                src={student.pictureUrl} 
-                alt={student.name || "Profile"} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <User className="w-8 h-8 text-primary" />
-            )}
-          </div>
-          <h1 className="text-lg font-bold">{student?.name}</h1>
-          <p className="text-sm text-muted-foreground">{student?.rollNumber}</p>
-        </div>
-
-        {/* Current Semester Info */}
-        <div className="bg-card rounded-xl p-3 border border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground">Current Term</p>
-              {isLoadingSemester ? (
-                <p className="font-semibold text-sm">Loading...</p>
-              ) : currentSemester ? (
-                <p className="font-semibold text-sm">
-                  {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
-                </p>
+      <div className="space-y-4 pb-4">
+        {/* Profile Header - Compact horizontal layout */}
+        <div className="bg-card rounded-xl p-4 border border-border">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+              {student?.pictureUrl ? (
+                <img 
+                  src={student.pictureUrl} 
+                  alt={student.name || "Profile"} 
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <p className="font-semibold text-sm text-muted-foreground">No active semester</p>
+                <User className="w-7 h-7 text-primary" />
               )}
             </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base font-bold truncate">{student?.name}</h1>
+              <p className="text-sm text-muted-foreground">{student?.rollNumber}</p>
+              {isLoadingSemester ? (
+                <p className="text-xs text-muted-foreground mt-0.5">Loading term...</p>
+              ) : currentSemester ? (
+                <p className="text-xs text-primary font-medium mt-0.5">
+                  {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
+                </p>
+              ) : null}
+            </div>
           </div>
         </div>
 
-        {/* Info Cards */}
-        <button 
-          onClick={() => setShowSubjectEditor(true)}
-          className="w-full bg-card rounded-xl p-3 border border-border flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
-        >
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-sm">My Subjects</p>
-            <p className="text-xs text-muted-foreground">{enrolledSubjects.length} subjects enrolled</p>
-          </div>
-          <Edit className="w-4 h-4 text-muted-foreground" />
-        </button>
+        {/* Quick Settings - 2x2 Grid */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Subjects */}
+          <button 
+            onClick={() => setShowSubjectEditor(true)}
+            className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+            </div>
+            <p className="font-medium text-sm">Subjects</p>
+            <p className="text-xs text-muted-foreground">{enrolledSubjects.length} enrolled</p>
+          </button>
 
-        {/* Sleep Duration - Premium Design */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          {isEditingSleepDuration ? (
-            <div className="p-4 space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          {/* Minimum Criteria */}
+          {enrolledSubjects.length > 0 ? (
+            <button
+              onClick={() => setShowCriteriaModal(true)}
+              className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <Target className="w-5 h-5 text-primary" />
+              </div>
+              <p className="font-medium text-sm">Criteria</p>
+              <p className="text-xs text-muted-foreground">Set targets</p>
+            </button>
+          ) : (
+            <div className="bg-card/50 rounded-xl p-3 border border-border/50 flex flex-col items-center text-center opacity-50">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2">
+                <Target className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <p className="font-medium text-sm text-muted-foreground">Criteria</p>
+              <p className="text-xs text-muted-foreground">Add subjects</p>
+            </div>
+          )}
+
+          {/* Sleep Duration */}
+          <button
+            onClick={handleEditSleepDuration}
+            className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <Moon className="w-5 h-5 text-primary" />
+            </div>
+            <p className="font-medium text-sm">Sleep</p>
+            {isLoadingSleepDuration ? (
+              <p className="text-xs text-muted-foreground">Loading...</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{sleepDuration || 8}h reminder</p>
+            )}
+          </button>
+
+          {/* Feedback */}
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+            </div>
+            <p className="font-medium text-sm">Feedback</p>
+            <p className="text-xs text-muted-foreground">Report bugs</p>
+          </button>
+        </div>
+
+        {/* Sleep Duration Edit Modal */}
+        {isEditingSleepDuration && (
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <Moon className="w-5 h-5 text-primary" />
-                </div>
-                <div>
                   <p className="font-semibold text-sm">Sleep Duration</p>
-                  <p className="text-xs text-muted-foreground">How many hours do you sleep?</p>
                 </div>
+                <span className="text-2xl font-bold text-primary tabular-nums">{editingSleepHours}h</span>
               </div>
               
-              {/* Value Display */}
-              <div className="text-center">
-                <span className="text-4xl font-bold text-primary tabular-nums">{editingSleepHours}</span>
-                <span className="text-lg text-muted-foreground ml-1">hours</span>
+              <Slider
+                value={[parseInt(editingSleepHours) || 8]}
+                onValueChange={(value) => setEditingSleepHours(value[0].toString())}
+                min={1}
+                max={20}
+                step={1}
+                disabled={isSavingSleepDuration}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>1h</span>
+                <span>10h</span>
+                <span>20h</span>
               </div>
               
-              {/* Slider */}
-              <div className="px-2">
-                <Slider
-                  value={[parseInt(editingSleepHours) || 8]}
-                  onValueChange={(value) => setEditingSleepHours(value[0].toString())}
-                  min={1}
-                  max={20}
-                  step={1}
-                  disabled={isSavingSleepDuration}
-                  className="w-full"
-                />
-                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                  <span>1h</span>
-                  <span>10h</span>
-                  <span>20h</span>
-                </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={handleCancelEditSleepDuration}
                   disabled={isSavingSleepDuration}
-                  className="flex-1 h-10 rounded-xl"
+                  className="flex-1"
                 >
                   Cancel
                 </Button>
                 <Button
+                  size="sm"
                   onClick={handleSaveSleepDuration}
                   disabled={isSavingSleepDuration}
-                  className="flex-1 h-10 rounded-xl gap-2"
+                  className="flex-1 gap-1.5"
                 >
-                  {isSavingSleepDuration ? (
-                    "Saving..."
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save
-                    </>
-                  )}
+                  {isSavingSleepDuration ? "Saving..." : <><Save className="w-4 h-4" />Save</>}
                 </Button>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-3 p-3">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Moon className="w-4 h-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">Sleep Duration</p>
-                {isLoadingSleepDuration ? (
-                  <p className="text-xs text-muted-foreground">Loading...</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    {sleepDuration !== null ? `${sleepDuration} hours` : "8 hours"} · Reminders enabled
-                  </p>
-                )}
-              </div>
-              {!isLoadingSleepDuration && (
-                <button
-                  onClick={handleEditSleepDuration}
-                  className="h-8 px-3 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-                >
-                  <Edit className="w-3 h-3" />
-                  Edit
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Minimum Criteria (Modal) */}
-        {enrolledSubjects.length > 0 && (
-          <button
-            onClick={() => setShowCriteriaModal(true)}
-            className="w-full bg-card rounded-xl p-3 border border-border flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
-          >
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <Target className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm">Minimum Criteria</p>
-              <p className="text-xs text-muted-foreground">Set attendance targets by subject</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
+          </div>
         )}
 
-        {/* Feedback & Bugs */}
-        <button
-          onClick={() => setShowFeedbackModal(true)}
-          className="w-full bg-card rounded-xl p-3 border border-border flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
-        >
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <MessageSquare className="w-4 h-4 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-sm">Feedback & Bugs</p>
-            <p className="text-xs text-muted-foreground">Help us improve the app</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        </button>
-
-        {/* Contributors Section */}
+        {/* Contributors Section - Compact */}
         <ContributorsSection />
 
         {/* Logout */}
         <Button
           variant="destructive"
           onClick={handleLogout}
-          className="w-full py-5 rounded-xl"
+          className="w-full h-11 rounded-xl"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Logout
         </Button>
 
         {/* Creator Credit */}
-        <div className="flex items-center justify-center gap-1.5 pt-2 pb-1">
+        <div className="flex items-center justify-center gap-1.5 pt-1">
           <span className="text-xs text-muted-foreground">Made with</span>
           <Heart className="w-3 h-3 text-red-500 fill-red-500 animate-pulse" />
           <span className="text-xs text-muted-foreground">by</span>

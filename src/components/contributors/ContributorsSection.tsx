@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Lightbulb, Users, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { API_CONFIG } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 
 interface Contributor {
@@ -10,7 +10,7 @@ interface Contributor {
   typeOfHelp: string;
 }
 
-const INITIAL_DISPLAY_COUNT = 8;
+const INITIAL_DISPLAY_COUNT = 6;
 
 export function ContributorsSection() {
   const [ideaContributors, setIdeaContributors] = useState<Contributor[]>([]);
@@ -18,21 +18,17 @@ export function ContributorsSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [showAllTesters, setShowAllTesters] = useState(false);
   const [showAllIdeas, setShowAllIdeas] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<'ideas' | 'testers' | null>(null);
 
   useEffect(() => {
     const fetchContributors = async () => {
       try {
         setIsLoading(true);
         
-        // Fetch idea contributors
-        const ideaResponse = await fetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('IDEA'), {
-          credentials: 'include',
-        });
-        
-        // Fetch testers
-        const testerResponse = await fetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('TESTER'), {
-          credentials: 'include',
-        });
+        const [ideaResponse, testerResponse] = await Promise.all([
+          fetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('IDEA'), { credentials: 'include' }),
+          fetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('TESTER'), { credentials: 'include' }),
+        ]);
 
         if (ideaResponse.ok) {
           const ideaData = await ideaResponse.json();
@@ -55,10 +51,14 @@ export function ContributorsSection() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-4">
+      <div className="flex items-center justify-center py-3">
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (ideaContributors.length === 0 && testers.length === 0) {
+    return null;
   }
 
   const displayedIdeas = showAllIdeas 
@@ -71,108 +71,105 @@ export function ContributorsSection() {
   const hasMoreTesters = testers.length > INITIAL_DISPLAY_COUNT;
 
   return (
-    <div className="space-y-3">
-      {/* Idea Contributors Section */}
-      {ideaContributors.length > 0 && (
-        <Card className="border-border">
-          <CardHeader className="pb-2 pt-3 px-3">
-            <CardTitle className="flex items-center gap-1.5 text-sm font-semibold">
-              <Lightbulb className="w-3.5 h-3.5 text-primary" />
-              Feature Ideas
-              <span className="text-xs font-normal text-muted-foreground ml-1">
-                ({ideaContributors.length})
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
-            <div className="flex flex-wrap gap-1.5">
-              {displayedIdeas.map((contributor) => (
-                <div
-                  key={contributor.id}
-                  className="px-2 py-1 bg-primary/10 rounded-md text-xs font-medium"
-                >
-                  {contributor.name}
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      {/* Combined Header - Collapsible sections */}
+      <div className="divide-y divide-border">
+        {/* Ideas Section */}
+        {ideaContributors.length > 0 && (
+          <div>
+            <button
+              onClick={() => setExpandedSection(expandedSection === 'ideas' ? null : 'ideas')}
+              className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-yellow-500" />
+                <span className="font-medium text-sm">Feature Ideas</span>
+                <span className="text-xs text-muted-foreground">({ideaContributors.length})</span>
+              </div>
+              {expandedSection === 'ideas' ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+            {expandedSection === 'ideas' && (
+              <div className="px-3 pb-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {displayedIdeas.map((contributor) => (
+                    <span
+                      key={contributor.id}
+                      className="px-2 py-0.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded text-xs font-medium"
+                    >
+                      {contributor.name}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {hasMoreIdeas && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAllIdeas(!showAllIdeas)}
-                className="mt-2 h-7 text-xs px-2"
-              >
-                {showAllIdeas ? (
-                  <>
-                    <ChevronUp className="w-3 h-3 mr-1" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-3 h-3 mr-1" />
-                    Show {ideaContributors.length - INITIAL_DISPLAY_COUNT} More
-                  </>
+                {hasMoreIdeas && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAllIdeas(!showAllIdeas);
+                    }}
+                    className="mt-2 h-6 text-xs px-2"
+                  >
+                    {showAllIdeas ? 'Show Less' : `+${ideaContributors.length - INITIAL_DISPLAY_COUNT} more`}
+                  </Button>
                 )}
-              </Button>
+              </div>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* Testers Section */}
-      {testers.length > 0 && (
-        <Card className="border-border">
-          <CardHeader className="pb-2 pt-3 px-3">
-            <CardTitle className="flex items-center gap-1.5 text-sm font-semibold">
-              <Users className="w-3.5 h-3.5 text-primary" />
-              Testers
-              <span className="text-xs font-normal text-muted-foreground ml-1">
-                ({testers.length})
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
-            <div className="flex flex-wrap gap-1.5">
-              {displayedTesters.map((tester) => (
-                <div
-                  key={tester.id}
-                  className="px-2 py-1 bg-primary/10 rounded-md text-xs font-medium"
-                >
-                  {tester.name}
+        {/* Testers Section */}
+        {testers.length > 0 && (
+          <div>
+            <button
+              onClick={() => setExpandedSection(expandedSection === 'testers' ? null : 'testers')}
+              className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-500" />
+                <span className="font-medium text-sm">Testers</span>
+                <span className="text-xs text-muted-foreground">({testers.length})</span>
+              </div>
+              {expandedSection === 'testers' ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+            {expandedSection === 'testers' && (
+              <div className="px-3 pb-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {displayedTesters.map((tester) => (
+                    <span
+                      key={tester.id}
+                      className="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-medium"
+                    >
+                      {tester.name}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {hasMoreTesters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAllTesters(!showAllTesters)}
-                className="mt-2 h-7 text-xs px-2"
-              >
-                {showAllTesters ? (
-                  <>
-                    <ChevronUp className="w-3 h-3 mr-1" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-3 h-3 mr-1" />
-                    Show {testers.length - INITIAL_DISPLAY_COUNT} More
-                  </>
+                {hasMoreTesters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAllTesters(!showAllTesters);
+                    }}
+                    className="mt-2 h-6 text-xs px-2"
+                  >
+                    {showAllTesters ? 'Show Less' : `+${testers.length - INITIAL_DISPLAY_COUNT} more`}
+                  </Button>
                 )}
-              </Button>
+              </div>
             )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Show message if no contributors */}
-      {!isLoading && ideaContributors.length === 0 && testers.length === 0 && (
-        <div className="text-center py-4 text-xs text-muted-foreground">
-          No contributors yet
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
