@@ -279,11 +279,11 @@ export default function Profile() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 pb-4">
-        {/* Profile Header - Compact horizontal layout */}
-        <div className="bg-card rounded-xl p-4 border border-border">
+      <div className="space-y-3 pb-4">
+        {/* Profile Header - Premium Card */}
+        <div className="bg-gradient-to-br from-primary/10 via-card to-card rounded-2xl p-5 border border-border shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20 shadow-lg">
               {student?.pictureUrl ? (
                 <img 
                   src={student.pictureUrl} 
@@ -291,85 +291,85 @@ export default function Profile() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User className="w-7 h-7 text-primary" />
+                <User className="w-8 h-8 text-primary" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-base font-bold truncate">{student?.name}</h1>
-              <p className="text-sm text-muted-foreground">{student?.rollNumber}</p>
+              <h1 className="text-lg font-bold truncate">{student?.name}</h1>
+              <p className="text-sm text-muted-foreground font-medium">{student?.rollNumber}</p>
               {isLoadingSemester ? (
-                <p className="text-xs text-muted-foreground mt-0.5">Loading term...</p>
+                <div className="mt-1.5 h-5 w-24 bg-muted/50 rounded animate-pulse" />
               ) : currentSemester ? (
-                <p className="text-xs text-primary font-medium mt-0.5">
+                <span className="inline-flex items-center mt-1.5 px-2.5 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-full">
                   {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
-                </p>
+                </span>
               ) : null}
             </div>
           </div>
         </div>
 
-        {/* Quick Settings - 2x2 Grid */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Quick Settings - 2x2 Grid with larger cards */}
+        <div className="grid grid-cols-2 gap-3">
           {/* Subjects */}
           <button 
             onClick={() => setShowSubjectEditor(true)}
-            className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+            className="bg-card rounded-2xl p-4 border border-border flex flex-col items-center text-center hover:bg-muted/50 hover:border-primary/30 transition-all active:scale-[0.98]"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-              <BookOpen className="w-5 h-5 text-primary" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center mb-2.5">
+              <BookOpen className="w-6 h-6 text-blue-500" />
             </div>
-            <p className="font-medium text-sm">Subjects</p>
-            <p className="text-xs text-muted-foreground">{enrolledSubjects.length} enrolled</p>
+            <p className="font-semibold text-sm">My Subjects</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{enrolledSubjects.length} enrolled</p>
           </button>
 
           {/* Minimum Criteria */}
           {enrolledSubjects.length > 0 ? (
             <button
               onClick={() => setShowCriteriaModal(true)}
-              className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+              className="bg-card rounded-2xl p-4 border border-border flex flex-col items-center text-center hover:bg-muted/50 hover:border-primary/30 transition-all active:scale-[0.98]"
             >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                <Target className="w-5 h-5 text-primary" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center mb-2.5">
+                <Target className="w-6 h-6 text-emerald-500" />
               </div>
-              <p className="font-medium text-sm">Criteria</p>
-              <p className="text-xs text-muted-foreground">Set targets</p>
+              <p className="font-semibold text-sm">Criteria</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Per subject</p>
             </button>
           ) : (
-            <div className="bg-card/50 rounded-xl p-3 border border-border/50 flex flex-col items-center text-center opacity-50">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2">
-                <Target className="w-5 h-5 text-muted-foreground" />
+            <div className="bg-card/50 rounded-2xl p-4 border border-border/50 flex flex-col items-center text-center opacity-50">
+              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-2.5">
+                <Target className="w-6 h-6 text-muted-foreground" />
               </div>
-              <p className="font-medium text-sm text-muted-foreground">Criteria</p>
-              <p className="text-xs text-muted-foreground">Add subjects</p>
+              <p className="font-semibold text-sm text-muted-foreground">Criteria</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
             </div>
           )}
 
           {/* Sleep Duration */}
           <button
             onClick={handleEditSleepDuration}
-            className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+            className="bg-card rounded-2xl p-4 border border-border flex flex-col items-center text-center hover:bg-muted/50 hover:border-primary/30 transition-all active:scale-[0.98]"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-              <Moon className="w-5 h-5 text-primary" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center mb-2.5">
+              <Moon className="w-6 h-6 text-purple-500" />
             </div>
-            <p className="font-medium text-sm">Sleep</p>
+            <p className="font-semibold text-sm">Sleep Timer</p>
             {isLoadingSleepDuration ? (
-              <p className="text-xs text-muted-foreground">Loading...</p>
+              <div className="h-4 w-16 bg-muted/50 rounded animate-pulse mt-0.5" />
             ) : (
-              <p className="text-xs text-muted-foreground">{sleepDuration || 8}h reminder</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{sleepDuration || 8}h reminder</p>
             )}
           </button>
 
           {/* Feedback */}
           <button
             onClick={() => setShowFeedbackModal(true)}
-            className="bg-card rounded-xl p-3 border border-border flex flex-col items-center text-center hover:bg-muted/50 transition-colors"
+            className="bg-card rounded-2xl p-4 border border-border flex flex-col items-center text-center hover:bg-muted/50 hover:border-primary/30 transition-all active:scale-[0.98]"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-              <MessageSquare className="w-5 h-5 text-primary" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center mb-2.5">
+              <MessageSquare className="w-6 h-6 text-orange-500" />
             </div>
-            <p className="font-medium text-sm">Feedback</p>
-            <p className="text-xs text-muted-foreground">Report bugs</p>
+            <p className="font-semibold text-sm">Feedback</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Report & suggest</p>
           </button>
         </div>
 
@@ -423,32 +423,42 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Contributors Section - Compact */}
+        {/* Contributors Section */}
         <ContributorsSection />
 
-        {/* Logout */}
-        <Button
-          variant="destructive"
-          onClick={handleLogout}
-          className="w-full h-11 rounded-xl"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
+        {/* Danger Zone */}
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="p-3 border-b border-border">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Account</p>
+          </div>
+          <div className="p-3">
+            <Button
+              variant="destructive"
+              onClick={handleLogout}
+              className="w-full h-11 rounded-xl"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
 
-        {/* Creator Credit */}
-        <div className="flex items-center justify-center gap-1.5 pt-1">
-          <span className="text-xs text-muted-foreground">Made with</span>
-          <Heart className="w-3 h-3 text-red-500 fill-red-500 animate-pulse" />
-          <span className="text-xs text-muted-foreground">by</span>
-          <a 
-            href="https://paramsavjani.in" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            Param Savjani
-          </a>
+        {/* Creator Credit - Enhanced */}
+        <div className="flex flex-col items-center gap-2 pt-2 pb-4">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Made with</span>
+            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse" />
+            <span className="text-xs text-muted-foreground">by</span>
+            <a 
+              href="https://paramsavjani.in" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Param Savjani
+            </a>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60">v1.0.0</p>
         </div>
 
         {/* Subject Editor Dialog */}
