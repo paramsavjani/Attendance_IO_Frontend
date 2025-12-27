@@ -29,6 +29,7 @@ export const API_CONFIG = {
     ANALYTICS: `${API_BASE_URL}/api/analytics`,
     ANALYTICS_SEMESTER: (semesterId: string) => `${API_BASE_URL}/api/analytics/semester/${semesterId}`,
     ANALYTICS_SEMESTERS: `${API_BASE_URL}/api/analytics/semesters`,
+    CONTRIBUTORS: (type?: string) => type ? `${API_BASE_URL}/api/contributors?type=${type}` : `${API_BASE_URL}/api/contributors`,
   },
 } as const;
 
