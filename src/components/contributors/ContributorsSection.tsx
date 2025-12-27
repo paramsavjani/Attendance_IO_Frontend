@@ -79,7 +79,7 @@ export function ContributorsSection() {
           <div>
             <button
               onClick={() => setExpandedSection(expandedSection === 'ideas' ? null : 'ideas')}
-              className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+              className="w-full flex items-center justify-between p-3 active:bg-muted/30 transition-colors touch-manipulation"
             >
               <div className="flex items-center gap-2">
                 <Lightbulb className="w-4 h-4 text-yellow-500" />
@@ -112,7 +112,7 @@ export function ContributorsSection() {
                       e.stopPropagation();
                       setShowAllIdeas(!showAllIdeas);
                     }}
-                    className="mt-2 h-6 text-xs px-2"
+                    className="mt-2 h-6 text-xs px-2 hover:bg-transparent active:bg-muted/50"
                   >
                     {showAllIdeas ? 'Show Less' : `+${ideaContributors.length - INITIAL_DISPLAY_COUNT} more`}
                   </Button>
@@ -127,7 +127,7 @@ export function ContributorsSection() {
           <div>
             <button
               onClick={() => setExpandedSection(expandedSection === 'testers' ? null : 'testers')}
-              className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+              className="w-full flex items-center justify-between p-3 active:bg-muted/30 transition-colors touch-manipulation"
             >
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-500" />
@@ -160,7 +160,7 @@ export function ContributorsSection() {
                       e.stopPropagation();
                       setShowAllTesters(!showAllTesters);
                     }}
-                    className="mt-2 h-6 text-xs px-2"
+                    className="mt-2 h-6 text-xs px-2 hover:bg-transparent active:bg-muted/50"
                   >
                     {showAllTesters ? 'Show Less' : `+${testers.length - INITIAL_DISPLAY_COUNT} more`}
                   </Button>
