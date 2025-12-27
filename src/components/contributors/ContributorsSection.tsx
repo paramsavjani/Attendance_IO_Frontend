@@ -98,7 +98,7 @@ export function ContributorsSection() {
                   {displayedIdeas.map((contributor) => (
                     <span
                       key={contributor.id}
-                      className="px-2 py-0.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded text-xs font-medium"
+                      className="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-medium"
                     >
                       {contributor.name}
                     </span>
