@@ -12,6 +12,7 @@ import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 import { API_CONFIG } from "@/lib/api";
 import { Slider } from "@/components/ui/slider";
+import { ContributorsSection } from "@/components/contributors/ContributorsSection";
 import {
   Dialog,
   DialogContent,
@@ -455,6 +456,9 @@ export default function Profile() {
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
+
+        {/* Contributors Section */}
+        <ContributorsSection />
 
         {/* Logout */}
         <Button
