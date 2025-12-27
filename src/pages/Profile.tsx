@@ -284,15 +284,14 @@ export default function Profile() {
         <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-xl p-4 border border-border shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20 shadow-md">
-              {student?.pictureUrl ? (
-                <img 
-                  src={student.pictureUrl} 
-                  alt={student.name || "Profile"} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-8 h-8 text-primary" />
-              )}
+              <img 
+                src={student?.pictureUrl || "/user-icons/user2.png"} 
+                alt={student?.name || "Profile"} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = "/user-icons/user2.png";
+                }}
+              />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-bold truncate leading-tight">{student?.name}</h1>
