@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ChevronDown, Settings, AlertCircle, CheckCircle } from "lucide-react";
+import { ChevronDown, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
 interface SubjectCardProps {
@@ -38,7 +38,6 @@ export function SubjectCard({
   defaultExpanded = false,
 }: SubjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const [showSettings, setShowSettings] = useState(false);
 
   // Use backend-calculated values if available, otherwise calculate locally
   const percentage = backendPercentage !== undefined ? backendPercentage : (total > 0 ? (present / total) * 100 : 0);
@@ -87,39 +86,9 @@ export function SubjectCard({
       {isExpanded && (
         <div className="px-3 pb-3 space-y-3 animate-fade-in">
           {/* Lecture place */}
-          <div className={cn("flex items-center", lecturePlace ? "justify-between" : "justify-end")}>
-            {lecturePlace && (
+          {lecturePlace && (
+            <div className="flex items-center">
               <p className="font-semibold text-sm">{lecturePlace}</p>
-            )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSettings(!showSettings);
-              }}
-              className="p-1.5 rounded-lg hover:bg-muted"
-            >
-              <Settings className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Settings panel */}
-          {showSettings && onMinChange && (
-            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-              <span className="text-xs text-muted-foreground">Min:</span>
-              {[60, 70, 75, 80, 85].map((val) => (
-                <button
-                  key={val}
-                  onClick={() => onMinChange(val)}
-                  className={cn(
-                    "px-2 py-1 rounded text-xs font-medium transition-all",
-                    minRequired === val
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground"
-                  )}
-                >
-                  {val}%
-                </button>
-              ))}
             </div>
           )}
 
