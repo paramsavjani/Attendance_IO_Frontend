@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ChevronDown, Settings, AlertCircle, CheckCircle } from "lucide-react";
+import { ChevronDown, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 
 interface SubjectCardProps {
@@ -17,6 +17,7 @@ interface SubjectCardProps {
   bunkableClasses?: number;
   onMinChange?: (value: number) => void;
   defaultExpanded?: boolean;
+  hideBunkableInfo?: boolean; // Hide "Can Bunk" and "Total Classes" sections (for search view)
 }
 
 export type { SubjectCardProps };
@@ -36,9 +37,9 @@ export function SubjectCard({
   bunkableClasses: backendBunkableClasses,
   onMinChange,
   defaultExpanded = false,
+  hideBunkableInfo = false,
 }: SubjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const [showSettings, setShowSettings] = useState(false);
 
   // Use backend-calculated values if available, otherwise calculate locally
   const percentage = backendPercentage !== undefined ? backendPercentage : (total > 0 ? (present / total) * 100 : 0);
@@ -87,39 +88,9 @@ export function SubjectCard({
       {isExpanded && (
         <div className="px-3 pb-3 space-y-3 animate-fade-in">
           {/* Lecture place */}
-          <div className={cn("flex items-center", lecturePlace ? "justify-between" : "justify-end")}>
-            {lecturePlace && (
+          {lecturePlace && (
+            <div className="flex items-center">
               <p className="font-semibold text-sm">{lecturePlace}</p>
-            )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSettings(!showSettings);
-              }}
-              className="p-1.5 rounded-lg hover:bg-muted"
-            >
-              <Settings className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Settings panel */}
-          {showSettings && onMinChange && (
-            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-              <span className="text-xs text-muted-foreground">Min:</span>
-              {[60, 70, 75, 80, 85].map((val) => (
-                <button
-                  key={val}
-                  onClick={() => onMinChange(val)}
-                  className={cn(
-                    "px-2 py-1 rounded text-xs font-medium transition-all",
-                    minRequired === val
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground"
-                  )}
-                >
-                  {val}%
-                </button>
-              ))}
             </div>
           )}
 
@@ -139,24 +110,26 @@ export function SubjectCard({
             </div>
           </div>
 
-          {/* Bunkable classes and Total classes info */}
-          <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/50">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Can Bunk</p>
-              <p className={cn(
-                "text-lg font-bold",
-                bunkable > 0 ? "text-success" : "text-muted-foreground"
-              )}>
-                {bunkable}
-              </p>
-              <p className="text-xs text-muted-foreground">classes</p>
+          {/* Bunkable classes and Total classes info - hidden in search view */}
+          {!hideBunkableInfo && (
+            <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/50">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Can Bunk</p>
+                <p className={cn(
+                  "text-lg font-bold",
+                  bunkable > 0 ? "text-success" : "text-muted-foreground"
+                )}>
+                  {bunkable}
+                </p>
+                <p className="text-xs text-muted-foreground">classes</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Total Classes</p>
+                <p className="text-lg font-bold text-foreground">{totalUntilEndDate ?? total}</p>
+                <p className="text-xs text-muted-foreground">till end date</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Total Classes</p>
-              <p className="text-lg font-bold text-foreground">{totalUntilEndDate ?? total}</p>
-              <p className="text-xs text-muted-foreground">till end date</p>
-            </div>
-          </div>
+          )}
 
           {/* Progress bar */}
           <div>
@@ -192,30 +165,32 @@ export function SubjectCard({
             </div>
           </div>
 
-          {/* Analysis message */}
-          <div className={cn(
-            "flex items-center gap-2 p-2 rounded-lg text-sm",
-            isSafe ? "bg-success/10" : "bg-muted"
-          )}>
-            {isSafe ? (
-              <>
-                <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                <span className="text-muted-foreground">
-                  Above {minRequired}% threshold - <span className="text-success font-medium">Safe</span>
-                  {bunkable > 0 && (
-                    <span className="text-muted-foreground"> (Can bunk {bunkable} classes)</span>
-                  )}
-                </span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-                <span className="text-muted-foreground">
-                  Attend <span className="text-warning font-medium">{classesNeeded}</span> more classes to reach {minRequired}%
-                </span>
-              </>
-            )}
-          </div>
+          {/* Analysis message - hidden in search view */}
+          {!hideBunkableInfo && (
+            <div className={cn(
+              "flex items-center gap-2 p-2 rounded-lg text-sm",
+              isSafe ? "bg-success/10" : "bg-muted"
+            )}>
+              {isSafe ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                  <span className="text-muted-foreground">
+                    Above {minRequired}% threshold - <span className="text-success font-medium">Safe</span>
+                    {bunkable > 0 && (
+                      <span className="text-muted-foreground"> (Can bunk {bunkable} classes)</span>
+                    )}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+                  <span className="text-muted-foreground">
+                    Attend <span className="text-warning font-medium">{classesNeeded}</span> more classes to reach {minRequired}%
+                  </span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
