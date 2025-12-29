@@ -471,6 +471,7 @@ export default function Search() {
                           total={subject.total}
                           minRequired={70}
                           defaultExpanded={true}
+                          hideBunkableInfo={true}
                         />
                       ))
                     )}
@@ -502,6 +503,7 @@ export default function Search() {
                               absent={subject.absent}
                               total={subject.total}
                               minRequired={75}
+                              hideBunkableInfo={true}
                             />
                           ))}
                         </div>
@@ -546,6 +548,7 @@ export default function Search() {
                                 absent={subject.absent}
                                 total={subject.total}
                                 minRequired={75}
+                                hideBunkableInfo={true}
                               />
                             ))}
                           </CollapsibleContent>
