@@ -17,6 +17,7 @@ interface SubjectCardProps {
   bunkableClasses?: number;
   onMinChange?: (value: number) => void;
   defaultExpanded?: boolean;
+  hideBunkableInfo?: boolean; // Hide "Can Bunk" and "Total Classes" sections (for search view)
 }
 
 export type { SubjectCardProps };
@@ -36,6 +37,7 @@ export function SubjectCard({
   bunkableClasses: backendBunkableClasses,
   onMinChange,
   defaultExpanded = false,
+  hideBunkableInfo = false,
 }: SubjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -108,24 +110,26 @@ export function SubjectCard({
             </div>
           </div>
 
-          {/* Bunkable classes and Total classes info */}
-          <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/50">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Can Bunk</p>
-              <p className={cn(
-                "text-lg font-bold",
-                bunkable > 0 ? "text-success" : "text-muted-foreground"
-              )}>
-                {bunkable}
-              </p>
-              <p className="text-xs text-muted-foreground">classes</p>
+          {/* Bunkable classes and Total classes info - hidden in search view */}
+          {!hideBunkableInfo && (
+            <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-muted/50">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Can Bunk</p>
+                <p className={cn(
+                  "text-lg font-bold",
+                  bunkable > 0 ? "text-success" : "text-muted-foreground"
+                )}>
+                  {bunkable}
+                </p>
+                <p className="text-xs text-muted-foreground">classes</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Total Classes</p>
+                <p className="text-lg font-bold text-foreground">{totalUntilEndDate ?? total}</p>
+                <p className="text-xs text-muted-foreground">till end date</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Total Classes</p>
-              <p className="text-lg font-bold text-foreground">{totalUntilEndDate ?? total}</p>
-              <p className="text-xs text-muted-foreground">till end date</p>
-            </div>
-          </div>
+          )}
 
           {/* Progress bar */}
           <div>
@@ -171,7 +175,7 @@ export function SubjectCard({
                 <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                 <span className="text-muted-foreground">
                   Above {minRequired}% threshold - <span className="text-success font-medium">Safe</span>
-                  {bunkable > 0 && (
+                  {!hideBunkableInfo && bunkable > 0 && (
                     <span className="text-muted-foreground"> (Can bunk {bunkable} classes)</span>
                   )}
                 </span>
