@@ -165,30 +165,32 @@ export function SubjectCard({
             </div>
           </div>
 
-          {/* Analysis message */}
-          <div className={cn(
-            "flex items-center gap-2 p-2 rounded-lg text-sm",
-            isSafe ? "bg-success/10" : "bg-muted"
-          )}>
-            {isSafe ? (
-              <>
-                <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                <span className="text-muted-foreground">
-                  Above {minRequired}% threshold - <span className="text-success font-medium">Safe</span>
-                  {!hideBunkableInfo && bunkable > 0 && (
-                    <span className="text-muted-foreground"> (Can bunk {bunkable} classes)</span>
-                  )}
-                </span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-                <span className="text-muted-foreground">
-                  Attend <span className="text-warning font-medium">{classesNeeded}</span> more classes to reach {minRequired}%
-                </span>
-              </>
-            )}
-          </div>
+          {/* Analysis message - hidden in search view */}
+          {!hideBunkableInfo && (
+            <div className={cn(
+              "flex items-center gap-2 p-2 rounded-lg text-sm",
+              isSafe ? "bg-success/10" : "bg-muted"
+            )}>
+              {isSafe ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                  <span className="text-muted-foreground">
+                    Above {minRequired}% threshold - <span className="text-success font-medium">Safe</span>
+                    {bunkable > 0 && (
+                      <span className="text-muted-foreground"> (Can bunk {bunkable} classes)</span>
+                    )}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+                  <span className="text-muted-foreground">
+                    Attend <span className="text-warning font-medium">{classesNeeded}</span> more classes to reach {minRequired}%
+                  </span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
