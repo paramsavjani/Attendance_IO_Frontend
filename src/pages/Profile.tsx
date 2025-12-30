@@ -360,7 +360,7 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Baseline Attendance */}
+            {/* Previous Attendance */}
             {enrolledSubjects.length > 0 ? (
               <button
                 onClick={() => {
@@ -378,8 +378,8 @@ export default function Profile() {
                   <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight">Baseline Attendance</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Set previous attendance data</p>
+                  <p className="font-semibold text-sm leading-tight">Previous Attendance</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Set past attendance data</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </button>
@@ -389,7 +389,7 @@ export default function Profile() {
                   <Calendar className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight text-muted-foreground">Baseline Attendance</p>
+                  <p className="font-semibold text-sm leading-tight text-muted-foreground">Previous Attendance</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
@@ -503,7 +503,7 @@ export default function Profile() {
           </DialogContent>
         </Dialog>
 
-        {/* Baseline Attendance Dialog */}
+        {/* Previous Attendance Dialog */}
         {showBaselineDialog && enrolledSubjects.length > 1 && !selectedBaselineSubject && (
           <Dialog open={showBaselineDialog} onOpenChange={(open) => {
             setShowBaselineDialog(open);
@@ -512,7 +512,7 @@ export default function Profile() {
             <DialogContent className="max-w-sm mx-auto rounded-xl">
               <DialogHeader>
                 <DialogTitle className="text-base font-semibold">Select Subject</DialogTitle>
-                <p className="text-sm text-muted-foreground">Choose a subject to set baseline attendance</p>
+                <p className="text-sm text-muted-foreground">Choose a subject to set previous attendance</p>
               </DialogHeader>
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
                 {enrolledSubjects.map((subject) => (
