@@ -4,10 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight } from "lucide-react";
+import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
+import { BaselineAttendanceDialog } from "@/components/attendance/BaselineAttendanceDialog";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 import { API_CONFIG } from "@/lib/api";
@@ -45,6 +46,8 @@ export default function Profile() {
   const [feedbackTitle, setFeedbackTitle] = useState("");
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [showBaselineDialog, setShowBaselineDialog] = useState(false);
+  const [selectedBaselineSubject, setSelectedBaselineSubject] = useState<Subject | null>(null);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -357,6 +360,42 @@ export default function Profile() {
               </div>
             )}
 
+            {/* Baseline Attendance */}
+            {enrolledSubjects.length > 0 ? (
+              <button
+                onClick={() => {
+                  if (enrolledSubjects.length === 1) {
+                    setSelectedBaselineSubject(enrolledSubjects[0]);
+                    setShowBaselineDialog(true);
+                  } else {
+                    // Show subject selector dialog
+                    setShowBaselineDialog(true);
+                  }
+                }}
+                className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm leading-tight">Baseline Attendance</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Set previous attendance data</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </button>
+            ) : (
+              <div className="w-full bg-card/50 p-3.5 flex items-center gap-3 text-left opacity-60">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm leading-tight text-muted-foreground">Baseline Attendance</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+              </div>
+            )}
+
             {/* Sleep Duration */}
             <button
               onClick={() => {
@@ -463,6 +502,58 @@ export default function Profile() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Baseline Attendance Dialog */}
+        {showBaselineDialog && enrolledSubjects.length > 1 && !selectedBaselineSubject && (
+          <Dialog open={showBaselineDialog} onOpenChange={(open) => {
+            setShowBaselineDialog(open);
+            if (!open) setSelectedBaselineSubject(null);
+          }}>
+            <DialogContent className="max-w-sm mx-auto rounded-xl">
+              <DialogHeader>
+                <DialogTitle className="text-base font-semibold">Select Subject</DialogTitle>
+                <p className="text-sm text-muted-foreground">Choose a subject to set baseline attendance</p>
+              </DialogHeader>
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                {enrolledSubjects.map((subject) => (
+                  <button
+                    key={subject.id}
+                    onClick={() => {
+                      setSelectedBaselineSubject(subject);
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
+                      {subject.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{subject.code}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {selectedBaselineSubject && (
+          <BaselineAttendanceDialog
+            open={showBaselineDialog}
+            onOpenChange={(open) => {
+              setShowBaselineDialog(open);
+              if (!open) {
+                setSelectedBaselineSubject(null);
+              }
+            }}
+            subjectId={selectedBaselineSubject.id}
+            subjectName={selectedBaselineSubject.name}
+            onSave={async () => {
+              // Refresh attendance data after saving baseline
+              await refreshEnrolledSubjects();
+            }}
+          />
+        )}
 
         {/* Contributors Section - Compact */}
         <ContributorsSection />
