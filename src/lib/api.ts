@@ -19,6 +19,8 @@ export const API_CONFIG = {
     UPDATE_MINIMUM_CRITERIA: `${API_BASE_URL}/api/student/enrollment/minimum-criteria`,
     GET_SLEEP_DURATION: `${API_BASE_URL}/api/student/enrollment/sleep-duration`,
     UPDATE_SLEEP_DURATION: `${API_BASE_URL}/api/student/enrollment/sleep-duration`,
+    GET_BASELINE_ATTENDANCE: (subjectId: string) => `${API_BASE_URL}/api/student/enrollment/baseline-attendance/${subjectId}`,
+    SAVE_BASELINE_ATTENDANCE: `${API_BASE_URL}/api/student/enrollment/baseline-attendance`,
     TIMETABLE: `${API_BASE_URL}/api/timetable`,
     MARK_ATTENDANCE: `${API_BASE_URL}/api/attendance`,
     GET_MY_ATTENDANCE: `${API_BASE_URL}/api/attendance`,
