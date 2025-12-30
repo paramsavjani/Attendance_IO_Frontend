@@ -111,15 +111,15 @@ export function BaselineAttendanceDialog({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to save baseline attendance');
+        throw new Error(error.error || 'Failed to save previous attendance');
       }
 
-      toast.success("Baseline attendance saved successfully");
+      toast.success("Previous attendance saved successfully");
       onSave?.();
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Error saving baseline attendance:', error);
-      toast.error(error.message || 'Failed to save baseline attendance');
+      console.error('Error saving previous attendance:', error);
+      toast.error(error.message || 'Failed to save previous attendance');
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +136,7 @@ export function BaselineAttendanceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-auto rounded-xl">
         <DialogHeader>
-          <DialogTitle className="text-base font-semibold">Baseline Attendance</DialogTitle>
+          <DialogTitle className="text-base font-semibold">Previous Attendance</DialogTitle>
           <p className="text-sm text-muted-foreground">{subjectName}</p>
         </DialogHeader>
 
@@ -158,7 +158,7 @@ export function BaselineAttendanceDialog({
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground">
-                Attendance data before this date will be considered as baseline
+                Attendance data before this date will be considered as previous attendance
               </p>
             </div>
 
