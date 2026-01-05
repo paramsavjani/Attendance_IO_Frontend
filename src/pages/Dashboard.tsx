@@ -67,17 +67,27 @@ export default function Dashboard() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   
   // Get last class hour from schedule
-  function getLastClassHour(schedule: { time: string; subject: any }[]) {
+  function getLastClassHour(schedule: { time: string; subject: any; endTime?: string }[]) {
     const classesWithSubjects = schedule.filter(s => s.subject);
     if (classesWithSubjects.length === 0) return null;
     
     const lastClass = classesWithSubjects[classesWithSubjects.length - 1];
-    const endTime = lastClass.time.split(" - ")[1];
+    // Use endTime if available (custom slots), otherwise parse from time string
+    const endTime = lastClass.endTime || lastClass.time.split(" - ")[1];
     const hour = parseInt(endTime.split(":")[0]);
     return hour < 8 ? hour + 12 : hour;
   }
 
-  // Get schedule for any date - always returns 5 fixed slots
+  // Helper to format time for display
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  // Get schedule for any date - returns standard slots (8-12) + custom slots
   function getScheduleForDate(date: Date) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
@@ -85,15 +95,45 @@ export default function Dashboard() {
     const adjustedDay = dayOfWeek - 1;
     const daySlots = timetable.filter((slot) => slot.day === adjustedDay);
     
-    // Always return 5 fixed slots based on timeSlots array
-    return timeSlots.map((time, slotIndex) => {
-      const slot = daySlots.find(s => s.timeSlot === slotIndex);
+    // Get standard slots (8-12) - always show all 5 slots
+    const standardSlots = timeSlots.map((time, slotIndex) => {
+      const slot = daySlots.find(s => s.timeSlot === slotIndex && !s.startTime);
       return {
         time,
         slotIndex,
+        startTime: time.split(" - ")[0],
+        endTime: time.split(" - ")[1],
         subject: slot?.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
+        isCustom: false,
       };
     });
+
+    // Get custom slots
+    const customSlots = daySlots
+      .filter((s) => s.startTime && s.endTime)
+      .map((slot) => {
+        const start = slot.startTime!;
+        const end = slot.endTime!;
+        return {
+          time: `${formatTime(start)} - ${formatTime(end)}`,
+          slotIndex: null,
+          startTime: start,
+          endTime: end,
+          subject: slot.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
+          isCustom: true,
+        };
+      });
+
+    // Combine and sort by start time
+    const allSlots = [...standardSlots, ...customSlots].sort((a, b) => {
+      const aTime = a.startTime.split(':').map(Number);
+      const bTime = b.startTime.split(':').map(Number);
+      const aMinutes = aTime[0] * 60 + aTime[1];
+      const bMinutes = bTime[0] * 60 + bTime[1];
+      return aMinutes - bMinutes;
+    });
+
+    return allSlots;
   }
 
   // Determine if showing tomorrow's schedule
@@ -161,19 +201,32 @@ export default function Dashboard() {
   );
 
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
-  const [pendingAttendance, setPendingAttendance] = useState<{subjectId: string; status: 'present' | 'absent' | 'cancelled'} | null>(null);
+  const [pendingAttendance, setPendingAttendance] = useState<{
+    subjectId: string; 
+    status: 'present' | 'absent' | 'cancelled';
+    timeSlot?: number | null;
+    startTime?: string;
+    endTime?: string;
+  } | null>(null);
 
   // Fetch attendance when date changes
   useEffect(() => {
     fetchAttendanceForDate(dateKey);
   }, [dateKey, fetchAttendanceForDate]);
 
-  const handleMarkAttendance = async (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
+  const handleMarkAttendance = async (
+    index: number, 
+    subjectId: string, 
+    status: 'present' | 'absent' | 'cancelled',
+    timeSlot?: number | null,
+    startTime?: string,
+    endTime?: string
+  ) => {
     // For future dates: only allow "cancelled", block "present" and "absent"
     if (isFutureDate) {
       if (status === 'cancelled') {
         // Allow marking cancelled for future dates
-        await markAttendance(subjectId, dateKey, status);
+        await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime);
       } else {
         // Block present/absent for future dates
         toast.error("You can only mark lectures as 'cancelled' for future dates");
@@ -183,18 +236,25 @@ export default function Dashboard() {
 
     // Show warning for past dates
     if (isPastDate) {
-      setPendingAttendance({ subjectId, status });
+      setPendingAttendance({ subjectId, status, timeSlot, startTime, endTime });
       setShowPastDateWarning(true);
       return;
     }
     
     // For today, mark directly
-    await markAttendance(subjectId, dateKey, status);
+    await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime);
   };
 
   const confirmPastDateAttendance = async () => {
     if (pendingAttendance) {
-      await markAttendance(pendingAttendance.subjectId, dateKey, pendingAttendance.status);
+      await markAttendance(
+        pendingAttendance.subjectId, 
+        dateKey, 
+        pendingAttendance.status,
+        pendingAttendance.timeSlot,
+        pendingAttendance.startTime,
+        pendingAttendance.endTime
+      );
       setPendingAttendance(null);
     }
     setShowPastDateWarning(false);
@@ -384,9 +444,11 @@ export default function Dashboard() {
                     ))
                   ) : (
                     schedule.map((slot, index) => {
-                      const timeStart = slot.time.split(" - ")[0];
-                      const timeEnd = slot.time.split(" - ")[1];
-                      const startHour = parseInt(slot.time.split(":")[0]);
+                      // Handle both standard and custom time formats
+                      const timeStart = slot.startTime || slot.time.split(" - ")[0];
+                      const timeEnd = slot.endTime || slot.time.split(" - ")[1];
+                      // Parse hour from 24-hour format
+                      const startHour = parseInt(timeStart.split(":")[0]);
                       const isCurrent = isSelectedToday && startHour === currentHour;
                       
                       if (!slot.subject) {
@@ -399,8 +461,8 @@ export default function Dashboard() {
                               <div className="flex-1" />
                             </div>
                             <div className="w-9 flex-shrink-0 flex flex-col justify-center">
-                              <p className="text-xs font-semibold leading-none text-muted-foreground/70">{timeStart}</p>
-                              <p className="text-[9px] text-muted-foreground/70">{timeEnd}</p>
+                              <p className="text-xs font-semibold leading-none text-muted-foreground/70">{formatTime(timeStart)}</p>
+                              <p className="text-[9px] text-muted-foreground/70">{formatTime(timeEnd)}</p>
                             </div>
                             <div className="flex-1 py-1 flex items-center">
                               <p className="text-[10px] text-muted-foreground/70">Free</p>
@@ -409,7 +471,18 @@ export default function Dashboard() {
                         );
                       }
 
-                      const slotKey = `${dateKey}-${slot.subject.id}`;
+                      // Generate slot key based on time information
+                      let slotKey: string;
+                      if (slot.slotIndex !== null && slot.slotIndex !== undefined && !slot.isCustom) {
+                        // Standard time slot
+                        slotKey = `${dateKey}-${slot.subject.id}-slot${slot.slotIndex}`;
+                      } else if (slot.startTime && slot.endTime && slot.isCustom) {
+                        // Custom time slot
+                        slotKey = `${dateKey}-${slot.subject.id}-${slot.startTime}-${slot.endTime}`;
+                      } else {
+                        // Backward compatibility: no time info
+                        slotKey = `${dateKey}-${slot.subject.id}`;
+                      }
                       const status = todayAttendance[slotKey] || null;
                       const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
                       const isSaving = savingState?.subjectId === slot.subject.id;
@@ -443,8 +516,11 @@ export default function Dashboard() {
                             <p className={cn(
                               "text-xs font-semibold leading-none transition-colors",
                               isCurrent && "text-primary"
-                            )}>{timeStart}</p>
-                            <p className="text-[9px] text-muted-foreground">{timeEnd}</p>
+                            )}>{formatTime(timeStart)}</p>
+                            <p className="text-[9px] text-muted-foreground">{formatTime(timeEnd)}</p>
+                            {slot.isCustom && (
+                              <p className="text-[8px] text-warning mt-0.5">Custom</p>
+                            )}
                           </div>
 
                           {/* Content */}
@@ -504,7 +580,14 @@ export default function Dashboard() {
                               {/* Action buttons */}
                               <div className="flex items-center gap-1">
                                 <button
-                                  onClick={() => handleMarkAttendance(index, slot.subject!.id, "present")}
+                                  onClick={() => handleMarkAttendance(
+                                    index, 
+                                    slot.subject!.id, 
+                                    "present",
+                                    slot.slotIndex,
+                                    slot.startTime,
+                                    slot.endTime
+                                  )}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
                                     "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
@@ -521,7 +604,14 @@ export default function Dashboard() {
                                   Present
                                 </button>
                                 <button
-                                  onClick={() => handleMarkAttendance(index, slot.subject!.id, "absent")}
+                                  onClick={() => handleMarkAttendance(
+                                    index, 
+                                    slot.subject!.id, 
+                                    "absent",
+                                    slot.slotIndex,
+                                    slot.startTime,
+                                    slot.endTime
+                                  )}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
                                     "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
@@ -538,7 +628,14 @@ export default function Dashboard() {
                                   Absent
                                 </button>
                                 <button
-                                  onClick={() => handleMarkAttendance(index, slot.subject!.id, "cancelled")}
+                                  onClick={() => handleMarkAttendance(
+                                    index, 
+                                    slot.subject!.id, 
+                                    "cancelled",
+                                    slot.slotIndex,
+                                    slot.startTime,
+                                    slot.endTime
+                                  )}
                                   disabled={isSaving}
                                   className={cn(
                                     "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
