@@ -143,8 +143,8 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
           })}
         </div>
 
-        <DialogFooter className="flex-col gap-3 sm:flex-row sm:gap-3 pt-2 sm:pt-0">
-          <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-start">
+        <DialogFooter className="flex-col sm:flex-row gap-3 pt-2 sm:pt-0">
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-start order-1 sm:order-1">
             <Checkbox
               id="dont-show"
               checked={dontShowAgain}
@@ -158,7 +158,7 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
               Don't show again
             </Label>
           </div>
-          <Button onClick={handleClose} className="w-full sm:w-auto min-w-[120px]">
+          <Button onClick={handleClose} className="w-full sm:w-auto sm:ml-auto min-w-[120px] order-2 sm:order-2">
             Got it!
           </Button>
         </DialogFooter>
