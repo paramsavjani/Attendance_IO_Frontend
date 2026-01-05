@@ -159,6 +159,7 @@ export default function DailyAttendance() {
                   subjectName={slot.subject.name}
                   subjectCode={slot.subject.code}
                   lecturePlace={slot.subject.lecturePlace}
+                  classroomLocation={slot.subject.classroomLocation}
                   time={slot.time}
                   color={slot.subject.color}
                   isCurrent={false} // Daily view doesn't show "LIVE" normally

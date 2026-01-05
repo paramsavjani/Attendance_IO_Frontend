@@ -5,7 +5,8 @@ import { useState } from "react";
 interface SubjectCardProps {
   name: string;
   code?: string;
-  lecturePlace?: string | null;
+  lecturePlace?: string | null; // Default/institute location
+  classroomLocation?: string | null; // User's custom location
   color: string;
   present: number;
   absent: number;
@@ -26,6 +27,7 @@ export function SubjectCard({
   name,
   code,
   lecturePlace,
+  classroomLocation,
   present,
   absent,
   total,
@@ -87,10 +89,10 @@ export function SubjectCard({
       {/* Expanded content */}
       {isExpanded && (
         <div className="px-3 pb-3 space-y-3 animate-fade-in">
-          {/* Lecture place */}
-          {lecturePlace && (
+          {/* Classroom location (use custom location or fallback to default) */}
+          {(classroomLocation || lecturePlace) && (
             <div className="flex items-center">
-              <p className="font-semibold text-sm">{lecturePlace}</p>
+              <p className="font-semibold text-sm">{classroomLocation || lecturePlace}</p>
             </div>
           )}
 
