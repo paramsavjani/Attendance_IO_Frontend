@@ -33,7 +33,14 @@ interface AttendanceContextType {
   isLoadingTimetable: boolean;
   isLoadingAttendance: boolean;
   savingState: { subjectId: string; action: 'present' | 'absent' | 'cancelled' } | null; // Currently saving attendance
-  markAttendance: (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => Promise<void>;
+  markAttendance: (
+    subjectId: string, 
+    date: string, 
+    status: 'present' | 'absent' | 'cancelled',
+    timeSlot?: number | null,
+    startTime?: string,
+    endTime?: string
+  ) => Promise<void>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
   setEnrolledSubjects: (subjects: Subject[]) => void;
@@ -244,10 +251,21 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setSubjectStats(statsMap);
 
         // Convert attendance records to the format expected by the frontend
+        // Key format: date-subjectId-timeSlot or date-subjectId-startTime-endTime or date-subjectId (backward compatibility)
         const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
         const idsMap: Record<string, number | null> = {};
         data.todayAttendance?.forEach((record: any) => {
-          const slotKey = `${record.lectureDate}-${record.subjectId}`;
+          let slotKey: string;
+          if (record.timeSlot !== null && record.timeSlot !== undefined) {
+            // Standard time slot
+            slotKey = `${record.lectureDate}-${record.subjectId}-slot${record.timeSlot}`;
+          } else if (record.startTime && record.endTime) {
+            // Custom time slot
+            slotKey = `${record.lectureDate}-${record.subjectId}-${record.startTime}-${record.endTime}`;
+          } else {
+            // Backward compatibility: no time info
+            slotKey = `${record.lectureDate}-${record.subjectId}`;
+          }
           attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
           idsMap[slotKey] = record.attendanceId || null;
         });
@@ -495,7 +513,14 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const markAttendance = useCallback(async (subjectId: string, date: string, status: 'present' | 'absent' | 'cancelled') => {
+  const markAttendance = useCallback(async (
+    subjectId: string, 
+    date: string, 
+    status: 'present' | 'absent' | 'cancelled',
+    timeSlot?: number | null,
+    startTime?: string,
+    endTime?: string
+  ) => {
     // Frontend guard: only allow "cancelled" for future dates, block "present" and "absent"
     try {
       const lectureDay = startOfDay(parseISO(date));
@@ -512,7 +537,19 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       // If parsing fails, allow request; backend should validate
     }
 
-    const slotKey = `${date}-${subjectId}`;
+    // Generate slot key based on time information
+    let slotKey: string;
+    if (timeSlot !== null && timeSlot !== undefined) {
+      // Standard time slot
+      slotKey = `${date}-${subjectId}-slot${timeSlot}`;
+    } else if (startTime && endTime) {
+      // Custom time slot
+      slotKey = `${date}-${subjectId}-${startTime}-${endTime}`;
+    } else {
+      // Backward compatibility: no time info
+      slotKey = `${date}-${subjectId}`;
+    }
+    
     const operationKey = `${slotKey}-${status}`;
     
     // Prevent duplicate simultaneous operations for the same slot and status
@@ -587,17 +624,27 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       updateStatsLocally(subjectId, previousStatus, status);
 
       // Call backend API to mark attendance
+      const requestBody: any = {
+        subjectId,
+        lectureDate: date,
+        status,
+      };
+      
+      // Add time information if provided
+      if (timeSlot !== null && timeSlot !== undefined) {
+        requestBody.timeSlot = timeSlot;
+      } else if (startTime && endTime) {
+        requestBody.startTime = startTime;
+        requestBody.endTime = endTime;
+      }
+      
       const response = await fetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          subjectId,
-          lectureDate: date,
-          status,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {

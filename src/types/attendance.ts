@@ -28,8 +28,10 @@ export interface SubjectAttendance {
 
 export interface TimetableSlot {
   day: number; // 0-4 (Monday-Friday)
-  timeSlot: number; // 0-5 (8-9, 9-10, etc.)
+  timeSlot: number | null; // 0-5 (8-9, 9-10, etc.) - null for custom times
   subjectId: string | null;
+  startTime?: string | null; // Custom start time (HH:mm format) - null if using standard slot
+  endTime?: string | null; // Custom end time (HH:mm format) - null if using standard slot
 }
 
 export interface DailySchedule {
