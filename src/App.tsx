@@ -7,6 +7,7 @@ import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Timetable from "./pages/Timetable";
@@ -25,6 +26,9 @@ const queryClient = new QueryClient();
 function AppRoutes() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
   const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
+  
+  // Show feature announcement only when authenticated and onboarding is complete
+  const showFeatureAnnouncement = isAuthenticated && hasCompletedOnboarding;
 
   // Show loading while checking authentication status
   if (isLoadingAuth) {
@@ -46,19 +50,21 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          isAuthenticated 
-            ? hasCompletedOnboarding 
-              ? <Navigate to="/dashboard" replace /> 
-              : hasSeenIntro
-                ? <Navigate to="/onboarding" replace />
-                : <Navigate to="/intro" replace />
-            : <Navigate to="/login" replace />
-        }
-      />
+    <>
+      {showFeatureAnnouncement && <FeatureAnnouncement onClose={() => {}} />}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            isAuthenticated 
+              ? hasCompletedOnboarding 
+                ? <Navigate to="/dashboard" replace /> 
+                : hasSeenIntro
+                  ? <Navigate to="/onboarding" replace />
+                  : <Navigate to="/intro" replace />
+              : <Navigate to="/login" replace />
+          }
+        />
       <Route path="/login" element={<Login />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/delete-account" element={<DeleteAccount />} />
@@ -124,6 +130,7 @@ function AppRoutes() {
       />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   );
 }
 
