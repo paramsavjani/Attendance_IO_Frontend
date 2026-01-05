@@ -17,6 +17,7 @@ export const API_CONFIG = {
     ENROLLED_SUBJECTS: `${API_BASE_URL}/api/student/enrollment/subjects`,
     CHECK_SUBJECT_CONFLICTS: `${API_BASE_URL}/api/student/enrollment/subjects/check-conflicts`,
     UPDATE_MINIMUM_CRITERIA: `${API_BASE_URL}/api/student/enrollment/minimum-criteria`,
+    UPDATE_CLASSROOM_LOCATION: `${API_BASE_URL}/api/student/enrollment/classroom-location`,
     GET_SLEEP_DURATION: `${API_BASE_URL}/api/student/enrollment/sleep-duration`,
     UPDATE_SLEEP_DURATION: `${API_BASE_URL}/api/student/enrollment/sleep-duration`,
     GET_BASELINE_ATTENDANCE: (subjectId: string) => `${API_BASE_URL}/api/student/enrollment/baseline-attendance/${subjectId}`,
