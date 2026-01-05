@@ -4,7 +4,8 @@ export interface Subject {
   id: string;
   name: string;
   code: string;
-  lecturePlace?: string | null;
+  lecturePlace?: string | null; // Default/institute location from subject
+  classroomLocation?: string | null; // User's custom location from student_subject
   color: string;
   minimumCriteria?: number | null;
 }

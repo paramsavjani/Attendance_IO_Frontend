@@ -5,7 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface AttendanceMarkerProps {
   subjectName: string;
   subjectCode?: string;
-  lecturePlace?: string | null;
+  lecturePlace?: string | null; // Default/institute location
+  classroomLocation?: string | null; // User's custom location
   time?: string;
   color: string; // hsl value
   isCurrent?: boolean;
@@ -25,6 +26,7 @@ export function AttendanceMarker({
   subjectName,
   subjectCode,
   lecturePlace,
+  classroomLocation,
   time,
   color,
   isCurrent = false,
@@ -115,10 +117,10 @@ export function AttendanceMarker({
       {/* Actions Section */}
       <div className="flex items-center justify-between px-3 py-2 pt-1 pb-1.5 bg-gradient-to-t from-black/20 to-transparent">
 
-        {/* Lecture Place & Time (Replaces Status Text) */}
+        {/* Classroom Location & Time (Replaces Status Text) */}
         <div className="flex-1 flex flex-col justify-center min-w-0 pr-3 pl-[1.375rem]">
           <div className="flex items-center gap-1.5 text-xs text-neutral-300 font-medium">
-            {lecturePlace && <span>{lecturePlace}</span>}
+            {(classroomLocation || lecturePlace) && <span>{classroomLocation || lecturePlace}</span>}
           </div>
           {time && (
             <div className="flex items-center gap-1.5 text-[10px] text-neutral-500 mt-0.5 font-medium">
