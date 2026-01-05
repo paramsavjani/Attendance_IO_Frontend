@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar } from "lucide-react";
+import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -32,10 +32,13 @@ export default function Profile() {
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
+  const [showClassroomLocationModal, setShowClassroomLocationModal] = useState(false);
   const [currentSemester, setCurrentSemester] = useState<CurrentSemester | null>(null);
   const [isLoadingSemester, setIsLoadingSemester] = useState(true);
   const [editingCriteria, setEditingCriteria] = useState<Record<string, string>>({});
   const [isSavingCriteria, setIsSavingCriteria] = useState<Record<string, boolean>>({});
+  const [editingClassroomLocation, setEditingClassroomLocation] = useState<Record<string, string>>({});
+  const [isSavingClassroomLocation, setIsSavingClassroomLocation] = useState<Record<string, boolean>>({});
   const [sleepDuration, setSleepDuration] = useState<number | null>(null);
   const [isLoadingSleepDuration, setIsLoadingSleepDuration] = useState(true);
   const [isEditingSleepDuration, setIsEditingSleepDuration] = useState(false);
@@ -233,6 +236,61 @@ export default function Profile() {
     }
   };
 
+  const handleEditClassroomLocation = (subjectId: string, currentValue: string | null | undefined) => {
+    setEditingClassroomLocation(prev => ({
+      ...prev,
+      [subjectId]: currentValue ?? ""
+    }));
+  };
+
+  const handleCancelEditClassroomLocation = (subjectId: string) => {
+    setEditingClassroomLocation(prev => {
+      const updated = { ...prev };
+      delete updated[subjectId];
+      return updated;
+    });
+  };
+
+  const handleSaveClassroomLocation = async (subjectId: string) => {
+    const value = editingClassroomLocation[subjectId]?.trim() || null;
+
+    setIsSavingClassroomLocation(prev => ({ ...prev, [subjectId]: true }));
+
+    try {
+      const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_CLASSROOM_LOCATION, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subjectId,
+          classroomLocation: value,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update classroom location');
+      }
+
+      toast.success("Classroom location updated successfully");
+      handleCancelEditClassroomLocation(subjectId);
+      
+      // Refresh enrolled subjects to get updated data
+      await refreshEnrolledSubjects();
+    } catch (error: any) {
+      console.error('Error updating classroom location:', error);
+      toast.error(error.message || 'Failed to update classroom location');
+    } finally {
+      setIsSavingClassroomLocation(prev => {
+        const updated = { ...prev };
+        delete updated[subjectId];
+        return updated;
+      });
+    }
+  };
+
   const handleSubmitFeedback = async () => {
     if (!feedbackTitle.trim() || !feedbackDescription.trim()) {
       toast.error("Please fill in all fields");
@@ -354,6 +412,34 @@ export default function Profile() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm leading-tight text-muted-foreground">Minimum Criteria</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+              </div>
+            )}
+
+            {/* Classroom Location */}
+            {enrolledSubjects.length > 0 ? (
+              <button
+                onClick={() => setShowClassroomLocationModal(true)}
+                className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm leading-tight">Classroom Location</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Customize location per subject</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </button>
+            ) : (
+              <div className="w-full bg-card/50 p-3.5 flex items-center gap-3 text-left opacity-60">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm leading-tight text-muted-foreground">Classroom Location</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
@@ -595,6 +681,125 @@ export default function Profile() {
                 onSave={handleSaveSubjects}
                 onCancel={() => setShowSubjectEditor(false)}
               />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Classroom Location Modal */}
+        <Dialog open={showClassroomLocationModal} onOpenChange={setShowClassroomLocationModal}>
+          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  Classroom Location
+                </DialogTitle>
+              </DialogHeader>
+              <p className="text-xs text-muted-foreground mt-1">Customize classroom location for each subject</p>
+            </div>
+            
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+              {enrolledSubjects.map((subject) => {
+                const isEditing = Object.prototype.hasOwnProperty.call(editingClassroomLocation, subject.id);
+                const isSaving = isSavingClassroomLocation[subject.id] || false;
+                const currentValue = subject.classroomLocation ?? subject.lecturePlace ?? null;
+                const displayValue = currentValue || "Not set";
+
+                return (
+                  <div
+                    key={subject.id}
+                    className={`rounded-xl border transition-all ${
+                      isEditing 
+                        ? 'border-primary/30 bg-primary/5 p-4' 
+                        : 'border-border bg-muted/30 p-3'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0 shadow-lg"
+                        style={{ backgroundColor: subject.color, boxShadow: `0 0 8px ${subject.color}40` }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{subject.name}</p>
+                        <p className="text-xs text-muted-foreground">{subject.code}</p>
+                      </div>
+                      {!isEditing && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground truncate max-w-[120px]">
+                            {displayValue}
+                          </span>
+                          <button
+                            onClick={() => handleEditClassroomLocation(subject.id, currentValue)}
+                            className="h-8 px-2.5 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {isEditing && (
+                      <div className="mt-4 space-y-4">
+                        {/* Input Field */}
+                        <div className="space-y-2">
+                          <Input
+                            value={editingClassroomLocation[subject.id] || ""}
+                            onChange={(e) => setEditingClassroomLocation(prev => ({ ...prev, [subject.id]: e.target.value }))}
+                            placeholder={subject.lecturePlace || "Enter classroom location"}
+                            disabled={isSaving}
+                            className="w-full"
+                            maxLength={50}
+                          />
+                          {subject.lecturePlace && (
+                            <p className="text-xs text-muted-foreground">
+                              Default: {subject.lecturePlace}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelEditClassroomLocation(subject.id)}
+                            disabled={isSaving}
+                            className="flex-1 h-9 rounded-lg"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveClassroomLocation(subject.id)}
+                            disabled={isSaving}
+                            className="flex-1 h-9 rounded-lg gap-1.5"
+                          >
+                            {isSaving ? (
+                              "Saving..."
+                            ) : (
+                              <>
+                                <Save className="w-3.5 h-3.5" />
+                                Save
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="p-4 pt-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowClassroomLocationModal(false)}
+                className="w-full h-10 rounded-xl"
+              >
+                Done
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
