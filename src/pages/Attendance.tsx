@@ -104,6 +104,7 @@ export default function Attendance() {
                   subjectName={slot.subject.name}
                   subjectCode={slot.subject.code}
                   lecturePlace={slot.subject.lecturePlace}
+                  classroomLocation={slot.subject.classroomLocation}
                   time={slot.time}
                   color={slot.subject.color}
                   isCurrent={isCurrent}
@@ -142,6 +143,7 @@ export default function Attendance() {
                     key={subject.id}
                     name={subject.name}
                     lecturePlace={subject.lecturePlace}
+                    classroomLocation={subject.classroomLocation}
                     color={subject.color}
                   present={stats.present}
                   absent={stats.absent}

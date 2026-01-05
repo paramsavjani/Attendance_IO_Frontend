@@ -470,7 +470,7 @@ export default function Dashboard() {
                                     "text-xs font-medium truncate",
                                     status === 'cancelled' && "line-through decoration-muted-foreground/50"
                                   )}>{slot.subject.name}</p>
-                                  <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.lecturePlace || slot.subject.code}</p>
+                                  <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.classroomLocation || slot.subject.lecturePlace || slot.subject.code}</p>
                                 </div>
                                 {/* Cancelled badge or Attendance percentage badge */}
                                 {status === 'cancelled' ? (
@@ -591,6 +591,7 @@ export default function Dashboard() {
                     key={subject.id}
                     name={subject.name}
                     lecturePlace={subject.lecturePlace}
+                    classroomLocation={subject.classroomLocation}
                     color={subject.color}
                     present={stats.present}
                     absent={stats.absent}
