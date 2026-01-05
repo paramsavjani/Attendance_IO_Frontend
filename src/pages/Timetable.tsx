@@ -20,7 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, Loader2, Plus, BookOpen, X, Save } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, BookOpen, X, Save, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
@@ -67,20 +68,27 @@ interface TimelineContentProps {
   activeDay: number;
   setActiveDay: (day: number) => void;
   totalDays: number;
-  getSlotSubject: (day: number, timeSlot: number) => any;
-  handleSlotClick: (day: number, timeSlot: number) => void;
-  handleClearSlot: (day: number, timeSlot: number, e: React.MouseEvent) => void;
+  getAllSlotsForDay: (day: number) => any[];
+  formatTime: (time: string) => string;
+  enrolledSubjects: any[];
+  handleSlotClick: (day: number, timeSlot: number | null, startTime?: string, endTime?: string) => void;
+  handleClearSlot: (day: number, timeSlot: number | null, e: React.MouseEvent, startTime?: string, endTime?: string) => void;
+  onAddCustomTime: () => void;
 }
 
 function TimelineContent({
   activeDay,
   setActiveDay,
   totalDays,
-  getSlotSubject,
+  getAllSlotsForDay,
+  formatTime,
+  enrolledSubjects,
   handleSlotClick,
   handleClearSlot,
+  onAddCustomTime,
 }: TimelineContentProps) {
   const swipeHandlers = useSwipeDayNavigation(activeDay, setActiveDay, totalDays);
+  const allSlots = getAllSlotsForDay(activeDay);
 
   return (
     <div 
@@ -93,13 +101,13 @@ function TimelineContent({
       <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
 
       <div className="space-y-0">
-        {timeSlots.slice(0, 6).map((time, timeIndex) => {
-          const subject = getSlotSubject(activeDay, timeIndex);
-          const timeStart = time.split(" - ")[0];
-          const timeEnd = time.split(" - ")[1];
+        {allSlots.map((slotInfo, index) => {
+          const subject = slotInfo.slot?.subjectId 
+            ? enrolledSubjects.find((s) => s.id === slotInfo.slot.subjectId)
+            : null;
           
           return (
-            <div key={timeIndex} className="relative flex items-stretch gap-3 min-h-[72px]">
+            <div key={index} className="relative flex items-stretch gap-3 min-h-[72px]">
               {/* Dot - centered vertically in its container */}
               <div className="flex flex-col items-center w-3 flex-shrink-0">
                 <div className="flex-1" />
@@ -108,6 +116,8 @@ function TimelineContent({
                     "w-3 h-3 rounded-full flex-shrink-0",
                     subject 
                       ? "bg-primary" 
+                      : slotInfo.type === 'custom'
+                      ? "bg-warning"
                       : "bg-muted-foreground/30"
                   )} 
                 />
@@ -116,13 +126,21 @@ function TimelineContent({
 
               {/* Time */}
               <div className="w-10 flex-shrink-0 flex flex-col justify-center">
-                <p className="text-sm font-semibold leading-none">{timeStart}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{timeEnd}</p>
+                <p className="text-sm font-semibold leading-none">{formatTime(slotInfo.startTime)}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{formatTime(slotInfo.endTime)}</p>
+                {slotInfo.type === 'custom' && (
+                  <p className="text-[8px] text-warning mt-0.5">Custom</p>
+                )}
               </div>
 
               {/* Content */}
               <button
-                onClick={() => handleSlotClick(activeDay, timeIndex)}
+                onClick={() => handleSlotClick(
+                  activeDay, 
+                  slotInfo.timeSlot, 
+                  slotInfo.startTime, 
+                  slotInfo.endTime
+                )}
                 className="flex-1 min-w-0 text-left group py-1.5"
               >
                 {subject ? (
@@ -132,7 +150,13 @@ function TimelineContent({
                       <p className="text-xs text-muted-foreground">{subject.code}</p>
                     </div>
                     <button
-                      onClick={(e) => handleClearSlot(activeDay, timeIndex, e)}
+                      onClick={(e) => handleClearSlot(
+                        activeDay, 
+                        slotInfo.timeSlot, 
+                        e, 
+                        slotInfo.startTime, 
+                        slotInfo.endTime
+                      )}
                       className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -150,6 +174,23 @@ function TimelineContent({
             </div>
           );
         })}
+        
+        {/* Add Custom Time Button */}
+        <div className="relative flex items-stretch gap-3 min-h-[72px] mt-2">
+          <div className="flex flex-col items-center w-3 flex-shrink-0">
+            <div className="flex-1" />
+            <div className="w-3 h-3 rounded-full flex-shrink-0 bg-muted-foreground/20" />
+            <div className="flex-1" />
+          </div>
+          <div className="w-10 flex-shrink-0" />
+          <button
+            onClick={onAddCustomTime}
+            className="flex-1 border border-dashed border-border rounded-xl p-3 hover:border-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+          >
+            <Clock className="w-4 h-4" />
+            <span className="text-sm font-medium">Add Custom Time</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -160,8 +201,12 @@ export default function Timetable() {
   const { enrolledSubjects } = useAttendance();
   const [timetable, setTimetable] = useState<TimetableSlot[]>([]);
   const [originalTimetable, setOriginalTimetable] = useState<TimetableSlot[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<{ day: number; timeSlot: number } | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<{ day: number; timeSlot: number | null; startTime?: string; endTime?: string } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [customTimeDialogOpen, setCustomTimeDialogOpen] = useState(false);
+  const [customTimeDay, setCustomTimeDay] = useState(0);
+  const [customStartTime, setCustomStartTime] = useState("14:00");
+  const [customEndTime, setCustomEndTime] = useState("14:50");
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -240,37 +285,131 @@ export default function Timetable() {
     fetchTimetable();
   }, []);
 
-  const getSlotSubject = (day: number, timeSlot: number) => {
-    const slot = timetable.find((s) => s.day === day && s.timeSlot === timeSlot);
+  // Helper to format time for display
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  // Get all slots (standard + custom) for a day, sorted by time
+  const getAllSlotsForDay = (day: number) => {
+    const standardSlots = timeSlots.slice(0, 6).map((time, timeIndex) => {
+      const slot = timetable.find((s) => s.day === day && s.timeSlot === timeIndex && !s.startTime);
+      return {
+        type: 'standard' as const,
+        timeSlot: timeIndex,
+        time,
+        slot,
+        startTime: time.split(" - ")[0],
+        endTime: time.split(" - ")[1],
+      };
+    });
+
+    const customSlots = timetable
+      .filter((s) => s.day === day && s.startTime && s.endTime)
+      .map((slot) => {
+        const start = slot.startTime!;
+        const end = slot.endTime!;
+        return {
+          type: 'custom' as const,
+          timeSlot: null,
+          time: `${start} - ${end}`,
+          slot,
+          startTime: start,
+          endTime: end,
+        };
+      });
+
+    // Sort all slots by start time
+    const allSlots = [...standardSlots, ...customSlots].sort((a, b) => {
+      const aTime = a.startTime.split(':').map(Number);
+      const bTime = b.startTime.split(':').map(Number);
+      const aMinutes = aTime[0] * 60 + aTime[1];
+      const bMinutes = bTime[0] * 60 + bTime[1];
+      return aMinutes - bMinutes;
+    });
+
+    return allSlots;
+  };
+
+  const getSlotSubject = (day: number, timeSlot: number | null, startTime?: string, endTime?: string) => {
+    let slot: TimetableSlot | undefined;
+    
+    if (timeSlot !== null) {
+      // Standard slot
+      slot = timetable.find((s) => s.day === day && s.timeSlot === timeSlot && !s.startTime);
+    } else if (startTime && endTime) {
+      // Custom time slot
+      slot = timetable.find((s) => 
+        s.day === day && 
+        s.startTime === startTime && 
+        s.endTime === endTime
+      );
+    }
+    
     if (slot?.subjectId) {
       return enrolledSubjects.find((s) => s.id === slot.subjectId);
     }
     return null;
   };
 
-  const handleSlotClick = (day: number, timeSlot: number) => {
-    setSelectedSlot({ day, timeSlot });
+  const handleSlotClick = (day: number, timeSlot: number | null, startTime?: string, endTime?: string) => {
+    setSelectedSlot({ day, timeSlot, startTime, endTime });
     setDialogOpen(true);
   };
 
   const handleAssignSubject = (subjectId: string | null) => {
     if (!selectedSlot) return;
 
-    const updatedTimetable = timetable.map((slot) =>
-      slot.day === selectedSlot.day && slot.timeSlot === selectedSlot.timeSlot
-        ? { ...slot, subjectId }
-        : slot
-    );
+    let updatedTimetable: TimetableSlot[];
+    
+    if (selectedSlot.timeSlot !== null) {
+      // Standard slot
+      updatedTimetable = timetable.map((slot) =>
+        slot.day === selectedSlot.day && slot.timeSlot === selectedSlot.timeSlot && !slot.startTime
+          ? { ...slot, subjectId }
+          : slot
+      );
 
-    const existingSlot = updatedTimetable.find(
-      (s) => s.day === selectedSlot.day && s.timeSlot === selectedSlot.timeSlot
-    );
-    if (!existingSlot) {
-      updatedTimetable.push({
-        day: selectedSlot.day,
-        timeSlot: selectedSlot.timeSlot,
-        subjectId,
-      });
+      const existingSlot = updatedTimetable.find(
+        (s) => s.day === selectedSlot.day && s.timeSlot === selectedSlot.timeSlot && !s.startTime
+      );
+      if (!existingSlot) {
+        updatedTimetable.push({
+          day: selectedSlot.day,
+          timeSlot: selectedSlot.timeSlot,
+          subjectId,
+        });
+      }
+    } else if (selectedSlot.startTime && selectedSlot.endTime) {
+      // Custom time slot
+      updatedTimetable = timetable.map((slot) =>
+        slot.day === selectedSlot.day && 
+        slot.startTime === selectedSlot.startTime && 
+        slot.endTime === selectedSlot.endTime
+          ? { ...slot, subjectId }
+          : slot
+      );
+
+      const existingSlot = updatedTimetable.find(
+        (s) => s.day === selectedSlot.day && 
+        s.startTime === selectedSlot.startTime && 
+        s.endTime === selectedSlot.endTime
+      );
+      if (!existingSlot) {
+        updatedTimetable.push({
+          day: selectedSlot.day,
+          timeSlot: null,
+          subjectId,
+          startTime: selectedSlot.startTime,
+          endTime: selectedSlot.endTime,
+        });
+      }
+    } else {
+      return;
     }
 
     setTimetable(updatedTimetable);
@@ -278,14 +417,67 @@ export default function Timetable() {
     setSelectedSlot(null);
   };
 
-  const handleClearSlot = (day: number, timeSlot: number, e: React.MouseEvent) => {
+  const handleClearSlot = (day: number, timeSlot: number | null, e: React.MouseEvent, startTime?: string, endTime?: string) => {
     e.stopPropagation();
     
-    const updatedTimetable = timetable.filter(
-      (slot) => !(slot.day === day && slot.timeSlot === timeSlot)
-    );
+    let updatedTimetable: TimetableSlot[];
+    
+    if (timeSlot !== null) {
+      // Standard slot
+      updatedTimetable = timetable.filter(
+        (slot) => !(slot.day === day && slot.timeSlot === timeSlot && !slot.startTime)
+      );
+    } else if (startTime && endTime) {
+      // Custom time slot
+      updatedTimetable = timetable.filter(
+        (slot) => !(slot.day === day && slot.startTime === startTime && slot.endTime === endTime)
+      );
+    } else {
+      return;
+    }
 
     setTimetable(updatedTimetable);
+  };
+
+  const handleAddCustomTime = () => {
+    if (!customStartTime || !customEndTime) {
+      toast.error("Please enter both start and end times");
+      return;
+    }
+
+    // Validate time format (HH:mm)
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(customStartTime) || !timeRegex.test(customEndTime)) {
+      toast.error("Invalid time format. Use HH:mm (e.g., 14:30)");
+      return;
+    }
+
+    // Check if custom time already exists
+    const exists = timetable.some(
+      (s) => s.day === customTimeDay && 
+      s.startTime === customStartTime && 
+      s.endTime === customEndTime
+    );
+
+    if (exists) {
+      toast.error("This time slot already exists");
+      return;
+    }
+
+    // Add custom time slot
+    setTimetable([
+      ...timetable,
+      {
+        day: customTimeDay,
+        timeSlot: null,
+        subjectId: null,
+        startTime: customStartTime,
+        endTime: customEndTime,
+      },
+    ]);
+
+    setCustomTimeDialogOpen(false);
+    toast.success("Custom time slot added");
   };
 
   const saveTimetable = async () => {
@@ -322,7 +514,7 @@ export default function Timetable() {
   };
 
   const getDaySlotCount = (dayIndex: number) => {
-    return timetable.filter(s => s.day === dayIndex && s.subjectId).length;
+    return timetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
   };
 
   const totalWeekClasses = days.reduce((acc, _, idx) => acc + getDaySlotCount(idx), 0);
@@ -469,9 +661,15 @@ export default function Timetable() {
               activeDay={activeDay}
               setActiveDay={setActiveDay}
               totalDays={days.length}
-              getSlotSubject={getSlotSubject}
+              getAllSlotsForDay={getAllSlotsForDay}
+              formatTime={formatTime}
+              enrolledSubjects={enrolledSubjects}
               handleSlotClick={handleSlotClick}
               handleClearSlot={handleClearSlot}
+              onAddCustomTime={() => {
+                setCustomTimeDay(activeDay);
+                setCustomTimeDialogOpen(true);
+              }}
             />
           </div>
         )}
@@ -483,7 +681,13 @@ export default function Timetable() {
               <DialogTitle className="text-base font-semibold">Select Subject</DialogTitle>
               {selectedSlot && (
                 <p className="text-sm text-muted-foreground">
-                  {days[selectedSlot.day]} · {timeSlots[selectedSlot.timeSlot]}
+                  {days[selectedSlot.day]} · {
+                    selectedSlot.timeSlot !== null 
+                      ? timeSlots[selectedSlot.timeSlot]
+                      : selectedSlot.startTime && selectedSlot.endTime
+                      ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
+                      : ""
+                  }
                 </p>
               )}
             </DialogHeader>
@@ -511,6 +715,58 @@ export default function Timetable() {
                   </button>
                 ))
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Custom Time Dialog */}
+        <Dialog open={customTimeDialogOpen} onOpenChange={setCustomTimeDialogOpen}>
+          <DialogContent className="max-w-sm mx-auto rounded-xl">
+            <DialogHeader>
+              <DialogTitle className="text-base font-semibold">Add Custom Time</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {days[customTimeDay]}
+              </p>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Start Time</label>
+                <Input
+                  type="time"
+                  value={customStartTime}
+                  onChange={(e) => setCustomStartTime(e.target.value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground">Format: HH:mm (24-hour)</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">End Time</label>
+                <Input
+                  type="time"
+                  value={customEndTime}
+                  onChange={(e) => setCustomEndTime(e.target.value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground">Format: HH:mm (24-hour)</p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCustomTimeDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddCustomTime}
+                  className="flex-1"
+                >
+                  Add
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
