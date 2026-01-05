@@ -171,11 +171,15 @@ export default function Profile() {
         throw new Error(error.error || 'Failed to update minimum criteria');
       }
 
+      // Update local state directly without API call
+      setEnrolledSubjects(enrolledSubjects.map(subject => 
+        subject.id === subjectId 
+          ? { ...subject, minimumCriteria: value }
+          : subject
+      ));
+
       toast.success("Minimum criteria updated successfully");
       handleCancelEdit(subjectId);
-      
-      // Refresh enrolled subjects to get updated data
-      await refreshEnrolledSubjects();
     } catch (error: any) {
       console.error('Error updating minimum criteria:', error);
       toast.error(error.message || 'Failed to update minimum criteria');
@@ -274,11 +278,15 @@ export default function Profile() {
         throw new Error(error.error || 'Failed to update classroom location');
       }
 
+      // Update local state directly without API call
+      setEnrolledSubjects(enrolledSubjects.map(subject => 
+        subject.id === subjectId 
+          ? { ...subject, classroomLocation: value }
+          : subject
+      ));
+
       toast.success("Classroom location updated successfully");
       handleCancelEditClassroomLocation(subjectId);
-      
-      // Refresh enrolled subjects to get updated data
-      await refreshEnrolledSubjects();
     } catch (error: any) {
       console.error('Error updating classroom location:', error);
       toast.error(error.message || 'Failed to update classroom location');
