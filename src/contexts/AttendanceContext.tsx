@@ -560,8 +560,10 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     ongoingOperationsRef.current.add(operationKey);
     
     // Read current state from closure (should be up to date due to dependency array)
-    const previousStatus = todayAttendance[slotKey] || null;
-    const attendanceId = attendanceIds[slotKey] || null;
+    // Check both time-specific key and old format key for backward compatibility
+    const fallbackKey = `${date}-${subjectId}`; // Old format
+    const previousStatus = todayAttendance[slotKey] || todayAttendance[fallbackKey] || null;
+    const attendanceId = attendanceIds[slotKey] || attendanceIds[fallbackKey] || null;
 
     setSavingState({ subjectId, action: status });
 
