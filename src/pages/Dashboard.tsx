@@ -722,7 +722,7 @@ export default function Dashboard() {
 
       {/* Past Date Warning Dialog */}
       <AlertDialog open={showPastDateWarning} onOpenChange={setShowPastDateWarning}>
-        <AlertDialogContent className="max-w-[90vw] rounded-xl">
+        <AlertDialogContent className="max-w-[90vw] md:max-w-md rounded-xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base">Update Past Attendance?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
