@@ -219,8 +219,7 @@ export default function PrivacyPolicy() {
               </p>
               <div className="bg-muted/50 rounded-lg p-4 mb-4">
                 <p className="text-muted-foreground">
-                  <strong>Email:</strong> [Your contact email]<br />
-                  <strong>Address:</strong> [Your contact address, if applicable]
+                  <strong>Email:</strong> paramsavjani3010@gmail.com<br />
                 </p>
               </div>
             </section>
