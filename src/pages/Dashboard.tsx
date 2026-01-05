@@ -173,6 +173,24 @@ export default function Dashboard() {
 
   // Calculate if a subject needs attention (below minimum requirement)
   // Always use today's stats to show final attendance up to now
+  // Helper to get attendance status with fallback to old format
+  const getAttendanceStatus = (subjectId: string, slotIndex?: number | null, startTime?: string, endTime?: string, isCustom?: boolean) => {
+    const fallbackKey = `${dateKey}-${subjectId}`; // Old format for backward compatibility
+    
+    // Try time-specific key first
+    let slotKey: string;
+    if (slotIndex !== null && slotIndex !== undefined && !isCustom) {
+      slotKey = `${dateKey}-${subjectId}-slot${slotIndex}`;
+    } else if (startTime && endTime && isCustom) {
+      slotKey = `${dateKey}-${subjectId}-${startTime}-${endTime}`;
+    } else {
+      slotKey = fallbackKey;
+    }
+    
+    // Try time-specific key first, then fall back to old format
+    return todayAttendance[slotKey] || todayAttendance[fallbackKey] || null;
+  };
+
   const getSubjectAttendanceInfo = (subjectId: string) => {
     const stats = subjectStatsToday[subjectId];
     const minRequired = subjectMinAttendance[subjectId] || 75;
@@ -471,19 +489,14 @@ export default function Dashboard() {
                         );
                       }
 
-                      // Generate slot key based on time information
-                      let slotKey: string;
-                      if (slot.slotIndex !== null && slot.slotIndex !== undefined && !slot.isCustom) {
-                        // Standard time slot
-                        slotKey = `${dateKey}-${slot.subject.id}-slot${slot.slotIndex}`;
-                      } else if (slot.startTime && slot.endTime && slot.isCustom) {
-                        // Custom time slot
-                        slotKey = `${dateKey}-${slot.subject.id}-${slot.startTime}-${slot.endTime}`;
-                      } else {
-                        // Backward compatibility: no time info
-                        slotKey = `${dateKey}-${slot.subject.id}`;
-                      }
-                      const status = todayAttendance[slotKey] || null;
+                      // Get attendance status with fallback to old format
+                      const status = getAttendanceStatus(
+                        slot.subject.id,
+                        slot.slotIndex,
+                        slot.startTime,
+                        slot.endTime,
+                        slot.isCustom
+                      );
                       const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
                       const isSaving = savingState?.subjectId === slot.subject.id;
 
