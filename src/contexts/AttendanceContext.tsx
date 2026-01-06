@@ -238,17 +238,15 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         // Debug: Log first subject stats to verify new fields are present
         if (data.subjectStats && data.subjectStats.length > 0) {
           const firstStat = data.subjectStats[0];
-          console.log('📊 Attendance API Response Sample:', {
-            subjectId: firstStat.subjectId,
-            hasPercentage: firstStat.percentage !== undefined,
-            hasClassesNeeded: firstStat.classesNeeded !== undefined,
-            hasBunkableClasses: firstStat.bunkableClasses !== undefined,
-            percentage: firstStat.percentage,
-            classesNeeded: firstStat.classesNeeded,
-            bunkableClasses: firstStat.bunkableClasses,
-          });
         }
         setSubjectStats(statsMap);
+
+        // If fetching today's date, also update subjectStatsToday for real-time updates in Subject Section
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        const fetchDate = date || today;
+        if (fetchDate === today) {
+          setSubjectStatsToday(statsMap);
+        }
 
         // Convert attendance records to the format expected by the frontend
         // Key format: date-subjectId-timeSlot or date-subjectId-startTime-endTime or date-subjectId (backward compatibility)
@@ -481,11 +479,17 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Recalculate percentage based on updated present/absent counts
+    const newPercentage = newTotal > 0 ? (newPresent / newTotal) * 100 : 0;
+
     return {
       ...currentStats,
       present: newPresent,
       absent: newAbsent,
-      total: newTotal // Total remains constant during live updates
+      total: newTotal, // Total remains constant during live updates
+      percentage: newPercentage, // Recalculate percentage for real-time updates
+      // Note: classesNeeded and bunkableClasses are not recalculated here
+      // They will be updated when backend response is received
     };
   };
 
