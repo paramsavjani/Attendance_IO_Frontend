@@ -370,19 +370,19 @@ export default function Timetable() {
       // Standard slot
       updatedTimetable = timetable.map((slot) =>
         slot.day === selectedSlot.day && slot.timeSlot === selectedSlot.timeSlot && !slot.startTime
-          ? { ...slot, subjectId }
-          : slot
-      );
+        ? { ...slot, subjectId }
+        : slot
+    );
 
-      const existingSlot = updatedTimetable.find(
+    const existingSlot = updatedTimetable.find(
         (s) => s.day === selectedSlot.day && s.timeSlot === selectedSlot.timeSlot && !s.startTime
-      );
-      if (!existingSlot) {
-        updatedTimetable.push({
-          day: selectedSlot.day,
-          timeSlot: selectedSlot.timeSlot,
-          subjectId,
-        });
+    );
+    if (!existingSlot) {
+      updatedTimetable.push({
+        day: selectedSlot.day,
+        timeSlot: selectedSlot.timeSlot,
+        subjectId,
+      });
       }
     } else if (selectedSlot.startTime && selectedSlot.endTime) {
       // Custom time slot
@@ -426,7 +426,7 @@ export default function Timetable() {
       // Standard slot
       updatedTimetable = timetable.filter(
         (slot) => !(slot.day === day && slot.timeSlot === timeSlot && !slot.startTime)
-      );
+    );
     } else if (startTime && endTime) {
       // Custom time slot
       updatedTimetable = timetable.filter(
