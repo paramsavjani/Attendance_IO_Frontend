@@ -1,3 +1,5 @@
+import { getToken } from './token';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.attendanceio.paramsavjani.in';
 
 export const API_CONFIG = {
@@ -45,3 +47,22 @@ export function getApiUrl(endpoint: string): string {
   return `${API_BASE_URL}/${cleanEndpoint}`;
 }
 
+/**
+ * Make an authenticated API request with JWT token
+ */
+export async function authenticatedFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const token = getToken();
+  const headers = new Headers(options.headers);
+  
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}
