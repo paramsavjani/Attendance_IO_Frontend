@@ -51,7 +51,6 @@ export function AttendanceCard({ data, showDetails = true }: AttendanceCardProps
 
       {showDetails && (
         <>
-          {/* Official Attendance */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
