@@ -114,7 +114,6 @@ export function AndroidWebViewBlock() {
           <div className="space-y-4">
             <FeatureItem icon={Zap} text="Faster & smoother experience" color="bg-amber-500/10 text-amber-500" />
             <FeatureItem icon={Bell} text="Push notifications for updates" color="bg-blue-500/10 text-blue-500" />
-            <FeatureItem icon={Shield} text="Works offline anytime" color="bg-emerald-500/10 text-emerald-500" />
           </div>
         </div>
 
