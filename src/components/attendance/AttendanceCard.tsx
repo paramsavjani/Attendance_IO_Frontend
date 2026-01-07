@@ -67,7 +67,6 @@ export function AttendanceCard({ data, showDetails = true }: AttendanceCardProps
             </p>
           </div>
 
-          {/* Estimated Attendance */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
