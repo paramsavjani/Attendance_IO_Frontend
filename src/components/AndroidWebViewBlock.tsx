@@ -14,7 +14,6 @@ import { Zap, Bell, Globe } from "lucide-react";
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
 
 function isAndroidWebView(): boolean {
-  // Only run on client side
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return false;
   }
@@ -24,15 +23,26 @@ function isAndroidWebView(): boolean {
   
   if (!isAndroid) return false;
 
-  // Check if running as native Capacitor app
+  // Check if running as native Capacitor app - don't show dialog in native app
   const isNative = Capacitor.isNativePlatform();
+  if (isNative) return false;
   
-  // Only show in Android WebView (not native app, not regular browser)
-  // WebView detection: Android + (wv flag OR specific WebView patterns)
-  const isWebView = /wv|WebView/.test(userAgent) || 
-    (userAgent.includes('Version/') && userAgent.includes('Chrome/'));
+  // Detect WebView from common apps (Instagram, Facebook, WhatsApp, etc.)
+  // Also detect generic Android WebView with "wv" or "; wv)" pattern
+  const webViewPatterns = [
+    /\bwv\b/,           // Generic WebView marker
+    /WebView/,          // WebView in UA
+    /Instagram/i,       // Instagram in-app browser
+    /FBAN|FBAV/,        // Facebook in-app browser
+    /WhatsApp/i,        // WhatsApp in-app browser
+    /Line\//i,          // LINE in-app browser
+    /Twitter/i,         // Twitter/X in-app browser
+    /Snapchat/i,        // Snapchat in-app browser
+  ];
   
-  return isAndroid && !isNative && isWebView;
+  const isWebView = webViewPatterns.some(pattern => pattern.test(userAgent));
+  
+  return isWebView;
 }
 
 async function openPlayStore(): Promise<void> {
