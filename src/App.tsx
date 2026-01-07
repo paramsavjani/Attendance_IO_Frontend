@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
+import { AndroidWebViewBlock } from "@/components/AndroidWebViewBlock";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Timetable from "./pages/Timetable";
@@ -51,6 +52,7 @@ function AppRoutes() {
 
   return (
     <>
+      <AndroidWebViewBlock />
       {showFeatureAnnouncement && <FeatureAnnouncement onClose={() => {}} />}
       <Routes>
         <Route
