@@ -5,18 +5,14 @@ import {
   AlertDialogAction,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Zap, Shield, Bell, X } from "lucide-react";
+import { Zap, Bell, Smartphone, Globe, ArrowRight } from "lucide-react";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
 
-/**
- * Detect if running in Android WebView (not native app)
- */
 function isAndroidWebView(): boolean {
   const userAgent = navigator.userAgent || "";
   const isAndroid = /Android/i.test(userAgent);
@@ -30,9 +26,6 @@ function isAndroidWebView(): boolean {
   return false;
 }
 
-/**
- * Open Play Store
- */
 async function openPlayStore(): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     try {
@@ -46,17 +39,8 @@ async function openPlayStore(): Promise<void> {
   }
 }
 
-const PlayStoreLogo = () => (
-  <svg viewBox="30 336.7 120.9 129.2" className="w-5 h-5">
-    <path fill="#FFD400" d="M119.2 421.2c-8.8 0-15.5-6.8-15.5-15.5v-40.1c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.1c0 8.8-6.8 15.5-15.5 15.5h-19.8z" transform="translate(-89, -336)"/>
-    <path fill="#FF3333" d="M99.1 421.3c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H99.1z" transform="translate(-69, -336)"/>
-    <path fill="#00F076" d="M79 465.8c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H79z" transform="translate(-49, -380)"/>
-    <path fill="#00CCFF" d="M59 465.8c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H59z" transform="translate(-29, -380)"/>
-  </svg>
-);
-
 const GooglePlayIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
     <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92z" fill="#4285F4"/>
     <path d="M17.556 8.235l-3.764 3.764 3.764 3.765 4.243-2.432a1 1 0 000-1.734l-4.243-2.363z" fill="#FBBC04"/>
     <path d="M3.609 1.814L13.792 12l3.764-3.765L5.892.49a1.002 1.002 0 00-2.283 1.324z" fill="#34A853"/>
@@ -66,10 +50,12 @@ const GooglePlayIcon = () => (
 
 export function AndroidWebViewBlock() {
   const [showDialog, setShowDialog] = useState(false);
+  const [isAnimated, setIsAnimated] = useState(false);
 
   useEffect(() => {
     if (isAndroidWebView()) {
       setShowDialog(true);
+      setTimeout(() => setIsAnimated(true), 50);
     }
   }, []);
 
@@ -78,42 +64,66 @@ export function AndroidWebViewBlock() {
   };
 
   const handleContinueWebsite = () => {
-    setShowDialog(false);
+    setIsAnimated(false);
+    setTimeout(() => setShowDialog(false), 200);
   };
 
   if (!showDialog) return null;
 
+  const features = [
+    { icon: Zap, label: "Lightning Fast", desc: "Smoother experience" },
+    { icon: Bell, label: "Notifications", desc: "Stay updated" },
+    { icon: Smartphone, label: "Native Feel", desc: "Works offline" },
+  ];
+
   return (
     <AlertDialog open={showDialog} onOpenChange={() => {}}>
       <AlertDialogContent 
-        className="w-[calc(100%-2rem)] max-w-sm p-0 rounded-3xl border border-border/50 shadow-2xl overflow-hidden bg-card" 
+        className={`
+          w-[calc(100%-2rem)] max-w-[340px] p-0 rounded-[28px] border-0 
+          shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] overflow-hidden bg-card
+          transition-all duration-300 ease-out
+          ${isAnimated ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+        `}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        {/* Header */}
-        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 pt-6 pb-6 relative">
-          <button 
-            onClick={handleContinueWebsite}
-            className="absolute top-4 right-4 p-2 rounded-full bg-muted/80 hover:bg-muted transition-colors"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
+        {/* Header with gradient background */}
+        <div className="relative px-6 pt-8 pb-6 bg-gradient-to-b from-muted/80 to-card">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.08),transparent_60%)]" />
           
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-background shadow-md border flex items-center justify-center">
-              <img src="/logo.png" alt="App" className="w-10 h-10 rounded-lg" />
+          <div className="relative flex flex-col items-center text-center">
+            <div className="w-20 h-20 rounded-[22px] bg-card shadow-lg border border-border/50 flex items-center justify-center mb-4">
+              <img src="/logo.png" alt="App" className="w-14 h-14 rounded-xl object-contain" />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">Attendance IO</h2>
-              <p className="text-muted-foreground text-sm">Get the App Experience</p>
-            </div>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">
+              Attendance IO
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Better on the app
+            </p>
           </div>
         </div>
 
-        {/* Features */}
-        <div className="px-6 pb-2">
-          <div className="space-y-4">
-            <FeatureItem icon={Zap} text="Faster & smoother experience" color="bg-amber-500/10 text-amber-500" />
-            <FeatureItem icon={Bell} text="Push notifications for updates" color="bg-blue-500/10 text-blue-500" />
+        {/* Features Grid */}
+        <div className="px-5 py-4">
+          <div className="grid grid-cols-3 gap-2">
+            {features.map((feature, idx) => (
+              <div 
+                key={feature.label}
+                className={`
+                  flex flex-col items-center p-3 rounded-2xl bg-muted/40 
+                  transition-all duration-300 delay-[${idx * 75}ms]
+                  ${isAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
+                `}
+                style={{ transitionDelay: `${idx * 75 + 100}ms` }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
+                  <feature.icon className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-xs font-semibold text-foreground">{feature.label}</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">{feature.desc}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -122,35 +132,27 @@ export function AndroidWebViewBlock() {
           <AlertDialogDescription>Get the app for better experience</AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="flex-col gap-2 p-6 pt-4">
+        {/* Actions */}
+        <div className="p-5 pt-2 space-y-2.5">
           <AlertDialogAction
             onClick={handleOpenPlayStore}
-            className="w-full h-12 text-sm font-medium rounded-xl bg-foreground hover:bg-foreground/90 text-background shadow-lg transition-all duration-300 flex items-center justify-center gap-3"
+            className="w-full h-[52px] text-sm font-semibold rounded-2xl bg-foreground hover:bg-foreground/90 text-background shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2.5 group"
           >
             <GooglePlayIcon />
-            <span>Get it on Google Play</span>
+            <span>Get on Google Play</span>
+            <ArrowRight className="w-4 h-4 opacity-60 group-hover:translate-x-0.5 transition-transform" />
           </AlertDialogAction>
           
           <Button
             variant="ghost"
             onClick={handleContinueWebsite}
-            className="w-full text-sm text-muted-foreground hover:text-foreground"
+            className="w-full h-11 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-2xl transition-colors"
           >
+            <Globe className="w-4 h-4 mr-2 opacity-60" />
             Continue on website
           </Button>
-        </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
-  );
-}
-
-function FeatureItem({ icon: Icon, text, color }: { icon: React.ElementType; text: string; color: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl ${color}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-      <span className="text-sm text-foreground">{text}</span>
-    </div>
   );
 }
