@@ -10,13 +10,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Zap, Shield, Bell, X } from "lucide-react";
+import { Zap, Shield, Bell, X, Star, Download } from "lucide-react";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
 
-/**
- * Detect if running in Android WebView (not native app)
- */
 function isAndroidWebView(): boolean {
   const userAgent = navigator.userAgent || "";
   const isAndroid = /Android/i.test(userAgent);
@@ -30,9 +27,6 @@ function isAndroidWebView(): boolean {
   return false;
 }
 
-/**
- * Open Play Store
- */
 async function openPlayStore(): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     try {
@@ -46,17 +40,8 @@ async function openPlayStore(): Promise<void> {
   }
 }
 
-const PlayStoreLogo = () => (
-  <svg viewBox="30 336.7 120.9 129.2" className="w-5 h-5">
-    <path fill="#FFD400" d="M119.2 421.2c-8.8 0-15.5-6.8-15.5-15.5v-40.1c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.1c0 8.8-6.8 15.5-15.5 15.5h-19.8z" transform="translate(-89, -336)"/>
-    <path fill="#FF3333" d="M99.1 421.3c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H99.1z" transform="translate(-69, -336)"/>
-    <path fill="#00F076" d="M79 465.8c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H79z" transform="translate(-49, -380)"/>
-    <path fill="#00CCFF" d="M59 465.8c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H59z" transform="translate(-29, -380)"/>
-  </svg>
-);
-
 const GooglePlayIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
     <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92z" fill="#4285F4"/>
     <path d="M17.556 8.235l-3.764 3.764 3.764 3.765 4.243-2.432a1 1 0 000-1.734l-4.243-2.363z" fill="#FBBC04"/>
     <path d="M3.609 1.814L13.792 12l3.764-3.765L5.892.49a1.002 1.002 0 00-2.283 1.324z" fill="#34A853"/>
@@ -66,10 +51,12 @@ const GooglePlayIcon = () => (
 
 export function AndroidWebViewBlock() {
   const [showDialog, setShowDialog] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     if (isAndroidWebView()) {
       setShowDialog(true);
+      setTimeout(() => setIsAnimating(true), 50);
     }
   }, []);
 
@@ -78,7 +65,8 @@ export function AndroidWebViewBlock() {
   };
 
   const handleContinueWebsite = () => {
-    setShowDialog(false);
+    setIsAnimating(false);
+    setTimeout(() => setShowDialog(false), 200);
   };
 
   if (!showDialog) return null;
@@ -86,35 +74,73 @@ export function AndroidWebViewBlock() {
   return (
     <AlertDialog open={showDialog} onOpenChange={() => {}}>
       <AlertDialogContent 
-        className="w-[calc(100%-2rem)] max-w-sm p-0 rounded-3xl border border-border/50 shadow-2xl overflow-hidden bg-card" 
+        className={`w-[calc(100%-2rem)] max-w-[360px] p-0 rounded-3xl border-0 shadow-2xl overflow-hidden bg-card transition-all duration-300 ${
+          isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        {/* Header */}
-        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 pt-6 pb-6 relative">
+        {/* Header with App Info */}
+        <div className="relative px-5 pt-5 pb-4">
           <button 
             onClick={handleContinueWebsite}
-            className="absolute top-4 right-4 p-2 rounded-full bg-muted/80 hover:bg-muted transition-colors"
+            className="absolute top-3 right-3 p-1.5 rounded-full bg-muted/60 hover:bg-muted transition-colors"
+            aria-label="Close"
           >
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
           
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-background shadow-md border flex items-center justify-center">
-              <img src="/logo.png" alt="App" className="w-10 h-10 rounded-lg" />
+          <div className="flex items-start gap-3">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg border border-primary/10 flex items-center justify-center flex-shrink-0">
+              <img src="/logo.png" alt="Attendance IO" className="w-12 h-12 rounded-xl" />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">Attendance IO</h2>
-              <p className="text-muted-foreground text-sm">Get the App Experience</p>
+            <div className="flex-1 min-w-0 pt-1">
+              <h2 className="text-base font-bold text-foreground">Attendance IO</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Track your attendance smartly</p>
+              <div className="flex items-center gap-1.5 mt-2">
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground">4.8</span>
+                <span className="text-xs text-muted-foreground">•</span>
+                <span className="text-xs text-muted-foreground">1K+ downloads</span>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Divider */}
+        <div className="h-px bg-border/60 mx-5" />
+
         {/* Features */}
-        <div className="px-6 pb-2">
-          <div className="space-y-4">
-            <FeatureItem icon={Zap} text="Faster & smoother experience" color="bg-amber-500/10 text-amber-500" />
-            <FeatureItem icon={Bell} text="Push notifications for updates" color="bg-blue-500/10 text-blue-500" />
-            <FeatureItem icon={Shield} text="Works offline anytime" color="bg-emerald-500/10 text-emerald-500" />
+        <div className="px-5 py-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Why use the app?</p>
+          <div className="space-y-3">
+            <FeatureItem 
+              icon={Zap} 
+              title="Lightning Fast" 
+              desc="Smoother & faster experience"
+              color="bg-amber-500/15 text-amber-500" 
+              delay={0}
+              animate={isAnimating}
+            />
+            <FeatureItem 
+              icon={Bell} 
+              title="Stay Updated" 
+              desc="Push notifications for classes"
+              color="bg-blue-500/15 text-blue-500" 
+              delay={1}
+              animate={isAnimating}
+            />
+            <FeatureItem 
+              icon={Shield} 
+              title="Works Offline" 
+              desc="Access anytime, anywhere"
+              color="bg-emerald-500/15 text-emerald-500" 
+              delay={2}
+              animate={isAnimating}
+            />
           </div>
         </div>
 
@@ -123,21 +149,24 @@ export function AndroidWebViewBlock() {
           <AlertDialogDescription>Get the app for better experience</AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="flex-col gap-2 p-6 pt-4">
+        <AlertDialogFooter className="flex-col gap-2 p-5 pt-2 bg-muted/30">
           <AlertDialogAction
             onClick={handleOpenPlayStore}
-            className="w-full h-12 text-sm font-medium rounded-xl bg-foreground hover:bg-foreground/90 text-background shadow-lg transition-all duration-300 flex items-center justify-center gap-3"
+            className="w-full h-12 text-sm font-semibold rounded-2xl bg-foreground hover:bg-foreground/90 text-background shadow-xl transition-all duration-300 flex items-center justify-center gap-2.5 active:scale-[0.98]"
           >
             <GooglePlayIcon />
-            <span>Get it on Google Play</span>
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-[10px] font-normal opacity-80">GET IT ON</span>
+              <span className="text-sm font-semibold -mt-0.5">Google Play</span>
+            </div>
           </AlertDialogAction>
           
           <Button
             variant="ghost"
             onClick={handleContinueWebsite}
-            className="w-full text-sm text-muted-foreground hover:text-foreground"
+            className="w-full text-xs text-muted-foreground hover:text-foreground h-9"
           >
-            Continue on website
+            No thanks, continue on website
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -145,13 +174,31 @@ export function AndroidWebViewBlock() {
   );
 }
 
-function FeatureItem({ icon: Icon, text, color }: { icon: React.ElementType; text: string; color: string }) {
+interface FeatureItemProps {
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+  color: string;
+  delay: number;
+  animate: boolean;
+}
+
+function FeatureItem({ icon: Icon, title, desc, color, delay, animate }: FeatureItemProps) {
   return (
-    <div className="flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl ${color}`}>
+    <div 
+      className={`flex items-center gap-3 transition-all duration-300 ${
+        animate ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
+      }`}
+      style={{ transitionDelay: `${delay * 100}ms` }}
+    >
+      <div className={`p-2 rounded-xl ${color} flex-shrink-0`}>
         <Icon className="w-4 h-4" />
       </div>
-      <span className="text-sm text-foreground">{text}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
     </div>
   );
 }
+
