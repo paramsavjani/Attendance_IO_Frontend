@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { initializePushNotifications, clearFcmToken } from "@/lib/notifications";
+import { getToken, setToken, removeToken } from "@/lib/token";
 
 interface Student {
   id: string;
@@ -31,10 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasCompletedInitialCheck = useRef<boolean>(false);
 
   const checkAuth = useCallback(async () => {
+    // If no token exists, don't make the request
+    const token = getToken();
+    if (!token) {
+      setStudent(null);
+      if (!hasCompletedInitialCheck.current) {
+        hasCompletedInitialCheck.current = true;
+        setIsLoadingAuth(false);
+      }
+      return;
+    }
+
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.USER_ME, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.USER_ME, {
         method: "GET",
-        credentials: "include", // Important for cookies/sessions
       });
 
       if (response.ok) {
@@ -55,13 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           initializePushNotifications().catch(console.error);
         }
       } else if (response.status === 401 || response.status === 404) {
-        // Not authenticated or student not found
+        // Not authenticated or student not found - clear token
         setStudent(null);
+        removeToken();
+      } else {
+        // For other errors (500, network issues, etc.), don't remove token
+        // Just log the error and keep current state
+        console.warn("Auth check returned non-ok status:", response.status);
       }
     } catch (error) {
-      console.error("Auth check failed:", error);
-      // Silently fail - user might not be logged in
-      setStudent(null);
+      // Network errors or other exceptions - don't remove token
+      // The token might still be valid, just the request failed
+      console.error("Auth check failed (network error):", error);
+      // Don't clear the token on network errors - keep current state
+      // The token variable is still in scope from the outer function
     } finally {
       // Only set loading to false on the initial check
       if (!hasCompletedInitialCheck.current) {
@@ -76,7 +94,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  // Mobile: listen for deep-link callback and exchange one-time code for a WebView session.
+  // Extract token from URL after OAuth redirect (web flow)
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) return; // Skip for mobile
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    
+    if (token) {
+      setToken(token);
+      // Remove token from URL
+      urlParams.delete("token");
+      const newUrl = window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : '');
+      window.history.replaceState({}, '', newUrl);
+      // Re-check auth with new token
+      checkAuth();
+    }
+  }, [checkAuth]);
+
+  // Mobile: listen for deep-link callback and exchange one-time code for JWT token.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
@@ -92,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const parsed = new URL(url);
           const code = parsed.searchParams.get("code");
+          const token = parsed.searchParams.get("token");
           const error = parsed.searchParams.get("error");
 
           if (error) {
@@ -102,14 +139,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
 
+          // If token is provided directly, use it
+          if (token) {
+            await Browser.close();
+            setToken(token);
+            await checkAuth();
+            // Initialize push notifications after successful login
+            if (Capacitor.isNativePlatform()) {
+              initializePushNotifications().catch(console.error);
+            }
+            window.dispatchEvent(new CustomEvent("auth:success"));
+            return;
+          }
+
+          // Otherwise, exchange code for token
           if (!code) return;
 
           await Browser.close();
 
-          const exchangeRes = await fetch(API_CONFIG.ENDPOINTS.OAUTH_MOBILE_EXCHANGE, {
+          const exchangeRes = await authenticatedFetch(API_CONFIG.ENDPOINTS.OAUTH_MOBILE_EXCHANGE, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include",
             body: JSON.stringify({ code }),
           });
 
@@ -121,6 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               })
             );
             return;
+          }
+
+          const exchangeData = await exchangeRes.json();
+          if (exchangeData.token) {
+            setToken(exchangeData.token);
           }
 
           await checkAuth();
@@ -143,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleGoogleLogin = useCallback(async () => {
     // Web: normal redirect
     if (!Capacitor.isNativePlatform()) {
-    window.location.href = API_CONFIG.ENDPOINTS.OAUTH_GOOGLE;
+      window.location.href = API_CONFIG.ENDPOINTS.OAUTH_GOOGLE;
       return;
     }
 
@@ -165,14 +220,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await clearFcmToken();
       }
       
-      await fetch(API_CONFIG.ENDPOINTS.USER_LOGOUT, {
-        method: "POST",
-        credentials: "include",
-      });
+      // Call logout endpoint (optional, since JWT is stateless)
+      try {
+        await authenticatedFetch(API_CONFIG.ENDPOINTS.USER_LOGOUT, {
+          method: "POST",
+        });
+      } catch (error) {
+        // Ignore logout errors
+        console.error("Logout request failed:", error);
+      }
     } catch (error) {
-      console.error("Logout request failed:", error);
+      console.error("Logout failed:", error);
     } finally {
       setStudent(null);
+      removeToken();
     }
   };
 

@@ -23,7 +23,7 @@ import {
 import { ChevronLeft, Loader2, Plus, BookOpen, X, Save, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -260,8 +260,8 @@ export default function Timetable() {
     const fetchTimetable = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
-          credentials: 'include',
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
+          method: "GET",
         });
 
         if (response.ok) {
@@ -483,12 +483,11 @@ export default function Timetable() {
   const saveTimetable = async () => {
     try {
       setIsSaving(true);
-      const response = await fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           slots: timetable,
         }),
