@@ -14,16 +14,25 @@ import { Zap, Bell, Globe } from "lucide-react";
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
 
 function isAndroidWebView(): boolean {
+  // Only run on client side
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+  
   const userAgent = navigator.userAgent || "";
   const isAndroid = /Android/i.test(userAgent);
   
   if (!isAndroid) return false;
 
+  // Check if running as native Capacitor app
   const isNative = Capacitor.isNativePlatform();
   
-  if (isAndroid && !isNative) return true;
-
-  return false;
+  // Only show in Android WebView (not native app, not regular browser)
+  // WebView detection: Android + (wv flag OR specific WebView patterns)
+  const isWebView = /wv|WebView/.test(userAgent) || 
+    (userAgent.includes('Version/') && userAgent.includes('Chrome/'));
+  
+  return isAndroid && !isNative && isWebView;
 }
 
 async function openPlayStore(): Promise<void> {
