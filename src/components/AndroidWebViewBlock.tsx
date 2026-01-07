@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Zap, Bell, ExternalLink } from "lucide-react";
+import { Zap, Bell, Globe } from "lucide-react";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
 
@@ -40,7 +40,7 @@ async function openPlayStore(): Promise<void> {
 }
 
 const GooglePlayBadge = () => (
-  <svg viewBox="0 0 135 40" className="h-10" fill="none">
+  <svg viewBox="0 0 135 40" className="h-14 w-auto" fill="none">
     <rect width="135" height="40" rx="5" fill="#000"/>
     <path d="M47.418 10.242a2.49 2.49 0 01-.677 1.836 2.593 2.593 0 01-1.962.808 2.778 2.778 0 01-1.971-.818 2.71 2.71 0 01-.817-1.969c0-.77.272-1.426.817-1.969a2.778 2.778 0 011.971-.818c.389 0 .76.076 1.111.229.352.153.632.36.842.619l-.474.474a1.866 1.866 0 00-1.479-.656c-.553 0-1.03.197-1.432.59a2.028 2.028 0 00-.603 1.531c0 .609.201 1.118.603 1.527.401.41.879.615 1.432.615.586 0 1.075-.205 1.465-.615.253-.263.4-.63.439-1.102h-1.904v-.645h2.555c.025.127.038.249.038.363h.046z" fill="#fff"/>
     <path d="M51.628 7.477h-2.289v1.742h2.065v.645h-2.065v1.742h2.289v.663h-2.956V6.814h2.956v.663zM54.758 12.269h-.667V7.477H52.45v-.663h3.948v.663h-1.64v4.792zM58.396 12.269V6.814h.667v5.455h-.667zM62.776 12.269h-.667V7.477h-1.64v-.663h3.947v.663h-1.64v4.792zM71.363 11.561a2.744 2.744 0 01-1.962.819 2.744 2.744 0 01-1.962-.819 2.684 2.684 0 01-.822-1.96c0-.77.274-1.426.822-1.969a2.744 2.744 0 011.962-.818c.77 0 1.427.273 1.962.818.544.543.822 1.199.822 1.968 0 .77-.278 1.418-.822 1.961zm-3.409-.465c.397.41.875.615 1.447.615.572 0 1.05-.205 1.447-.615.397-.41.596-.918.596-1.527 0-.608-.199-1.117-.596-1.527a1.977 1.977 0 00-1.447-.619c-.572 0-1.05.206-1.447.62a2.05 2.05 0 00-.596 1.526c0 .609.199 1.118.596 1.527zM73.592 12.269V6.814h.812l2.524 4.243h.029l-.029-1.052V6.814h.667v5.455h-.696l-2.64-4.481h-.029l.029 1.052v3.43h-.667z" fill="#fff"/>
@@ -196,7 +196,7 @@ export function AndroidWebViewBlock() {
               ${isAnimated ? 'opacity-100' : 'opacity-0'}
             `}
           >
-            <ExternalLink className="w-4 h-4 mr-2 opacity-50" />
+            <Globe className="w-4 h-4 mr-2 opacity-60" />
             Continue on website
           </Button>
         </div>
