@@ -86,33 +86,38 @@ export function AndroidWebViewBlock() {
 
   return (
     <AlertDialog open={showDialog} onOpenChange={() => {}}>
-      <AlertDialogContent className="sm:max-w-md" onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
-        <AlertDialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-full bg-primary/10">
-              <Smartphone className="h-5 w-5 text-primary" />
-            </div>
-            <AlertDialogTitle className="text-xl">
-              App Required
-            </AlertDialogTitle>
+      <AlertDialogContent 
+        className="sm:max-w-md mx-4 rounded-2xl border-0 shadow-2xl bg-gradient-to-br from-background via-background to-primary/5" 
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <AlertDialogHeader className="text-center space-y-4">
+          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <Smartphone className="h-10 w-10 text-primary" />
           </div>
-          <AlertDialogDescription className="text-base space-y-2">
-            <p>
-              This website is no longer available. Please use the <strong>Attendance IO</strong> app from the Google Play Store to access all features.
+          <AlertDialogTitle className="text-2xl font-bold">
+            Download Our App
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-base space-y-3 text-center">
+            <p className="text-foreground/80">
+              The web version has been discontinued. Please download the <strong className="text-primary">Attendance IO</strong> app for the best experience.
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              The web version has been discontinued. Download the app for the best experience.
-            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+              <span>✨</span>
+              <span>Faster, offline access & push notifications</span>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+        <AlertDialogFooter className="flex-col gap-3 mt-4">
           <AlertDialogAction
             onClick={handleOpenPlayStore}
-            className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+            className="w-full py-6 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all duration-300"
           >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Open Play Store
+            <ExternalLink className="h-5 w-5 mr-2" />
+            Get it on Play Store
           </AlertDialogAction>
+          <p className="text-xs text-center text-muted-foreground">
+            Free download • No ads
+          </p>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
