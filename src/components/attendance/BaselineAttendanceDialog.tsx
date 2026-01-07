@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 
 interface BaselineAttendanceDialogProps {
   open: boolean;
@@ -38,8 +38,8 @@ export function BaselineAttendanceDialog({
   const fetchBaselineData = async () => {
     setIsFetching(true);
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.GET_BASELINE_ATTENDANCE(subjectId), {
-        credentials: 'include',
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_BASELINE_ATTENDANCE(subjectId), {
+        method: "GET",
       });
 
       if (response.ok) {
@@ -95,7 +95,7 @@ export function BaselineAttendanceDialog({
 
     setIsLoading(true);
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.SAVE_BASELINE_ATTENDANCE, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.SAVE_BASELINE_ATTENDANCE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { SemesterSelector, Semester } from "@/components/filters/SemesterSelector";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 
 interface AnalyticsData {
@@ -44,8 +44,8 @@ export default function Analytics() {
       setIsLoading(true);
       try {
         // Fetch semesters
-        const semestersResponse = await fetch(API_CONFIG.ENDPOINTS.ANALYTICS_SEMESTERS, {
-          credentials: 'include',
+        const semestersResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.ANALYTICS_SEMESTERS, {
+          method: "GET",
         });
         
         if (semestersResponse.ok) {
@@ -63,8 +63,8 @@ export default function Analytics() {
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
         
         try {
-          const analyticsResponse = await fetch(API_CONFIG.ENDPOINTS.ANALYTICS, {
-            credentials: 'include',
+          const analyticsResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.ANALYTICS, {
+            method: "GET",
             signal: controller.signal,
           });
           
@@ -112,8 +112,8 @@ export default function Analytics() {
           const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
           
           try {
-            const response = await fetch(API_CONFIG.ENDPOINTS.ANALYTICS_SEMESTER(semester.id.toString()), {
-              credentials: 'include',
+            const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.ANALYTICS_SEMESTER(semester.id.toString()), {
+              method: "GET",
               signal: controller.signal,
             });
             
