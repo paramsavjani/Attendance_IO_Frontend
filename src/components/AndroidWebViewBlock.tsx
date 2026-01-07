@@ -47,11 +47,20 @@ async function openPlayStore(): Promise<void> {
 }
 
 const PlayStoreLogo = () => (
-  <svg viewBox="0 0 512 512" className="w-6 h-6" fill="currentColor">
-    <path d="M48 59.49v393a17 17 0 0027.78 13.14L283 256 75.78 46.35A17 17 0 0048 59.49z" fill="#2196F3"/>
-    <path d="M283 256l65.14-65.14L89.33 30.82a17 17 0 00-13.55-.68z" fill="#4CAF50"/>
-    <path d="M415 236.17l-66.86-38.83L283 256l65.14 65.14 66.86-38.86a17 17 0 000-46.11z" fill="#FFC107"/>
-    <path d="M75.78 465.65A17 17 0 0089.33 481.18l258.81-160.04L283 256z" fill="#F44336"/>
+  <svg viewBox="30 336.7 120.9 129.2" className="w-5 h-5">
+    <path fill="#FFD400" d="M119.2 421.2c-8.8 0-15.5-6.8-15.5-15.5v-40.1c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.1c0 8.8-6.8 15.5-15.5 15.5h-19.8z" transform="translate(-89, -336)"/>
+    <path fill="#FF3333" d="M99.1 421.3c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H99.1z" transform="translate(-69, -336)"/>
+    <path fill="#00F076" d="M79 465.8c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H79z" transform="translate(-49, -380)"/>
+    <path fill="#00CCFF" d="M59 465.8c-8.8 0-15.5-6.8-15.5-15.5v-40.2c0-8.8 6.8-15.5 15.5-15.5h19.8c8.8 0 15.5 6.8 15.5 15.5v40.2c0 8.8-6.8 15.5-15.5 15.5H59z" transform="translate(-29, -380)"/>
+  </svg>
+);
+
+const GooglePlayIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
+    <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92z" fill="#4285F4"/>
+    <path d="M17.556 8.235l-3.764 3.764 3.764 3.765 4.243-2.432a1 1 0 000-1.734l-4.243-2.363z" fill="#FBBC04"/>
+    <path d="M3.609 1.814L13.792 12l3.764-3.765L5.892.49a1.002 1.002 0 00-2.283 1.324z" fill="#34A853"/>
+    <path d="M13.792 12L3.61 22.186A1 1 0 005.892 23.51l11.664-7.745L13.792 12z" fill="#EA4335"/>
   </svg>
 );
 
@@ -77,35 +86,35 @@ export function AndroidWebViewBlock() {
   return (
     <AlertDialog open={showDialog} onOpenChange={() => {}}>
       <AlertDialogContent 
-        className="w-[calc(100%-2rem)] max-w-sm p-0 rounded-3xl border-0 shadow-2xl overflow-hidden" 
+        className="w-[calc(100%-2rem)] max-w-sm p-0 rounded-3xl border border-border/50 shadow-2xl overflow-hidden bg-card" 
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        {/* Header with gradient */}
-        <div className="bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 px-6 pt-8 pb-12 text-white relative">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 pt-6 pb-6 relative">
           <button 
             onClick={handleContinueWebsite}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full bg-muted/80 hover:bg-muted transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-muted-foreground" />
           </button>
           
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center">
-              <img src="/logo.png" alt="App" className="w-12 h-12 rounded-lg" />
+            <div className="w-14 h-14 rounded-2xl bg-background shadow-md border flex items-center justify-center">
+              <img src="/logo.png" alt="App" className="w-10 h-10 rounded-lg" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">Attendance IO</h2>
-              <p className="text-white/80 text-sm">Get the App Experience</p>
+              <h2 className="text-lg font-bold text-foreground">Attendance IO</h2>
+              <p className="text-muted-foreground text-sm">Get the App Experience</p>
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-6 -mt-6 relative z-10">
-          <div className="bg-background rounded-2xl shadow-lg border p-4 space-y-3">
-            <FeatureItem icon={Zap} text="Faster & smoother experience" color="text-amber-500" />
-            <FeatureItem icon={Bell} text="Push notifications for updates" color="text-blue-500" />
-            <FeatureItem icon={Shield} text="Works offline anytime" color="text-emerald-500" />
+        {/* Features */}
+        <div className="px-6 pb-2">
+          <div className="space-y-4">
+            <FeatureItem icon={Zap} text="Faster & smoother experience" color="bg-amber-500/10 text-amber-500" />
+            <FeatureItem icon={Bell} text="Push notifications for updates" color="bg-blue-500/10 text-blue-500" />
+            <FeatureItem icon={Shield} text="Works offline anytime" color="bg-emerald-500/10 text-emerald-500" />
           </div>
         </div>
 
@@ -114,19 +123,19 @@ export function AndroidWebViewBlock() {
           <AlertDialogDescription>Get the app for better experience</AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="flex-col gap-3 p-6 pt-4">
+        <AlertDialogFooter className="flex-col gap-2 p-6 pt-4">
           <AlertDialogAction
             onClick={handleOpenPlayStore}
-            className="w-full py-6 text-base font-semibold rounded-xl bg-black hover:bg-black/90 text-white shadow-lg transition-all duration-300 flex items-center justify-center gap-3"
+            className="w-full h-12 text-sm font-medium rounded-xl bg-foreground hover:bg-foreground/90 text-background shadow-lg transition-all duration-300 flex items-center justify-center gap-3"
           >
-            <PlayStoreLogo />
+            <GooglePlayIcon />
             <span>Get it on Google Play</span>
           </AlertDialogAction>
           
           <Button
             variant="ghost"
             onClick={handleContinueWebsite}
-            className="w-full text-muted-foreground hover:text-foreground"
+            className="w-full text-sm text-muted-foreground hover:text-foreground"
           >
             Continue on website
           </Button>
@@ -139,10 +148,10 @@ export function AndroidWebViewBlock() {
 function FeatureItem({ icon: Icon, text, color }: { icon: React.ElementType; text: string; color: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className={`p-2 rounded-lg bg-muted ${color}`}>
+      <div className={`p-2.5 rounded-xl ${color}`}>
         <Icon className="w-4 h-4" />
       </div>
-      <span className="text-sm font-medium">{text}</span>
+      <span className="text-sm text-foreground">{text}</span>
     </div>
   );
 }
