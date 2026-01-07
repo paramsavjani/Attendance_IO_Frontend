@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Lightbulb, Users, Loader2, ChevronDown, ChevronUp } from "lucide-react";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 
@@ -26,8 +26,8 @@ export function ContributorsSection() {
         setIsLoading(true);
         
         const [ideaResponse, testerResponse] = await Promise.all([
-          fetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('IDEA'), { credentials: 'include' }),
-          fetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('TESTER'), { credentials: 'include' }),
+          authenticatedFetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('IDEA'), { method: "GET" }),
+          authenticatedFetch(API_CONFIG.ENDPOINTS.CONTRIBUTORS('TESTER'), { method: "GET" }),
         ]);
 
         if (ideaResponse.ok) {

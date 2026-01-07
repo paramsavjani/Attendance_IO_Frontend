@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 
 interface SleepDurationDialogProps {
@@ -44,7 +44,7 @@ export function SleepDurationDialog({
 
     setIsSaving(true);
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_SLEEP_DURATION, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.UPDATE_SLEEP_DURATION, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

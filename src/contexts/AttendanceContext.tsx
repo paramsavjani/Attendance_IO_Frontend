@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
 import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 import { hexToHslLightened } from "@/lib/utils";
 import { toast } from "sonner";
@@ -70,8 +70,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     try {
       setIsLoadingEnrolledSubjects(true);
-      const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
-        credentials: 'include',
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
+        method: "GET",
       });
 
       if (response.ok) {
@@ -122,8 +122,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     try {
       setIsLoadingTimetable(true);
-      const response = await fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
-        credentials: 'include',
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
+        method: "GET",
       });
 
       if (response.ok) {
@@ -213,8 +213,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         ? `${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`
         : API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE;
 
-      const response = await fetch(url, {
-        credentials: 'include',
+      const response = await authenticatedFetch(url, {
+        method: "GET",
       });
 
       if (response.ok) {
@@ -303,8 +303,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     try {
       const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
-      const response = await fetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${today}`, {
-        credentials: 'include',
+      const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${today}`, {
+        method: "GET",
       });
 
       if (response.ok) {
@@ -408,12 +408,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     setTimetableState(newTimetable);
 
     // Save to backend
-    fetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
+    authenticatedFetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
       body: JSON.stringify({
         slots: newTimetable,
       }),
@@ -576,9 +575,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       // Delete from backend if we have the attendance ID
       if (attendanceId) {
         try {
-          const deleteResponse = await fetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(attendanceId.toString()), {
+          const deleteResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(attendanceId.toString()), {
             method: 'DELETE',
-            credentials: 'include',
           });
 
           if (!deleteResponse.ok) {
@@ -644,12 +642,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         requestBody.endTime = endTime;
       }
       
-      const response = await fetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify(requestBody),
       });
 

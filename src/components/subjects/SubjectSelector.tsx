@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Subject, SaveEnrolledSubjectsResponse, TimetableConflict, SubjectInfo, SubjectSchedule, SelectedSubjectConflict } from "@/types/attendance";
 import { cn, hexToHslLightened } from "@/lib/utils";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { ConflictResolutionModal } from "./ConflictResolutionModal";
 import { SubjectConflictResolutionModal } from "./SubjectConflictResolutionModal";
@@ -127,12 +127,11 @@ export function SubjectSelector({
 
     try {
       // Call backend to detect conflicts
-      const response = await fetch(API_CONFIG.ENDPOINTS.CHECK_SUBJECT_CONFLICTS, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.CHECK_SUBJECT_CONFLICTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           subjectIds: subjectIds,
         }),
@@ -245,12 +244,11 @@ export function SubjectSelector({
       }
       
       // Save to backend with conflict resolutions
-      const response = await fetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.ENROLLED_SUBJECTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           subjectIds: subjectsToSave.map(s => s.id),
           conflictResolutions: conflictResolutions ? resolutionsObject : null,

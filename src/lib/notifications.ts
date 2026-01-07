@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { API_CONFIG } from './api';
+import { API_CONFIG, authenticatedFetch } from './api';
 
 /**
  * Request notification permissions and register for push notifications
@@ -97,7 +97,7 @@ export async function sendFcmTokenToBackend(token: string | null): Promise<boole
     console.log('[FCM] Token:', token ? `${token.substring(0, 20)}...` : 'null');
     console.log('[FCM] Endpoint:', API_CONFIG.ENDPOINTS.UPDATE_FCM_TOKEN);
     
-    const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_FCM_TOKEN, {
+    const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.UPDATE_FCM_TOKEN, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

@@ -11,7 +11,7 @@ import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { BaselineAttendanceDialog } from "@/components/attendance/BaselineAttendanceDialog";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { Slider } from "@/components/ui/slider";
 import { ContributorsSection } from "@/components/contributors/ContributorsSection";
 import {
@@ -83,8 +83,8 @@ export default function Profile() {
   useEffect(() => {
     const fetchSleepDuration = async () => {
       try {
-        const response = await fetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, {
-          credentials: 'include',
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, {
+          method: "GET",
         });
         
         if (response.ok) {
@@ -154,12 +154,11 @@ export default function Profile() {
     setIsSavingCriteria(prev => ({ ...prev, [subjectId]: true }));
 
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_MINIMUM_CRITERIA, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.UPDATE_MINIMUM_CRITERIA, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           subjectId,
           minimumCriteria: value,
@@ -213,12 +212,11 @@ export default function Profile() {
 
     setIsSavingSleepDuration(true);
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_SLEEP_DURATION, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.UPDATE_SLEEP_DURATION, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           sleepDurationHours: hoursNum,
         }),
@@ -261,12 +259,11 @@ export default function Profile() {
     setIsSavingClassroomLocation(prev => ({ ...prev, [subjectId]: true }));
 
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.UPDATE_CLASSROOM_LOCATION, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.UPDATE_CLASSROOM_LOCATION, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           subjectId,
           classroomLocation: value,
@@ -308,12 +305,11 @@ export default function Profile() {
     setIsSubmittingFeedback(true);
     
     try {
-      const response = await fetch(API_CONFIG.ENDPOINTS.SUBMIT_FEEDBACK, {
+      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.SUBMIT_FEEDBACK, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           type: feedbackType,
           title: feedbackTitle.trim(),
