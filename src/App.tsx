@@ -9,6 +9,7 @@ import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
 import { AndroidWebViewBlock } from "@/components/AndroidWebViewBlock";
+import { UpdateDialog } from "@/components/UpdateDialog";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Timetable from "./pages/Timetable";
@@ -21,8 +22,61 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
 import { Capacitor } from "@capacitor/core";
+import { useEffect, useState } from "react";
+import { checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
 
 const queryClient = new QueryClient();
+
+/**
+ * Component to handle app update checks on launch
+ */
+function AppUpdateChecker() {
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateResponse | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    // Check for updates on app launch
+    const checkUpdate = async () => {
+      try {
+        const result = await checkAppUpdate();
+        if (result && result.isUpdateRequired) {
+          setUpdateInfo(result);
+          setIsOpen(true);
+        }
+      } catch (error) {
+        console.error("Failed to check app update:", error);
+      }
+    };
+
+    // Small delay to ensure app is fully loaded
+    const timer = setTimeout(() => {
+      checkUpdate();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleDismiss = () => {
+    if (updateInfo && !updateInfo.isCritical) {
+      setIsOpen(false);
+    }
+  };
+
+  if (!updateInfo) {
+    return null;
+  }
+
+  return (
+    <UpdateDialog
+      open={isOpen}
+      isCritical={updateInfo.isCritical}
+      title={updateInfo.title}
+      message={updateInfo.message}
+      updateUrl={updateInfo.updateUrl}
+      onDismiss={handleDismiss}
+    />
+  );
+}
 
 function AppRoutes() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
@@ -53,6 +107,7 @@ function AppRoutes() {
   return (
     <>
       <AndroidWebViewBlock />
+      <AppUpdateChecker />
       {showFeatureAnnouncement && <FeatureAnnouncement onClose={() => {}} />}
       <Routes>
         <Route
