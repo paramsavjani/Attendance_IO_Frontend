@@ -8,8 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Zap, Bell, Globe } from "lucide-react";
+import { Zap, Bell } from "lucide-react";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
 
@@ -61,11 +60,6 @@ export function AndroidWebViewBlock() {
 
   const handleOpenPlayStore = async () => {
     await openPlayStore();
-  };
-
-  const handleContinueWebsite = () => {
-    setIsAnimated(false);
-    setTimeout(() => setShowDialog(false), 200);
   };
 
   if (!showDialog) return null;
@@ -156,8 +150,21 @@ export function AndroidWebViewBlock() {
           <AlertDialogDescription>Get the app for better experience</AlertDialogDescription>
         </AlertDialogHeader>
 
+        {/* Message */}
+        <div 
+          className={`
+            mx-6 mb-4 p-4 rounded-xl bg-muted/60 border border-border/60
+            transition-all duration-500 delay-300
+            ${isAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}
+          `}
+        >
+          <p className="text-sm font-medium text-foreground text-center">
+            You must use the app to access Attendance IO. Please download it from Google Play Store.
+          </p>
+        </div>
+
         {/* Actions */}
-        <div className="p-6 pt-5 space-y-3">
+        <div className="p-6 pt-0">
           <AlertDialogAction
             onClick={handleOpenPlayStore}
             className={`
@@ -171,19 +178,6 @@ export function AndroidWebViewBlock() {
             <GooglePlayIcon />
             <span>Get it on Google Play</span>
           </AlertDialogAction>
-          
-          <Button
-            variant="ghost"
-            onClick={handleContinueWebsite}
-            className={`
-              w-full h-11 text-sm text-muted-foreground hover:text-foreground 
-              hover:bg-muted/60 rounded-xl transition-all duration-200
-              ${isAnimated ? 'opacity-100' : 'opacity-0'}
-            `}
-          >
-            <Globe className="w-4 h-4 mr-2 opacity-60" />
-            Continue on website
-          </Button>
         </div>
       </AlertDialogContent>
     </AlertDialog>
