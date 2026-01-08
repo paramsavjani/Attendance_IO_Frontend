@@ -72,7 +72,6 @@ function AppUpdateChecker() {
       isCritical={updateInfo.isCritical}
       title={updateInfo.title}
       message={updateInfo.message}
-      updateUrl={updateInfo.updateUrl}
       onDismiss={handleDismiss}
     />
   );
