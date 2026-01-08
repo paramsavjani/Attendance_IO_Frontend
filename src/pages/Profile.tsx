@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,11 @@ export default function Profile() {
     };
 
     fetchCurrentSemester();
+    
+    // Track profile page view
+    trackAppEvent('profile_view', {
+      timestamp: new Date().toISOString(),
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {

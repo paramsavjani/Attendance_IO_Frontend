@@ -26,10 +26,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to track app events - exported for use in other components
+export async function trackAppEvent(eventType: string, metadata?: Record<string, any>) {
+  const token = getToken();
+  if (!token) return; // Only track if authenticated
+  
+  try {
+    await authenticatedFetch(API_CONFIG.ENDPOINTS.TRACK_EVENT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        eventType,
+        metadata,
+      }),
+    });
+  } catch (error) {
+    // Silently fail - don't interrupt app flow if tracking fails
+    console.debug('Event tracking failed:', error);
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [student, setStudent] = useState<Student | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
   const hasCompletedInitialCheck = useRef<boolean>(false);
+  const hasTrackedAppOpen = useRef<boolean>(false);
 
   const checkAuth = useCallback(async () => {
     // If no token exists, don't make the request
@@ -61,6 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         setStudent(studentData);
         
+        // Track app open event only once per session
+        if (!hasTrackedAppOpen.current) {
+          hasTrackedAppOpen.current = true;
+          trackAppEvent('app_open', {
+            platform: Capacitor.isNativePlatform() ? 'mobile' : 'web',
+            timestamp: new Date().toISOString(),
+          }).catch(console.error);
+        }
+        
         // Initialize push notifications after successful auth check (if on native platform)
         if (Capacitor.isNativePlatform()) {
           initializePushNotifications().catch(console.error);
@@ -69,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Not authenticated or student not found - clear token
         setStudent(null);
         removeToken();
+        hasTrackedAppOpen.current = false; // Reset tracking flag on logout
       } else {
         // For other errors (500, network issues, etc.), don't remove token
         // Just log the error and keep current state

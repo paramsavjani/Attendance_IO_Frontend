@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
+import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
@@ -207,7 +208,14 @@ export default function Search() {
       }
     };
     fetchCurrentSemester();
-  }, []);
+    
+    // Track search page view (only when not viewing a specific profile)
+    if (!studentIdParam) {
+      trackAppEvent('search_view', {
+        timestamp: new Date().toISOString(),
+      }).catch(console.error);
+    }
+  }, [studentIdParam]);
 
   // Search students when query changes
   useEffect(() => {
@@ -231,6 +239,13 @@ export default function Search() {
         if (response.ok) {
           const data = await response.json();
           setStudents(data);
+          
+          // Track search event
+          trackAppEvent('search_performed', {
+            query: query.trim(),
+            resultsCount: data.length,
+            timestamp: new Date().toISOString(),
+          }).catch(console.error);
         } else {
           console.error('Failed to search students');
           toast.error('Failed to search students');
@@ -254,6 +269,13 @@ export default function Search() {
         setAttendanceData(null);
         return;
       }
+
+      // Track profile open event when a student is selected
+      trackAppEvent('profile_open', {
+        studentId: selectedStudent.id,
+        studentName: selectedStudent.name,
+        timestamp: new Date().toISOString(),
+      }).catch(console.error);
 
       // Skip if we already have attendance data for this student
       if (attendanceData && attendanceData.studentId === selectedStudent.id) {
