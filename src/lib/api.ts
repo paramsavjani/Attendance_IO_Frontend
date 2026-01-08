@@ -77,7 +77,6 @@ export interface AppUpdateResponse {
   isCritical: boolean;
   title: string;
   message: string;
-  updateUrl: string;
 }
 
 /**
