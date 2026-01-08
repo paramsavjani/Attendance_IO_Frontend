@@ -36,6 +36,7 @@ export const API_CONFIG = {
     ANALYTICS_SEMESTERS: `${API_BASE_URL}/api/analytics/semesters`,
     CONTRIBUTORS: (type?: string) => type ? `${API_BASE_URL}/api/contributors?type=${type}` : `${API_BASE_URL}/api/contributors`,
     TRACK_EVENT: `${API_BASE_URL}/api/event/track`,
+    CHECK_APP_UPDATE: `${API_BASE_URL}/api/app/check-update`,
   },
 } as const;
 
@@ -66,4 +67,76 @@ export async function authenticatedFetch(
     ...options,
     headers,
   });
+}
+
+/**
+ * Interface for app update check response
+ */
+export interface AppUpdateResponse {
+  isUpdateRequired: boolean;
+  isCritical: boolean;
+  title: string;
+  message: string;
+  updateUrl: string;
+}
+
+/**
+ * Get the current app build number from Capacitor
+ * Falls back to 0 for web or if Capacitor is not available
+ */
+export async function getAppBuildNumber(): Promise<number> {
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    if (!Capacitor.isNativePlatform()) {
+      // For web, return 0 (no update check needed on web)
+      return 0;
+    }
+
+    const { App } = await import('@capacitor/app');
+    const info = await App.getInfo();
+    
+    // Build number is available as 'build' property in Capacitor App.getInfo()
+    // It's a string, so we need to parse it
+    const buildNumber = parseInt(info.build || '0', 10);
+    return isNaN(buildNumber) ? 0 : buildNumber;
+  } catch (error) {
+    console.error('Error getting app build number:', error);
+    return 0;
+  }
+}
+
+/**
+ * Check if app update is required
+ * This endpoint does not require authentication
+ */
+export async function checkAppUpdate(): Promise<AppUpdateResponse | null> {
+  try {
+    const buildNumber = await getAppBuildNumber();
+    
+    // Skip update check for web (build number is 0)
+    if (buildNumber === 0) {
+      return null;
+    }
+
+    const response = await fetch(API_CONFIG.ENDPOINTS.CHECK_APP_UPDATE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        buildNumber: buildNumber,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to check app update:', response.status);
+      return null;
+    }
+
+    const data: AppUpdateResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error checking app update:', error);
+    return null;
+  }
 }
