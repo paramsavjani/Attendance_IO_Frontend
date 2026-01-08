@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Capacitor } from "@capacitor/core";
 
+// Hard-coded Google Play Store URL
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
+
 // Google Play Store Icon Component
 const GooglePlayIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
@@ -25,7 +28,6 @@ interface UpdateDialogProps {
   isCritical: boolean;
   title: string;
   message: string;
-  updateUrl: string;
   onDismiss?: () => void;
 }
 
@@ -34,7 +36,6 @@ export function UpdateDialog({
   isCritical,
   title,
   message,
-  updateUrl,
   onDismiss,
 }: UpdateDialogProps) {
   const handleUpdate = async () => {
@@ -45,11 +46,11 @@ export function UpdateDialog({
       if (Capacitor.isNativePlatform()) {
         try {
           const { Browser } = await import("@capacitor/browser");
-          await Browser.open({ url: updateUrl });
+          await Browser.open({ url: PLAY_STORE_URL });
         } catch {
           // Fallback: try to open Play Store app directly
           // Use market:// for Android Play Store app, or fallback to web URL
-          const playStoreAppUrl = updateUrl.replace(
+          const playStoreAppUrl = PLAY_STORE_URL.replace(
             "https://play.google.com/store/apps/details",
             "market://details"
           );
@@ -57,16 +58,16 @@ export function UpdateDialog({
             const { Browser } = await import("@capacitor/browser");
             await Browser.open({ url: playStoreAppUrl });
           } catch {
-            window.open(updateUrl, "_blank");
+            window.open(PLAY_STORE_URL, "_blank");
           }
         }
       } else {
-        window.open(updateUrl, "_blank", "noopener,noreferrer");
+        window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
       }
     } catch (error) {
       console.error("Failed to open Play Store:", error);
       // Final fallback
-      window.open(updateUrl, "_blank");
+      window.open(PLAY_STORE_URL, "_blank");
     }
   };
 
