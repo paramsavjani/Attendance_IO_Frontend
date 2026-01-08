@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots, days } from "@/data/mockData";
 import { TimetableSlot } from "@/types/attendance";
 import { cn } from "@/lib/utils";
+import { trackAppEvent } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -283,6 +284,11 @@ export default function Timetable() {
     };
 
     fetchTimetable();
+    
+    // Track timetable page view
+    trackAppEvent('timetable_view', {
+      timestamp: new Date().toISOString(),
+    }).catch(console.error);
   }, []);
 
   // Helper to format time for display
