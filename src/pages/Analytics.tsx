@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer }
 import { SemesterSelector, Semester } from "@/components/filters/SemesterSelector";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { trackAppEvent } from "@/contexts/AuthContext";
 
 interface AnalyticsData {
   totalStudents: number;
@@ -93,6 +94,11 @@ export default function Analytics() {
     };
 
     fetchData();
+    
+    // Track analytics page view
+    trackAppEvent('analytics_view', {
+      timestamp: new Date().toISOString(),
+    }).catch(console.error);
   }, []);
 
   // Fetch specific semester analytics when selected
