@@ -5,12 +5,13 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, FlaskConical, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { TimetableSlot } from "@/types/attendance";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -62,6 +63,25 @@ export default function Dashboard() {
   const { student } = useAuth();
   const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState } = useAttendance();
   
+  // Lab/Tutorial timetable states
+  const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
+  const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>([]);
+  const [isLoadingLab, setIsLoadingLab] = useState(true);
+  const [isLoadingTutorial, setIsLoadingTutorial] = useState(true);
+  
+  // Lab/Tutorial attendance stats
+  const [labTutStats, setLabTutStats] = useState<Record<string, { 
+    subjectId: string; 
+    present: number; 
+    absent: number; 
+    total: number;
+    totalUntilEndDate: number;
+    percentage: number;
+    classesNeeded: number;
+    bunkableClasses: number;
+  }>>({});
+  const [isLoadingLabTutStats, setIsLoadingLabTutStats] = useState(true);
+  
   const now = new Date();
   const currentHour = now.getHours();
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -87,8 +107,154 @@ export default function Dashboard() {
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  // Get schedule for any date - returns standard slots (8-12) + custom slots
-  function getScheduleForDate(date: Date) {
+  // Fetch lab timetable
+  useEffect(() => {
+    if (!student) {
+      setIsLoadingLab(false);
+      return;
+    }
+
+    const fetchLabTimetable = async () => {
+      try {
+        setIsLoadingLab(true);
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.LAB_TIMETABLE, {
+          method: "GET",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setLabTimetable(data.slots || []);
+        } else {
+          setLabTimetable([]);
+        }
+      } catch (error) {
+        console.error('Error fetching lab timetable:', error);
+        setLabTimetable([]);
+      } finally {
+        setIsLoadingLab(false);
+      }
+    };
+
+    fetchLabTimetable();
+  }, [student]);
+
+  // Fetch tutorial timetable
+  useEffect(() => {
+    if (!student) {
+      setIsLoadingTutorial(false);
+      return;
+    }
+
+    const fetchTutorialTimetable = async () => {
+      try {
+        setIsLoadingTutorial(true);
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE, {
+          method: "GET",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTutorialTimetable(data.slots || []);
+        } else {
+          setTutorialTimetable([]);
+        }
+      } catch (error) {
+        console.error('Error fetching tutorial timetable:', error);
+        setTutorialTimetable([]);
+      } finally {
+        setIsLoadingTutorial(false);
+      }
+    };
+
+    fetchTutorialTimetable();
+  }, [student]);
+
+  // Fetch lab/tutorial attendance stats
+  useEffect(() => {
+    if (!student) {
+      setIsLoadingLabTutStats(false);
+      return;
+    }
+
+    const fetchLabTutStats = async () => {
+      try {
+        setIsLoadingLabTutStats(true);
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_LAB_TUTORIAL_ATTENDANCE, {
+          method: "GET",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const statsMap: Record<string, any> = {};
+          data.subjectStats?.forEach((stat: any) => {
+            statsMap[stat.subjectId] = {
+              subjectId: stat.subjectId,
+              present: stat.present,
+              absent: stat.absent,
+              total: stat.total,
+              totalUntilEndDate: stat.totalUntilEndDate,
+              percentage: stat.percentage,
+              classesNeeded: stat.classesNeeded,
+              bunkableClasses: stat.bunkableClasses,
+            };
+          });
+          setLabTutStats(statsMap);
+        } else {
+          setLabTutStats({});
+        }
+      } catch (error) {
+        console.error('Error fetching lab/tutorial attendance stats:', error);
+        setLabTutStats({});
+      } finally {
+        setIsLoadingLabTutStats(false);
+      }
+    };
+
+    fetchLabTutStats();
+  }, [student]);
+
+  // Refresh lab/tutorial stats when attendance is marked
+  useEffect(() => {
+    if (!student || isLoadingLabTutStats) return;
+    
+    // Refresh stats after a short delay to allow backend to process
+    const timeoutId = setTimeout(() => {
+      const fetchLabTutStats = async () => {
+        try {
+          const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_LAB_TUTORIAL_ATTENDANCE, {
+            method: "GET",
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const statsMap: Record<string, any> = {};
+            data.subjectStats?.forEach((stat: any) => {
+              statsMap[stat.subjectId] = {
+                subjectId: stat.subjectId,
+                present: stat.present,
+                absent: stat.absent,
+                total: stat.total,
+                totalUntilEndDate: stat.totalUntilEndDate,
+                percentage: stat.percentage,
+                classesNeeded: stat.classesNeeded,
+                bunkableClasses: stat.bunkableClasses,
+              };
+            });
+            setLabTutStats(statsMap);
+          }
+        } catch (error) {
+          console.error('Error refreshing lab/tutorial attendance stats:', error);
+        }
+      };
+
+      fetchLabTutStats();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [todayAttendance, student, isLoadingLabTutStats]);
+
+  // Get schedule for any date - returns standard slots (8-12) + custom slots + lab/tutorial
+  function getScheduleForDate(date: Date, includeLabTutorial: boolean = true) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
     
@@ -105,6 +271,7 @@ export default function Dashboard() {
         endTime: time.split(" - ")[1],
         subject: slot?.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
         isCustom: false,
+        type: "lecture" as const,
       };
     });
 
@@ -121,11 +288,95 @@ export default function Dashboard() {
           endTime: end,
           subject: slot.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
           isCustom: true,
+          type: "lecture" as const,
         };
       });
 
+    // Get lab/tutorial slots if requested
+    let labTutorialSlots: any[] = [];
+    if (includeLabTutorial) {
+      const labDaySlots = labTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
+      const tutorialDaySlots = tutorialTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
+
+      labTutorialSlots = [
+        ...labDaySlots.map((slot) => {
+          const start = slot.startTime!;
+          const end = slot.endTime!;
+          return {
+            time: `${formatTime(start)} - ${formatTime(end)}`,
+            slotIndex: null,
+            startTime: start,
+            endTime: end,
+            subject: enrolledSubjects.find((s) => s.id === slot.subjectId) || null,
+            isCustom: true,
+            type: "lab" as const,
+          };
+        }),
+        ...tutorialDaySlots.map((slot) => {
+          const start = slot.startTime!;
+          const end = slot.endTime!;
+          return {
+            time: `${formatTime(start)} - ${formatTime(end)}`,
+            slotIndex: null,
+            startTime: start,
+            endTime: end,
+            subject: enrolledSubjects.find((s) => s.id === slot.subjectId) || null,
+            isCustom: true,
+            type: "tutorial" as const,
+          };
+        }),
+      ];
+    }
+
     // Combine and sort by start time
-    const allSlots = [...standardSlots, ...customSlots].sort((a, b) => {
+    const allSlots = [...standardSlots, ...customSlots, ...labTutorialSlots].sort((a, b) => {
+      const aTime = a.startTime.split(':').map(Number);
+      const bTime = b.startTime.split(':').map(Number);
+      const aMinutes = aTime[0] * 60 + aTime[1];
+      const bMinutes = bTime[0] * 60 + bTime[1];
+      return aMinutes - bMinutes;
+    });
+
+    return allSlots;
+  }
+
+  // Get lab/tutorial schedule only
+  function getLabTutorialScheduleForDate(date: Date) {
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) return [];
+    
+    const adjustedDay = dayOfWeek - 1;
+    const labDaySlots = labTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
+    const tutorialDaySlots = tutorialTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
+
+    const allSlots = [
+      ...labDaySlots.map((slot) => {
+        const start = slot.startTime!;
+        const end = slot.endTime!;
+        return {
+          time: `${formatTime(start)} - ${formatTime(end)}`,
+          slotIndex: null,
+          startTime: start,
+          endTime: end,
+          subject: enrolledSubjects.find((s) => s.id === slot.subjectId) || null,
+          isCustom: true,
+          type: "lab" as const,
+        };
+      }),
+      ...tutorialDaySlots.map((slot) => {
+        const start = slot.startTime!;
+        const end = slot.endTime!;
+        return {
+          time: `${formatTime(start)} - ${formatTime(end)}`,
+          slotIndex: null,
+          startTime: start,
+          endTime: end,
+          subject: enrolledSubjects.find((s) => s.id === slot.subjectId) || null,
+          isCustom: true,
+          type: "tutorial" as const,
+        };
+      }),
+    ].sort((a, b) => {
       const aTime = a.startTime.split(':').map(Number);
       const bTime = b.startTime.split(':').map(Number);
       const aMinutes = aTime[0] * 60 + aTime[1];
@@ -162,7 +413,8 @@ export default function Dashboard() {
       });
   }, []);
 
-  const schedule = useMemo(() => getScheduleForDate(selectedDate), [selectedDate, timetable, enrolledSubjects]);
+  const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable]);
+  const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const isSelectedToday = isToday(selectedDate);
   const isSelectedTomorrow = isTomorrow(selectedDate);
@@ -204,6 +456,30 @@ export default function Dashboard() {
     const needsAttention = percent < minRequired;
     
     return { percent, needsAttention };
+  };
+
+  // Helper to check if a specific slot is being saved
+  const isSlotSaving = (
+    subjectId: string,
+    slotIndex?: number | null,
+    startTime?: string,
+    endTime?: string
+  ) => {
+    if (!savingState || savingState.subjectId !== subjectId) {
+      return false;
+    }
+    
+    // Check if time slot information matches
+    if (slotIndex !== null && slotIndex !== undefined) {
+      // Standard slot - check timeSlot
+      return savingState.timeSlot === slotIndex;
+    } else if (startTime && endTime) {
+      // Custom slot - check startTime and endTime
+      return savingState.startTime === startTime && savingState.endTime === endTime;
+    } else {
+      // Old format (no time info) - check if savingState also has no time info
+      return !savingState.timeSlot && !savingState.startTime && !savingState.endTime;
+    }
   };
 
   const navigateDate = useCallback((direction: "prev" | "next") => {
@@ -338,12 +614,18 @@ export default function Dashboard() {
         </div>
 
         <Tabs defaultValue="schedule" className="w-full flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-0.5 rounded-xl h-9">
+          <TabsList className="grid w-full grid-cols-3 bg-secondary/50 p-0.5 rounded-xl h-9">
             <TabsTrigger 
               value="schedule" 
               className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
             >
               Schedule
+            </TabsTrigger>
+            <TabsTrigger 
+              value="lab-tutorial"
+              className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+            >
+              Lab & Tut
             </TabsTrigger>
             <TabsTrigger 
               value="subjects"
@@ -497,8 +779,35 @@ export default function Dashboard() {
                         slot.endTime,
                         slot.isCustom
                       );
-                      const { percent, needsAttention } = getSubjectAttendanceInfo(slot.subject.id);
-                      const isSaving = savingState?.subjectId === slot.subject.id;
+                      // For lab/tutorial slots, use lab/tut specific stats; otherwise use overall stats
+                      let percent = 0;
+                      let needsAttention = false;
+                      if (slot.type === "lab" || slot.type === "tutorial") {
+                        // Use lab/tutorial specific stats
+                        const labTutStat = labTutStats[slot.subject.id];
+                        if (labTutStat) {
+                          percent = labTutStat.percentage || 0;
+                          const minRequired = subjectMinAttendance[slot.subject.id] || slot.subject.minimumCriteria || 75;
+                          needsAttention = percent < minRequired;
+                        } else {
+                          // Fallback to overall stats if lab/tut stats not available
+                          const { percent: overallPercent, needsAttention: overallNeedsAttention } = getSubjectAttendanceInfo(slot.subject.id);
+                          percent = overallPercent;
+                          needsAttention = overallNeedsAttention;
+                        }
+                      } else {
+                        // Use overall stats for regular lectures
+                        const { percent: overallPercent, needsAttention: overallNeedsAttention } = getSubjectAttendanceInfo(slot.subject.id);
+                        percent = overallPercent;
+                        needsAttention = overallNeedsAttention;
+                      }
+                      // Check if this specific slot is being saved
+                      const isSaving = isSlotSaving(
+                        slot.subject.id,
+                        slot.slotIndex,
+                        slot.startTime,
+                        slot.endTime
+                      );
 
                       return (
                         <div 
@@ -555,10 +864,25 @@ export default function Dashboard() {
                                 status === 'cancelled' && "opacity-50"
                               )}>
                                 <div className="flex-1 min-w-0">
-                                  <p className={cn(
-                                    "text-xs font-medium truncate",
-                                    status === 'cancelled' && "line-through decoration-muted-foreground/50"
-                                  )}>{slot.subject.name}</p>
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <p className={cn(
+                                      "text-xs font-medium truncate",
+                                      status === 'cancelled' && "line-through decoration-muted-foreground/50"
+                                    )}>{slot.subject.name}</p>
+                                    {/* Lab/Tutorial badge */}
+                                    {slot.type === "lab" && (
+                                      <div className="px-1.5 py-0.5 rounded-md bg-blue-500/20 border border-blue-500/30 flex items-center gap-0.5 flex-shrink-0">
+                                        <FlaskConical className="w-2.5 h-2.5 text-blue-400" />
+                                        <span className="text-[9px] font-medium text-blue-400">Lab</span>
+                                      </div>
+                                    )}
+                                    {slot.type === "tutorial" && (
+                                      <div className="px-1.5 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/30 flex items-center gap-0.5 flex-shrink-0">
+                                        <GraduationCap className="w-2.5 h-2.5 text-purple-400" />
+                                        <span className="text-[9px] font-medium text-purple-400">Tut</span>
+                                      </div>
+                                    )}
+                                  </div>
                                   <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.classroomLocation || slot.subject.lecturePlace || slot.subject.code}</p>
                                 </div>
                                 {/* Cancelled badge or Attendance percentage badge */}
@@ -673,6 +997,80 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="lab-tutorial" className="mt-4 flex-1 overflow-y-auto space-y-2">
+            {enrolledSubjects.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="w-6 h-6 text-muted-foreground/50" />
+                </div>
+                <p className="font-medium text-sm text-muted-foreground">No subjects enrolled</p>
+                <p className="text-xs text-muted-foreground/70 mt-0.5">Enroll in subjects to see them here</p>
+              </div>
+            ) : (isLoadingLab || isLoadingTutorial || isLoadingLabTutStats) ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Loading lab & tutorial stats...</p>
+              </div>
+            ) : (
+              (() => {
+                // Get subjects that have lab/tutorial schedules
+                const subjectsWithLabTut = enrolledSubjects.filter((subject) => {
+                  const hasLab = labTimetable.some(slot => slot.subjectId === subject.id && slot.startTime && slot.endTime);
+                  const hasTutorial = tutorialTimetable.some(slot => slot.subjectId === subject.id && slot.startTime && slot.endTime);
+                  return hasLab || hasTutorial;
+                });
+                
+                if (subjectsWithLabTut.length === 0) {
+                  return (
+                    <div className="text-center py-12">
+                      <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                        <BookOpen className="w-6 h-6 text-muted-foreground/50" />
+                      </div>
+                      <p className="font-medium text-sm text-muted-foreground">No labs or tutorials</p>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">No subjects have lab or tutorial schedules</p>
+                    </div>
+                  );
+                }
+                
+                return subjectsWithLabTut.map((subject) => {
+                  // Get stats from backend
+                  const stats = labTutStats[subject.id] || { 
+                    subjectId: subject.id, 
+                    present: 0, 
+                    absent: 0, 
+                    total: 0,
+                    totalUntilEndDate: 0,
+                    percentage: 0,
+                    classesNeeded: 0,
+                    bunkableClasses: 0
+                  };
+                  
+                  const minRequired = subjectMinAttendance[subject.id] || subject.minimumCriteria || 75;
+
+                  return (
+                    <SubjectCard
+                      key={subject.id}
+                      name={subject.name}
+                      code={subject.code}
+                      lecturePlace={subject.lecturePlace}
+                      classroomLocation={subject.classroomLocation}
+                      color={subject.color}
+                      present={stats.present}
+                      absent={stats.absent}
+                      total={stats.total}
+                      totalUntilEndDate={stats.totalUntilEndDate}
+                      minRequired={minRequired}
+                      percentage={stats.percentage}
+                      classesNeeded={stats.classesNeeded}
+                      bunkableClasses={stats.bunkableClasses}
+                      onMinChange={(val) => setSubjectMin(subject.id, val)}
+                    />
+                  );
+                });
+              })()
             )}
           </TabsContent>
 
