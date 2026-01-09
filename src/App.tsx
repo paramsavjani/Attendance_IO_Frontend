@@ -13,6 +13,7 @@ import { UpdateDialog } from "@/components/UpdateDialog";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Timetable from "./pages/Timetable";
+import LabTutorial from "./pages/LabTutorial";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 import Analytics from "./pages/Analytics";
@@ -157,6 +158,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Timetable />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/lab-tutorial"
+        element={
+          <ProtectedRoute>
+            {hasCompletedOnboarding ? <LabTutorial /> : <Navigate to="/onboarding" replace />}
           </ProtectedRoute>
         }
       />
