@@ -32,7 +32,13 @@ interface AttendanceContextType {
   isLoadingEnrolledSubjects: boolean;
   isLoadingTimetable: boolean;
   isLoadingAttendance: boolean;
-  savingState: { subjectId: string; action: 'present' | 'absent' | 'cancelled' } | null; // Currently saving attendance
+  savingState: { 
+    subjectId: string; 
+    action: 'present' | 'absent' | 'cancelled';
+    timeSlot?: number | null;
+    startTime?: string;
+    endTime?: string;
+  } | null; // Currently saving attendance
   markAttendance: (
     subjectId: string, 
     date: string, 
@@ -160,7 +166,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
   // Loading states
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
-  const [savingState, setSavingState] = useState<{ subjectId: string; action: 'present' | 'absent' | 'cancelled' } | null>(null);
+  const [savingState, setSavingState] = useState<{ 
+    subjectId: string; 
+    action: 'present' | 'absent' | 'cancelled';
+    timeSlot?: number | null;
+    startTime?: string;
+    endTime?: string;
+  } | null>(null);
 
   // Track if we've successfully loaded data to prevent clearing on race conditions
   const hasLoadedDataRef = useRef(false);
@@ -568,7 +580,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     const previousStatus = todayAttendance[slotKey] || todayAttendance[fallbackKey] || null;
     const attendanceId = attendanceIds[slotKey] || attendanceIds[fallbackKey] || null;
 
-    setSavingState({ subjectId, action: status });
+    setSavingState({ subjectId, action: status, timeSlot, startTime, endTime });
 
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
