@@ -310,6 +310,7 @@ export default function Dashboard() {
             subject: enrolledSubjects.find((s) => s.id === slot.subjectId) || null,
             isCustom: true,
             type: "lab" as const,
+            location: slot.location || undefined,
           };
         }),
         ...tutorialDaySlots.map((slot) => {
@@ -323,6 +324,7 @@ export default function Dashboard() {
             subject: enrolledSubjects.find((s) => s.id === slot.subjectId) || null,
             isCustom: true,
             type: "tutorial" as const,
+            location: slot.location || undefined,
           };
         }),
       ];
@@ -883,7 +885,11 @@ export default function Dashboard() {
                                       </div>
                                     )}
                                   </div>
-                                  <p className="text-[10px] text-muted-foreground leading-tight">{slot.subject.classroomLocation || slot.subject.lecturePlace || slot.subject.code}</p>
+                                  <p className="text-[10px] text-muted-foreground leading-tight">
+                                    {slot.isCustom && (slot.type === "lab" || slot.type === "tutorial")
+                                      ? (slot.location || slot.subject.code)
+                                      : (slot.subject.classroomLocation || slot.subject.lecturePlace || slot.subject.code)}
+                                  </p>
                                 </div>
                                 {/* Cancelled badge or Attendance percentage badge */}
                                 {status === 'cancelled' ? (
