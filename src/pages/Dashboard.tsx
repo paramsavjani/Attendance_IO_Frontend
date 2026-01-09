@@ -447,7 +447,9 @@ export default function Dashboard() {
 
   const getSubjectAttendanceInfo = (subjectId: string) => {
     const stats = subjectStatsToday[subjectId];
-    const minRequired = subjectMinAttendance[subjectId] || 75;
+    const subject = enrolledSubjects.find(s => s.id === subjectId);
+    // Use user's custom minimum, then subject's minimumCriteria, then fallback to 75
+    const minRequired = subjectMinAttendance[subjectId] || subject?.minimumCriteria || 75;
     
     // Always calculate percentage, even if stats don't exist or total is 0
     let percent = 0;
@@ -457,7 +459,7 @@ export default function Dashboard() {
     
     const needsAttention = percent < minRequired;
     
-    return { percent, needsAttention };
+    return { percent, needsAttention, minRequired };
   };
 
   // Helper to check if a specific slot is being saved
