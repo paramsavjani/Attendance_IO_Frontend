@@ -9,6 +9,7 @@ interface AttendanceCardProps {
   showDetails?: boolean;
 }
 
+
 export function AttendanceCard({ data, showDetails = true }: AttendanceCardProps) {
   const officialPercentage = Math.round(
     (data.officialPresent / data.officialTotal) * 100
