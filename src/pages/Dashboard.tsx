@@ -5,7 +5,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, FlaskConical, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, FlaskConical, GraduationCap, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -57,6 +58,160 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
   }, [onSwipeLeft, onSwipeRight]);
 
   return { onTouchStart, onTouchMove, onTouchEnd };
+}
+
+// Lab & Tutorial Section Component with expandable sections
+interface LabTutorialContentProps {
+  enrolledSubjects: any[];
+  labTimetable: TimetableSlot[];
+  tutorialTimetable: TimetableSlot[];
+  labTutStats: Record<string, any>;
+  subjectMinAttendance: Record<string, number>;
+  setSubjectMin: (subjectId: string, min: number) => void;
+  lecturesEnded: boolean;
+}
+
+function LabTutorialContent({
+  enrolledSubjects,
+  labTimetable,
+  tutorialTimetable,
+  labTutStats,
+  subjectMinAttendance,
+  setSubjectMin,
+  lecturesEnded,
+}: LabTutorialContentProps) {
+  // Get subjects with lab schedules
+  const subjectsWithLab = enrolledSubjects.filter((subject) =>
+    labTimetable.some(slot => slot.subjectId === subject.id && slot.startTime && slot.endTime)
+  );
+  
+  // Get subjects with tutorial schedules
+  const subjectsWithTutorial = enrolledSubjects.filter((subject) =>
+    tutorialTimetable.some(slot => slot.subjectId === subject.id && slot.startTime && slot.endTime)
+  );
+
+  const hasLabs = subjectsWithLab.length > 0;
+  const hasTutorials = subjectsWithTutorial.length > 0;
+
+  // Auto-expand when lectures have ended, otherwise collapsed by default
+  const [labOpen, setLabOpen] = useState(lecturesEnded);
+  const [tutorialOpen, setTutorialOpen] = useState(lecturesEnded);
+
+  // Update open state when lecturesEnded changes
+  useEffect(() => {
+    if (lecturesEnded) {
+      setLabOpen(true);
+      setTutorialOpen(true);
+    }
+  }, [lecturesEnded]);
+
+  if (!hasLabs && !hasTutorials) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+          <BookOpen className="w-6 h-6 text-muted-foreground/50" />
+        </div>
+        <p className="font-medium text-sm text-muted-foreground">No labs or tutorials</p>
+        <p className="text-xs text-muted-foreground/70 mt-0.5">No subjects have lab or tutorial schedules</p>
+      </div>
+    );
+  }
+
+  const renderSubjectCards = (subjects: any[], type: 'lab' | 'tutorial') => {
+    return subjects.map((subject) => {
+      const stats = labTutStats[subject.id] || {
+        subjectId: subject.id,
+        present: 0,
+        absent: 0,
+        total: 0,
+        totalUntilEndDate: 0,
+        percentage: 0,
+        classesNeeded: 0,
+        bunkableClasses: 0,
+      };
+      const minRequired = subjectMinAttendance[subject.id] || subject.minimumCriteria || 75;
+
+      return (
+        <SubjectCard
+          key={`${type}-${subject.id}`}
+          name={subject.name}
+          code={subject.code}
+          lecturePlace={subject.lecturePlace}
+          classroomLocation={subject.classroomLocation}
+          color={subject.color}
+          present={stats.present}
+          absent={stats.absent}
+          total={stats.total}
+          totalUntilEndDate={stats.totalUntilEndDate}
+          minRequired={minRequired}
+          percentage={stats.percentage}
+          classesNeeded={stats.classesNeeded}
+          bunkableClasses={stats.bunkableClasses}
+          onMinChange={(val) => setSubjectMin(subject.id, val)}
+        />
+      );
+    });
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Labs Section */}
+      {hasLabs && (
+        <Collapsible open={labOpen} onOpenChange={setLabOpen}>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between px-3 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl transition-all hover:bg-blue-500/15 active:scale-[0.99]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <FlaskConical className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Lab Sessions</p>
+                  <p className="text-[10px] text-muted-foreground">{subjectsWithLab.length} subject{subjectsWithLab.length > 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <ChevronDown className={cn(
+                "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                labOpen && "rotate-180"
+              )} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="pt-2 space-y-2">
+              {renderSubjectCards(subjectsWithLab, 'lab')}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* Tutorials Section */}
+      {hasTutorials && (
+        <Collapsible open={tutorialOpen} onOpenChange={setTutorialOpen}>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between px-3 py-2.5 bg-purple-500/10 border border-purple-500/20 rounded-xl transition-all hover:bg-purple-500/15 active:scale-[0.99]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                  <GraduationCap className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Tutorial Sessions</p>
+                  <p className="text-[10px] text-muted-foreground">{subjectsWithTutorial.length} subject{subjectsWithTutorial.length > 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <ChevronDown className={cn(
+                "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                tutorialOpen && "rotate-180"
+              )} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="pt-2 space-y-2">
+              {renderSubjectCards(subjectsWithTutorial, 'tutorial')}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
 }
 
 export default function Dashboard() {
@@ -1006,7 +1161,7 @@ export default function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="lab-tutorial" className="mt-4 flex-1 overflow-y-auto space-y-2">
+          <TabsContent value="lab-tutorial" className="mt-4 flex-1 overflow-y-auto space-y-3">
             {enrolledSubjects.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
@@ -1021,62 +1176,15 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground">Loading lab & tutorial stats...</p>
               </div>
             ) : (
-              (() => {
-                // Get subjects that have lab/tutorial schedules
-                const subjectsWithLabTut = enrolledSubjects.filter((subject) => {
-                  const hasLab = labTimetable.some(slot => slot.subjectId === subject.id && slot.startTime && slot.endTime);
-                  const hasTutorial = tutorialTimetable.some(slot => slot.subjectId === subject.id && slot.startTime && slot.endTime);
-                  return hasLab || hasTutorial;
-                });
-                
-                if (subjectsWithLabTut.length === 0) {
-                  return (
-                    <div className="text-center py-12">
-                      <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                        <BookOpen className="w-6 h-6 text-muted-foreground/50" />
-                      </div>
-                      <p className="font-medium text-sm text-muted-foreground">No labs or tutorials</p>
-                      <p className="text-xs text-muted-foreground/70 mt-0.5">No subjects have lab or tutorial schedules</p>
-                    </div>
-                  );
-                }
-                
-                return subjectsWithLabTut.map((subject) => {
-                  // Get stats from backend
-                  const stats = labTutStats[subject.id] || { 
-                    subjectId: subject.id, 
-                    present: 0, 
-                    absent: 0, 
-                    total: 0,
-                    totalUntilEndDate: 0,
-                    percentage: 0,
-                    classesNeeded: 0,
-                    bunkableClasses: 0
-                  };
-                  
-                  const minRequired = subjectMinAttendance[subject.id] || subject.minimumCriteria || 75;
-
-                  return (
-                    <SubjectCard
-                      key={subject.id}
-                      name={subject.name}
-                      code={subject.code}
-                      lecturePlace={subject.lecturePlace}
-                      classroomLocation={subject.classroomLocation}
-                      color={subject.color}
-                      present={stats.present}
-                      absent={stats.absent}
-                      total={stats.total}
-                      totalUntilEndDate={stats.totalUntilEndDate}
-                      minRequired={minRequired}
-                      percentage={stats.percentage}
-                      classesNeeded={stats.classesNeeded}
-                      bunkableClasses={stats.bunkableClasses}
-                      onMinChange={(val) => setSubjectMin(subject.id, val)}
-                    />
-                  );
-                });
-              })()
+              <LabTutorialContent
+                enrolledSubjects={enrolledSubjects}
+                labTimetable={labTimetable}
+                tutorialTimetable={tutorialTimetable}
+                labTutStats={labTutStats}
+                subjectMinAttendance={subjectMinAttendance}
+                setSubjectMin={setSubjectMin}
+                lecturesEnded={lastClassHour !== null && currentHour >= lastClassHour + 1}
+              />
             )}
           </TabsContent>
 
