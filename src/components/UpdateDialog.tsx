@@ -84,7 +84,27 @@ export function UpdateDialog({
         }
       }}
     >
-      <AlertDialogContent className="sm:max-w-[425px] max-w-[95vw]">
+      <AlertDialogContent 
+        className="sm:max-w-[425px] max-w-[95vw]"
+        onEscapeKeyDown={(e) => {
+          // Prevent escape key from closing critical updates
+          if (isCritical) {
+            e.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          // Prevent outside click from closing critical updates
+          if (isCritical) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          // Prevent any outside interaction from closing critical updates
+          if (isCritical) {
+            e.preventDefault();
+          }
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-semibold">
             {title}
