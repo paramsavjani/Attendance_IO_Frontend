@@ -156,16 +156,6 @@ export function NotificationPermissionGate({ children }: { children: React.React
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <h3 className="font-semibold text-sm">Why we need this:</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-                <li>Wake-up reminders before your first lecture</li>
-                <li>Critical attendance alerts for important classes</li>
-                <li>Sleep schedule notifications</li>
-                <li>Real-time attendance updates</li>
-              </ul>
-            </div>
-
             {error && (
               <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                 <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
