@@ -4,7 +4,7 @@ import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { format, addDays, subDays, isToday, isBefore, isAfter, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, BookOpen, FlaskConical, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, BookOpen, Laptop, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -371,8 +371,8 @@ export default function LabTutorial() {
                           )}>
                             {slot.type === "lab" ? (
                               <div className="flex items-center gap-1">
-                                <FlaskConical className="w-2.5 h-2.5" />
-                                <span>Lab</span>
+                                <Laptop className="w-2.5 h-2.5" />
+                                <span>Computer Lab</span>
                               </div>
                             ) : (
                               <div className="flex items-center gap-1">
