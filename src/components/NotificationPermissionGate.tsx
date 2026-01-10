@@ -13,7 +13,8 @@ import { Bell, AlertCircle } from "lucide-react";
 import { checkNotificationPermission, requestNotificationPermission } from "@/lib/notifications";
 
 export function NotificationPermissionGate({ children }: { children: React.ReactNode }) {
-  const [isBlocked, setIsBlocked] = useState(false);
+  // Start with blocked=true on native platforms to be safe (will be updated after check)
+  const [isBlocked, setIsBlocked] = useState(Capacitor.isNativePlatform());
   const [isChecking, setIsChecking] = useState(true);
   const [isRequesting, setIsRequesting] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | null>(null);
@@ -29,28 +30,61 @@ export function NotificationPermissionGate({ children }: { children: React.React
 
     try {
       const status = await checkNotificationPermission();
+      console.log('[NotificationGate] Permission status:', status);
       setPermissionStatus(status);
       
+      // Only allow through if permission is explicitly granted
+      // Block for 'denied', 'prompt', or null (unknown)
       if (status === 'granted') {
+        console.log('[NotificationGate] Permission granted, allowing access');
         setIsBlocked(false);
-      } else if (status === 'denied' || status === 'prompt') {
-        setIsBlocked(true);
       } else {
-        // If check failed, allow through (don't block on error)
-        console.warn('[NotificationGate] Failed to check permission, allowing through');
-        setIsBlocked(false);
+        // Block for denied, prompt, or any other state (including null)
+        console.log('[NotificationGate] Permission not granted, blocking access. Status:', status);
+        setIsBlocked(true);
       }
     } catch (error) {
       console.error('[NotificationGate] Error checking permission:', error);
-      // Don't block on error
-      setIsBlocked(false);
+      // On error, block to be safe (we can't verify permission is granted)
+      console.log('[NotificationGate] Error checking permission, blocking to be safe');
+      setIsBlocked(true);
+      setPermissionStatus(null);
     } finally {
       setIsChecking(false);
     }
   };
 
   useEffect(() => {
+    // Check permission on mount
     checkPermissionStatus();
+
+    // Also check when app comes back to foreground (in case user changed settings)
+    let listener: any = null;
+    
+    if (Capacitor.isNativePlatform()) {
+      const setupAppStateListener = async () => {
+        try {
+          const { App } = await import('@capacitor/app');
+          listener = await App.addListener('appStateChange', (state) => {
+            if (state.isActive) {
+              // App came to foreground, re-check permission
+              console.log('[NotificationGate] App came to foreground, re-checking permission');
+              checkPermissionStatus();
+            }
+          });
+        } catch (error) {
+          console.error('[NotificationGate] Error setting up app state listener:', error);
+        }
+      };
+
+      setupAppStateListener();
+    }
+
+    return () => {
+      if (listener) {
+        listener.remove();
+      }
+    };
   }, []);
 
   const handleRequestPermission = async () => {
@@ -62,20 +96,27 @@ export function NotificationPermissionGate({ children }: { children: React.React
       
       // Re-check permission status after requesting
       const newStatus = await checkNotificationPermission();
+      console.log('[NotificationGate] After request, permission status:', newStatus);
       setPermissionStatus(newStatus);
       
       if (token || newStatus === 'granted') {
         // Permission granted successfully
+        console.log('[NotificationGate] Permission granted after request, allowing access');
         setIsBlocked(false);
-      } else if (newStatus === 'denied') {
-        // Permission was denied - user needs to go to settings
-        setError("Notification permission was denied. Please enable it in your device settings to continue.");
       } else {
-        // Still in prompt state or failed
-        setError("Please allow notification permission to continue using the app.");
+        // Permission was denied or still not granted - keep blocking
+        console.log('[NotificationGate] Permission not granted after request, keeping blocked. Status:', newStatus);
+        setIsBlocked(true);
+        if (newStatus === 'denied') {
+          setError("Notification permission was denied. Please enable it in your device settings to continue.");
+        } else {
+          setError("Please allow notification permission to continue using the app.");
+        }
       }
     } catch (error) {
       console.error('[NotificationGate] Error requesting permission:', error);
+      // On error, keep blocking
+      setIsBlocked(true);
       setError("Failed to request notification permission. Please try again.");
     } finally {
       setIsRequesting(false);
