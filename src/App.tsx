@@ -22,6 +22,7 @@ import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
+import ErrorOldVersion from "./pages/ErrorOldVersion";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useState } from "react";
 import { checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
@@ -123,6 +124,7 @@ function AppRoutes() {
           }
         />
       <Route path="/login" element={<Login />} />
+      <Route path="/error-old-version" element={<ErrorOldVersion />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/delete-account" element={<DeleteAccount />} />
       <Route
