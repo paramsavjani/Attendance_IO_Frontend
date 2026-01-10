@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext";
@@ -82,9 +82,13 @@ function AppUpdateChecker() {
 function AppRoutes() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
   const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
+  const location = useLocation();
   
-  // Show feature announcement only when authenticated and onboarding is complete
-  const showFeatureAnnouncement = isAuthenticated && hasCompletedOnboarding;
+  // Don't show popups/announcements on error page
+  const isErrorPage = location.pathname === "/error-old-version";
+  
+  // Show feature announcement only when authenticated and onboarding is complete, and not on error page
+  const showFeatureAnnouncement = isAuthenticated && hasCompletedOnboarding && !isErrorPage;
 
   // Show loading while checking authentication status
   if (isLoadingAuth) {
@@ -107,8 +111,8 @@ function AppRoutes() {
 
   return (
     <>
-      <AndroidWebViewBlock />
-      <AppUpdateChecker />
+      {!isErrorPage && <AndroidWebViewBlock />}
+      {!isErrorPage && <AppUpdateChecker />}
       {showFeatureAnnouncement && <FeatureAnnouncement onClose={() => {}} />}
       <Routes>
         <Route
