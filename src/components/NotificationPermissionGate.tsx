@@ -120,8 +120,36 @@ export function NotificationPermissionGate({ children }: { children: React.React
   };
 
   const handleOpenSettings = async () => {
-    // Show instructions - opening settings programmatically is not reliable
-    setError("Notification permission was denied. Please enable it in your device settings to continue.");
+    try {
+      const platform = Capacitor.getPlatform();
+      
+      if (platform === 'android') {
+        // For Android, use intent URL to open app settings
+        try {
+          const { Browser } = await import('@capacitor/browser');
+          // Use Android intent to open app details settings
+          await Browser.open({ 
+            url: `intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;data=package:com.attendanceio.app;end` 
+          });
+        } catch (error) {
+          // Fallback: try simple package scheme
+          try {
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.open({ 
+              url: `package:com.attendanceio.app` 
+            });
+          } catch (fallbackError) {
+            console.error('[NotificationGate] Failed to open Android settings:', fallbackError);
+            setError("Please manually go to: Settings → Apps → Attendance IO → Notifications → Enable notifications");
+          }
+        }
+      } else {
+        setError("Please manually open your device settings and enable notifications for this app.");
+      }
+    } catch (error) {
+      console.error('[NotificationGate] Error opening settings:', error);
+      setError("Please manually open your device settings and enable notifications for this app.");
+    }
   };
 
   // Show loading state while checking
@@ -177,7 +205,7 @@ export function NotificationPermissionGate({ children }: { children: React.React
                 <Button
                   onClick={checkPermissionStatus}
                   variant="outline"
-                  className="w-full"
+                  className="w-full hover:bg-transparent hover:text-inherit"
                   size="lg"
                 >
                   I've Enabled It
