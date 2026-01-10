@@ -1309,7 +1309,7 @@ export default function Timetable() {
                     </div>
                     <div className="flex-1 min-w-0 overflow-hidden">
                       <p className="text-sm font-medium truncate w-full">
-                        {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name || "Unknown"}
+                        {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.length > 25 ? enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.slice(0, 25)+'...' : enrolledSubjects.find(s => s.id === selectedSubjectId)?.name || "Unknown"}
                       </p>
                       <p className="text-xs text-muted-foreground truncate w-full">
                         {enrolledSubjects.find(s => s.id === selectedSubjectId)?.code || ""}
