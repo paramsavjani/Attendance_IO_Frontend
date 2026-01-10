@@ -607,6 +607,31 @@ export default function Timetable() {
 
   const handleSlotClick = (day: number, timeSlot: number | null, startTime?: string, endTime?: string, type?: "lab" | "tutorial") => {
     setSelectedSlot({ day, timeSlot, startTime, endTime, type });
+    
+    // Pre-fill location and subject when editing an existing lab/tutorial slot
+    if (type === "lab" || type === "tutorial") {
+      const currentTimetable = type === "lab" ? labTimetable : tutorialTimetable;
+      if (startTime && endTime) {
+        const existingSlot = currentTimetable.find(
+          (s) => s.day === day && s.startTime === startTime && s.endTime === endTime
+        );
+        if (existingSlot) {
+          setSelectedSubjectId(existingSlot.subjectId || null);
+          setSlotLocation(existingSlot.location || "");
+        } else {
+          setSelectedSubjectId(null);
+          setSlotLocation("");
+        }
+      } else {
+        setSelectedSubjectId(null);
+        setSlotLocation("");
+      }
+    } else {
+      // Reset for lecture slots
+      setSelectedSubjectId(null);
+      setSlotLocation("");
+    }
+    
     setDialogOpen(true);
   };
 
@@ -845,7 +870,7 @@ export default function Timetable() {
     toast.success("Custom time slot added");
   };
 
-  const saveTimetable = async () => {
+  const saveTimetable = async (silent: boolean = false) => {
     try {
       setIsSaving(true);
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
@@ -864,16 +889,21 @@ export default function Timetable() {
       }
 
       setOriginalTimetable([...timetable]);
-      toast.success('Lecture timetable saved');
+      if (!silent) {
+        toast.success('Lecture timetable saved');
+      }
     } catch (error: any) {
       console.error('Error saving timetable:', error);
-      toast.error(error.message || 'Failed to save timetable');
+      if (!silent) {
+        toast.error(error.message || 'Failed to save timetable');
+      }
+      throw error;
     } finally {
       setIsSaving(false);
     }
   };
 
-  const saveLabTimetable = async () => {
+  const saveLabTimetable = async (silent: boolean = false) => {
     try {
       setIsSavingLab(true);
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.LAB_TIMETABLE, {
@@ -892,16 +922,21 @@ export default function Timetable() {
       }
 
       setOriginalLabTimetable([...labTimetable]);
-      toast.success('Lab timetable saved');
+      if (!silent) {
+        toast.success('Lab timetable saved');
+      }
     } catch (error: any) {
       console.error('Error saving lab timetable:', error);
-      toast.error(error.message || 'Failed to save lab timetable');
+      if (!silent) {
+        toast.error(error.message || 'Failed to save lab timetable');
+      }
+      throw error;
     } finally {
       setIsSavingLab(false);
     }
   };
 
-  const saveTutorialTimetable = async () => {
+  const saveTutorialTimetable = async (silent: boolean = false) => {
     try {
       setIsSavingTutorial(true);
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE, {
@@ -920,21 +955,31 @@ export default function Timetable() {
       }
 
       setOriginalTutorialTimetable([...tutorialTimetable]);
-      toast.success('Tutorial timetable saved');
+      if (!silent) {
+        toast.success('Tutorial timetable saved');
+      }
     } catch (error: any) {
       console.error('Error saving tutorial timetable:', error);
-      toast.error(error.message || 'Failed to save tutorial timetable');
+      if (!silent) {
+        toast.error(error.message || 'Failed to save tutorial timetable');
+      }
+      throw error;
     } finally {
       setIsSavingTutorial(false);
     }
   };
 
   const saveAllTimetables = async () => {
-    await Promise.all([
-      saveTimetable(),
-      saveLabTimetable(),
-      saveTutorialTimetable(),
-    ]);
+    try {
+      await Promise.all([
+        saveTimetable(true),
+        saveLabTimetable(true),
+        saveTutorialTimetable(true),
+      ]);
+      toast.success('Timetable saved');
+    } catch (error: any) {
+      toast.error('Failed to save timetable');
+    }
   };
 
   const handleRegenerate = async () => {
