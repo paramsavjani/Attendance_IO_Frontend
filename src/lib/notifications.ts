@@ -2,6 +2,26 @@ import { Capacitor } from '@capacitor/core';
 import { API_CONFIG, authenticatedFetch } from './api';
 
 /**
+ * Check notification permission status without requesting
+ * Returns 'granted', 'denied', or 'prompt'
+ */
+export async function checkNotificationPermission(): Promise<'granted' | 'denied' | 'prompt' | null> {
+  if (!Capacitor.isNativePlatform()) {
+    // On web, we don't need to block - notifications are optional
+    return 'granted';
+  }
+
+  try {
+    const { PushNotifications } = await import('@capacitor/push-notifications');
+    const permStatus = await PushNotifications.checkPermissions();
+    return permStatus.receive as 'granted' | 'denied' | 'prompt';
+  } catch (error) {
+    console.error('[FCM] Error checking notification permission:', error);
+    return null;
+  }
+}
+
+/**
  * Request notification permissions and register for push notifications
  * Returns the FCM token if successful, null otherwise
  */
