@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
 import { AndroidWebViewBlock } from "@/components/AndroidWebViewBlock";
 import { UpdateDialog } from "@/components/UpdateDialog";
+import { NotificationPermissionGate } from "@/components/NotificationPermissionGate";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Timetable from "./pages/Timetable";
@@ -212,16 +213,18 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          {Capacitor.isNativePlatform() ? (
-            <HashRouter>
+          <NotificationPermissionGate>
+            {Capacitor.isNativePlatform() ? (
+              <HashRouter>
+                <AppRoutes />
+              </HashRouter>
+            ) : (
+            <BrowserRouter>
               <AppRoutes />
-            </HashRouter>
-          ) : (
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-          )}
-          {!Capacitor.isNativePlatform() && <VercelAnalytics />}
+            </BrowserRouter>
+            )}
+            {!Capacitor.isNativePlatform() && <VercelAnalytics />}
+          </NotificationPermissionGate>
         </TooltipProvider>
       </AttendanceProvider>
     </AuthProvider>
