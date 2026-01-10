@@ -107,11 +107,7 @@ export function NotificationPermissionGate({ children }: { children: React.React
         // Permission was denied or still not granted - keep blocking
         console.log('[NotificationGate] Permission not granted after request, keeping blocked. Status:', newStatus);
         setIsBlocked(true);
-        if (newStatus === 'denied') {
-          setError("Notification permission was denied. Please enable it in your device settings to continue.");
-        } else {
-          setError("Please allow notification permission to continue using the app.");
-        }
+        setError("Notification permission was denied. Please enable it in your device settings to continue.");
       }
     } catch (error) {
       console.error('[NotificationGate] Error requesting permission:', error);
@@ -213,13 +209,6 @@ export function NotificationPermissionGate({ children }: { children: React.React
               >
                 {isRequesting ? "Requesting Permission..." : "Allow Notifications"}
               </Button>
-            )}
-            {error && (
-              <p className="text-xs text-muted-foreground text-center">
-                {permissionStatus === 'denied' 
-                  ? "Please enable notifications in your device settings, then tap 'I've Enabled It' above."
-                  : "Please allow notification permission to continue."}
-              </p>
             )}
           </DialogFooter>
         </DialogContent>
