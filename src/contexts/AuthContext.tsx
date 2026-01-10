@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
-import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch, getAppBuildNumber } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { initializePushNotifications, clearFcmToken } from "@/lib/notifications";
 import { getToken, setToken, removeToken } from "@/lib/token";
@@ -190,10 +190,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           await Browser.close();
 
+          const buildNumber = await getAppBuildNumber();
           const exchangeRes = await authenticatedFetch(API_CONFIG.ENDPOINTS.OAUTH_MOBILE_EXCHANGE, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ code, buildNumber }),
           });
 
           if (!exchangeRes.ok) {
@@ -238,10 +239,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Native app: open system browser and return via deep link.
     const { Browser } = await import("@capacitor/browser");
     const redirectUri = "com.attendanceio.app://auth";
+    const buildNumber = await getAppBuildNumber();
 
     const url = `${API_CONFIG.ENDPOINTS.OAUTH_GOOGLE_MOBILE_START}?redirect_uri=${encodeURIComponent(
       redirectUri
-    )}`;
+    )}&buildNumber=${buildNumber}`;
 
     await Browser.open({ url });
   }, []);
