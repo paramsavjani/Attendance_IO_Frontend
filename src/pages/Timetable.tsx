@@ -1026,6 +1026,8 @@ export default function Timetable() {
 
   const discardChanges = () => {
     setTimetable([...originalTimetable]);
+    setLabTimetable([...originalLabTimetable]);
+    setTutorialTimetable([...originalTutorialTimetable]);
     setShowUnsavedDialog(false);
     if (pendingNavigation === 'back') {
       navigate(-1);
@@ -1088,23 +1090,27 @@ export default function Timetable() {
                   className="text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                   disabled={isSaving}
                 >
-                  Clear all
+                  {hasUnsavedChanges() ? "Discard" : "Clear all"}
                 </button>
               </AlertDialogTrigger>
               <AlertDialogContent className="max-w-[90vw] rounded-xl">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-base">Reset Timetable?</AlertDialogTitle>
+                  <AlertDialogTitle className="text-base">
+                    {hasUnsavedChanges() ? "Discard Changes?" : "Reset Timetable?"}
+                  </AlertDialogTitle>
                   <AlertDialogDescription className="text-sm">
-                    This will remove all scheduled classes.
+                    {hasUnsavedChanges() 
+                      ? "This will discard all unsaved changes and restore the last saved timetable."
+                      : "This will remove all scheduled classes."}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-2">
                   <AlertDialogCancel className="h-9 text-sm">Cancel</AlertDialogCancel>
                   <AlertDialogAction 
-                    onClick={handleRegenerate}
+                    onClick={hasUnsavedChanges() ? discardChanges : handleRegenerate}
                     className="bg-destructive text-destructive-foreground h-9 text-sm"
                   >
-                    Reset
+                    {hasUnsavedChanges() ? "Discard" : "Reset"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -1301,11 +1307,11 @@ export default function Timetable() {
                     <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
                       {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.charAt(0) || "?"}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p className="text-sm font-medium truncate w-full">
                         {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name || "Unknown"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate w-full">
                         {enrolledSubjects.find(s => s.id === selectedSubjectId)?.code || ""}
                       </p>
                     </div>
