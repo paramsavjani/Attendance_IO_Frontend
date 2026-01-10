@@ -372,7 +372,7 @@ export default function LabTutorial() {
                             {slot.type === "lab" ? (
                               <div className="flex items-center gap-1">
                                 <Laptop className="w-2.5 h-2.5" />
-                                <span>Computer Lab</span>
+                                <span>Lab</span>
                               </div>
                             ) : (
                               <div className="flex items-center gap-1">
