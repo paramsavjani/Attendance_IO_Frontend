@@ -10,11 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Clock, MapPin, Sparkles } from "lucide-react";
+import { Laptop, GraduationCap, Sparkles, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const FEATURE_ANNOUNCEMENT_STORAGE_KEY = "attendance_io_feature_announcement_v2";
-const FEATURE_ANNOUNCEMENT_VERSION = "2.0.0";
+const FEATURE_ANNOUNCEMENT_STORAGE_KEY = "attendance_io_feature_announcement_v4";
+const FEATURE_ANNOUNCEMENT_VERSION = "4.0.0";
 const FEATURE_ANNOUNCEMENT_SHOWN_KEY = "attendance_io_feature_announcement_shown_count";
 
 export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
@@ -67,19 +67,19 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
 
   const features = [
     {
-      icon: Clock,
-      title: "Custom Time Slots",
+      icon: GraduationCap,
+      title: "Tutorial Attendance Tracking",
       description:
-        "Add lectures at any time, including afternoon sessions! No longer limited to fixed morning slots.",
-      color: "text-blue-500 dark:text-blue-400",
-      bgColor: "bg-blue-500/10",
-      iconBg: "bg-blue-500/20",
+        "Track tutorial attendance separately from lectures. Manually create time slots and assign subjects to monitor your progress independently.",
+      color: "text-purple-500 dark:text-purple-400",
+      bgColor: "bg-purple-500/10",
+      iconBg: "bg-purple-500/20",
     },
     {
-      icon: MapPin,
-      title: "Custom Classroom Locations",
+      icon: Calendar,
+      title: "Manual Timetable Creation",
       description:
-        "Personalize classroom locations for each subject. Set different locations than the default lecture place.",
+        "Computer lab and tutorial timetables require manual setup. Go to Timetable → Lab & Tutorial tab, add time slots, and assign subjects. Full control, no auto-assignment.",
       color: "text-emerald-500 dark:text-emerald-400",
       bgColor: "bg-emerald-500/10",
       iconBg: "bg-emerald-500/20",
@@ -106,7 +106,7 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
             <span className="leading-tight">New Features Available!</span>
           </DialogTitle>
           <DialogDescription className="text-sm sm:text-base mt-1 sm:mt-2 text-muted-foreground leading-relaxed">
-            We've added some exciting new features to make your attendance tracking even better.
+            Track computer lab and tutorial attendance separately. Create timetables manually for full control.
           </DialogDescription>
         </DialogHeader>
 
