@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, Loader2, Plus, BookOpen, X, Save, Clock, FlaskConical, GraduationCap } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, BookOpen, X, Save, Clock, Laptop, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
@@ -287,12 +287,12 @@ function LabTutorialTimeline({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         {slotInfo.type === "lab" ? (
-                          <FlaskConical className="w-3 h-3 text-blue-400" />
+                          <Laptop className="w-3 h-3 text-blue-400" />
                         ) : (
                           <GraduationCap className="w-3 h-3 text-purple-400" />
                         )}
                         <p className="text-xs font-medium text-muted-foreground">
-                          {slotInfo.type === "lab" ? "Lab" : "Tutorial"}
+                          {slotInfo.type === "lab" ? "Computer Lab" : "Tutorial"}
                         </p>
                       </div>
                       <p className="text-sm font-medium truncate">{subject.name}</p>
@@ -319,7 +319,7 @@ function LabTutorialTimeline({
                   <div className="border border-dashed border-border rounded-xl p-3 group-hover:border-muted-foreground/50 transition-colors h-full flex items-center">
                     <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
                       <Plus className="w-3.5 h-3.5" />
-                      <span className="text-sm">Add {slotInfo.type === "lab" ? "Lab" : "Tutorial"}</span>
+                      <span className="text-sm">Add {slotInfo.type === "lab" ? "Computer Lab" : "Tutorial"}</span>
                     </div>
                   </div>
                 )}
@@ -341,8 +341,8 @@ function LabTutorialTimeline({
               onClick={() => onAddCustomTime("lab")}
               className="flex-1 border border-dashed border-border rounded-xl p-3 hover:border-blue-500 hover:bg-blue-500/5 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-blue-400"
             >
-              <FlaskConical className="w-4 h-4" />
-              <span className="text-sm font-medium">Add Lab</span>
+              <Laptop className="w-4 h-4" />
+              <span className="text-sm font-medium">Add Computer Lab</span>
             </button>
             <button
               onClick={() => onAddCustomTime("tutorial")}
@@ -837,7 +837,7 @@ export default function Timetable() {
       ]);
 
       setCustomTimeDialogOpen(false);
-      toast.success(`${type === "lab" ? "Lab" : "Tutorial"} time slot added`);
+      toast.success(`${type === "lab" ? "Computer Lab" : "Tutorial"} time slot added`);
       return;
     }
 
