@@ -79,7 +79,7 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
       icon: Calendar,
       title: "Manual Timetable Creation",
       description:
-        "Computer lab and tutorial timetables require manual setup. Go to Timetable → Lab & Tutorial tab, add time slots, and assign subjects. Full control, no auto-assignment.",
+        "Lab and tutorial timetables require manual setup. Go to Timetable → Lab & Tutorial tab, add time slots, and assign subjects. Full control, no auto-assignment.",
       color: "text-emerald-500 dark:text-emerald-400",
       bgColor: "bg-emerald-500/10",
       iconBg: "bg-emerald-500/20",
@@ -106,7 +106,7 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
             <span className="leading-tight">New Features Available!</span>
           </DialogTitle>
           <DialogDescription className="text-sm sm:text-base mt-1 sm:mt-2 text-muted-foreground leading-relaxed">
-            Track computer lab and tutorial attendance separately. Create timetables manually for full control.
+            Track lab and tutorial attendance separately. Create timetables manually for full control.
           </DialogDescription>
         </DialogHeader>
 
