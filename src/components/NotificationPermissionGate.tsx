@@ -113,7 +113,7 @@ export function NotificationPermissionGate({ children }: { children: React.React
       console.error('[NotificationGate] Error requesting permission:', error);
       // On error, keep blocking
       setIsBlocked(true);
-      setError("Failed to request notification permission. Please try again.");
+      setError("Notification permission was denied. Please enable it in your device settings to continue.");
     } finally {
       setIsRequesting(false);
     }
@@ -121,14 +121,7 @@ export function NotificationPermissionGate({ children }: { children: React.React
 
   const handleOpenSettings = async () => {
     // Show instructions - opening settings programmatically is not reliable
-    const platform = Capacitor.getPlatform();
-    if (platform === 'android') {
-      setError("Please go to: Settings → Apps → Attendance IO → Notifications → Enable notifications");
-    } else if (platform === 'ios') {
-      setError("Please go to: Settings → Attendance IO → Notifications → Allow Notifications");
-    } else {
-      setError("Please manually open your device settings and enable notifications for this app.");
-    }
+    setError("Notification permission was denied. Please enable it in your device settings to continue.");
   };
 
   // Show loading state while checking
