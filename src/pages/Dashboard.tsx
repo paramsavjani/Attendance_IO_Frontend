@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, FlaskConical, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -876,7 +876,7 @@ export default function Dashboard() {
                                     {/* Lab/Tutorial badge */}
                                     {slot.type === "lab" && (
                                       <div className="px-1.5 py-0.5 rounded-md bg-blue-500/20 border border-blue-500/30 flex items-center gap-0.5 flex-shrink-0">
-                                        <FlaskConical className="w-2.5 h-2.5 text-blue-400" />
+                                        <Laptop className="w-2.5 h-2.5 text-blue-400" />
                                         <span className="text-[9px] font-medium text-blue-400">Lab</span>
                                       </div>
                                     )}
