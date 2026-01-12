@@ -61,13 +61,14 @@ interface AttendanceContextType {
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
 
 export function AttendanceProvider({ children }: { children: ReactNode }) {
-  const { student } = useAuth();
+  const { student, enrolledSubjects: enrolledSubjectsFromAuth } = useAuth();
 
-  // Enrolled subjects
+  // Enrolled subjects - use from AuthContext if available, otherwise fetch
   const [enrolledSubjects, setEnrolledSubjectsState] = useState<Subject[]>([]);
   const [isLoadingEnrolledSubjects, setIsLoadingEnrolledSubjects] = useState(true);
+  const hasInitializedFromAuth = useRef(false);
 
-  // Fetch enrolled subjects from backend - no localStorage fallback
+  // Fetch enrolled subjects from backend - used for refresh
   const fetchEnrolledSubjects = useCallback(async () => {
     if (!student) {
       setIsLoadingEnrolledSubjects(false);
@@ -93,6 +94,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           minimumCriteria: s.minimumCriteria ?? null,
         }));
         setEnrolledSubjectsState(subjects);
+        hasInitializedFromAuth.current = true;
       } else {
         // No fallback - just set empty array if backend fails
         setEnrolledSubjectsState([]);
@@ -106,9 +108,33 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
   }, [student]);
 
+  // Convert enrolled subjects from AuthContext format to Subject format
+  // Use subjects from AuthContext on initial load (from combined endpoint)
   useEffect(() => {
-    fetchEnrolledSubjects();
-  }, [fetchEnrolledSubjects]);
+    if (enrolledSubjectsFromAuth && enrolledSubjectsFromAuth.length > 0) {
+      const subjects: Subject[] = enrolledSubjectsFromAuth.map((s) => ({
+        id: s.subjectId,
+        code: s.subjectCode,
+        name: s.subjectName,
+        lecturePlace: s.lecturePlace ?? null,
+        classroomLocation: s.classroomLocation ?? null,
+        color: hexToHslLightened(s.color || "#3B82F6"),
+        minimumCriteria: s.minimumCriteria ?? null,
+      }));
+      setEnrolledSubjectsState(subjects);
+      setIsLoadingEnrolledSubjects(false);
+      hasInitializedFromAuth.current = true;
+    } else if (!student) {
+      // No student, clear subjects
+      setEnrolledSubjectsState([]);
+      setIsLoadingEnrolledSubjects(false);
+      hasInitializedFromAuth.current = false;
+    } else if (student && enrolledSubjectsFromAuth.length === 0 && !hasInitializedFromAuth.current) {
+      // Student exists but no subjects from auth context on initial load - fetch them
+      // This handles edge cases where USER_ME was used instead of USER_INIT
+      fetchEnrolledSubjects();
+    }
+  }, [enrolledSubjectsFromAuth, student, fetchEnrolledSubjects]);
 
   // Expose refresh function for manual refresh
   const refreshEnrolledSubjects = useCallback(async () => {
