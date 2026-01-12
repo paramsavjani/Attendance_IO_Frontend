@@ -9,6 +9,7 @@ export const API_CONFIG = {
     OAUTH_GOOGLE_MOBILE_START: `${API_BASE_URL}/api/auth/mobile/google/start`,
     OAUTH_MOBILE_EXCHANGE: `${API_BASE_URL}/api/auth/mobile/exchange`,
     USER_ME: `${API_BASE_URL}/api/user/me`,
+    USER_INIT: `${API_BASE_URL}/api/user/init`,
     USER_LOGOUT: `${API_BASE_URL}/api/user/logout`,
     UPDATE_FCM_TOKEN: `${API_BASE_URL}/api/user/fcm-token`,
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,
