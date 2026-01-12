@@ -15,8 +15,19 @@ interface Student {
   phone?: string;
 }
 
+interface EnrolledSubject {
+  subjectId: string;
+  subjectCode: string;
+  subjectName: string;
+  lecturePlace: string | null;
+  classroomLocation: string | null;
+  color: string;
+  minimumCriteria: number | null;
+}
+
 interface AuthContextType {
   student: Student | null;
+  enrolledSubjects: EnrolledSubject[];
   isAuthenticated: boolean;
   isLoadingAuth: boolean;
   handleGoogleLogin: () => Promise<void>;
@@ -50,6 +61,7 @@ export async function trackAppEvent(eventType: string, metadata?: Record<string,
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [student, setStudent] = useState<Student | null>(null);
+  const [enrolledSubjects, setEnrolledSubjects] = useState<EnrolledSubject[]>([]);
   const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
   const hasCompletedInitialCheck = useRef<boolean>(false);
   const hasTrackedAppOpen = useRef<boolean>(false);
@@ -59,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = getToken();
     if (!token) {
       setStudent(null);
+      setEnrolledSubjects([]);
       if (!hasCompletedInitialCheck.current) {
         hasCompletedInitialCheck.current = true;
         setIsLoadingAuth(false);
@@ -67,7 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.USER_ME, {
+      // Use the combined endpoint for initial load to get both user and enrolled subjects
+      const isInitialLoad = !hasCompletedInitialCheck.current;
+      const endpoint = isInitialLoad ? API_CONFIG.ENDPOINTS.USER_INIT : API_CONFIG.ENDPOINTS.USER_ME;
+      
+      const response = await authenticatedFetch(endpoint, {
         method: "GET",
       });
 
@@ -83,6 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           phone: userData.phone,
         };
         setStudent(studentData);
+        
+        // If using the init endpoint, also set enrolled subjects
+        if (isInitialLoad && userData.subjects) {
+          setEnrolledSubjects(userData.subjects);
+        }
         
         // Track app open event only once per session
         if (!hasTrackedAppOpen.current) {
@@ -100,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (response.status === 401 || response.status === 404) {
         // Not authenticated or student not found - clear token
         setStudent(null);
+        setEnrolledSubjects([]);
         removeToken();
         hasTrackedAppOpen.current = false; // Reset tracking flag on logout
       } else {
@@ -268,6 +291,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout failed:", error);
     } finally {
       setStudent(null);
+      setEnrolledSubjects([]);
       removeToken();
     }
   };
@@ -276,6 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         student,
+        enrolledSubjects,
         isAuthenticated: !!student,
         isLoadingAuth,
         handleGoogleLogin,
