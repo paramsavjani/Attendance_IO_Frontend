@@ -41,6 +41,9 @@ export const API_CONFIG = {
     CONTRIBUTORS: (type?: string) => type ? `${API_BASE_URL}/api/contributors?type=${type}` : `${API_BASE_URL}/api/contributors`,
     TRACK_EVENT: `${API_BASE_URL}/api/event/track`,
     CHECK_APP_UPDATE: `${API_BASE_URL}/api/app/check-update`,
+    EXTRA_CLASS: `${API_BASE_URL}/api/extra-class`,
+    EXTRA_CLASS_BY_DATE: (date?: string) => date ? `${API_BASE_URL}/api/extra-class?date=${date}` : `${API_BASE_URL}/api/extra-class`,
+    DELETE_EXTRA_CLASS: (id: string) => `${API_BASE_URL}/api/extra-class/${id}`,
   },
 } as const;
 
