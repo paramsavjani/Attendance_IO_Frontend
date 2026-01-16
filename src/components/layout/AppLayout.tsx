@@ -110,7 +110,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main 
         data-scroll-container
         className={cn(
-          "flex-1 pb-20 flex flex-col overflow-hidden",
+          "flex-1 pb-20 flex flex-col overflow-hidden safe-area-top",
           "transition-transform duration-300 ease-out"
         )}
         style={{ 
