@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DemoBanner } from "@/components/DemoBanner";
 
 // Swipe navigation hook
 function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
@@ -577,6 +578,7 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
+      <DemoBanner isDemo={student?.isDemo || false} />
       <div className="h-full flex flex-col overflow-hidden pb-2">
         {/* Header - matching timetable style */}
         <div className="flex items-center justify-between mb-5">
@@ -585,7 +587,7 @@ export default function Dashboard() {
               {format(now, "EEEE, MMM d")}
             </p>
             <h1 className="text-lg font-semibold">
-              Hi, {student?.name?.split(" ")[0]} {student?.name?.split(" ")[1]}
+              Hi, {student?.isDemo ? "Demo User" : (student?.name?.split(" ").slice(0, 2).join(" ") || student?.name || "")}
             </h1>
           </div>
           <div className="flex items-center gap-2">

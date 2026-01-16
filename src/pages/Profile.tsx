@@ -364,7 +364,7 @@ export default function Profile() {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold truncate leading-tight">{student?.name}</h1>
+              <h1 className="text-lg font-bold truncate leading-tight">{student?.isDemo ? "Demo User" : student?.name}</h1>
               <p className="text-sm text-muted-foreground mt-0.5">{student?.rollNumber}</p>
               {isLoadingSemester ? (
                 <div className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md bg-muted/50">
