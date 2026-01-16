@@ -47,7 +47,7 @@ export default function ErrorOldVersion() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4 safe-area-top">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-3xl shadow-2xl p-8 text-center space-y-6">
           {/* Icon */}
