@@ -94,7 +94,7 @@ function AppRoutes() {
   // Show loading while checking authentication status
   if (isLoadingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#000', color: '#fff' }}>
+      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
         <div>Loading...</div>
       </div>
     );
@@ -104,7 +104,7 @@ function AppRoutes() {
   // Only show loading if authenticated (unauthenticated users should see login)
   if (isAuthenticated && isLoadingEnrolledSubjects) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#000', color: '#fff' }}>
+      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
         <div>Loading...</div>
       </div>
     );
