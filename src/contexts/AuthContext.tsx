@@ -13,6 +13,7 @@ interface Student {
   pictureUrl?: string;
   sid?: string;
   phone?: string;
+  isDemo?: boolean;
 }
 
 interface EnrolledSubject {
@@ -92,12 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await response.json();
         const studentData: Student = {
           id: userData.id,
-          name: userData.name,
+          name: userData.isDemo ? "Demo User" : userData.name,
           email: userData.email,
           rollNumber: userData.sid,
           pictureUrl: userData.pictureUrl,
           sid: userData.sid,
           phone: userData.phone,
+          isDemo: userData.isDemo || false,
         };
         setStudent(studentData);
         
