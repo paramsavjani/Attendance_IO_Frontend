@@ -5,9 +5,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
@@ -24,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DemoBanner } from "@/components/DemoBanner";
+import { AddExtraClassDialog } from "@/components/attendance/AddExtraClassDialog";
 
 // Swipe navigation hook
 function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
@@ -70,6 +72,18 @@ export default function Dashboard() {
   const [isLoadingLab, setIsLoadingLab] = useState(true);
   const [isLoadingTutorial, setIsLoadingTutorial] = useState(true);
   
+  // Extra classes state
+  const [extraClasses, setExtraClasses] = useState<Array<{
+    id: number;
+    subjectId: string;
+    subjectCode: string;
+    subjectName: string;
+    classDate: string;
+    startTime: string | null;
+    endTime: string | null;
+  }>>([]);
+  const [isLoadingExtraClasses, setIsLoadingExtraClasses] = useState(false);
+  
   // Lab/Tutorial attendance stats
   const [labTutStats, setLabTutStats] = useState<Record<string, { 
     subjectId: string; 
@@ -86,6 +100,7 @@ export default function Dashboard() {
   const now = new Date();
   const currentHour = now.getHours();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [extraClassDialogOpen, setExtraClassDialogOpen] = useState(false);
   
   // Get last class hour from schedule
   function getLastClassHour(schedule: { time: string; subject: any; endTime?: string }[]) {
@@ -254,13 +269,12 @@ export default function Dashboard() {
     return () => clearTimeout(timeoutId);
   }, [todayAttendance, student, isLoadingLabTutStats]);
 
-  // Get schedule for any date - returns standard slots (8-12) + custom slots + lab/tutorial
+  // Get schedule for any date - returns standard slots (8-12) + custom slots + lab/tutorial + extra classes
   function getScheduleForDate(date: Date, includeLabTutorial: boolean = true) {
     const dayOfWeek = date.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) return [];
-    
-    const adjustedDay = dayOfWeek - 1;
-    const daySlots = timetable.filter((slot) => slot.day === adjustedDay);
+    const adjustedDay = dayOfWeek === 0 || dayOfWeek === 6 ? -1 : dayOfWeek - 1;
+    const daySlots = adjustedDay >= 0 ? timetable.filter((slot) => slot.day === adjustedDay) : [];
+    const dateKey = format(date, "yyyy-MM-dd");
     
     // Get standard slots (8-12) - always show all 5 slots
     const standardSlots = timeSlots.map((time, slotIndex) => {
@@ -331,8 +345,35 @@ export default function Dashboard() {
       ];
     }
 
+    // Get extra classes from backend
+    const extraClassSlots: any[] = extraClasses.map((extraClass) => {
+      const subject = enrolledSubjects.find((s) => s.id === extraClass.subjectId);
+      if (!subject) return null;
+      
+      const hasTime = extraClass.startTime && extraClass.endTime;
+      
+      return {
+        time: hasTime 
+          ? `${formatTime(extraClass.startTime!)} - ${formatTime(extraClass.endTime!)}`
+          : "Extra Class",
+        slotIndex: null,
+        startTime: extraClass.startTime || "00:00",
+        endTime: extraClass.endTime || "00:00",
+        subject: subject,
+        isCustom: true,
+        type: "lecture" as const,
+        isExtra: true,
+        noTime: !hasTime,
+        extraClassId: extraClass.id, // Store ID for deletion
+      };
+    }).filter(Boolean) as any[];
+
     // Combine and sort by start time
-    const allSlots = [...standardSlots, ...customSlots, ...labTutorialSlots].sort((a, b) => {
+    const allSlots = [...standardSlots, ...customSlots, ...labTutorialSlots, ...extraClassSlots].sort((a, b) => {
+      // Put no-time slots at the end
+      if (a.noTime && !b.noTime) return 1;
+      if (!a.noTime && b.noTime) return -1;
+      
       const aTime = a.startTime.split(':').map(Number);
       const bTime = b.startTime.split(':').map(Number);
       const aMinutes = aTime[0] * 60 + aTime[1];
@@ -416,7 +457,7 @@ export default function Dashboard() {
       });
   }, []);
 
-  const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable]);
+  const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, extraClasses]);
   const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const isSelectedToday = isToday(selectedDate);
@@ -507,11 +548,39 @@ export default function Dashboard() {
     startTime?: string;
     endTime?: string;
   } | null>(null);
+  const [showDeleteExtraClassDialog, setShowDeleteExtraClassDialog] = useState(false);
+  const [pendingDeleteExtraClassId, setPendingDeleteExtraClassId] = useState<number | null>(null);
 
   // Fetch attendance when date changes
   useEffect(() => {
     fetchAttendanceForDate(dateKey);
   }, [dateKey, fetchAttendanceForDate]);
+
+  // Fetch extra classes when date changes
+  useEffect(() => {
+    const fetchExtraClasses = async () => {
+      try {
+        setIsLoadingExtraClasses(true);
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.EXTRA_CLASS_BY_DATE(dateKey), {
+          method: "GET",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setExtraClasses(data.extraClasses || []);
+        } else {
+          setExtraClasses([]);
+        }
+      } catch (error) {
+        console.error('Error fetching extra classes:', error);
+        setExtraClasses([]);
+      } finally {
+        setIsLoadingExtraClasses(false);
+      }
+    };
+
+    fetchExtraClasses();
+  }, [dateKey]);
 
   const handleMarkAttendance = async (
     index: number, 
@@ -715,8 +784,32 @@ export default function Dashboard() {
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
                   <BookOpen className="w-6 h-6 text-muted-foreground/50" />
                 </div>
-                <p className="font-medium text-sm text-muted-foreground">No classes</p>
-                <p className="text-xs text-muted-foreground/70 mt-0.5">Enjoy your day off!</p>
+                <p className="font-medium text-sm text-muted-foreground">No scheduled classes</p>
+                <p className="text-xs text-muted-foreground/70 mt-0.5">Add an extra class if needed</p>
+                <Button
+                  onClick={() => setExtraClassDialogOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Extra Class
+                </Button>
+              </div>
+            )}
+
+            {/* Add Extra Class Button - shown when there are classes */}
+            {!isBeforeStartDate && schedule.length > 0 && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setExtraClassDialogOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add Extra Class
+                </Button>
               </div>
             )}
 
@@ -841,13 +934,22 @@ export default function Dashboard() {
 
                           {/* Time */}
                           <div className="w-9 flex-shrink-0 flex flex-col justify-center">
-                            <p className={cn(
-                              "text-xs font-semibold leading-none transition-colors",
-                              isCurrent && "text-primary"
-                            )}>{formatTime(timeStart)}</p>
-                            <p className="text-[9px] text-muted-foreground">{formatTime(timeEnd)}</p>
-                            {slot.isCustom && (
-                              <p className="text-[8px] text-warning mt-0.5">Custom</p>
+                            {slot.noTime ? (
+                              <>
+                                <p className="text-xs font-semibold leading-none text-muted-foreground">—</p>
+                                <p className="text-[9px] text-muted-foreground">Extra</p>
+                              </>
+                            ) : (
+                              <>
+                                <p className={cn(
+                                  "text-xs font-semibold leading-none transition-colors",
+                                  isCurrent && "text-primary"
+                                )}>{formatTime(timeStart)}</p>
+                                <p className="text-[9px] text-muted-foreground">{formatTime(timeEnd)}</p>
+                                {slot.isCustom && (
+                                  <p className="text-[8px] text-warning mt-0.5">Custom</p>
+                                )}
+                              </>
                             )}
                           </div>
 
@@ -888,9 +990,18 @@ export default function Dashboard() {
                                         <span className="text-[9px] font-medium text-purple-400">Tut</span>
                                       </div>
                                     )}
+                                    {/* Extra class badge */}
+                                    {slot.isExtra && (
+                                      <div className="px-1.5 py-0.5 rounded-md bg-warning/20 border border-warning/30 flex items-center gap-0.5 flex-shrink-0">
+                                        <Plus className="w-2.5 h-2.5 text-warning" />
+                                        <span className="text-[9px] font-medium text-warning">Extra</span>
+                                      </div>
+                                    )}
                                   </div>
                                   <p className="text-[10px] text-muted-foreground leading-tight">
-                                    {slot.isCustom && (slot.type === "lab" || slot.type === "tutorial")
+                                    {slot.noTime 
+                                      ? (slot.location || slot.subject.code)
+                                      : slot.isCustom && (slot.type === "lab" || slot.type === "tutorial")
                                       ? (slot.location || slot.subject.code)
                                       : (slot.subject.classroomLocation || slot.subject.lecturePlace || slot.subject.code)}
                                   </p>
@@ -926,6 +1037,7 @@ export default function Dashboard() {
 
                               {/* Action buttons */}
                               <div className="flex items-center gap-1">
+                                {/* Present button - show for all classes including extra */}
                                 <button
                                   onClick={() => handleMarkAttendance(
                                     index, 
@@ -950,6 +1062,7 @@ export default function Dashboard() {
                                   )}
                                   Present
                                 </button>
+                                {/* Absent button - show for all classes including extra */}
                                 <button
                                   onClick={() => handleMarkAttendance(
                                     index, 
@@ -974,30 +1087,58 @@ export default function Dashboard() {
                                   )}
                                   Absent
                                 </button>
-                                <button
-                                  onClick={() => handleMarkAttendance(
-                                    index, 
-                                    slot.subject!.id, 
-                                    "cancelled",
-                                    slot.slotIndex,
-                                    slot.startTime,
-                                    slot.endTime
-                                  )}
-                                  disabled={isSaving}
-                                  className={cn(
-                                    "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
-                                    status === 'cancelled'
-                                      ? "bg-muted-foreground text-white"
-                                      : "bg-secondary"
-                                  )}
-                                  title="Cancelled"
-                                >
-                                  {isSaving && savingState?.action === 'cancelled' ? (
-                                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                  ) : (
-                                    <Ban className="w-2.5 h-2.5" />
-                                  )}
-                                </button>
+                                {/* Cancelled button - only for regular classes */}
+                                {!slot.isExtra && (
+                                  <button
+                                    onClick={() => handleMarkAttendance(
+                                      index, 
+                                      slot.subject!.id, 
+                                      "cancelled",
+                                      slot.slotIndex,
+                                      slot.startTime,
+                                      slot.endTime
+                                    )}
+                                    disabled={isSaving}
+                                    className={cn(
+                                      "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
+                                      status === 'cancelled'
+                                        ? "bg-muted-foreground text-white"
+                                        : "bg-secondary"
+                                    )}
+                                    title="Cancelled"
+                                  >
+                                    {isSaving && savingState?.action === 'cancelled' ? (
+                                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                    ) : (
+                                      <Ban className="w-2.5 h-2.5" />
+                                    )}
+                                  </button>
+                                )}
+                                {/* Delete button - only for extra classes */}
+                                {slot.isExtra && (
+                                  <button
+                                    onClick={() => {
+                                      if (slot.extraClassId) {
+                                        // Check if attendance exists for this extra class
+                                        const hasAttendance = status !== null && status !== undefined;
+                                        
+                                        if (hasAttendance) {
+                                          // Show toast message asking to clear attendance first
+                                          toast.error("Please clear the attendance first, then you can delete the extra class");
+                                          return;
+                                        }
+                                        
+                                        // If no attendance, proceed with deletion
+                                        setPendingDeleteExtraClassId(slot.extraClassId);
+                                        setShowDeleteExtraClassDialog(true);
+                                      }
+                                    }}
+                                    className="h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20"
+                                    title={status ? "Clear attendance first to delete" : "Delete extra class"}
+                                  >
+                                    <Trash2 className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1148,6 +1289,118 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Delete Extra Class Confirmation Dialog */}
+      <AlertDialog open={showDeleteExtraClassDialog} onOpenChange={setShowDeleteExtraClassDialog}>
+        <AlertDialogContent className="max-w-[90vw] md:max-w-md rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base">Delete Extra Class?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              This will delete the extra class and any associated attendance record. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel 
+              onClick={() => {
+                setPendingDeleteExtraClassId(null);
+                setShowDeleteExtraClassDialog(false);
+              }} 
+              className="h-9 text-sm"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                if (pendingDeleteExtraClassId) {
+                  try {
+                    const response = await authenticatedFetch(
+                      API_CONFIG.ENDPOINTS.DELETE_EXTRA_CLASS(pendingDeleteExtraClassId.toString()),
+                      { method: "DELETE" }
+                    );
+                    if (response.ok) {
+                      const result = await response.json().catch(() => ({}));
+                      toast.success(result.message || "Extra class deleted");
+                      // Refresh extra classes
+                      const extraClassesResponse = await authenticatedFetch(
+                        API_CONFIG.ENDPOINTS.EXTRA_CLASS_BY_DATE(dateKey),
+                        { method: "GET" }
+                      );
+                      if (extraClassesResponse.ok) {
+                        const data = await extraClassesResponse.json();
+                        setExtraClasses(data.extraClasses || []);
+                      }
+                      // Refresh attendance data
+                      await fetchAttendanceForDate(dateKey);
+                    } else {
+                      const errorData = await response.json().catch(() => ({ error: `Failed to delete extra class (${response.status})` }));
+                      console.error('Delete error:', errorData);
+                      // Show specific message if attendance exists
+                      if (response.status === 400 && errorData.error?.includes("clear the attendance")) {
+                        toast.error("Please clear the attendance first, then you can delete the extra class");
+                      } else {
+                        toast.error(errorData.error || `Failed to delete extra class (${response.status})`);
+                      }
+                    }
+                  } catch (error: any) {
+                    console.error('Error deleting extra class:', error);
+                    toast.error(error.message || "Failed to delete extra class");
+                  }
+                }
+                setPendingDeleteExtraClassId(null);
+                setShowDeleteExtraClassDialog(false);
+              }} 
+              className="h-9 text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add Extra Class Dialog */}
+      <AddExtraClassDialog
+        open={extraClassDialogOpen}
+        onOpenChange={setExtraClassDialogOpen}
+        enrolledSubjects={enrolledSubjects}
+        date={dateKey}
+        onAdd={async (subjectId, startTime, endTime) => {
+          try {
+            const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.EXTRA_CLASS, {
+              method: "POST",
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                subjectId,
+                classDate: dateKey,
+                startTime: startTime || null,
+                endTime: endTime || null,
+              }),
+            });
+
+            if (response.ok) {
+              toast.success("Extra class added successfully");
+              // Refresh extra classes
+              const extraClassesResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.EXTRA_CLASS_BY_DATE(dateKey), {
+                method: "GET",
+              });
+              if (extraClassesResponse.ok) {
+                const data = await extraClassesResponse.json();
+                setExtraClasses(data.extraClasses || []);
+              }
+              // Also refresh attendance data to show the automatically marked attendance
+              await fetchAttendanceForDate(dateKey);
+            } else {
+              const error = await response.json().catch(() => ({ error: 'Failed to add extra class' }));
+              toast.error(error.error || 'Failed to add extra class');
+            }
+          } catch (error: any) {
+            console.error('Error adding extra class:', error);
+            toast.error('Failed to add extra class');
+          }
+        }}
+      />
     </AppLayout>
   );
 }
