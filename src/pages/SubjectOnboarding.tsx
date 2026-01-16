@@ -69,7 +69,7 @@ export default function SubjectOnboarding() {
         {student && (
           <div className="text-center mb-3 animate-fade-in flex-shrink-0">
             <p className="text-xs text-muted-foreground">
-              Welcome, <span className="font-medium text-foreground">{student.name}</span>
+              Welcome, <span className="font-medium text-foreground">{student.isDemo ? "Demo User" : student.name}</span>
             </p>
           </div>
         )}
