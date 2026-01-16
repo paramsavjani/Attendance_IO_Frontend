@@ -12,6 +12,10 @@
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
 /* Active scale for touch */
 .active\:scale-98:active {
   transform: scale(0.98);
