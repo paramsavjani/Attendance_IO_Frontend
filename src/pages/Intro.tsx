@@ -192,7 +192,7 @@ export default function Intro() {
   const isFirstSlide = currentSlide === 0;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-2">
+    <div className="min-h-screen bg-background flex items-center justify-center p-2 safe-area-top">
       {/* Background blur effect */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
