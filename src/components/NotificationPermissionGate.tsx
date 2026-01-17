@@ -155,7 +155,7 @@ export function NotificationPermissionGate({ children }: { children: React.React
   // Show loading state while checking
   if (isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#000', color: '#fff' }}>
+      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
         <div>Loading...</div>
       </div>
     );
