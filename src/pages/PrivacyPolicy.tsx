@@ -3,7 +3,7 @@ import { Capacitor } from "@capacitor/core";
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 safe-area-top">
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
