@@ -25,6 +25,7 @@ interface AttendanceContextType {
   subjectStatsToday: Record<string, SubjectStats>; // Always shows today's total attendance
   subjectMinAttendance: Record<string, number>;
   todayAttendance: Record<string, 'present' | 'absent' | 'cancelled' | null>;
+  attendanceIds: Record<string, number | null>; // Map of slot keys to attendance IDs
   enrolledSubjects: Subject[];
   timetable: TimetableSlot[];
   hasCompletedOnboarding: boolean;
@@ -45,7 +46,8 @@ interface AttendanceContextType {
     status: 'present' | 'absent' | 'cancelled',
     timeSlot?: number | null,
     startTime?: string,
-    endTime?: string
+    endTime?: string,
+    isExtraClass?: boolean
   ) => Promise<void>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
@@ -560,7 +562,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     status: 'present' | 'absent' | 'cancelled',
     timeSlot?: number | null,
     startTime?: string,
-    endTime?: string
+    endTime?: string,
+    isExtraClass?: boolean
   ) => {
     // Frontend guard: only allow "cancelled" for future dates, block "present" and "absent"
     try {
@@ -680,6 +683,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         requestBody.endTime = endTime;
       }
       
+      // Add isExtraClass flag if this is an extra class
+      if (isExtraClass) {
+        requestBody.isExtraClass = true;
+      }
+      
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
         method: 'POST',
         headers: {
@@ -742,6 +750,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         subjectStatsToday,
         subjectMinAttendance,
         todayAttendance,
+        attendanceIds,
         enrolledSubjects,
         timetable,
         hasCompletedOnboarding,
