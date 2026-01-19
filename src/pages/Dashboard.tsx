@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,6 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DemoBanner } from "@/components/DemoBanner";
 
 // Swipe navigation hook
@@ -62,7 +69,7 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState } = useAttendance();
+  const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState, attendanceIds } = useAttendance();
   
   // Lab/Tutorial timetable states
   const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
@@ -86,6 +93,34 @@ export default function Dashboard() {
   const now = new Date();
   const currentHour = now.getHours();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  
+  // Extra classes state - stores subject IDs for extra classes added by user
+  // Format: { [dateKey]: string[] } where string[] is array of subject IDs
+  // Persist to localStorage
+  const [extraClasses, setExtraClasses] = useState<Record<string, string[]>>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('extraClasses');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Error parsing extraClasses from localStorage:', e);
+        }
+      }
+    }
+    return {};
+  });
+  const [addClassDialogOpen, setAddClassDialogOpen] = useState(false);
+  
+  // Track which extra class is being deleted (for loading state)
+  const [deletingExtraClass, setDeletingExtraClass] = useState<{ subjectId: string; index: number } | null>(null);
+  
+  // Persist extra classes to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('extraClasses', JSON.stringify(extraClasses));
+    }
+  }, [extraClasses]);
   
   // Get last class hour from schedule
   function getLastClassHour(schedule: { time: string; subject: any; endTime?: string }[]) {
@@ -419,6 +454,33 @@ export default function Dashboard() {
   const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable]);
   const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
+  
+  // Get extra classes for the selected date
+  const extraClassesForDate = extraClasses[dateKey] || [];
+  
+  // Create extra class slots from extra classes
+  const extraClassSlots = useMemo(() => {
+    return extraClassesForDate.map((subjectId) => {
+      const subject = enrolledSubjects.find((s) => s.id === subjectId);
+      if (!subject) return null;
+      
+      return {
+        time: "", // No time for extra classes
+        slotIndex: null,
+        startTime: "",
+        endTime: "",
+        subject: subject,
+        isCustom: true,
+        isExtraClass: true, // Flag to identify extra classes
+        type: "lecture" as const,
+      };
+    }).filter(Boolean) as any[];
+  }, [extraClassesForDate, enrolledSubjects]);
+  
+  // Combine regular schedule with extra classes
+  const fullSchedule = useMemo(() => {
+    return [...schedule, ...extraClassSlots];
+  }, [schedule, extraClassSlots]);
   const isSelectedToday = isToday(selectedDate);
   const isSelectedTomorrow = isTomorrow(selectedDate);
   const isFutureDate = isBefore(startOfDay(now), startOfDay(selectedDate));
@@ -468,10 +530,16 @@ export default function Dashboard() {
     subjectId: string,
     slotIndex?: number | null,
     startTime?: string,
-    endTime?: string
+    endTime?: string,
+    isExtraClass?: boolean
   ) => {
     if (!savingState || savingState.subjectId !== subjectId) {
       return false;
+    }
+    
+    // For extra classes (no time info), check if savingState also has no time info
+    if (isExtraClass) {
+      return !savingState.timeSlot && !savingState.startTime && !savingState.endTime;
     }
     
     // Check if time slot information matches
@@ -519,13 +587,14 @@ export default function Dashboard() {
     status: 'present' | 'absent' | 'cancelled',
     timeSlot?: number | null,
     startTime?: string,
-    endTime?: string
+    endTime?: string,
+    isExtraClass?: boolean
   ) => {
     // For future dates: only allow "cancelled", block "present" and "absent"
     if (isFutureDate) {
       if (status === 'cancelled') {
         // Allow marking cancelled for future dates
-        await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime);
+        await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass);
       } else {
         // Block present/absent for future dates
         toast.error("You can only mark lectures as 'cancelled' for future dates");
@@ -541,7 +610,7 @@ export default function Dashboard() {
     }
     
     // For today, mark directly
-    await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime);
+    await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass);
   };
 
   const confirmPastDateAttendance = async () => {
@@ -552,7 +621,8 @@ export default function Dashboard() {
         pendingAttendance.status,
         pendingAttendance.timeSlot,
         pendingAttendance.startTime,
-        pendingAttendance.endTime
+        pendingAttendance.endTime,
+        false // Past date attendance is not for extra classes
       );
       setPendingAttendance(null);
     }
@@ -565,6 +635,82 @@ export default function Dashboard() {
     if (date) {
       setSelectedDate(date);
       setCalendarOpen(false);
+    }
+  };
+  
+  // Handle adding an extra class
+  const handleAddClass = (subjectId: string) => {
+    setExtraClasses((prev) => {
+      const current = prev[dateKey] || [];
+      // Always add, even if same subject (allows multiple extra classes for same subject)
+      return { ...prev, [dateKey]: [...current, subjectId] };
+    });
+    setAddClassDialogOpen(false);
+    toast.success("Class added successfully");
+  };
+  
+  // Handle deleting an extra class
+  const handleDeleteExtraClass = async (subjectId: string, extraClassIndex: number) => {
+    // Set loading state for this specific delete button
+    setDeletingExtraClass({ subjectId, index: extraClassIndex });
+    
+    try {
+      // For extra classes, we use the date-subject key (no time info)
+      // Note: If there are multiple extra classes of the same subject, they share the same slotKey
+      // So we'll delete the attendance record if it exists, and always remove from the list
+      const slotKey = `${dateKey}-${subjectId}`;
+      const attendanceId = attendanceIds[slotKey];
+      
+      // If attendance exists, delete it from backend
+      if (attendanceId) {
+        try {
+          const deleteResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(attendanceId.toString()), {
+            method: 'DELETE',
+          });
+
+          if (!deleteResponse.ok) {
+            throw new Error('Failed to delete attendance');
+          }
+          
+          // Remove from attendance state
+          setTodayAttendance(prev => {
+            const updated = { ...prev };
+            delete updated[slotKey];
+            return updated;
+          });
+          
+          setAttendanceIds(prev => {
+            const updated = { ...prev };
+            delete updated[slotKey];
+            return updated;
+          });
+        } catch (error: any) {
+          console.error('Error deleting attendance:', error);
+          toast.error('Failed to delete attendance record');
+          // Continue to remove from UI even if backend deletion fails
+        }
+      }
+      
+      // Remove from extra classes list by index
+      setExtraClasses((prev) => {
+        const current = prev[dateKey] || [];
+        const updated = current.filter((_, idx) => idx !== extraClassIndex);
+        
+        if (updated.length === 0) {
+          const newState = { ...prev };
+          delete newState[dateKey];
+          return newState;
+        }
+        return { ...prev, [dateKey]: updated };
+      });
+      
+      toast.success("Extra class removed");
+      
+      // Refresh attendance data to update stats
+      await fetchAttendanceForDate(dateKey);
+    } finally {
+      // Clear loading state
+      setDeletingExtraClass(null);
     }
   };
 
@@ -710,7 +856,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {!isBeforeStartDate && schedule.length === 0 && (
+            {!isBeforeStartDate && fullSchedule.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
                   <BookOpen className="w-6 h-6 text-muted-foreground/50" />
@@ -721,7 +867,7 @@ export default function Dashboard() {
             )}
 
             {/* Timeline Schedule - matching timetable structure */}
-            {!isBeforeStartDate && schedule.length > 0 && (
+            {!isBeforeStartDate && fullSchedule.length > 0 && (
               <div className="relative">
                 {/* Vertical line */}
                 <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
@@ -729,7 +875,7 @@ export default function Dashboard() {
                 <div className="space-y-0">
                   {isLoadingAttendance ? (
                     // Loading skeleton - compact
-                    schedule.map((slot, index) => (
+                    fullSchedule.map((slot, index) => (
                       <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
                         <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                           <div className="flex-1" />
@@ -749,13 +895,16 @@ export default function Dashboard() {
                       </div>
                     ))
                   ) : (
-                    schedule.map((slot, index) => {
+                    fullSchedule.map((slot, index) => {
                       // Handle both standard and custom time formats
-                      const timeStart = slot.startTime || slot.time.split(" - ")[0];
-                      const timeEnd = slot.endTime || slot.time.split(" - ")[1];
-                      // Parse hour from 24-hour format
-                      const startHour = parseInt(timeStart.split(":")[0]);
-                      const isCurrent = isSelectedToday && startHour === currentHour;
+                      const timeStart = slot.startTime || (slot.time ? slot.time.split(" - ")[0] : "");
+                      const timeEnd = slot.endTime || (slot.time ? slot.time.split(" - ")[1] : "");
+                      // Parse hour from 24-hour format (only for slots with time)
+                      const startHour = timeStart ? parseInt(timeStart.split(":")[0]) : null;
+                      const isCurrent = isSelectedToday && startHour !== null && startHour === currentHour;
+                      const isExtraClass = (slot as any).isExtraClass === true;
+                      // Calculate the index in the extra classes array (for deletion)
+                      const extraClassIndex = isExtraClass ? index - schedule.length : -1;
                       
                       if (!slot.subject) {
                         // Empty slot - same height as lecture slots
@@ -778,13 +927,16 @@ export default function Dashboard() {
                       }
 
                       // Get attendance status with fallback to old format
-                      const status = getAttendanceStatus(
-                        slot.subject.id,
-                        slot.slotIndex,
-                        slot.startTime,
-                        slot.endTime,
-                        slot.isCustom
-                      );
+                      // For extra classes, use the old format (no time info)
+                      const status = isExtraClass 
+                        ? (todayAttendance[`${dateKey}-${slot.subject.id}`] || null)
+                        : getAttendanceStatus(
+                            slot.subject.id,
+                            slot.slotIndex,
+                            slot.startTime,
+                            slot.endTime,
+                            slot.isCustom
+                          );
                       // For lab/tutorial slots, use lab/tut specific stats; otherwise use overall stats
                       let percent = 0;
                       let needsAttention = false;
@@ -812,7 +964,8 @@ export default function Dashboard() {
                         slot.subject.id,
                         slot.slotIndex,
                         slot.startTime,
-                        slot.endTime
+                        slot.endTime,
+                        isExtraClass
                       );
 
                       return (
@@ -841,13 +994,19 @@ export default function Dashboard() {
 
                           {/* Time */}
                           <div className="w-9 flex-shrink-0 flex flex-col justify-center">
-                            <p className={cn(
-                              "text-xs font-semibold leading-none transition-colors",
-                              isCurrent && "text-primary"
-                            )}>{formatTime(timeStart)}</p>
-                            <p className="text-[9px] text-muted-foreground">{formatTime(timeEnd)}</p>
-                            {slot.isCustom && (
-                              <p className="text-[8px] text-warning mt-0.5">Custom</p>
+                            {isExtraClass ? (
+                              <p className="text-[9px] text-muted-foreground/70 italic">Extra</p>
+                            ) : (
+                              <>
+                                <p className={cn(
+                                  "text-xs font-semibold leading-none transition-colors",
+                                  isCurrent && "text-primary"
+                                )}>{formatTime(timeStart)}</p>
+                                <p className="text-[9px] text-muted-foreground">{formatTime(timeEnd)}</p>
+                                {slot.isCustom && (
+                                  <p className="text-[8px] text-warning mt-0.5">Custom</p>
+                                )}
+                              </>
                             )}
                           </div>
 
@@ -931,9 +1090,10 @@ export default function Dashboard() {
                                     index, 
                                     slot.subject!.id, 
                                     "present",
-                                    slot.slotIndex,
-                                    slot.startTime,
-                                    slot.endTime
+                                    isExtraClass ? null : slot.slotIndex,
+                                    isExtraClass ? undefined : slot.startTime,
+                                    isExtraClass ? undefined : slot.endTime,
+                                    isExtraClass
                                   )}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
@@ -955,9 +1115,10 @@ export default function Dashboard() {
                                     index, 
                                     slot.subject!.id, 
                                     "absent",
-                                    slot.slotIndex,
-                                    slot.startTime,
-                                    slot.endTime
+                                    isExtraClass ? null : slot.slotIndex,
+                                    isExtraClass ? undefined : slot.startTime,
+                                    isExtraClass ? undefined : slot.endTime,
+                                    isExtraClass
                                   )}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
@@ -974,30 +1135,50 @@ export default function Dashboard() {
                                   )}
                                   Absent
                                 </button>
-                                <button
-                                  onClick={() => handleMarkAttendance(
-                                    index, 
-                                    slot.subject!.id, 
-                                    "cancelled",
-                                    slot.slotIndex,
-                                    slot.startTime,
-                                    slot.endTime
-                                  )}
-                                  disabled={isSaving}
-                                  className={cn(
-                                    "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
-                                    status === 'cancelled'
-                                      ? "bg-muted-foreground text-white"
-                                      : "bg-secondary"
-                                  )}
-                                  title="Cancelled"
-                                >
-                                  {isSaving && savingState?.action === 'cancelled' ? (
-                                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                  ) : (
-                                    <Ban className="w-2.5 h-2.5" />
-                                  )}
-                                </button>
+                                {isExtraClass ? (
+                                  <button
+                                    onClick={() => handleDeleteExtraClass(slot.subject!.id, extraClassIndex)}
+                                    disabled={deletingExtraClass?.subjectId === slot.subject!.id && deletingExtraClass?.index === extraClassIndex}
+                                    className={cn(
+                                      "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
+                                      "bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20",
+                                      deletingExtraClass?.subjectId === slot.subject!.id && deletingExtraClass?.index === extraClassIndex && "opacity-50"
+                                    )}
+                                    title="Delete Extra Class"
+                                  >
+                                    {deletingExtraClass?.subjectId === slot.subject!.id && deletingExtraClass?.index === extraClassIndex ? (
+                                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-2.5 h-2.5" />
+                                    )}
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleMarkAttendance(
+                                      index, 
+                                      slot.subject!.id, 
+                                      "cancelled",
+                                      slot.slotIndex,
+                                      slot.startTime,
+                                      slot.endTime,
+                                      false
+                                    )}
+                                    disabled={isSaving}
+                                    className={cn(
+                                      "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
+                                      status === 'cancelled'
+                                        ? "bg-muted-foreground text-white"
+                                        : "bg-secondary"
+                                    )}
+                                    title="Cancelled"
+                                  >
+                                    {isSaving && savingState?.action === 'cancelled' ? (
+                                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                    ) : (
+                                      <Ban className="w-2.5 h-2.5" />
+                                    )}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1006,6 +1187,21 @@ export default function Dashboard() {
                     })
                   )}
                 </div>
+              </div>
+            )}
+            
+            {/* Add a Class Button */}
+            {!isBeforeStartDate && (
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setAddClassDialogOpen(true)}
+                  className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl bg-neutral-900/80 hover:bg-neutral-900 border border-neutral-700/50 hover:border-neutral-600 text-white font-medium text-sm transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-black/20 active:scale-[0.98] group backdrop-blur-sm"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-neutral-800/50 group-hover:bg-neutral-800 flex items-center justify-center border border-neutral-700/50 group-hover:border-neutral-600 transition-all duration-200">
+                    <Plus className="w-3.5 h-3.5 text-neutral-300 group-hover:text-white group-hover:rotate-90 transition-all duration-200" />
+                  </div>
+                  <span className="text-neutral-200 group-hover:text-white transition-colors">Add a Class</span>
+                </button>
               </div>
             )}
           </TabsContent>
@@ -1148,6 +1344,56 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Add a Class Dialog */}
+      <Dialog open={addClassDialogOpen} onOpenChange={setAddClassDialogOpen}>
+        <DialogContent className="max-w-[90vw] md:max-w-md rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base">Add a Class</DialogTitle>
+            <DialogDescription className="text-sm">
+              Select a subject to add an extra class for {format(selectedDate, "MMM d, yyyy")}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto space-y-2 py-4">
+            {enrolledSubjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No subjects enrolled. Please enroll in subjects first.
+              </p>
+            ) : (() => {
+              // Filter out subjects that already have an extra class added for this date
+              const availableSubjects = enrolledSubjects.filter(
+                subject => !extraClassesForDate.includes(subject.id)
+              );
+              
+              if (availableSubjects.length === 0) {
+                return (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    All subjects already have extra classes added for this date.
+                  </p>
+                );
+              }
+              
+              return availableSubjects.map((subject) => (
+                <button
+                  key={subject.id}
+                  onClick={() => handleAddClass(subject.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50 hover:bg-secondary border border-border transition-all text-left"
+                >
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: `hsl(${subject.color})` }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{subject.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{subject.code}</p>
+                  </div>
+                  <Plus className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </button>
+              ));
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
