@@ -41,7 +41,7 @@ export default function Attendance() {
       
       // Find subject's min required
       const subject = enrolledSubjects.find(s => s.id === stats.subjectId);
-      const minRequired = subjectMinAttendance[stats.subjectId] || subject?.minimumCriteria || 75;
+      const minRequired = subjectMinAttendance[stats.subjectId] ?? subject?.minimumCriteria ?? 75;
       
       if (percentage < minRequired) {
         subjectsAtRisk++;
@@ -136,7 +136,7 @@ export default function Attendance() {
                 const stats = subjectStatsToday[subject.id];
                 if (!stats) return null;
 
-                const minRequired = subjectMinAttendance[subject.id] || 75;
+                const minRequired = subjectMinAttendance[subject.id] ?? subject?.minimumCriteria ?? 75;
 
                 return (
                   <SubjectCard
