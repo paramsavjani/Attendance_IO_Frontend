@@ -7,7 +7,6 @@ import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
 import { AndroidWebViewBlock } from "@/components/AndroidWebViewBlock";
 import { UpdateDialog } from "@/components/UpdateDialog";
 import { NotificationPermissionGate } from "@/components/NotificationPermissionGate";
@@ -87,9 +86,6 @@ function AppRoutes() {
   
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";
-  
-  // Show feature announcement only when authenticated and onboarding is complete, and not on error page
-  const showFeatureAnnouncement = isAuthenticated && hasCompletedOnboarding && !isErrorPage;
 
   // Show loading while checking authentication status
   if (isLoadingAuth) {
@@ -114,7 +110,6 @@ function AppRoutes() {
     <>
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
-      {showFeatureAnnouncement && <FeatureAnnouncement onClose={() => {}} />}
       <Routes>
         <Route
           path="/"
