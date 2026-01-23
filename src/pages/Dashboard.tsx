@@ -512,7 +512,8 @@ export default function Dashboard() {
     const stats = subjectStatsToday[subjectId];
     const subject = enrolledSubjects.find(s => s.id === subjectId);
     // Use user's custom minimum, then subject's minimumCriteria, then fallback to 75
-    const minRequired = subjectMinAttendance[subjectId] || subject?.minimumCriteria || 75;
+    // Use ?? instead of || to respect 0 as a valid value
+    const minRequired = subjectMinAttendance[subjectId] ?? subject?.minimumCriteria ?? 75;
     
     // Always calculate percentage, even if stats don't exist or total is 0
     let percent = 0;
@@ -945,7 +946,7 @@ export default function Dashboard() {
                         const labTutStat = labTutStats[slot.subject.id];
                         if (labTutStat) {
                           percent = labTutStat.percentage || 0;
-                          const minRequired = subjectMinAttendance[slot.subject.id] || slot.subject.minimumCriteria || 75;
+                          const minRequired = subjectMinAttendance[slot.subject.id] ?? slot.subject.minimumCriteria ?? 75;
                           needsAttention = percent < minRequired;
                         } else {
                           // Fallback to overall stats if lab/tut stats not available
@@ -1254,7 +1255,7 @@ export default function Dashboard() {
                     bunkableClasses: 0
                   };
                   
-                  const minRequired = subjectMinAttendance[subject.id] || subject.minimumCriteria || 75;
+                  const minRequired = subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75;
 
                   return (
                     <SubjectCard
@@ -1298,7 +1299,7 @@ export default function Dashboard() {
                   absent: 0, 
                   total: 0 
                 };
-                const minRequired = subjectMinAttendance[subject.id] || subject.minimumCriteria || 75;
+                const minRequired = subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75;
 
                 return (
                   <SubjectCard
