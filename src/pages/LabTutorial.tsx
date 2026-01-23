@@ -358,7 +358,7 @@ export default function LabTutorial() {
                           present={0}
                           absent={0}
                           total={0}
-                          minRequired={slot.subject.minimumCriteria || 75}
+                          minRequired={slot.subject.minimumCriteria ?? 75}
                           hideBunkableInfo={true}
                         />
                         {/* Badge to show Lab or Tutorial */}
