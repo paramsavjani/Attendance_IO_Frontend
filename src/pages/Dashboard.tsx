@@ -672,19 +672,6 @@ export default function Dashboard() {
           if (!deleteResponse.ok) {
             throw new Error('Failed to delete attendance');
           }
-          
-          // Remove from attendance state
-          setTodayAttendance(prev => {
-            const updated = { ...prev };
-            delete updated[slotKey];
-            return updated;
-          });
-          
-          setAttendanceIds(prev => {
-            const updated = { ...prev };
-            delete updated[slotKey];
-            return updated;
-          });
         } catch (error: any) {
           console.error('Error deleting attendance:', error);
           toast.error('Failed to delete attendance record');
