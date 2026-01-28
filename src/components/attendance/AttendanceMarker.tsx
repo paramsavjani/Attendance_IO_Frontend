@@ -58,14 +58,35 @@ export function AttendanceMarker({
     <div
       className={cn(
         "relative flex flex-col rounded-2xl overflow-hidden",
-        "bg-neutral-900/50 border border-white/5 backdrop-blur-sm",
+        "bg-neutral-900/50 border backdrop-blur-sm",
         "transition-all duration-300 group",
-        needsAttention ? "ring-1 ring-warning/40" : 
-        (isCurrent ? "ring-1 ring-primary/40" : "hover:bg-white/[0.02]")
+        needsAttention 
+          ? "border-transparent" 
+          : "border-white/5",
+        isCurrent && !needsAttention && "ring-1 ring-primary/40",
+        !isCurrent && !needsAttention && "hover:bg-white/[0.02]"
       )}
     >
+      {/* Animated gradient border for needs attention */}
+      {needsAttention && (
+        <>
+          {/* Outer glow effect */}
+          <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-red-500 via-orange-500 to-red-500 opacity-75 blur-[2px] animate-pulse" />
+          {/* Animated gradient border */}
+          <div 
+            className="absolute -inset-[1px] rounded-2xl"
+            style={{
+              background: 'linear-gradient(90deg, #ef4444, #f97316, #ef4444, #f97316)',
+              backgroundSize: '300% 100%',
+              animation: 'gradient-shift 2s linear infinite',
+            }}
+          />
+          {/* Inner background */}
+          <div className="absolute inset-[1px] rounded-[14px] bg-neutral-900/95" />
+        </>
+      )}
 
-      {/* Top Row: Color Dot + Subject Name + LIVE + Percentage (same row) */}
+      {/* Top Row: Color Dot + Subject Name + LIVE + Attention Badge + Percentage */}
       <div className="flex items-start justify-between px-3 py-2 pb-0.5">
         <div className="flex items-start gap-3 min-w-0">
           {/* Color Dot */}
@@ -92,8 +113,16 @@ export function AttendanceMarker({
           </div>
         </div>
 
-        {/* Right Side: LIVE + Percentage (same row) */}
+        {/* Right Side: Attention Badge + LIVE + Percentage */}
         <div className="flex items-center gap-2 pl-3 pt-1 flex-shrink-0">
+          {/* Attention Badge */}
+          {needsAttention && (
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold tracking-wider whitespace-nowrap animate-pulse">
+              <AlertTriangle className="w-3 h-3" />
+              LOW
+            </span>
+          )}
+          
           {/* LIVE Badge - Inline with percentage */}
           {isCurrent && (
             <span className="flex items-center mr-2 gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold tracking-wider whitespace-nowrap">
