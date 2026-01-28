@@ -229,3 +229,32 @@
 .animate-live-pulse {
   animation: live-pulse 2s ease-in-out infinite;
 }
+
+/* Gradient shift animation for attention border */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Attention pulse for needs attention cards */
+@keyframes attention-pulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.animate-attention-pulse {
+  animation: attention-pulse 1.5s ease-in-out infinite;
+}

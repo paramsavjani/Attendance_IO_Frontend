@@ -92,18 +92,6 @@ export function UpdateDialog({
             e.preventDefault();
           }
         }}
-        onPointerDownOutside={(e) => {
-          // Prevent outside click from closing critical updates
-          if (isCritical) {
-            e.preventDefault();
-          }
-        }}
-        onInteractOutside={(e) => {
-          // Prevent any outside interaction from closing critical updates
-          if (isCritical) {
-            e.preventDefault();
-          }
-        }}
       >
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-semibold">
