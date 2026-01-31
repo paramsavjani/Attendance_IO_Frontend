@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { Slider } from "@/components/ui/slider";
 import { ContributorsSection } from "@/components/contributors/ContributorsSection";
-import { AppAnalyticsModal } from "@/components/AppAnalyticsModal";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +51,6 @@ export default function Profile() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [showBaselineDialog, setShowBaselineDialog] = useState(false);
   const [selectedBaselineSubject, setSelectedBaselineSubject] = useState<Subject | null>(null);
-  const [showAppAnalyticsModal, setShowAppAnalyticsModal] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -519,7 +517,7 @@ export default function Profile() {
 
             {/* App Analytics */}
             <button
-              onClick={() => setShowAppAnalyticsModal(true)}
+              onClick={() => navigate("/app-analytics")}
               className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
             >
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -548,12 +546,6 @@ export default function Profile() {
             </button>
           </div>
         </div>
-
-        {/* App Analytics Modal */}
-        <AppAnalyticsModal
-          open={showAppAnalyticsModal}
-          onOpenChange={setShowAppAnalyticsModal}
-        />
 
         {/* Sleep Duration Modal */}
         <Dialog open={isEditingSleepDuration} onOpenChange={setIsEditingSleepDuration}>
