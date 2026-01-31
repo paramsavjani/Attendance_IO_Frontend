@@ -36,6 +36,7 @@ export const API_CONFIG = {
     CLASSES_END_DATE: `${API_BASE_URL}/api/config/classes-end-date`,
     SUBMIT_FEEDBACK: `${API_BASE_URL}/api/feedback`,
     ANALYTICS: `${API_BASE_URL}/api/analytics`,
+    ANALYTICS_APP: `${API_BASE_URL}/api/analytics/app`,
     ANALYTICS_SEMESTER: (semesterId: string) => `${API_BASE_URL}/api/analytics/semester/${semesterId}`,
     ANALYTICS_SEMESTERS: `${API_BASE_URL}/api/analytics/semesters`,
     CONTRIBUTORS: (type?: string) => type ? `${API_BASE_URL}/api/contributors?type=${type}` : `${API_BASE_URL}/api/contributors`,
