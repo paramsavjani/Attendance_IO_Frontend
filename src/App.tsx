@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Timetable from "./pages/Timetable";
 import LabTutorial from "./pages/LabTutorial";
 import Profile from "./pages/Profile";
+import AppAnalyticsPage from "./pages/AppAnalyticsPage";
 import Search from "./pages/Search";
 import Analytics from "./pages/Analytics";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
@@ -176,6 +177,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app-analytics"
+        element={
+          <ProtectedRoute>
+            <AppAnalyticsPage />
           </ProtectedRoute>
         }
       />
