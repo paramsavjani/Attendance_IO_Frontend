@@ -229,3 +229,68 @@
 .animate-live-pulse {
   animation: live-pulse 2s ease-in-out infinite;
 }
+
+/* Custom dark scrollbar (global) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.5);
+  border-radius: 10px;
+  border: 1px solid hsl(var(--muted));
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.7);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.5) hsl(var(--muted));
+}
+
+/* App Analytics modal – black theme scrollbars (all scrollable areas) */
+.app-analytics-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-analytics-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.6);
+  border-radius: 10px;
+  margin: 6px 2px;
+}
+
+.app-analytics-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.45);
+  border-radius: 10px;
+  border: 2px solid hsl(var(--card));
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.app-analytics-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.65);
+}
+
+.app-analytics-scrollbar::-webkit-scrollbar-thumb:active {
+  background: hsl(var(--muted-foreground) / 0.8);
+}
+
+.app-analytics-scrollbar::-webkit-scrollbar-corner {
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 0 0 10px 0;
+}
+
+.app-analytics-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.5) hsl(var(--muted));
+  scrollbar-gutter: stable;
+}
