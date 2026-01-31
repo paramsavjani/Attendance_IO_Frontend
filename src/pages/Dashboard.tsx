@@ -672,9 +672,6 @@ export default function Dashboard() {
           if (!deleteResponse.ok) {
             throw new Error('Failed to delete attendance');
           }
-          
-          // Refresh attendance data to sync state after deletion
-          await fetchAttendanceForDate(dateKey);
         } catch (error: any) {
           console.error('Error deleting attendance:', error);
           toast.error('Failed to delete attendance record');
