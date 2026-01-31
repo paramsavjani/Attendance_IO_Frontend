@@ -349,11 +349,11 @@ export default function Profile() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 pb-4">
-        {/* Profile Header - Enhanced Design */}
-        <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-xl p-4 border border-border shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20 shadow-md">
+      <div className="space-y-3 pb-3">
+        {/* Profile Header */}
+        <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-xl p-3.5 border border-border shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20 shadow-md">
               <img 
                 src={student?.pictureUrl || "/user-icons/user2.png"} 
                 alt={student?.name || "Profile"} 
@@ -367,11 +367,11 @@ export default function Profile() {
               <h1 className="text-lg font-bold truncate leading-tight">{student?.isDemo ? "Demo User" : student?.name}</h1>
               <p className="text-sm text-muted-foreground mt-0.5">{student?.rollNumber}</p>
               {isLoadingSemester ? (
-                <div className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md bg-muted/50">
+                <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-muted/50">
                   <p className="text-[10px] text-muted-foreground">Loading term...</p>
                 </div>
               ) : currentSemester ? (
-                <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">
+                <div className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">
                   <p className="text-xs font-semibold text-primary">
                     {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
                   </p>
@@ -381,16 +381,16 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Quick Actions - Vertical List Layout */}
+        {/* Quick Actions */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="divide-y divide-border">
             {/* Subjects */}
             <button 
               onClick={() => setShowSubjectEditor(true)}
-              className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
             >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm leading-tight">My Subjects</p>
@@ -403,10 +403,10 @@ export default function Profile() {
             {enrolledSubjects.length > 0 ? (
               <button
                 onClick={() => setShowCriteriaModal(true)}
-                className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+                className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Target className="w-5 h-5 text-primary" />
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Target className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm leading-tight">Minimum Criteria</p>
@@ -415,9 +415,9 @@ export default function Profile() {
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </button>
             ) : (
-              <div className="w-full bg-card/50 p-3.5 flex items-center gap-3 text-left opacity-60">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Target className="w-5 h-5 text-muted-foreground" />
+              <div className="w-full bg-card/50 p-3 flex items-center gap-3 text-left opacity-60">
+                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Target className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm leading-tight text-muted-foreground">Minimum Criteria</p>
@@ -431,10 +431,10 @@ export default function Profile() {
             {enrolledSubjects.length > 0 ? (
               <button
                 onClick={() => setShowClassroomLocationModal(true)}
-                className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+                className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-primary" />
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm leading-tight">Classroom Location</p>
@@ -443,9 +443,9 @@ export default function Profile() {
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </button>
             ) : (
-              <div className="w-full bg-card/50 p-3.5 flex items-center gap-3 text-left opacity-60">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-muted-foreground" />
+              <div className="w-full bg-card/50 p-3 flex items-center gap-3 text-left opacity-60">
+                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm leading-tight text-muted-foreground">Classroom Location</p>
@@ -463,14 +463,13 @@ export default function Profile() {
                     setSelectedBaselineSubject(enrolledSubjects[0]);
                     setShowBaselineDialog(true);
                   } else {
-                    // Show subject selector dialog
                     setShowBaselineDialog(true);
                   }
                 }}
-                className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+                className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-primary" />
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm leading-tight">Previous Attendance</p>
@@ -479,9 +478,9 @@ export default function Profile() {
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </button>
             ) : (
-              <div className="w-full bg-card/50 p-3.5 flex items-center gap-3 text-left opacity-60">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-muted-foreground" />
+              <div className="w-full bg-card/50 p-3 flex items-center gap-3 text-left opacity-60">
+                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm leading-tight text-muted-foreground">Previous Attendance</p>
@@ -497,10 +496,10 @@ export default function Profile() {
                 setEditingSleepHours(sleepDuration?.toString() || "8");
                 setIsEditingSleepDuration(true);
               }}
-              className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
             >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Moon className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Moon className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm leading-tight">Sleep Duration</p>
@@ -518,10 +517,10 @@ export default function Profile() {
             {/* App Analytics */}
             <button
               onClick={() => navigate("/app-analytics")}
-              className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
             >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm leading-tight">App Analytics</p>
@@ -533,10 +532,10 @@ export default function Profile() {
             {/* Feedback */}
             <button
               onClick={() => setShowFeedbackModal(true)}
-              className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
             >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <MessageSquare className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm leading-tight">Feedback & Bugs</p>
@@ -672,7 +671,7 @@ export default function Profile() {
         <Button
           variant="destructive"
           onClick={handleLogout}
-          className="w-full h-11 rounded-xl"
+          className="w-full h-10 rounded-xl"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Logout
