@@ -1,48 +1,30 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Laptop, GraduationCap, Sparkles, Calendar, Clock } from "lucide-react";
+import { BarChart3, Sparkles, ArrowRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const FEATURE_ANNOUNCEMENT_STORAGE_KEY = "attendance_io_feature_announcement_v4";
-const FEATURE_ANNOUNCEMENT_VERSION = "4.0.0";
-const FEATURE_ANNOUNCEMENT_SHOWN_KEY = "attendance_io_feature_announcement_shown_count";
+const STORAGE_KEY = "attendance_io_feature_announcement_v5";
+const VERSION = "5.0.0";
 
 export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
   const [open, setOpen] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     try {
-      const seen = localStorage.getItem(FEATURE_ANNOUNCEMENT_STORAGE_KEY);
-      
-      // Check how many times it's been shown
-      const shownCount = parseInt(
-        localStorage.getItem(FEATURE_ANNOUNCEMENT_SHOWN_KEY) || "0",
-        10
-      );
-
-      // Show if not seen this version OR if shown less than 2 times
-      if (seen !== FEATURE_ANNOUNCEMENT_VERSION || shownCount < 2) {
-        timer = setTimeout(() => {
-          setOpen(true);
-          // Increment shown count
-          localStorage.setItem(
-            FEATURE_ANNOUNCEMENT_SHOWN_KEY,
-            (shownCount + 1).toString()
-          );
-        }, 400);
+      const seen = localStorage.getItem(STORAGE_KEY);
+      if (seen !== VERSION) {
+        timer = setTimeout(() => setOpen(true), 400);
       } else {
         onClose?.();
       }
@@ -50,116 +32,111 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
       onClose?.();
     }
 
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
+    return () => timer && clearTimeout(timer);
   }, [onClose]);
 
-  const handleClose = () => {
-    if (dontShowAgain) {
-      try {
-        localStorage.setItem(FEATURE_ANNOUNCEMENT_STORAGE_KEY, FEATURE_ANNOUNCEMENT_VERSION);
-      } catch {}
-    }
+  const close = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, VERSION);
+    } catch {}
     setOpen(false);
     onClose?.();
   };
 
-  const features = [
-    {
-      icon: GraduationCap,
-      title: "Tutorial Attendance Tracking",
-      description:
-        "Track tutorial attendance separately from lectures. Manually create time slots and assign subjects to monitor your progress independently.",
-      color: "text-purple-500 dark:text-purple-400",
-      bgColor: "bg-purple-500/10",
-      iconBg: "bg-purple-500/20",
-    },
-    {
-      icon: Calendar,
-      title: "Manual Timetable Creation",
-      description:
-        "Lab and tutorial timetables require manual setup. Go to Timetable → Lab & Tutorial tab, add time slots, and assign subjects. Full control, no auto-assignment.",
-      color: "text-emerald-500 dark:text-emerald-400",
-      bgColor: "bg-emerald-500/10",
-      iconBg: "bg-emerald-500/20",
-    },
-  ];
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(value) => {
-        if (!value) {
-          handleClose();
-        } else {
-          setOpen(true);
-        }
-      }}
-    >
-      <DialogContent className="sm:max-w-[550px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-lg p-4 sm:p-6">
-        <DialogHeader className="space-y-2 sm:space-y-3">
-          <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 flex-shrink-0">
-              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+    <Dialog open={open} onOpenChange={(v) => !v && close()}>
+      <DialogContent
+        className={cn(
+          "max-w-[95vw] sm:max-w-xl md:max-w-2xl",
+          "rounded-2xl p-5 sm:p-8",
+          "[&>button]:hidden"
+        )}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        {/* Header */}
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="flex items-center gap-3 text-xl sm:text-2xl font-semibold">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Sparkles className="h-6 w-6 text-primary" />
             </div>
-            <span className="leading-tight">New Features Available!</span>
+            What’s New
           </DialogTitle>
-          <DialogDescription className="text-sm sm:text-base mt-1 sm:mt-2 text-muted-foreground leading-relaxed">
-            Track lab and tutorial attendance separately. Create timetables manually for full control.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <div
-                key={index}
-                className={cn(
-                  "flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border",
-                  feature.bgColor,
-                  "border-border"
-                )}
-              >
-                <div
-                  className={cn(
-                    "p-2 sm:p-3 rounded-lg flex-shrink-0",
-                    feature.iconBg
-                  )}
-                >
-                  <Icon className={cn("w-5 h-5 sm:w-6 sm:h-6", feature.color)} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-1.5 leading-tight">
-                    {feature.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
+        {/* Main Feature Card */}
+        <div className="mt-5 sm:mt-6">
+          <div
+            className={cn(
+              "rounded-2xl border",
+              "bg-muted/40 dark:bg-muted/20",
+              "p-4 sm:p-6"
+            )}
+          >
+            {/* Top */}
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-primary/15">
+                <BarChart3 className="h-7 w-7 text-primary" />
               </div>
-            );
-          })}
+
+              <div className="flex-1">
+                <h3 className="text-base sm:text-lg font-semibold">
+                  App Analytics
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  App Analytics is now available from your{" "}
+                  <span className="font-medium text-foreground">
+                    Profile section
+                  </span>
+                  . Get a complete view of how your app is being used.
+                </p>
+              </div>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 text-xs sm:text-sm">
+              {[
+                "User activity",
+                "Attendance overview",
+                "Event performance",
+                "Daily charts",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-lg border bg-background/70 dark:bg-background/40 px-3 py-2 flex items-center justify-center text-center"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            {/* Location hint */}
+            <div className="flex items-center gap-2 mt-4 text-xs sm:text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              Available in <span className="font-medium">Profile → App Analytics</span>
+            </div>
+          </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-3 pt-2 sm:pt-0">
-          <div className="flex items-center space-x-2 w-full sm:w-auto justify-start order-1 sm:order-1">
-            <Checkbox
-              id="dont-show"
-              checked={dontShowAgain}
-              onCheckedChange={(v) => setDontShowAgain(v as boolean)}
-              className="flex-shrink-0"
-            />
-            <Label
-              htmlFor="dont-show"
-              className="text-xs sm:text-sm font-normal cursor-pointer text-muted-foreground leading-tight"
-            >
-              Don't show again
-            </Label>
-          </div>
-          <Button onClick={handleClose} className="w-full sm:w-auto sm:ml-auto min-w-[120px] order-2 sm:order-2">
-            Got it!
+        {/* Footer */}
+        <DialogFooter className="mt-6 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={close}
+          >
+            Maybe later
+          </Button>
+
+          <Button
+            className="w-full sm:w-auto gap-2"
+            onClick={() => {
+              close();
+              navigate("/app-analytics");
+            }}
+          >
+            Open App Analytics
+            <ArrowRight className="h-4 w-4" />
           </Button>
         </DialogFooter>
       </DialogContent>
