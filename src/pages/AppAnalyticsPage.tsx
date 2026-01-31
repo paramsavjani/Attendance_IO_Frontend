@@ -188,11 +188,11 @@ export default function AppAnalyticsPage() {
       <div className="min-h-screen pb-6">
         {/* Fixed header - always stuck to top */}
         <header className="fixed top-0 left-0 right-0 z-30 bg-background border-b border-border safe-area-top">
-          <div className="flex items-center gap-3 px-4 py-3 sm:px-6 max-w-lg mx-auto min-h-[52px] sm:min-h-[56px]">
+          <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6 sm:py-3 max-w-lg mx-auto min-h-[48px] sm:min-h-[52px]">
             <button
               type="button"
               onClick={() => navigate("/profile")}
-              className="flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 rounded-xl bg-muted/90 hover:bg-muted active:scale-[0.98] text-foreground transition-colors touch-manipulation flex-shrink-0"
+              className="flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 rounded-xl bg-muted/60 hover:bg-muted active:scale-[0.98] text-foreground transition-colors touch-manipulation flex-shrink-0"
               aria-label="Back to Profile"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -205,9 +205,9 @@ export default function AppAnalyticsPage() {
         </header>
 
         {/* Spacer so content starts below fixed header */}
-        <div className="h-[52px] sm:h-[56px]" aria-hidden />
+        <div className="h-[48px] sm:h-[52px]" aria-hidden />
 
-        <div className="space-y-3 sm:space-y-5 app-analytics-scrollbar -mx-1 px-1">
+        <div className="space-y-3 sm:space-y-5 app-analytics-scrollbar -mx-1 px-1 pt-3 sm:pt-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 sm:py-20 gap-3">
               <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-primary" />
