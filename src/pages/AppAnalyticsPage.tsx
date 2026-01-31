@@ -145,10 +145,16 @@ export default function AppAnalyticsPage() {
     }));
   }, [data?.attendanceByHour]);
 
+  // Attendance avg: weekdays only (exclude Saturday & Sunday)
   const avgAttendancePerDay = useMemo(() => {
     if (!attendanceChartData.length) return 0;
-    const sum = attendanceChartData.reduce((s, d) => s + d.count, 0);
-    return Math.round((sum / attendanceChartData.length) * 10) / 10;
+    const weekdays = attendanceChartData.filter((d) => {
+      const day = new Date(d.date).getDay();
+      return day >= 1 && day <= 5;
+    });
+    if (!weekdays.length) return 0;
+    const sum = weekdays.reduce((s, d) => s + d.count, 0);
+    return Math.round((sum / weekdays.length) * 10) / 10;
   }, [attendanceChartData]);
 
   const avgAppOpensPerDay = useMemo(() => {
@@ -295,14 +301,11 @@ export default function AppAnalyticsPage() {
               <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
                 {/* Attendance chart */}
                 <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 mb-3">
+                  <div className="mb-3">
                     <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
                       Attendance (last {chartPeriod} days)
                     </h2>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">
-                      Avg <span className="font-semibold text-success tabular-nums">{avgAttendancePerDay.toFixed(1)}</span>/day
-                    </span>
                   </div>
                   {attendanceChartData.length > 0 ? (
                     <div className="w-full" style={{ height: chartHeight }}>
@@ -360,14 +363,11 @@ export default function AppAnalyticsPage() {
 
                 {/* App opens chart */}
                 <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 mb-3">
+                  <div className="mb-3">
                     <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
                       <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                       App opens (last {chartPeriod} days)
                     </h2>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">
-                      Avg <span className="font-semibold text-primary tabular-nums">{avgAppOpensPerDay.toFixed(1)}</span>/day (weekdays)
-                    </span>
                   </div>
                   {appOpensChartData.length > 0 ? (
                     <div className="w-full" style={{ height: chartHeight }}>
@@ -420,7 +420,7 @@ export default function AppAnalyticsPage() {
                       <TrendingUp className="w-5 h-5 sm:w-5 sm:h-5 text-success" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Attendance avg (last {chartPeriod}d)</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Attendance avg (last {chartPeriod}d, weekdays)</p>
                       <p className="text-base sm:text-lg font-bold text-success tabular-nums">{avgAttendancePerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
                     </div>
                   </div>
