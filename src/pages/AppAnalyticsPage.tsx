@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Calendar,
   ArrowLeft,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -34,15 +35,23 @@ interface DailyCount {
   count: number;
 }
 
+interface HourCount {
+  hour: number;
+  count: number;
+}
+
 interface AppAnalyticsData {
   totalUsers: number;
   totalAttendance: number;
   totalEvents: number;
   recentLogins: number;
   eventsByType: Record<string, number>;
-  attendanceLast15Days?: DailyCount[];
-  appOpensLast15Days?: DailyCount[];
+  attendanceLast30Days?: DailyCount[];
+  appOpensLast30Days?: DailyCount[];
+  attendanceByHour?: HourCount[];
 }
+
+type ChartPeriod = 5 | 15 | 30;
 
 function formatEventName(type: string): string {
   return type
@@ -60,10 +69,17 @@ function formatChartDate(dateStr: string): string {
   }
 }
 
+const PERIOD_OPTIONS: { value: ChartPeriod; label: string }[] = [
+  { value: 5, label: "5 days" },
+  { value: 15, label: "15 days" },
+  { value: 30, label: "30 days" },
+];
+
 export default function AppAnalyticsPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<AppAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>(15);
   const openedAtRef = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -98,24 +114,36 @@ export default function AppAnalyticsPage() {
   }, []);
 
   const attendanceChartData = useMemo(() => {
-    const list = data?.attendanceLast15Days ?? [];
+    const list = data?.attendanceLast30Days ?? [];
     if (!list.length) return [];
-    return list.map((d) => ({
+    const sliced = list.slice(-chartPeriod);
+    return sliced.map((d) => ({
       date: d.date,
       label: formatChartDate(d.date),
       count: d.count,
     }));
-  }, [data?.attendanceLast15Days]);
+  }, [data?.attendanceLast30Days, chartPeriod]);
 
   const appOpensChartData = useMemo(() => {
-    const list = data?.appOpensLast15Days ?? [];
+    const list = data?.appOpensLast30Days ?? [];
     if (!list.length) return [];
-    return list.map((d) => ({
+    const sliced = list.slice(-chartPeriod);
+    return sliced.map((d) => ({
       date: d.date,
       label: formatChartDate(d.date),
       count: d.count,
     }));
-  }, [data?.appOpensLast15Days]);
+  }, [data?.appOpensLast30Days, chartPeriod]);
+
+  const attendanceByHourData = useMemo(() => {
+    const list = data?.attendanceByHour ?? [];
+    if (!list.length) return [];
+    return list.map((d) => ({
+      hour: d.hour,
+      label: d.hour === 0 ? "12am" : d.hour < 12 ? `${d.hour}am` : d.hour === 12 ? "12pm" : `${d.hour - 12}pm`,
+      count: d.count,
+    }));
+  }, [data?.attendanceByHour]);
 
   const avgAttendancePerDay = useMemo(() => {
     if (!attendanceChartData.length) return 0;
@@ -239,6 +267,30 @@ export default function AppAnalyticsPage() {
                 </div>
               </section>
 
+              {/* Period selector for day charts */}
+              <section className="flex items-center justify-between gap-2">
+                <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Day charts
+                </span>
+                <div className="flex rounded-lg border border-border bg-muted/50 p-0.5">
+                  {PERIOD_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setChartPeriod(opt.value)}
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-md text-[11px] sm:text-xs font-medium transition-colors touch-manipulation",
+                        chartPeriod === opt.value
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
               {/* Charts - side by side on large screens */}
               <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
                 {/* Attendance chart */}
@@ -246,7 +298,7 @@ export default function AppAnalyticsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-1.5 mb-3">
                     <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
-                      Attendance (last 15 days)
+                      Attendance (last {chartPeriod} days)
                     </h2>
                     <span className="text-[10px] sm:text-xs text-muted-foreground">
                       Avg <span className="font-semibold text-success tabular-nums">{avgAttendancePerDay.toFixed(1)}</span>/day
@@ -311,7 +363,7 @@ export default function AppAnalyticsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-1.5 mb-3">
                     <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
                       <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                      App opens (last 15 days)
+                      App opens (last {chartPeriod} days)
                     </h2>
                     <span className="text-[10px] sm:text-xs text-muted-foreground">
                       Avg <span className="font-semibold text-primary tabular-nums">{avgAppOpensPerDay.toFixed(1)}</span>/day (weekdays)
@@ -368,7 +420,7 @@ export default function AppAnalyticsPage() {
                       <TrendingUp className="w-5 h-5 sm:w-5 sm:h-5 text-success" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Attendance avg (15d)</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Attendance avg (last {chartPeriod}d)</p>
                       <p className="text-base sm:text-lg font-bold text-success tabular-nums">{avgAttendancePerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
                     </div>
                   </div>
@@ -382,6 +434,57 @@ export default function AppAnalyticsPage() {
                       <p className="text-base sm:text-lg font-bold text-primary tabular-nums">{avgAppOpensPerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
                     </div>
                   </div>
+                </div>
+              </section>
+
+              {/* Attendance by hour (24h) */}
+              <section>
+                <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  Attendance by hour (last 30 days)
+                </h2>
+                <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+                  {attendanceByHourData.length > 0 ? (
+                    <div className="w-full" style={{ height: chartHeight }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={attendanceByHourData}
+                          margin={{ top: 8, right: 4, left: -8, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={false}
+                            tickLine={false}
+                            interval={2}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={false}
+                            tickLine={false}
+                            width={24}
+                            tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
+                              fontSize: "11px",
+                            }}
+                            formatter={(value: number) => [value, "Attendance"]}
+                            labelFormatter={(label) => (label ? `Hour: ${label}` : "")}
+                          />
+                          <Bar dataKey="count" fill="hsl(var(--success) / 0.85)" radius={[2, 2, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
+                      No attendance by hour data
+                    </div>
+                  )}
                 </div>
               </section>
 
