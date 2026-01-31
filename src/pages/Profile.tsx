@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin } from "lucide-react";
+import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin, BarChart3 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { Slider } from "@/components/ui/slider";
 import { ContributorsSection } from "@/components/contributors/ContributorsSection";
+import { AppAnalyticsModal } from "@/components/AppAnalyticsModal";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +52,7 @@ export default function Profile() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [showBaselineDialog, setShowBaselineDialog] = useState(false);
   const [selectedBaselineSubject, setSelectedBaselineSubject] = useState<Subject | null>(null);
+  const [showAppAnalyticsModal, setShowAppAnalyticsModal] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -515,6 +517,21 @@ export default function Profile() {
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </button>
 
+            {/* App Analytics */}
+            <button
+              onClick={() => setShowAppAnalyticsModal(true)}
+              className="w-full bg-card p-3.5 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm leading-tight">App Analytics</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Overview of app usage and engagement</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </button>
+
             {/* Feedback */}
             <button
               onClick={() => setShowFeedbackModal(true)}
@@ -531,6 +548,12 @@ export default function Profile() {
             </button>
           </div>
         </div>
+
+        {/* App Analytics Modal */}
+        <AppAnalyticsModal
+          open={showAppAnalyticsModal}
+          onOpenChange={setShowAppAnalyticsModal}
+        />
 
         {/* Sleep Duration Modal */}
         <Dialog open={isEditingSleepDuration} onOpenChange={setIsEditingSleepDuration}>
