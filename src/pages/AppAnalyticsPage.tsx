@@ -263,7 +263,7 @@ export default function AppAnalyticsPage() {
                         <LogIn className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-warning" />
                       </div>
                       <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
-                        Recent 7d
+                        Recent Open (7d)
                       </span>
                     </div>
                     <p className="text-lg sm:text-2xl font-bold text-warning tabular-nums leading-tight">
