@@ -51,7 +51,7 @@ export function ContributorsSection() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-3">
+      <div className="flex items-center justify-center py-2.5">
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
       </div>
     );
@@ -72,14 +72,12 @@ export function ContributorsSection() {
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
-      {/* Combined Header - Collapsible sections */}
       <div className="divide-y divide-border">
-        {/* Ideas Section */}
         {ideaContributors.length > 0 && (
           <div>
             <button
               onClick={() => setExpandedSection(expandedSection === 'ideas' ? null : 'ideas')}
-              className="w-full flex items-center justify-between p-3 active:bg-muted/30 transition-colors touch-manipulation"
+              className="w-full flex items-center justify-between p-2.5 active:bg-muted/30 transition-colors touch-manipulation"
             >
               <div className="flex items-center gap-2">
                 <Lightbulb className="w-4 h-4 text-yellow-500" />
@@ -93,7 +91,7 @@ export function ContributorsSection() {
               )}
             </button>
             {expandedSection === 'ideas' && (
-              <div className="px-3 pb-3">
+              <div className="px-3 pb-2.5">
                 <div className="flex flex-wrap gap-1.5">
                   {displayedIdeas.map((contributor) => (
                     <span
@@ -122,12 +120,11 @@ export function ContributorsSection() {
           </div>
         )}
 
-        {/* Testers Section */}
         {testers.length > 0 && (
           <div>
             <button
               onClick={() => setExpandedSection(expandedSection === 'testers' ? null : 'testers')}
-              className="w-full flex items-center justify-between p-3 active:bg-muted/30 transition-colors touch-manipulation"
+              className="w-full flex items-center justify-between p-2.5 active:bg-muted/30 transition-colors touch-manipulation"
             >
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-500" />
@@ -141,7 +138,7 @@ export function ContributorsSection() {
               )}
             </button>
             {expandedSection === 'testers' && (
-              <div className="px-3 pb-3">
+              <div className="px-3 pb-2.5">
                 <div className="flex flex-wrap gap-1.5">
                   {displayedTesters.map((tester) => (
                     <span
