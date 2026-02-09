@@ -25,6 +25,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
 import ErrorOldVersion from "./pages/ErrorOldVersion";
 import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
+import { InAppReviewPrompt } from "@/components/InAppReviewPrompt";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useState } from "react";
 import { checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
@@ -151,6 +152,7 @@ function AppRoutes() {
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
       {!isErrorPage && isAuthenticated && <FeatureAnnouncement />}
+      {!isErrorPage && isAuthenticated && <InAppReviewPrompt />}
       <Routes>
         <Route
           path="/"

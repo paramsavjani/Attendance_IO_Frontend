@@ -23,6 +23,8 @@ export const API_CONFIG = {
     UPDATE_CLASSROOM_LOCATION: `${API_BASE_URL}/api/student/enrollment/classroom-location`,
     GET_SLEEP_DURATION: `${API_BASE_URL}/api/student/enrollment/sleep-duration`,
     UPDATE_SLEEP_DURATION: `${API_BASE_URL}/api/student/enrollment/sleep-duration`,
+    GET_REVIEW_STATUS: `${API_BASE_URL}/api/student/enrollment/review-status`,
+    POST_REVIEW_SUBMITTED: `${API_BASE_URL}/api/student/enrollment/review-submitted`,
     GET_BASELINE_ATTENDANCE: (subjectId: string) => `${API_BASE_URL}/api/student/enrollment/baseline-attendance/${subjectId}`,
     SAVE_BASELINE_ATTENDANCE: `${API_BASE_URL}/api/student/enrollment/baseline-attendance`,
     TIMETABLE: `${API_BASE_URL}/api/timetable`,
@@ -142,5 +144,30 @@ export async function checkAppUpdate(): Promise<AppUpdateResponse | null> {
   } catch (error) {
     console.error('Error checking app update:', error);
     return null;
+  }
+}
+
+export interface ReviewStatusResponse {
+  reviewSubmittedAt: string | null;
+}
+
+export async function getReviewStatus(): Promise<ReviewStatusResponse | null> {
+  try {
+    const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_REVIEW_STATUS, { method: 'GET' });
+    if (!response.ok) return null;
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching review status:', error);
+    return null;
+  }
+}
+
+export async function markReviewSubmitted(): Promise<boolean> {
+  try {
+    const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.POST_REVIEW_SUBMITTED, { method: 'POST' });
+    return response.ok;
+  } catch (error) {
+    console.error('Error marking review submitted:', error);
+    return false;
   }
 }
