@@ -530,9 +530,16 @@ export default function Profile() {
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </button>
 
-            {/* Rate us - Play Store in-app review (stars, submit from app) */}
+            {/* Rate us - Play Store in-app review (stars) or open Play Store */}
             <button
-              onClick={() => requestAppReview()}
+              onClick={async () => {
+                try {
+                  await requestAppReview();
+                } catch (e) {
+                  console.error("Rate us failed:", e);
+                  toast.error("Could not open review. Please try again.");
+                }
+              }}
               className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
             >
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

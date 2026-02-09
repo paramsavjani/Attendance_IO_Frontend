@@ -11,6 +11,7 @@
  * - If the dialog doesn’t appear, the fallback opens the Play Store so you can still leave a review.
  */
 
+import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
@@ -34,29 +35,27 @@ async function openPlayStoreOnNative(): Promise<void> {
 }
 
 export async function requestAppReview(): Promise<void> {
+  const isNative = Capacitor.isNativePlatform();
+
+  if (!isNative) {
+    window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  // Try in-app review first (may not show in debug builds)
   try {
-    const { Capacitor } = await import("@capacitor/core");
-    if (Capacitor.isNativePlatform()) {
-      try {
-        const { InAppReview } = await import("@capacitor-community/in-app-review");
-        await InAppReview.requestReview();
-        // Dialog may or may not show (Google quota). No toast so we don't say "thanks" if nothing was shown.
-      } catch (error) {
-        console.warn("In-app review not available, opening Play Store:", error);
-        toast.info("Opening Play Store so you can leave a review…");
-        await openPlayStoreOnNative();
-      }
-    } else {
-      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
-    }
+    const { InAppReview } = await import("@capacitor-community/in-app-review");
+    await InAppReview.requestReview();
+  } catch (_) {
+    // Ignore; we'll open Play Store below
+  }
+
+  // On native, always open Play Store so the button always does something visible
+  try {
+    toast.info("Opening Play Store…");
+    await openPlayStoreOnNative();
   } catch (error) {
-    console.error("In-app review failed:", error);
-    toast.error("Something went wrong. Opening Play Store…");
-    const { Capacitor } = await import("@capacitor/core");
-    if (Capacitor.isNativePlatform()) {
-      await openPlayStoreOnNative();
-    } else {
-      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
-    }
+    console.error("Failed to open Play Store:", error);
+    toast.error("Could not open Play Store. Please try again.");
   }
 }
