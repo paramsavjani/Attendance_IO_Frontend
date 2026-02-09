@@ -126,42 +126,7 @@ export default function Dashboard() {
   // When sleep warning targets tomorrow, we need tomorrow's attendance (cancelled slots). Context only has selected date.
   const [attendanceForSleepTargetDate, setAttendanceForSleepTargetDate] = useState<Record<string, "present" | "absent" | "cancelled" | null> | null>(null);
   const [sleepTargetDateKey, setSleepTargetDateKey] = useState<string | null>(null);
-  useEffect(() => {
-    if (!student) return;
-    const now = new Date();
-    if (now.getHours() < 15) {
-      setAttendanceForSleepTargetDate(null);
-      setSleepTargetDateKey(null);
-      return;
-    }
-    const tomorrowKey = format(addDays(now, 1), "yyyy-MM-dd");
-    const fetchTomorrowAttendance = async () => {
-      try {
-        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${tomorrowKey}`, { method: "GET" });
-        if (!response.ok) return;
-        const data = await response.json();
-        const attendanceMap: Record<string, "present" | "absent" | "cancelled" | null> = {};
-        data.todayAttendance?.forEach((record: { lectureDate: string; subjectId: string; timeSlot?: number | null; startTime?: string; endTime?: string; status: string }) => {
-          let key: string;
-          if (record.timeSlot != null && record.timeSlot !== undefined) {
-            key = `${record.lectureDate}-${record.subjectId}-slot${record.timeSlot}`;
-          } else if (record.startTime && record.endTime) {
-            key = `${record.lectureDate}-${record.subjectId}-${record.startTime}-${record.endTime}`;
-          } else {
-            key = `${record.lectureDate}-${record.subjectId}`;
-          }
-          attendanceMap[key] = record.status as "present" | "absent" | "cancelled";
-        });
-        setAttendanceForSleepTargetDate(attendanceMap);
-        setSleepTargetDateKey(tomorrowKey);
-      } catch {
-        setAttendanceForSleepTargetDate(null);
-        setSleepTargetDateKey(null);
-      }
-    };
-    fetchTomorrowAttendance();
-  }, [student, sleepWarningTick]);
-  
+
   // Persist extra classes to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -520,7 +485,44 @@ export default function Dashboard() {
   const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable]);
   const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
-  
+
+  // Fetch tomorrow's attendance when sleep warning targets tomorrow (after 15:00). Refetch when user changes date so we always have fresh data (e.g. after they cancel on tomorrow and swipe back to today).
+  useEffect(() => {
+    if (!student) return;
+    const now = new Date();
+    if (now.getHours() < 15) {
+      setAttendanceForSleepTargetDate(null);
+      setSleepTargetDateKey(null);
+      return;
+    }
+    const tomorrowKey = format(addDays(now, 1), "yyyy-MM-dd");
+    const fetchTomorrowAttendance = async () => {
+      try {
+        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${tomorrowKey}`, { method: "GET" });
+        if (!response.ok) return;
+        const data = await response.json();
+        const attendanceMap: Record<string, "present" | "absent" | "cancelled" | null> = {};
+        data.todayAttendance?.forEach((record: { lectureDate: string; subjectId: string; timeSlot?: number | null; startTime?: string; endTime?: string; status: string }) => {
+          let key: string;
+          if (record.timeSlot != null && record.timeSlot !== undefined) {
+            key = `${record.lectureDate}-${record.subjectId}-slot${record.timeSlot}`;
+          } else if (record.startTime && record.endTime) {
+            key = `${record.lectureDate}-${record.subjectId}-${record.startTime}-${record.endTime}`;
+          } else {
+            key = `${record.lectureDate}-${record.subjectId}`;
+          }
+          attendanceMap[key] = record.status as "present" | "absent" | "cancelled";
+        });
+        setAttendanceForSleepTargetDate(attendanceMap);
+        setSleepTargetDateKey(tomorrowKey);
+      } catch {
+        setAttendanceForSleepTargetDate(null);
+        setSleepTargetDateKey(null);
+      }
+    };
+    fetchTomorrowAttendance();
+  }, [student, sleepWarningTick, dateKey]);
+
   // Get extra classes for the selected date
   const extraClassesForDate = extraClasses[dateKey] || [];
   
@@ -550,7 +552,8 @@ export default function Dashboard() {
 
   // If time until first lecture is less than user's sleep duration, show warning at top.
   // Ignore cancelled classes when finding the first lecture.
-  // When target is tomorrow, use separately fetched attendance (context only has selected date).
+  // - When checking tomorrow: always use attendanceForSleepTargetDate (fetched separately; refetches when user changes date so cancellations are fresh).
+  // - When checking today: use todayAttendance only if context has actually loaded that date (keys start with targetDateKey), else don't show warning (avoids flash when switching to tomorrow).
   const sleepWarning = useMemo(() => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -560,13 +563,15 @@ export default function Dashboard() {
     const targetDateKey = format(targetDate, "yyyy-MM-dd");
     const daySchedule = getScheduleForDate(targetDate);
 
-    const attendanceToUse =
-      targetDateKey === dateKey
-        ? todayAttendance
-        : sleepTargetDateKey === targetDateKey
-          ? attendanceForSleepTargetDate
-          : null;
-    if (targetDateKey !== dateKey && attendanceToUse == null) return null;
+    let attendanceToUse: Record<string, "present" | "absent" | "cancelled" | null> | null = null;
+    if (targetDateKey === dateKey) {
+      const contextHasDataForTarget = Object.keys(todayAttendance).some((k) => k.startsWith(targetDateKey));
+      if (!contextHasDataForTarget) return null;
+      attendanceToUse = todayAttendance;
+    } else {
+      if (sleepTargetDateKey !== targetDateKey || attendanceForSleepTargetDate == null) return null;
+      attendanceToUse = attendanceForSleepTargetDate;
+    }
 
     const slotKeyForAttendance = (slot: { subject: { id: string } | null; slotIndex?: number | null; startTime?: string; endTime?: string; isCustom?: boolean }) => {
       if (!slot.subject) return null;
