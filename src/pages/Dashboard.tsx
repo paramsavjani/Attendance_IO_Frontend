@@ -3,9 +3,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
-import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO } from "date-fns";
+import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO, setHours, setMinutes } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap, Plus, Trash2, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -114,6 +114,14 @@ export default function Dashboard() {
   
   // Track which extra class is being deleted (for loading state)
   const [deletingExtraClass, setDeletingExtraClass] = useState<{ subjectId: string; index: number } | null>(null);
+
+  // Sleep duration for "time until first lecture" warning
+  const [sleepDurationHours, setSleepDurationHours] = useState<number | null>(null);
+  const [sleepWarningTick, setSleepWarningTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setSleepWarningTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
   
   // Persist extra classes to localStorage whenever they change
   useEffect(() => {
@@ -121,6 +129,25 @@ export default function Dashboard() {
       localStorage.setItem('extraClasses', JSON.stringify(extraClasses));
     }
   }, [extraClasses]);
+
+  // Fetch sleep duration for "time until first lecture" warning
+  useEffect(() => {
+    if (!student) return;
+    const fetchSleepDuration = async () => {
+      try {
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, { method: "GET" });
+        if (response.ok) {
+          const data = await response.json();
+          setSleepDurationHours(data.sleepDurationHours ?? 8);
+        } else if (response.status === 404) {
+          setSleepDurationHours(8);
+        }
+      } catch {
+        setSleepDurationHours(8);
+      }
+    };
+    fetchSleepDuration();
+  }, [student]);
   
   // Get last class hour from schedule
   function getLastClassHour(schedule: { time: string; subject: any; endTime?: string }[]) {
@@ -481,6 +508,50 @@ export default function Dashboard() {
   const fullSchedule = useMemo(() => {
     return [...schedule, ...extraClassSlots];
   }, [schedule, extraClassSlots]);
+
+  // If time until first lecture is less than user's sleep duration, show warning at top.
+  // Ignore cancelled classes when finding the first lecture.
+  const sleepWarning = useMemo(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const sleepHours = sleepDurationHours ?? 8;
+    const checkDate = currentHour >= 15 ? addDays(now, 1) : now;
+    const targetDate = startOfDay(checkDate);
+    const targetDateKey = format(targetDate, "yyyy-MM-dd");
+    const daySchedule = getScheduleForDate(targetDate);
+
+    const slotKeyForAttendance = (slot: { subject: { id: string } | null; slotIndex?: number | null; startTime?: string; endTime?: string; isCustom?: boolean }) => {
+      if (!slot.subject) return null;
+      const subjectId = slot.subject.id;
+      if (slot.slotIndex != null && !slot.isCustom) {
+        return `${targetDateKey}-${subjectId}-slot${slot.slotIndex}`;
+      }
+      if (slot.startTime && slot.endTime && slot.isCustom) {
+        return `${targetDateKey}-${subjectId}-${slot.startTime}-${slot.endTime}`;
+      }
+      return `${targetDateKey}-${subjectId}`;
+    };
+
+    const slotsNotCancelled = daySchedule.filter((s) => {
+      if (!s.subject) return false;
+      const key = slotKeyForAttendance(s);
+      if (key == null) return true;
+      const fallbackKey = `${targetDateKey}-${s.subject.id}`;
+      const status = todayAttendance[key] ?? todayAttendance[fallbackKey];
+      return status !== "cancelled";
+    });
+    const firstSlot = slotsNotCancelled.find((s) => s.subject);
+    if (!firstSlot?.startTime) return null;
+    const [h, m] = firstSlot.startTime.split(":").map(Number);
+    const firstLectureDate = setMinutes(setHours(targetDate, h), m);
+    const timeUntilMs = firstLectureDate.getTime() - now.getTime();
+    const sleepMs = sleepHours * 60 * 60 * 1000;
+    if (timeUntilMs <= 0 || timeUntilMs >= sleepMs) return null;
+    const hours = Math.floor(timeUntilMs / (60 * 60 * 1000));
+    const minutes = Math.floor((timeUntilMs % (60 * 60 * 1000)) / (60 * 1000));
+    return { hours, minutes };
+  }, [sleepWarningTick, sleepDurationHours, timetable, enrolledSubjects, labTimetable, tutorialTimetable, todayAttendance]);
+
   const isSelectedToday = isToday(selectedDate);
   const isSelectedTomorrow = isTomorrow(selectedDate);
   const isFutureDate = isBefore(startOfDay(now), startOfDay(selectedDate));
@@ -726,6 +797,26 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <DemoBanner isDemo={student?.isDemo || false} />
+      {sleepWarning && (
+        <div className="mb-4 overflow-hidden rounded-2xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-indigo-50 dark:border-violet-500/20 dark:from-violet-950/40 dark:to-indigo-950/30 shadow-sm">
+          <div className="flex gap-3 px-4 py-3.5">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
+              <Moon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <p className="text-sm font-semibold text-violet-900 dark:text-violet-100">
+                {sleepWarning.hours > 0
+                  ? `${sleepWarning.hours} ${sleepWarning.hours === 1 ? "hour" : "hours"}${sleepWarning.minutes > 0 ? ` and ${sleepWarning.minutes} ${sleepWarning.minutes === 1 ? "minute" : "minutes"}` : ""}`
+                  : `${sleepWarning.minutes} ${sleepWarning.minutes === 1 ? "minute" : "minutes"}`}{" "}
+                until your first lecture
+              </p>
+              <p className="text-xs text-violet-700/90 dark:text-violet-300/90">
+                That’s less than your usual sleep. Wind down soon so you’re fresh for class.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="h-full flex flex-col overflow-hidden pb-2">
         {/* Header - matching timetable style */}
         <div className="flex items-center justify-between mb-5">
