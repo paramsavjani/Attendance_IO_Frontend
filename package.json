@@ -17,6 +17,7 @@
     "android:build": "npm run build && npx cap sync && npx cap open android"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "^7.1.0",
     "@capacitor/android": "^7.4.4",
     "@capacitor/app": "^7.1.1",
     "@capacitor/browser": "^7.0.3",
