@@ -31,8 +31,34 @@ import { checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
 
 const queryClient = new QueryClient();
 
+const NON_CRITICAL_UPDATE_SHOWN_DATE_KEY = "attendance_io_non_critical_update_shown_date";
+
+function getTodayDateString(): string {
+  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+function shouldShowNonCriticalUpdateToday(): boolean {
+  try {
+    const lastShown = localStorage.getItem(NON_CRITICAL_UPDATE_SHOWN_DATE_KEY);
+    const today = getTodayDateString();
+    return lastShown !== today;
+  } catch {
+    return true;
+  }
+}
+
+function markNonCriticalUpdateShownToday(): void {
+  try {
+    localStorage.setItem(NON_CRITICAL_UPDATE_SHOWN_DATE_KEY, getTodayDateString());
+  } catch {
+    // ignore
+  }
+}
+
 /**
- * Component to handle app update checks on launch
+ * Component to handle app update checks on launch.
+ * Critical updates: shown every time.
+ * Non-critical updates: shown only on the first app open of each day.
  */
 function AppUpdateChecker() {
   const [updateInfo, setUpdateInfo] = useState<AppUpdateResponse | null>(null);
@@ -43,7 +69,18 @@ function AppUpdateChecker() {
     const checkUpdate = async () => {
       try {
         const result = await checkAppUpdate();
-        if (result && result.isUpdateRequired) {
+        if (!result || !result.isUpdateRequired) return;
+
+        // Critical update: always show
+        if (result.isCritical) {
+          setUpdateInfo(result);
+          setIsOpen(true);
+          return;
+        }
+
+        // Non-critical: show only on first open of the day
+        if (shouldShowNonCriticalUpdateToday()) {
+          markNonCriticalUpdateShownToday();
           setUpdateInfo(result);
           setIsOpen(true);
         }
@@ -62,6 +99,7 @@ function AppUpdateChecker() {
 
   const handleDismiss = () => {
     if (updateInfo && !updateInfo.isCritical) {
+      markNonCriticalUpdateShownToday();
       setIsOpen(false);
     }
   };
