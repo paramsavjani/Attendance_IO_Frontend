@@ -42,20 +42,19 @@ export async function requestAppReview(): Promise<void> {
     return;
   }
 
-  // Try in-app review first (may not show in debug builds)
+  // Show the official Play Store in-app review dialog (stars, submit from inside the app).
+  // Only open the Play Store if the API throws (e.g. not available in debug); otherwise the dialog can appear.
   try {
     const { InAppReview } = await import("@capacitor-community/in-app-review");
     await InAppReview.requestReview();
-  } catch (_) {
-    // Ignore; we'll open Play Store below
-  }
-
-  // On native, always open Play Store so the button always does something visible
-  try {
-    toast.info("Opening Play Store…");
-    await openPlayStoreOnNative();
   } catch (error) {
-    console.error("Failed to open Play Store:", error);
-    toast.error("Could not open Play Store. Please try again.");
+    console.warn("In-app review not available, opening Play Store:", error);
+    try {
+      toast.info("Opening Play Store…");
+      await openPlayStoreOnNative();
+    } catch (e) {
+      console.error("Failed to open Play Store:", e);
+      toast.error("Could not open Play Store. Please try again.");
+    }
   }
 }
