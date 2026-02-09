@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin, BarChart3 } from "lucide-react";
+import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin, BarChart3, Star } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -12,6 +12,7 @@ import { BaselineAttendanceDialog } from "@/components/attendance/BaselineAttend
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
 import { ContributorsSection } from "@/components/contributors/ContributorsSection";
 import {
@@ -525,6 +526,21 @@ export default function Profile() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm leading-tight">App Analytics</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Overview of app usage and engagement</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </button>
+
+            {/* Rate us - Play Store in-app review (stars, submit from app) */}
+            <button
+              onClick={() => requestAppReview()}
+              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+            >
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Star className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm leading-tight">Rate us</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Share your experience on the Play Store</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </button>
