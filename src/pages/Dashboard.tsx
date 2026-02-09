@@ -122,6 +122,45 @@ export default function Dashboard() {
     const id = setInterval(() => setSleepWarningTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
+
+  // When sleep warning targets tomorrow, we need tomorrow's attendance (cancelled slots). Context only has selected date.
+  const [attendanceForSleepTargetDate, setAttendanceForSleepTargetDate] = useState<Record<string, "present" | "absent" | "cancelled" | null> | null>(null);
+  const [sleepTargetDateKey, setSleepTargetDateKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!student) return;
+    const now = new Date();
+    if (now.getHours() < 15) {
+      setAttendanceForSleepTargetDate(null);
+      setSleepTargetDateKey(null);
+      return;
+    }
+    const tomorrowKey = format(addDays(now, 1), "yyyy-MM-dd");
+    const fetchTomorrowAttendance = async () => {
+      try {
+        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${tomorrowKey}`, { method: "GET" });
+        if (!response.ok) return;
+        const data = await response.json();
+        const attendanceMap: Record<string, "present" | "absent" | "cancelled" | null> = {};
+        data.todayAttendance?.forEach((record: { lectureDate: string; subjectId: string; timeSlot?: number | null; startTime?: string; endTime?: string; status: string }) => {
+          let key: string;
+          if (record.timeSlot != null && record.timeSlot !== undefined) {
+            key = `${record.lectureDate}-${record.subjectId}-slot${record.timeSlot}`;
+          } else if (record.startTime && record.endTime) {
+            key = `${record.lectureDate}-${record.subjectId}-${record.startTime}-${record.endTime}`;
+          } else {
+            key = `${record.lectureDate}-${record.subjectId}`;
+          }
+          attendanceMap[key] = record.status as "present" | "absent" | "cancelled";
+        });
+        setAttendanceForSleepTargetDate(attendanceMap);
+        setSleepTargetDateKey(tomorrowKey);
+      } catch {
+        setAttendanceForSleepTargetDate(null);
+        setSleepTargetDateKey(null);
+      }
+    };
+    fetchTomorrowAttendance();
+  }, [student, sleepWarningTick]);
   
   // Persist extra classes to localStorage whenever they change
   useEffect(() => {
@@ -511,6 +550,7 @@ export default function Dashboard() {
 
   // If time until first lecture is less than user's sleep duration, show warning at top.
   // Ignore cancelled classes when finding the first lecture.
+  // When target is tomorrow, use separately fetched attendance (context only has selected date).
   const sleepWarning = useMemo(() => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -519,6 +559,14 @@ export default function Dashboard() {
     const targetDate = startOfDay(checkDate);
     const targetDateKey = format(targetDate, "yyyy-MM-dd");
     const daySchedule = getScheduleForDate(targetDate);
+
+    const attendanceToUse =
+      targetDateKey === dateKey
+        ? todayAttendance
+        : sleepTargetDateKey === targetDateKey
+          ? attendanceForSleepTargetDate
+          : null;
+    if (targetDateKey !== dateKey && attendanceToUse == null) return null;
 
     const slotKeyForAttendance = (slot: { subject: { id: string } | null; slotIndex?: number | null; startTime?: string; endTime?: string; isCustom?: boolean }) => {
       if (!slot.subject) return null;
@@ -537,7 +585,7 @@ export default function Dashboard() {
       const key = slotKeyForAttendance(s);
       if (key == null) return true;
       const fallbackKey = `${targetDateKey}-${s.subject.id}`;
-      const status = todayAttendance[key] ?? todayAttendance[fallbackKey];
+      const status = (attendanceToUse ?? {})[key] ?? (attendanceToUse ?? {})[fallbackKey];
       return status !== "cancelled";
     });
     const firstSlot = slotsNotCancelled.find((s) => s.subject);
@@ -550,7 +598,7 @@ export default function Dashboard() {
     const hours = Math.floor(timeUntilMs / (60 * 60 * 1000));
     const minutes = Math.floor((timeUntilMs % (60 * 60 * 1000)) / (60 * 1000));
     return { hours, minutes };
-  }, [sleepWarningTick, sleepDurationHours, timetable, enrolledSubjects, labTimetable, tutorialTimetable, todayAttendance]);
+  }, [sleepWarningTick, sleepDurationHours, timetable, enrolledSubjects, labTimetable, tutorialTimetable, todayAttendance, dateKey, attendanceForSleepTargetDate, sleepTargetDateKey]);
 
   const isSelectedToday = isToday(selectedDate);
   const isSelectedTomorrow = isTomorrow(selectedDate);
