@@ -852,19 +852,19 @@ export default function Dashboard() {
       <DemoBanner isDemo={student?.isDemo || false} />
       {sleepWarning && (
         <div className="mb-4 overflow-hidden rounded-2xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-indigo-50 dark:border-violet-500/20 dark:from-violet-950/40 dark:to-indigo-950/30 shadow-sm">
-          <div className="flex gap-3 px-4 py-3.5">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
-              <Moon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <div className="flex gap-3 px-4 py-3">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
+              <Moon className="h-6 w-6 text-violet-600 dark:text-violet-400" />
             </div>
             <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-sm font-semibold text-violet-900 dark:text-violet-100">
-                {sleepWarning.hours > 0
-                  ? `${sleepWarning.hours} ${sleepWarning.hours === 1 ? "hour" : "hours"}${sleepWarning.minutes > 0 ? ` and ${sleepWarning.minutes} ${sleepWarning.minutes === 1 ? "minute" : "minutes"}` : ""}`
-                  : `${sleepWarning.minutes} ${sleepWarning.minutes === 1 ? "minute" : "minutes"}`}{" "}
-                until your first lecture
+              <p className="text-sm font-semibold leading-tight text-violet-900 dark:text-violet-100">
+                Only {sleepWarning.hours > 0
+                  ? `${sleepWarning.hours}h${sleepWarning.minutes > 0 ? ` ${sleepWarning.minutes}m` : ""}`
+                  : `${sleepWarning.minutes}m`}{" "}
+                until first lecture
               </p>
-              <p className="text-xs text-violet-700/90 dark:text-violet-300/90">
-                That’s less than your usual sleep. Wind down soon so you’re fresh for class.
+              <p className="text-xs leading-snug text-violet-700/90 dark:text-violet-300/90 line-clamp-2">
+              Less than your usual sleep. Rest up.
               </p>
             </div>
           </div>
