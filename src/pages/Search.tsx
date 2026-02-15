@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AppLayout } from "@/components/layout/AppLayout";
+
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
 import { trackAppEvent } from "@/contexts/AuthContext";
@@ -59,7 +59,7 @@ interface StudentAttendanceData {
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const studentIdParam = searchParams.get("studentId");
-  
+
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
@@ -81,7 +81,7 @@ export default function Search() {
 
     (async () => {
       const { App } = await import("@capacitor/app");
-      
+
       listenerHandle = await App.addListener("backButton", ({ canGoBack }) => {
         if (studentIdParam) {
           // If viewing a profile, go back to search results
@@ -136,10 +136,10 @@ export default function Search() {
       try {
         const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(studentIdParam);
         const response = await fetch(url, { credentials: 'include' });
-        
+
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
-          
+
           // Create student object from attendance data
           const student: Student = {
             id: data.studentId,
@@ -147,7 +147,7 @@ export default function Search() {
             rollNumber: data.rollNumber,
             pictureUrl: data.studentPictureUrl,
           };
-          
+
           setSelectedStudent(student);
 
           // Convert hex colors to HSL format for subjects
@@ -157,7 +157,7 @@ export default function Search() {
               color: hexToHslLightened(subj.color || "#3B82F6")
             }));
           }
-          
+
           if (data.semesters) {
             data.semesters = data.semesters.map(sem => ({
               ...sem,
@@ -167,7 +167,7 @@ export default function Search() {
               }))
             }));
           }
-          
+
           setAttendanceData(data);
         } else if (response.status === 404) {
           // Student not found, clear the param
@@ -208,7 +208,7 @@ export default function Search() {
       }
     };
     fetchCurrentSemester();
-    
+
     // Track search page view (only when not viewing a specific profile)
     if (!studentIdParam) {
       trackAppEvent('search_view', {
@@ -235,11 +235,11 @@ export default function Search() {
           `${API_CONFIG.ENDPOINTS.SEARCH_STUDENTS}?query=${encodeURIComponent(query)}`,
           { credentials: 'include' }
         );
-        
+
         if (response.ok) {
           const data = await response.json();
           setStudents(data);
-          
+
           // Track search event
           trackAppEvent('search_performed', {
             query: query.trim(),
@@ -286,7 +286,7 @@ export default function Search() {
       try {
         const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
         const response = await fetch(url, { credentials: 'include' });
-        
+
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
 
@@ -297,7 +297,7 @@ export default function Search() {
               color: hexToHslLightened(subj.color || "#3B82F6")
             }));
           }
-          
+
           if (data.semesters) {
             data.semesters = data.semesters.map(sem => ({
               ...sem,
@@ -307,7 +307,7 @@ export default function Search() {
               }))
             }));
           }
-          
+
           setAttendanceData(data);
         } else {
           console.error('Failed to fetch attendance');
@@ -329,7 +329,7 @@ export default function Search() {
     if (!attendanceData?.semesters || !selectedSemester) {
       return attendanceData?.semesters || [];
     }
-    return attendanceData.semesters.filter(sem => 
+    return attendanceData.semesters.filter(sem =>
       sem.semester.year === selectedSemester.year &&
       sem.semester.type.toLowerCase() === selectedSemester.term.toLowerCase()
     );
@@ -338,7 +338,7 @@ export default function Search() {
   // Find current semester data
   const currentSemesterData = useMemo(() => {
     if (!attendanceData?.semesters || !currentSemester) return null;
-    return attendanceData.semesters.find(sem => 
+    return attendanceData.semesters.find(sem =>
       sem.semester.year === currentSemester.year &&
       sem.semester.type.toLowerCase() === currentSemester.type.toLowerCase()
     );
@@ -371,155 +371,200 @@ export default function Search() {
 
   if (selectedStudent) {
     return (
-      <AppLayout>
-        <div className="space-y-4">
-          {/* Back button */}
-          <button
-            onClick={() => {
-              // Remove studentId from URL to go back to search results
-              // This works with browser history - when URL changes, browser history is updated
-              setSearchParams((prev) => {
-                const newParams = new URLSearchParams(prev);
-                newParams.delete("studentId");
-                return newParams;
-              });
-              setSelectedSemester(null);
-            }}
-            className="flex items-center gap-2 text-muted-foreground text-sm"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </button>
 
-          {isLoadingAttendance ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">Loading attendance data...</p>
-            </div>
-          ) : (
-            <>
-              {/* Student Profile Card with Overall Attendance */}
-              {overallAttendance && (
-                <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
-                  {/* Student Info */}
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                      <img 
-                        src={selectedStudent.pictureUrl || "/user-icons/user2.png"} 
-                        alt={selectedStudent.name}
-                        className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/user-icons/user2.png";
-                        }}
+      <div className="space-y-4">
+        {/* Back button */}
+        <button
+          onClick={() => {
+            // Remove studentId from URL to go back to search results
+            // This works with browser history - when URL changes, browser history is updated
+            setSearchParams((prev) => {
+              const newParams = new URLSearchParams(prev);
+              newParams.delete("studentId");
+              return newParams;
+            });
+            setSelectedSemester(null);
+          }}
+          className="flex items-center gap-2 text-muted-foreground text-sm"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Back
+        </button>
+
+        {isLoadingAttendance ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">Loading attendance data...</p>
+          </div>
+        ) : (
+          <>
+            {/* Student Profile Card with Overall Attendance */}
+            {overallAttendance && (
+              <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
+                {/* Student Info */}
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img
+                      src={selectedStudent.pictureUrl || "/user-icons/user2.png"}
+                      alt={selectedStudent.name}
+                      className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/user-icons/user2.png";
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-base md:text-lg font-bold truncate">{selectedStudent.name}</h1>
+                    <p className="text-xs text-muted-foreground">{selectedStudent.rollNumber}</p>
+                  </div>
+                </div>
+
+                {/* Overall Attendance */}
+                <div className="space-y-2">
+                  {/* Percentage Display */}
+                  <div className="text-center">
+                    <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Overall Attendance</p>
+                    <p className={cn(
+                      "text-3xl md:text-4xl font-bold",
+                      overallAttendance.percentage >= 75 ? "text-success" :
+                        overallAttendance.percentage >= 60 ? "text-warning" : "text-destructive"
+                    )}>
+                      {overallAttendance.percentage.toFixed(1)}%
+                    </p>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div>
+                    <div className="relative h-2 md:h-2.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all",
+                          overallAttendance.percentage >= 75 ? "bg-success" :
+                            overallAttendance.percentage >= 60 ? "bg-warning" : "bg-destructive"
+                        )}
+                        style={{ width: `${Math.min(overallAttendance.percentage, 100)}%` }}
+                      />
+                      {/* 75% threshold marker */}
+                      <div
+                        className="absolute top-0 w-0.5 h-full bg-foreground/30"
+                        style={{ left: "75%" }}
                       />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h1 className="text-base md:text-lg font-bold truncate">{selectedStudent.name}</h1>
-                      <p className="text-xs text-muted-foreground">{selectedStudent.rollNumber}</p>
-                    </div>
                   </div>
 
-                  {/* Overall Attendance */}
-                  <div className="space-y-2">
-                    {/* Percentage Display */}
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-2 md:gap-3 pt-1">
                     <div className="text-center">
-                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Overall Attendance</p>
-                      <p className={cn(
-                        "text-3xl md:text-4xl font-bold",
-                        overallAttendance.percentage >= 75 ? "text-success" :
-                        overallAttendance.percentage >= 60 ? "text-warning" : "text-destructive"
-                      )}>
-                        {overallAttendance.percentage.toFixed(1)}%
-                      </p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Present</p>
+                      <p className="text-lg md:text-xl font-bold text-success">{overallAttendance.present}</p>
                     </div>
-
-                    {/* Progress Bar */}
-                    <div>
-                      <div className="relative h-2 md:h-2.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all",
-                            overallAttendance.percentage >= 75 ? "bg-success" :
-                            overallAttendance.percentage >= 60 ? "bg-warning" : "bg-destructive"
-                          )}
-                          style={{ width: `${Math.min(overallAttendance.percentage, 100)}%` }}
-                        />
-                        {/* 75% threshold marker */}
-                        <div
-                          className="absolute top-0 w-0.5 h-full bg-foreground/30"
-                          style={{ left: "75%" }}
-                        />
-                      </div>
+                    <div className="text-center">
+                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Absent</p>
+                      <p className="text-lg md:text-xl font-bold text-destructive">{overallAttendance.absent}</p>
                     </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-2 md:gap-3 pt-1">
-                      <div className="text-center">
-                        <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Present</p>
-                        <p className="text-lg md:text-xl font-bold text-success">{overallAttendance.present}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Absent</p>
-                        <p className="text-lg md:text-xl font-bold text-destructive">{overallAttendance.absent}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Total</p>
-                        <p className="text-lg md:text-xl font-bold text-foreground">{overallAttendance.total}</p>
-                      </div>
+                    <div className="text-center">
+                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Total</p>
+                      <p className="text-lg md:text-xl font-bold text-foreground">{overallAttendance.total}</p>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Current Semester - Only if no filter applied */}
-              {!selectedSemester && currentSemesterData && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">
-                    Current Semester ({currentSemesterData.semester.type} {currentSemesterData.semester.year})
-                  </h3>
-                  <div className="space-y-2">
-                    {currentSemesterData.subjects.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No attendance data for current semester
-                      </p>
-                    ) : (
-                      currentSemesterData.subjects.map((subject) => (
-                        <SubjectCard
-                          key={subject.subjectId}
-                          name={subject.subjectName}
-                          code={subject.subjectCode}
-                          color={subject.color}
-                          present={subject.present}
-                          absent={subject.absent}
-                          total={subject.total}
-                          minRequired={70}
-                          defaultExpanded={true}
-                          hideBunkableInfo={true}
-                        />
-                      ))
-                    )}
-                  </div>
+            {/* Current Semester - Only if no filter applied */}
+            {!selectedSemester && currentSemesterData && (
+              <div>
+                <h3 className="font-semibold text-sm mb-2">
+                  Current Semester ({currentSemesterData.semester.type} {currentSemesterData.semester.year})
+                </h3>
+                <div className="space-y-2">
+                  {currentSemesterData.subjects.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No attendance data for current semester
+                    </p>
+                  ) : (
+                    currentSemesterData.subjects.map((subject) => (
+                      <SubjectCard
+                        key={subject.subjectId}
+                        name={subject.subjectName}
+                        code={subject.subjectCode}
+                        color={subject.color}
+                        present={subject.present}
+                        absent={subject.absent}
+                        total={subject.total}
+                        minRequired={70}
+                        defaultExpanded={true}
+                        hideBunkableInfo={true}
+                      />
+                    ))
+                  )}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Filtered Semester Data */}
-              {selectedSemester && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">
-                    {selectedSemester.label} Attendance
-                  </h3>
-                  <div className="space-y-2">
-                    {filteredSemesters.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No data for {selectedSemester.label}
-                      </p>
-                    ) : (
-                      filteredSemesters.map((sem) => (
-                        <div key={`${sem.semester.year}-${sem.semester.type}`} className="space-y-2">
+            {/* Filtered Semester Data */}
+            {selectedSemester && (
+              <div>
+                <h3 className="font-semibold text-sm mb-2">
+                  {selectedSemester.label} Attendance
+                </h3>
+                <div className="space-y-2">
+                  {filteredSemesters.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No data for {selectedSemester.label}
+                    </p>
+                  ) : (
+                    filteredSemesters.map((sem) => (
+                      <div key={`${sem.semester.year}-${sem.semester.type}`} className="space-y-2">
+                        {sem.subjects.map((subject) => (
+                          <SubjectCard
+                            key={subject.subjectId}
+                            name={subject.subjectName}
+                            code={subject.subjectCode}
+                            color={subject.color}
+                            present={subject.present}
+                            absent={subject.absent}
+                            total={subject.total}
+                            minRequired={75}
+                            hideBunkableInfo={true}
+                          />
+                        ))}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Previous Semesters - Collapsed view without filter */}
+            {!selectedSemester && attendanceData?.semesters && (
+              <div>
+                <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
+                <div className="space-y-2">
+                  {attendanceData.semesters
+                    .filter(sem =>
+                      !currentSemester ||
+                      sem.semester.year !== currentSemester.year ||
+                      sem.semester.type.toLowerCase() !== currentSemester.type.toLowerCase()
+                    )
+                    .map((sem) => (
+                      <Collapsible key={`${sem.semester.year}-${sem.semester.type}`}>
+                        <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
+                          <div>
+                            <p className="font-medium text-sm">
+                              {sem.semester.type} {sem.semester.year}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {sem.subjects.length} subject{sem.subjects.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-2 space-y-2">
                           {sem.subjects.map((subject) => (
                             <SubjectCard
                               key={subject.subjectId}
                               name={subject.subjectName}
-                              code={subject.subjectCode}
+                              lecturePlace={subject.lecturePlace}
                               color={subject.color}
                               present={subject.present}
                               absent={subject.absent}
@@ -528,157 +573,112 @@ export default function Search() {
                               hideBunkableInfo={true}
                             />
                           ))}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Previous Semesters - Collapsed view without filter */}
-              {!selectedSemester && attendanceData?.semesters && (
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
-                  <div className="space-y-2">
-                    {attendanceData.semesters
-                      .filter(sem => 
-                        !currentSemester || 
-                        sem.semester.year !== currentSemester.year ||
-                        sem.semester.type.toLowerCase() !== currentSemester.type.toLowerCase()
-                      )
-                      .map((sem) => (
-                        <Collapsible key={`${sem.semester.year}-${sem.semester.type}`}>
-                          <CollapsibleTrigger className="w-full bg-card rounded-xl p-3 border border-border flex items-center justify-between text-left">
-                            <div>
-                              <p className="font-medium text-sm">
-                                {sem.semester.type} {sem.semester.year}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {sem.subjects.length} subject{sem.subjects.length !== 1 ? 's' : ''}
-                              </p>
-                            </div>
-                            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="pt-2 space-y-2">
-                            {sem.subjects.map((subject) => (
-                              <SubjectCard
-                                key={subject.subjectId}
-                                name={subject.subjectName}
-                                lecturePlace={subject.lecturePlace}
-                                color={subject.color}
-                                present={subject.present}
-                                absent={subject.absent}
-                                total={subject.total}
-                                minRequired={75}
-                                hideBunkableInfo={true}
-                              />
-                            ))}
-                          </CollapsibleContent>
-                        </Collapsible>
-                      ))}
-                  </div>
-                </div>
-              )}
+            {!attendanceData?.semesters && !attendanceData?.subjects && overallAttendance && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No detailed attendance data available</p>
+              </div>
+            )}
 
-              {!attendanceData?.semesters && !attendanceData?.subjects && overallAttendance && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">No detailed attendance data available</p>
-                </div>
-              )}
+            {!overallAttendance && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No attendance data available</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
-              {!overallAttendance && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">No attendance data available</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </AppLayout>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-4">
-        {/* Semester Filter at Top */}
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-sm">Search Students</h2>
-          <SemesterSelector
-            selectedSemester={selectedSemester}
-            onSemesterChange={setSelectedSemester}
-            semesters={availableSemesters}
-          />
-        </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or roll number..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-12 py-6 text-base rounded-xl bg-card border-border"
-          />
-        </div>
-
-        {/* Results */}
-        {query.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">Search for any student</p>
-            {selectedSemester && (
-              <p className="text-xs mt-1">Filtering by {selectedSemester.label}</p>
-            )}
-          </div>
-        )}
-
-        {isSearching && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">Searching...</p>
-          </div>
-        )}
-
-        {!isSearching && query.length >= 2 && students.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <p className="text-sm">No students found</p>
-          </div>
-        )}
-
-        {!isSearching && students.length > 0 && (
-          <div className="space-y-2">
-            {students.map((student) => (
-              <button
-                key={student.id}
-                onClick={() => {
-                  // Update URL with studentId to maintain browser history
-                  setSearchParams((prev) => {
-                    const newParams = new URLSearchParams(prev);
-                    newParams.set("studentId", student.id);
-                    return newParams;
-                  });
-                }}
-                className="bg-card rounded-xl p-4 border border-border flex items-center gap-3 text-left w-full active:scale-98 transition-transform"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                  <img 
-                    src={student.pictureUrl || "/user-icons/user2.png"} 
-                    alt={student.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = "/user-icons/user2.png";
-                    }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{student.name}</p>
-                  <p className="text-xs text-muted-foreground">{student.rollNumber}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+    <div className="space-y-4">
+      {/* Semester Filter at Top */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-sm">Search Students</h2>
+        <SemesterSelector
+          selectedSemester={selectedSemester}
+          onSemesterChange={setSelectedSemester}
+          semesters={availableSemesters}
+        />
       </div>
-    </AppLayout>
+
+      {/* Search Input */}
+      <div className="relative">
+        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <Input
+          placeholder="Search by name or roll number..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-12 py-6 text-base rounded-xl bg-card border-border"
+        />
+      </div>
+
+      {/* Results */}
+      {query.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="text-sm">Search for any student</p>
+          {selectedSemester && (
+            <p className="text-xs mt-1">Filtering by {selectedSemester.label}</p>
+          )}
+        </div>
+      )}
+
+      {isSearching && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-sm">Searching...</p>
+        </div>
+      )}
+
+      {!isSearching && query.length >= 2 && students.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-sm">No students found</p>
+        </div>
+      )}
+
+      {!isSearching && students.length > 0 && (
+        <div className="space-y-2">
+          {students.map((student) => (
+            <button
+              key={student.id}
+              onClick={() => {
+                // Update URL with studentId to maintain browser history
+                setSearchParams((prev) => {
+                  const newParams = new URLSearchParams(prev);
+                  newParams.set("studentId", student.id);
+                  return newParams;
+                });
+              }}
+              className="bg-card rounded-xl p-4 border border-border flex items-center gap-3 text-left w-full active:scale-98 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                <img
+                  src={student.pictureUrl || "/user-icons/user2.png"}
+                  alt={student.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "/user-icons/user2.png";
+                  }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{student.name}</p>
+                <p className="text-xs text-muted-foreground">{student.rollNumber}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+
   );
 }

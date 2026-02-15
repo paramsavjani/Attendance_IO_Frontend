@@ -850,7 +850,7 @@ export default function Dashboard() {
   }).length;
 
   return (
-    <AppLayout>
+    <>
       <DemoBanner isDemo={student?.isDemo || false} />
       {sleepWarning && (
         <div className="mb-2 overflow-hidden rounded-xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-indigo-50 dark:border-violet-500/20 dark:from-violet-950/40 dark:to-indigo-950/30 shadow-sm">
@@ -1530,6 +1530,6 @@ export default function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </>
   );
 }
