@@ -42,13 +42,33 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, [location.pathname, isDragging]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    startX.current = e.touches[0].clientX;
-    startProgress.current = dragProgress;
+    if (!navRef.current) return;
+
+    // Calculate which item was touched
+    const navRect = navRef.current.getBoundingClientRect();
+    const touchX = e.touches[0].clientX;
+
+    // Account for the grid gap and padding in the calculation if needed,
+    // but simple division usually works well enough for "intent".
+    // Width includes padding (4px total) + gaps (16px total). 
+    // It's a grid of 5 equal columns.
+    const itemWidth = navRect.width / 5;
+    const relativeX = touchX - navRect.left;
+    const touchedIndex = Math.floor(relativeX / itemWidth);
+
+    // Get current active index
+    const currentIndex = navItems.findIndex(i => location.pathname === i.path);
+
+    // Only start dragging if touching the active tab (or very close to it)
+    if (touchedIndex === currentIndex) {
+      setIsDragging(true);
+      startX.current = touchX;
+      startProgress.current = dragProgress;
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!navRef.current) return;
+    if (!navRef.current || !isDragging) return;
 
     const currentX = e.touches[0].clientX;
     const diff = currentX - startX.current;
@@ -61,6 +81,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   const handleTouchEnd = () => {
+    if (!isDragging) return;
+
     setIsDragging(false);
     const targetIndex = Math.round(dragProgress);
     const targetPath = navItems[targetIndex].path;
