@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+
 import { timeSlots, days } from "@/data/mockData";
 import { TimetableSlot } from "@/types/attendance";
 import { cn } from "@/lib/utils";
@@ -48,17 +48,17 @@ function useSwipeDayNavigation(activeDay: number, setActiveDay: (day: number) =>
 
   const onTouchEnd = useCallback(() => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
+
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
+
     if (isLeftSwipe && activeDay < totalDays - 1) {
       setActiveDay(activeDay + 1); // Navigate to next day
     } else if (isRightSwipe && activeDay > 0) {
       setActiveDay(activeDay - 1); // Navigate to previous day
     }
-    
+
     touchStartX.current = null;
     touchEndX.current = null;
   }, [activeDay, setActiveDay, totalDays]);
@@ -94,7 +94,7 @@ function TimelineContent({
   const allSlots = getAllSlotsForDay(activeDay);
 
   return (
-    <div 
+    <div
       className="flex-1 overflow-y-auto relative"
       onTouchStart={swipeHandlers.onTouchStart}
       onTouchMove={swipeHandlers.onTouchMove}
@@ -105,24 +105,24 @@ function TimelineContent({
 
       <div className="space-y-0">
         {allSlots.map((slotInfo, index) => {
-          const subject = slotInfo.slot?.subjectId 
+          const subject = slotInfo.slot?.subjectId
             ? enrolledSubjects.find((s) => s.id === slotInfo.slot.subjectId)
             : null;
-          
+
           return (
             <div key={index} className="relative flex items-stretch gap-3 min-h-[72px]">
               {/* Dot - centered vertically in its container */}
               <div className="flex flex-col items-center w-3 flex-shrink-0">
                 <div className="flex-1" />
-                <div 
+                <div
                   className={cn(
                     "w-3 h-3 rounded-full flex-shrink-0",
-                    subject 
-                      ? "bg-primary" 
+                    subject
+                      ? "bg-primary"
                       : slotInfo.type === 'custom'
-                      ? "bg-warning"
-                      : "bg-muted-foreground/30"
-                  )} 
+                        ? "bg-warning"
+                        : "bg-muted-foreground/30"
+                  )}
                 />
                 <div className="flex-1" />
               </div>
@@ -139,9 +139,9 @@ function TimelineContent({
               {/* Content */}
               <button
                 onClick={() => handleSlotClick(
-                  activeDay, 
-                  slotInfo.timeSlot, 
-                  slotInfo.startTime, 
+                  activeDay,
+                  slotInfo.timeSlot,
+                  slotInfo.startTime,
                   slotInfo.endTime
                 )}
                 className="flex-1 min-w-0 text-left group py-1.5"
@@ -154,10 +154,10 @@ function TimelineContent({
                     </div>
                     <button
                       onClick={(e) => handleClearSlot(
-                        activeDay, 
-                        slotInfo.timeSlot, 
-                        e, 
-                        slotInfo.startTime, 
+                        activeDay,
+                        slotInfo.timeSlot,
+                        e,
+                        slotInfo.startTime,
                         slotInfo.endTime
                       )}
                       className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
@@ -177,7 +177,7 @@ function TimelineContent({
             </div>
           );
         })}
-        
+
         {/* Add Custom Time Button */}
         <div className="relative flex items-stretch gap-3 min-h-[72px] mt-2">
           <div className="flex flex-col items-center w-3 flex-shrink-0">
@@ -235,7 +235,7 @@ function LabTutorialTimeline({
   });
 
   return (
-    <div 
+    <div
       className="flex-1 overflow-y-auto relative"
       onTouchStart={swipeHandlers.onTouchStart}
       onTouchMove={swipeHandlers.onTouchMove}
@@ -244,21 +244,21 @@ function LabTutorialTimeline({
       <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
       <div className="space-y-0">
         {allSlots.map((slotInfo, index) => {
-          const subject = slotInfo.slot?.subjectId 
+          const subject = slotInfo.slot?.subjectId
             ? enrolledSubjects.find((s) => s.id === slotInfo.slot.subjectId)
             : null;
-          
+
           return (
             <div key={index} className="relative flex items-stretch gap-3 min-h-[72px]">
               <div className="flex flex-col items-center w-3 flex-shrink-0">
                 <div className="flex-1" />
-                <div 
+                <div
                   className={cn(
                     "w-3 h-3 rounded-full flex-shrink-0",
-                    subject 
+                    subject
                       ? slotInfo.type === "lab" ? "bg-blue-500" : "bg-purple-500"
                       : "bg-muted-foreground/30"
-                  )} 
+                  )}
                 />
                 <div className="flex-1" />
               </div>
@@ -270,9 +270,9 @@ function LabTutorialTimeline({
 
               <button
                 onClick={() => handleSlotClick(
-                  activeDay, 
-                  null, 
-                  slotInfo.startTime, 
+                  activeDay,
+                  null,
+                  slotInfo.startTime,
                   slotInfo.endTime,
                   slotInfo.type
                 )}
@@ -303,10 +303,10 @@ function LabTutorialTimeline({
                     </div>
                     <button
                       onClick={(e) => handleClearSlot(
-                        activeDay, 
-                        null, 
-                        e, 
-                        slotInfo.startTime, 
+                        activeDay,
+                        null,
+                        e,
+                        slotInfo.startTime,
                         slotInfo.endTime,
                         slotInfo.type
                       )}
@@ -327,7 +327,7 @@ function LabTutorialTimeline({
             </div>
           );
         })}
-        
+
         {/* Add Custom Time Buttons */}
         <div className="relative flex items-stretch gap-3 min-h-[72px] mt-2">
           <div className="flex flex-col items-center w-3 flex-shrink-0">
@@ -363,17 +363,17 @@ export default function Timetable() {
   const { student } = useAuth();
   const { enrolledSubjects } = useAttendance();
   const [activeTab, setActiveTab] = useState<"lecture" | "lab-tutorial">("lecture");
-  
+
   // Lecture timetable states
   const [timetable, setTimetable] = useState<TimetableSlot[]>([]);
   const [originalTimetable, setOriginalTimetable] = useState<TimetableSlot[]>([]);
-  
+
   // Lab/Tutorial timetable states
   const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
   const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>([]);
   const [originalLabTimetable, setOriginalLabTimetable] = useState<TimetableSlot[]>([]);
   const [originalTutorialTimetable, setOriginalTutorialTimetable] = useState<TimetableSlot[]>([]);
-  
+
   const [selectedSlot, setSelectedSlot] = useState<{ day: number; timeSlot: number | null; startTime?: string; endTime?: string; type?: "lab" | "tutorial" } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [slotLocation, setSlotLocation] = useState("");
@@ -457,7 +457,7 @@ export default function Timetable() {
     };
 
     fetchTimetable();
-    
+
     // Track timetable page view
     trackAppEvent('timetable_view', {
       timestamp: new Date().toISOString(),
@@ -586,19 +586,19 @@ export default function Timetable() {
 
   const getSlotSubject = (day: number, timeSlot: number | null, startTime?: string, endTime?: string) => {
     let slot: TimetableSlot | undefined;
-    
+
     if (timeSlot !== null) {
       // Standard slot
       slot = timetable.find((s) => s.day === day && s.timeSlot === timeSlot && !s.startTime);
     } else if (startTime && endTime) {
       // Custom time slot
-      slot = timetable.find((s) => 
-        s.day === day && 
-        s.startTime === startTime && 
+      slot = timetable.find((s) =>
+        s.day === day &&
+        s.startTime === startTime &&
         s.endTime === endTime
       );
     }
-    
+
     if (slot?.subjectId) {
       return enrolledSubjects.find((s) => s.id === slot.subjectId);
     }
@@ -607,7 +607,7 @@ export default function Timetable() {
 
   const handleSlotClick = (day: number, timeSlot: number | null, startTime?: string, endTime?: string, type?: "lab" | "tutorial") => {
     setSelectedSlot({ day, timeSlot, startTime, endTime, type });
-    
+
     // Pre-fill location and subject when editing an existing lab/tutorial slot
     if (type === "lab" || type === "tutorial") {
       const currentTimetable = type === "lab" ? labTimetable : tutorialTimetable;
@@ -631,7 +631,7 @@ export default function Timetable() {
       setSelectedSubjectId(null);
       setSlotLocation("");
     }
-    
+
     setDialogOpen(true);
   };
 
@@ -641,7 +641,7 @@ export default function Timetable() {
       handleConfirmAssignment(subjectId);
       return;
     }
-    
+
     // For lab/tutorial slots, just set the selected subject - don't save yet
     setSelectedSubjectId(subjectId);
     if (subjectId === null) {
@@ -652,7 +652,7 @@ export default function Timetable() {
 
   const handleConfirmAssignment = (subjectId: string | null) => {
     if (!selectedSlot) return;
-    
+
     const finalSubjectId = subjectId !== null ? subjectId : selectedSubjectId;
     if (finalSubjectId === null && subjectId === null) {
       // Clearing subject
@@ -666,21 +666,21 @@ export default function Timetable() {
     if (selectedSlot.type === "lab" || selectedSlot.type === "tutorial") {
       const currentTimetable = selectedSlot.type === "lab" ? labTimetable : tutorialTimetable;
       const setTimetable = selectedSlot.type === "lab" ? setLabTimetable : setTutorialTimetable;
-      
+
       if (!selectedSlot.startTime || !selectedSlot.endTime) return;
-      
+
       let updatedTimetable: TimetableSlot[] = currentTimetable.map((slot) =>
         slot.day === selectedSlot.day &&
-        slot.startTime === selectedSlot.startTime &&
-        slot.endTime === selectedSlot.endTime
+          slot.startTime === selectedSlot.startTime &&
+          slot.endTime === selectedSlot.endTime
           ? { ...slot, subjectId: finalSubjectId, location: slotLocation.trim() || undefined }
           : slot
       );
 
       const existingSlot = updatedTimetable.find(
         (s) => s.day === selectedSlot.day &&
-        s.startTime === selectedSlot.startTime &&
-        s.endTime === selectedSlot.endTime
+          s.startTime === selectedSlot.startTime &&
+          s.endTime === selectedSlot.endTime
       );
       if (!existingSlot) {
         updatedTimetable.push({
@@ -703,39 +703,39 @@ export default function Timetable() {
 
     // Handle lecture slots (immediate save, no location needed)
     let updatedTimetable: TimetableSlot[];
-    
+
     if (selectedSlot.timeSlot !== null) {
       // Standard slot
       updatedTimetable = timetable.map((slot) =>
         slot.day === selectedSlot.day && slot.timeSlot === selectedSlot.timeSlot && !slot.startTime
-        ? { ...slot, subjectId: finalSubjectId }
-        : slot
-    );
-
-    const existingSlot = updatedTimetable.find(
-        (s) => s.day === selectedSlot.day && s.timeSlot === selectedSlot.timeSlot && !s.startTime
-    );
-    if (!existingSlot) {
-      updatedTimetable.push({
-        day: selectedSlot.day,
-        timeSlot: selectedSlot.timeSlot,
-        subjectId: finalSubjectId,
-      });
-      }
-    } else if (selectedSlot.startTime && selectedSlot.endTime) {
-      // Custom time slot
-      updatedTimetable = timetable.map((slot) =>
-        slot.day === selectedSlot.day && 
-        slot.startTime === selectedSlot.startTime && 
-        slot.endTime === selectedSlot.endTime
           ? { ...slot, subjectId: finalSubjectId }
           : slot
       );
 
       const existingSlot = updatedTimetable.find(
-        (s) => s.day === selectedSlot.day && 
-        s.startTime === selectedSlot.startTime && 
-        s.endTime === selectedSlot.endTime
+        (s) => s.day === selectedSlot.day && s.timeSlot === selectedSlot.timeSlot && !s.startTime
+      );
+      if (!existingSlot) {
+        updatedTimetable.push({
+          day: selectedSlot.day,
+          timeSlot: selectedSlot.timeSlot,
+          subjectId: finalSubjectId,
+        });
+      }
+    } else if (selectedSlot.startTime && selectedSlot.endTime) {
+      // Custom time slot
+      updatedTimetable = timetable.map((slot) =>
+        slot.day === selectedSlot.day &&
+          slot.startTime === selectedSlot.startTime &&
+          slot.endTime === selectedSlot.endTime
+          ? { ...slot, subjectId: finalSubjectId }
+          : slot
+      );
+
+      const existingSlot = updatedTimetable.find(
+        (s) => s.day === selectedSlot.day &&
+          s.startTime === selectedSlot.startTime &&
+          s.endTime === selectedSlot.endTime
       );
       if (!existingSlot) {
         updatedTimetable.push({
@@ -758,30 +758,30 @@ export default function Timetable() {
 
   const handleClearSlot = (day: number, timeSlot: number | null, e: React.MouseEvent, startTime?: string, endTime?: string, type?: "lab" | "tutorial") => {
     e.stopPropagation();
-    
+
     // Handle lab/tutorial slots
     if (type === "lab" || type === "tutorial") {
       const currentTimetable = type === "lab" ? labTimetable : tutorialTimetable;
       const setTimetable = type === "lab" ? setLabTimetable : setTutorialTimetable;
-      
+
       if (!startTime || !endTime) return;
-      
+
       const updatedTimetable = currentTimetable.filter(
         (slot) => !(slot.day === day && slot.startTime === startTime && slot.endTime === endTime)
       );
-      
+
       setTimetable(updatedTimetable);
       return;
     }
-    
+
     // Handle lecture slots
     let updatedTimetable: TimetableSlot[];
-    
+
     if (timeSlot !== null) {
       // Standard slot
       updatedTimetable = timetable.filter(
         (slot) => !(slot.day === day && slot.timeSlot === timeSlot && !slot.startTime)
-    );
+      );
     } else if (startTime && endTime) {
       // Custom time slot
       updatedTimetable = timetable.filter(
@@ -811,12 +811,12 @@ export default function Timetable() {
     if (type === "lab" || type === "tutorial") {
       const currentTimetable = type === "lab" ? labTimetable : tutorialTimetable;
       const setTimetable = type === "lab" ? setLabTimetable : setTutorialTimetable;
-      
+
       // Check if custom time already exists
       const exists = currentTimetable.some(
         (s) => s.day === customTimeDay &&
-        s.startTime === customStartTime &&
-        s.endTime === customEndTime
+          s.startTime === customStartTime &&
+          s.endTime === customEndTime
       );
 
       if (exists) {
@@ -844,9 +844,9 @@ export default function Timetable() {
     // Handle lecture custom time
     // Check if custom time already exists
     const exists = timetable.some(
-      (s) => s.day === customTimeDay && 
-      s.startTime === customStartTime && 
-      s.endTime === customEndTime
+      (s) => s.day === customTimeDay &&
+        s.startTime === customStartTime &&
+        s.endTime === customEndTime
     );
 
     if (exists) {
@@ -1053,460 +1053,460 @@ export default function Timetable() {
   };
 
   return (
-    <AppLayout>
-      <div className="h-full flex flex-col overflow-hidden pb-2">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handleBack} 
-              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-            </button>
-            <h1 className="text-lg font-semibold">Timetable</h1>
-          </div>
 
-          <div className="flex items-center gap-3">
-            {hasUnsavedChanges() && (
-              <Button
-                onClick={saveAllTimetables}
-                disabled={isSaving || isSavingLab || isSavingTutorial}
-                size="sm"
-                className="h-8 gap-1.5"
-              >
-                {(isSaving || isSavingLab || isSavingTutorial) ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Save className="w-3.5 h-3.5" />
-                )}
-                Save
-              </Button>
-            )}
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button 
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                  disabled={isSaving}
-                >
-                  {hasUnsavedChanges() ? "Discard" : "Clear all"}
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="max-w-[90vw] rounded-xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-base">
-                    {hasUnsavedChanges() ? "Discard Changes?" : "Reset Timetable?"}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="text-sm">
-                    {hasUnsavedChanges() 
-                      ? "This will discard all unsaved changes and restore the last saved timetable."
-                      : "This will remove all scheduled classes."}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="gap-2">
-                  <AlertDialogCancel className="h-9 text-sm">Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={hasUnsavedChanges() ? discardChanges : handleRegenerate}
-                    className="bg-destructive text-destructive-foreground h-9 text-sm"
-                  >
-                    {hasUnsavedChanges() ? "Discard" : "Reset"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+    <div className="h-full flex flex-col overflow-hidden pb-2">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleBack}
+            className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+          </button>
+          <h1 className="text-lg font-semibold">Timetable</h1>
         </div>
 
-        {(isLoading || (activeTab === "lab-tutorial" && (isLoadingLab || isLoadingTutorial))) ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "lecture" | "lab-tutorial")} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-0.5 rounded-xl h-9 mb-5 flex-shrink-0">
-                <TabsTrigger 
-                  value="lecture" 
-                  className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+        <div className="flex items-center gap-3">
+          {hasUnsavedChanges() && (
+            <Button
+              onClick={saveAllTimetables}
+              disabled={isSaving || isSavingLab || isSavingTutorial}
+              size="sm"
+              className="h-8 gap-1.5"
+            >
+              {(isSaving || isSavingLab || isSavingTutorial) ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              Save
+            </Button>
+          )}
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                disabled={isSaving}
+              >
+                {hasUnsavedChanges() ? "Discard" : "Clear all"}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="max-w-[90vw] rounded-xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-base">
+                  {hasUnsavedChanges() ? "Discard Changes?" : "Reset Timetable?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                  {hasUnsavedChanges()
+                    ? "This will discard all unsaved changes and restore the last saved timetable."
+                    : "This will remove all scheduled classes."}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="gap-2">
+                <AlertDialogCancel className="h-9 text-sm">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={hasUnsavedChanges() ? discardChanges : handleRegenerate}
+                  className="bg-destructive text-destructive-foreground h-9 text-sm"
                 >
-                  Lecture
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="lab-tutorial" 
-                  className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
-                >
-                  Lab & Tutorial
-                </TabsTrigger>
-              </TabsList>
+                  {hasUnsavedChanges() ? "Discard" : "Reset"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
 
-              <TabsContent value="lecture" className="flex-1 flex flex-col overflow-hidden mt-0">
-                {/* Stats Row */}
-                <div className="flex items-center gap-3 mb-5 flex-shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-2xl font-bold">{timetable.filter(s => s.day === activeDay && s.subjectId !== null).length}</span>
-                    <span className="text-xs text-muted-foreground">today</span>
-                  </div>
-                  <div className="w-px h-4 bg-border" />
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-2xl font-bold text-muted-foreground">{days.reduce((acc, _, idx) => acc + timetable.filter(s => s.day === idx && s.subjectId !== null).length, 0)}</span>
-                    <span className="text-xs text-muted-foreground">this week</span>
-                  </div>
+      {(isLoading || (activeTab === "lab-tutorial" && (isLoadingLab || isLoadingTutorial))) ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "lecture" | "lab-tutorial")} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-0.5 rounded-xl h-9 mb-5 flex-shrink-0">
+              <TabsTrigger
+                value="lecture"
+                className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+              >
+                Lecture
+              </TabsTrigger>
+              <TabsTrigger
+                value="lab-tutorial"
+                className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+              >
+                Lab & Tutorial
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="lecture" className="flex-1 flex flex-col overflow-hidden mt-0">
+              {/* Stats Row */}
+              <div className="flex items-center gap-3 mb-5 flex-shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-2xl font-bold">{timetable.filter(s => s.day === activeDay && s.subjectId !== null).length}</span>
+                  <span className="text-xs text-muted-foreground">today</span>
                 </div>
-
-                {/* Day Pills */}
-                <div className="grid grid-cols-5 gap-1.5 mb-6 flex-shrink-0">
-                  {days.map((day, dayIndex) => {
-                    const slotCount = timetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
-                    const isActive = activeDay === dayIndex;
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => setActiveDay(dayIndex)}
-                        className={cn(
-                          "py-2.5 rounded-full text-sm font-medium transition-all text-center",
-                          isActive 
-                            ? "bg-foreground text-background" 
-                            : "bg-secondary text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <span>{day.slice(0, 3)}</span>
-                        {slotCount > 0 && (
-                          <span className={cn(
-                            "ml-0.5 text-xs",
-                            isActive ? "text-background/70" : "text-muted-foreground"
-                          )}>
-                            · {slotCount}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                <div className="w-px h-4 bg-border" />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-2xl font-bold text-muted-foreground">{days.reduce((acc, _, idx) => acc + timetable.filter(s => s.day === idx && s.subjectId !== null).length, 0)}</span>
+                  <span className="text-xs text-muted-foreground">this week</span>
                 </div>
+              </div>
 
-                {/* Timeline */}
-                <TimelineContent
-                  activeDay={activeDay}
-                  setActiveDay={setActiveDay}
-                  totalDays={days.length}
-                  getAllSlotsForDay={getAllSlotsForDay}
-                  formatTime={formatTime}
-                  enrolledSubjects={enrolledSubjects}
-                  handleSlotClick={handleSlotClick}
-                  handleClearSlot={handleClearSlot}
-                  onAddCustomTime={() => {
-                    setCustomTimeDay(activeDay);
-                    setCustomTimeDialogOpen(true);
-                  }}
-                />
-              </TabsContent>
+              {/* Day Pills */}
+              <div className="grid grid-cols-5 gap-1.5 mb-6 flex-shrink-0">
+                {days.map((day, dayIndex) => {
+                  const slotCount = timetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
+                  const isActive = activeDay === dayIndex;
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setActiveDay(dayIndex)}
+                      className={cn(
+                        "py-2.5 rounded-full text-sm font-medium transition-all text-center",
+                        isActive
+                          ? "bg-foreground text-background"
+                          : "bg-secondary text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>{day.slice(0, 3)}</span>
+                      {slotCount > 0 && (
+                        <span className={cn(
+                          "ml-0.5 text-xs",
+                          isActive ? "text-background/70" : "text-muted-foreground"
+                        )}>
+                          · {slotCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-              <TabsContent value="lab-tutorial" className="flex-1 flex flex-col overflow-hidden mt-0">
-                {/* Stats Row */}
-                <div className="flex items-center gap-3 mb-5 flex-shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-2xl font-bold">{getDaySlotCount(activeDay)}</span>
-                    <span className="text-xs text-muted-foreground">today</span>
-                  </div>
-                  <div className="w-px h-4 bg-border" />
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-2xl font-bold text-muted-foreground">{totalWeekClasses}</span>
-                    <span className="text-xs text-muted-foreground">this week</span>
-                  </div>
+              {/* Timeline */}
+              <TimelineContent
+                activeDay={activeDay}
+                setActiveDay={setActiveDay}
+                totalDays={days.length}
+                getAllSlotsForDay={getAllSlotsForDay}
+                formatTime={formatTime}
+                enrolledSubjects={enrolledSubjects}
+                handleSlotClick={handleSlotClick}
+                handleClearSlot={handleClearSlot}
+                onAddCustomTime={() => {
+                  setCustomTimeDay(activeDay);
+                  setCustomTimeDialogOpen(true);
+                }}
+              />
+            </TabsContent>
+
+            <TabsContent value="lab-tutorial" className="flex-1 flex flex-col overflow-hidden mt-0">
+              {/* Stats Row */}
+              <div className="flex items-center gap-3 mb-5 flex-shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-2xl font-bold">{getDaySlotCount(activeDay)}</span>
+                  <span className="text-xs text-muted-foreground">today</span>
                 </div>
-
-                {/* Day Pills */}
-                <div className="grid grid-cols-5 gap-1.5 mb-6 flex-shrink-0">
-                  {days.map((day, dayIndex) => {
-                    const labCount = labTimetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
-                    const tutorialCount = tutorialTimetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
-                    const slotCount = labCount + tutorialCount;
-                    const isActive = activeDay === dayIndex;
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => setActiveDay(dayIndex)}
-                        className={cn(
-                          "py-2.5 rounded-full text-sm font-medium transition-all text-center",
-                          isActive 
-                            ? "bg-foreground text-background" 
-                            : "bg-secondary text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <span>{day.slice(0, 3)}</span>
-                        {slotCount > 0 && (
-                          <span className={cn(
-                            "ml-0.5 text-xs",
-                            isActive ? "text-background/70" : "text-muted-foreground"
-                          )}>
-                            · {slotCount}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                <div className="w-px h-4 bg-border" />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-2xl font-bold text-muted-foreground">{totalWeekClasses}</span>
+                  <span className="text-xs text-muted-foreground">this week</span>
                 </div>
+              </div>
 
-                {/* Lab/Tutorial Timeline */}
-                <LabTutorialTimeline
-                  activeDay={activeDay}
-                  setActiveDay={setActiveDay}
-                  totalDays={days.length}
-                  getAllSlotsForDay={getAllLabTutorialSlotsForDay}
-                  formatTime={formatTime}
-                  enrolledSubjects={enrolledSubjects}
-                  handleSlotClick={handleSlotClick}
-                  handleClearSlot={handleClearSlot}
-                  onAddCustomTime={(type) => {
-                    setCustomTimeDay(activeDay);
-                    setCustomTimeType(type);
-                    setCustomTimeDialogOpen(true);
-                  }}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
+              {/* Day Pills */}
+              <div className="grid grid-cols-5 gap-1.5 mb-6 flex-shrink-0">
+                {days.map((day, dayIndex) => {
+                  const labCount = labTimetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
+                  const tutorialCount = tutorialTimetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
+                  const slotCount = labCount + tutorialCount;
+                  const isActive = activeDay === dayIndex;
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setActiveDay(dayIndex)}
+                      className={cn(
+                        "py-2.5 rounded-full text-sm font-medium transition-all text-center",
+                        isActive
+                          ? "bg-foreground text-background"
+                          : "bg-secondary text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>{day.slice(0, 3)}</span>
+                      {slotCount > 0 && (
+                        <span className={cn(
+                          "ml-0.5 text-xs",
+                          isActive ? "text-background/70" : "text-muted-foreground"
+                        )}>
+                          · {slotCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-        {/* Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) {
-            setSlotLocation("");
-            setSelectedSubjectId(null);
-          }
-        }}>
-          <DialogContent className="max-w-sm mx-auto rounded-xl">
-            <DialogHeader className="pb-2">
-              <DialogTitle className="text-base font-semibold">
-                {selectedSubjectId && (selectedSlot?.type === "lab" || selectedSlot?.type === "tutorial")
-                  ? "Enter Location"
-                  : "Select Subject"}
-              </DialogTitle>
-              {selectedSlot && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {days[selectedSlot.day]} · {
-                    selectedSlot.type === "lab" ? "Lab" :
+              {/* Lab/Tutorial Timeline */}
+              <LabTutorialTimeline
+                activeDay={activeDay}
+                setActiveDay={setActiveDay}
+                totalDays={days.length}
+                getAllSlotsForDay={getAllLabTutorialSlotsForDay}
+                formatTime={formatTime}
+                enrolledSubjects={enrolledSubjects}
+                handleSlotClick={handleSlotClick}
+                handleClearSlot={handleClearSlot}
+                onAddCustomTime={(type) => {
+                  setCustomTimeDay(activeDay);
+                  setCustomTimeType(type);
+                  setCustomTimeDialogOpen(true);
+                }}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
+
+      {/* Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) {
+          setSlotLocation("");
+          setSelectedSubjectId(null);
+        }
+      }}>
+        <DialogContent className="max-w-sm mx-auto rounded-xl">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base font-semibold">
+              {selectedSubjectId && (selectedSlot?.type === "lab" || selectedSlot?.type === "tutorial")
+                ? "Enter Location"
+                : "Select Subject"}
+            </DialogTitle>
+            {selectedSlot && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {days[selectedSlot.day]} · {
+                  selectedSlot.type === "lab" ? "Lab" :
                     selectedSlot.type === "tutorial" ? "Tutorial" :
-                    selectedSlot.timeSlot !== null 
-                      ? timeSlots[selectedSlot.timeSlot]
-                      : selectedSlot.startTime && selectedSlot.endTime
-                      ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
-                      : ""
-                  }
-                </p>
-              )}
-            </DialogHeader>
-
-            {selectedSubjectId && (selectedSlot?.type === "lab" || selectedSlot?.type === "tutorial") ? (
-              // Step 2: Show location input after subject is selected
-              <div className="space-y-4 mt-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Selected Subject</label>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                      {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.charAt(0) || "?"}
-                    </div>
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <p className="text-sm font-medium truncate w-full">
-                        {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.length > 25 ? enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.slice(0, 25)+'...' : enrolledSubjects.find(s => s.id === selectedSubjectId)?.name || "Unknown"}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate w-full">
-                        {enrolledSubjects.find(s => s.id === selectedSubjectId)?.code || ""}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setSelectedSubjectId(null)}
-                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Location</label>
-                  <Input
-                    type="text"
-                    value={slotLocation}
-                    onChange={(e) => setSlotLocation(e.target.value.toUpperCase())}
-                    placeholder="e.g., LAB-101, TUT-201"
-                    className="w-full uppercase"
-                    maxLength={255}
-                    autoFocus
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedSubjectId(null)}
-                    className="flex-1"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    onClick={() => handleConfirmAssignment(null)}
-                    className="flex-1"
-                  >
-                    Confirm
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              // Step 1: Show subject list
-              <div className="space-y-1 max-h-[50vh] overflow-y-auto mt-2">
-                {enrolledSubjects.length === 0 ? (
-                  <div className="text-center py-8">
-                    <BookOpen className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No subjects enrolled</p>
-                  </div>
-                ) : (
-                  <>
-                    {enrolledSubjects.map((subject) => (
-                      <button
-                        key={subject.id}
-                        onClick={() => handleSubjectSelect(subject.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
-                      >
-                        <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                          {subject.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{subject.name}</p>
-                          <p className="text-xs text-muted-foreground">{subject.code}</p>
-                        </div>
-                      </button>
-                    ))}
-                    {selectedSlot && selectedSlot.type !== "lab" && selectedSlot.type !== "tutorial" && (
-                      <button
-                        onClick={() => handleConfirmAssignment(null)}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-destructive/10 transition-colors text-left border-t border-border mt-2 pt-2"
-                      >
-                        <X className="w-4 h-4 text-destructive flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-destructive">Clear Subject</p>
-                        </div>
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Custom Time Dialog */}
-        <Dialog open={customTimeDialogOpen} onOpenChange={setCustomTimeDialogOpen}>
-          <DialogContent className="max-w-sm mx-auto rounded-xl">
-            <DialogHeader>
-              <DialogTitle className="text-base font-semibold">Add Custom Time</DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                {days[customTimeDay]} {activeTab === "lab-tutorial" && `· ${customTimeType === "lab" ? "Lab" : "Tutorial"}`}
+                      selectedSlot.timeSlot !== null
+                        ? timeSlots[selectedSlot.timeSlot]
+                        : selectedSlot.startTime && selectedSlot.endTime
+                          ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
+                          : ""
+                }
               </p>
-            </DialogHeader>
+            )}
+          </DialogHeader>
 
-            <div className="space-y-4">
-              {activeTab === "lab-tutorial" && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Type</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setCustomTimeType("lab")}
-                      className={cn(
-                        "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
-                        customTimeType === "lab"
-                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                          : "bg-secondary text-muted-foreground"
-                      )}
-                    >
-                      Lab
-                    </button>
-                    <button
-                      onClick={() => setCustomTimeType("tutorial")}
-                      className={cn(
-                        "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
-                        customTimeType === "tutorial"
-                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                          : "bg-secondary text-muted-foreground"
-                      )}
-                    >
-                      Tutorial
-                    </button>
+          {selectedSubjectId && (selectedSlot?.type === "lab" || selectedSlot?.type === "tutorial") ? (
+            // Step 2: Show location input after subject is selected
+            <div className="space-y-4 mt-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Selected Subject</label>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
+                  <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
+                    {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.charAt(0) || "?"}
                   </div>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="text-sm font-medium truncate w-full">
+                      {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.length > 25 ? enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.slice(0, 25) + '...' : enrolledSubjects.find(s => s.id === selectedSubjectId)?.name || "Unknown"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate w-full">
+                      {enrolledSubjects.find(s => s.id === selectedSubjectId)?.code || ""}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedSubjectId(null)}
+                    className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Start Time</label>
-                <Input
-                  type="time"
-                  value={customStartTime}
-                  onChange={(e) => setCustomStartTime(e.target.value)}
-                  className="w-full"
-                />
-                <p className="text-xs text-muted-foreground">Format: HH:mm (24-hour)</p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">End Time</label>
+                <label className="text-sm font-medium">Location</label>
                 <Input
-                  type="time"
-                  value={customEndTime}
-                  onChange={(e) => setCustomEndTime(e.target.value)}
-                  className="w-full"
+                  type="text"
+                  value={slotLocation}
+                  onChange={(e) => setSlotLocation(e.target.value.toUpperCase())}
+                  placeholder="e.g., LAB-101, TUT-201"
+                  className="w-full uppercase"
+                  maxLength={255}
+                  autoFocus
                 />
-                <p className="text-xs text-muted-foreground">Format: HH:mm (24-hour)</p>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-1">
                 <Button
                   variant="outline"
-                  onClick={() => setCustomTimeDialogOpen(false)}
+                  onClick={() => setSelectedSubjectId(null)}
                   className="flex-1"
                 >
-                  Cancel
+                  Back
                 </Button>
                 <Button
-                  onClick={() => handleAddCustomTime(activeTab === "lab-tutorial" ? customTimeType : undefined)}
+                  onClick={() => handleConfirmAssignment(null)}
                   className="flex-1"
                 >
-                  Add
+                  Confirm
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          ) : (
+            // Step 1: Show subject list
+            <div className="space-y-1 max-h-[50vh] overflow-y-auto mt-2">
+              {enrolledSubjects.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No subjects enrolled</p>
+                </div>
+              ) : (
+                <>
+                  {enrolledSubjects.map((subject) => (
+                    <button
+                      key={subject.id}
+                      onClick={() => handleSubjectSelect(subject.id)}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                    >
+                      <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
+                        {subject.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{subject.name}</p>
+                        <p className="text-xs text-muted-foreground">{subject.code}</p>
+                      </div>
+                    </button>
+                  ))}
+                  {selectedSlot && selectedSlot.type !== "lab" && selectedSlot.type !== "tutorial" && (
+                    <button
+                      onClick={() => handleConfirmAssignment(null)}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-destructive/10 transition-colors text-left border-t border-border mt-2 pt-2"
+                    >
+                      <X className="w-4 h-4 text-destructive flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-destructive">Clear Subject</p>
+                      </div>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-        {/* Unsaved Changes Warning Dialog */}
-        <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
-          <AlertDialogContent className="max-w-[90vw] rounded-xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-base">Unsaved Changes</AlertDialogTitle>
-              <AlertDialogDescription className="text-sm">
-                You have unsaved changes to your timetable. What would you like to do?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-              <AlertDialogCancel onClick={discardChanges} className="h-9 text-sm">
-                Discard
-              </AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={proceedWithoutSaving}
-                className="bg-destructive text-destructive-foreground h-9 text-sm"
+      {/* Custom Time Dialog */}
+      <Dialog open={customTimeDialogOpen} onOpenChange={setCustomTimeDialogOpen}>
+        <DialogContent className="max-w-sm mx-auto rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold">Add Custom Time</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {days[customTimeDay]} {activeTab === "lab-tutorial" && `· ${customTimeType === "lab" ? "Lab" : "Tutorial"}`}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {activeTab === "lab-tutorial" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Type</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCustomTimeType("lab")}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                      customTimeType === "lab"
+                        ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                        : "bg-secondary text-muted-foreground"
+                    )}
+                  >
+                    Lab
+                  </button>
+                  <button
+                    onClick={() => setCustomTimeType("tutorial")}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                      customTimeType === "tutorial"
+                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                        : "bg-secondary text-muted-foreground"
+                    )}
+                  >
+                    Tutorial
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Time</label>
+              <Input
+                type="time"
+                value={customStartTime}
+                onChange={(e) => setCustomStartTime(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">Format: HH:mm (24-hour)</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Time</label>
+              <Input
+                type="time"
+                value={customEndTime}
+                onChange={(e) => setCustomEndTime(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">Format: HH:mm (24-hour)</p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setCustomTimeDialogOpen(false)}
+                className="flex-1"
               >
-                Leave anyway
-              </AlertDialogAction>
-              <AlertDialogAction 
-                onClick={saveAndProceed}
-                className="h-9 text-sm"
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleAddCustomTime(activeTab === "lab-tutorial" ? customTimeType : undefined)}
+                className="flex-1"
               >
-                Save & Leave
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </AppLayout>
+                Add
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unsaved Changes Warning Dialog */}
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent className="max-w-[90vw] rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base">Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              You have unsaved changes to your timetable. What would you like to do?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <AlertDialogCancel onClick={discardChanges} className="h-9 text-sm">
+              Discard
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={proceedWithoutSaving}
+              className="bg-destructive text-destructive-foreground h-9 text-sm"
+            >
+              Leave anyway
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={saveAndProceed}
+              className="h-9 text-sm"
+            >
+              Save & Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+
   );
 }
