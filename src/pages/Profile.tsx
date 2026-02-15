@@ -348,13 +348,18 @@ export default function Profile() {
     { id: 'suggestion' as const, label: 'Suggestion', icon: Lightbulb, color: 'text-yellow-500' },
   ];
 
+  const rowClass = "w-full bg-card py-2.5 px-3 flex items-center gap-2.5 text-left active:bg-muted/50 transition-colors touch-manipulation";
+  const iconClass = "w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0";
+  const iconClassMuted = "w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0";
+  const disabledRowClass = "w-full bg-card/50 py-2.5 px-3 flex items-center gap-2.5 text-left opacity-60";
+
   return (
     <AppLayout>
-      <div className="space-y-3 pb-3">
-        {/* Profile Header */}
-        <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-xl p-3.5 border border-border shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20 shadow-md">
+      <div className="space-y-2 pb-2">
+        {/* Profile Header - compact */}
+        <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-xl px-3 py-2.5 border border-border shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20">
               <img 
                 src={student?.pictureUrl || "/user-icons/user2.png"} 
                 alt={student?.name || "Profile"} 
@@ -364,99 +369,72 @@ export default function Profile() {
                 }}
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold truncate leading-tight">{student?.isDemo ? "Demo User" : student?.name}</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">{student?.rollNumber}</p>
-              {isLoadingSemester ? (
-                <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-muted/50">
-                  <p className="text-[10px] text-muted-foreground">Loading term...</p>
-                </div>
-              ) : currentSemester ? (
-                <div className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">
-                  <p className="text-xs font-semibold text-primary">
+            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+              <h1 className="text-base font-bold truncate leading-tight">{student?.isDemo ? "Demo User" : student?.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs text-muted-foreground">{student?.rollNumber}</p>
+                {isLoadingSemester ? (
+                  <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/50">Loading...</span>
+                ) : currentSemester ? (
+                  <span className="text-[10px] font-medium text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
                     {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
-                  </p>
-                </div>
-              ) : null}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - compact list */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="divide-y divide-border">
-            {/* Subjects */}
-            <button 
-              onClick={() => setShowSubjectEditor(true)}
-              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
-            >
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-4 h-4 text-primary" />
-              </div>
+            <button onClick={() => setShowSubjectEditor(true)} className={rowClass}>
+              <div className={iconClass}><BookOpen className="w-3.5 h-3.5 text-primary" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm leading-tight">My Subjects</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{enrolledSubjects.length} subjects enrolled</p>
+                <p className="font-semibold text-[13px] leading-tight">My Subjects</p>
+                <p className="text-[11px] text-muted-foreground">{enrolledSubjects.length} enrolled</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             </button>
 
-            {/* Minimum Criteria */}
             {enrolledSubjects.length > 0 ? (
-              <button
-                onClick={() => setShowCriteriaModal(true)}
-                className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
-              >
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Target className="w-4 h-4 text-primary" />
-                </div>
+              <button onClick={() => setShowCriteriaModal(true)} className={rowClass}>
+                <div className={iconClass}><Target className="w-3.5 h-3.5 text-primary" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight">Minimum Criteria</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Set attendance targets by subject</p>
+                  <p className="font-semibold text-[13px] leading-tight">Minimum Criteria</p>
+                  <p className="text-[11px] text-muted-foreground">Targets by subject</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               </button>
             ) : (
-              <div className="w-full bg-card/50 p-3 flex items-center gap-3 text-left opacity-60">
-                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Target className="w-4 h-4 text-muted-foreground" />
-                </div>
+              <div className={disabledRowClass}>
+                <div className={iconClassMuted}><Target className="w-3.5 h-3.5 text-muted-foreground" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight text-muted-foreground">Minimum Criteria</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
+                  <p className="font-semibold text-[13px] text-muted-foreground">Minimum Criteria</p>
+                  <p className="text-[11px] text-muted-foreground">Add subjects first</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
               </div>
             )}
 
-            {/* Classroom Location */}
             {enrolledSubjects.length > 0 ? (
-              <button
-                onClick={() => setShowClassroomLocationModal(true)}
-                className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
-              >
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-primary" />
-                </div>
+              <button onClick={() => setShowClassroomLocationModal(true)} className={rowClass}>
+                <div className={iconClass}><MapPin className="w-3.5 h-3.5 text-primary" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight">Classroom Location</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Customize location per subject</p>
+                  <p className="font-semibold text-[13px] leading-tight">Classroom Location</p>
+                  <p className="text-[11px] text-muted-foreground">Per subject</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               </button>
             ) : (
-              <div className="w-full bg-card/50 p-3 flex items-center gap-3 text-left opacity-60">
-                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                </div>
+              <div className={disabledRowClass}>
+                <div className={iconClassMuted}><MapPin className="w-3.5 h-3.5 text-muted-foreground" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight text-muted-foreground">Classroom Location</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
+                  <p className="font-semibold text-[13px] text-muted-foreground">Classroom Location</p>
+                  <p className="text-[11px] text-muted-foreground">Add subjects first</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
               </div>
             )}
 
-            {/* Previous Attendance */}
             {enrolledSubjects.length > 0 ? (
               <button
                 onClick={() => {
@@ -467,104 +445,75 @@ export default function Profile() {
                     setShowBaselineDialog(true);
                   }
                 }}
-                className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+                className={rowClass}
               >
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4 text-primary" />
-                </div>
+                <div className={iconClass}><Calendar className="w-3.5 h-3.5 text-primary" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight">Previous Attendance</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Set past attendance data</p>
+                  <p className="font-semibold text-[13px] leading-tight">Previous Attendance</p>
+                  <p className="text-[11px] text-muted-foreground">Past data</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               </button>
             ) : (
-              <div className="w-full bg-card/50 p-3 flex items-center gap-3 text-left opacity-60">
-                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                </div>
+              <div className={disabledRowClass}>
+                <div className={iconClassMuted}><Calendar className="w-3.5 h-3.5 text-muted-foreground" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight text-muted-foreground">Previous Attendance</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Add subjects first</p>
+                  <p className="font-semibold text-[13px] text-muted-foreground">Previous Attendance</p>
+                  <p className="text-[11px] text-muted-foreground">Add subjects first</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
               </div>
             )}
 
-            {/* Sleep Duration */}
             <button
-              onClick={() => {
-                setEditingSleepHours(sleepDuration?.toString() || "8");
-                setIsEditingSleepDuration(true);
-              }}
-              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
+              className={rowClass}
             >
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Moon className="w-4 h-4 text-primary" />
-              </div>
+              <div className={iconClass}><Moon className="w-3.5 h-3.5 text-primary" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm leading-tight">Sleep Duration</p>
+                <p className="font-semibold text-[13px] leading-tight">Sleep Duration</p>
                 {isLoadingSleepDuration ? (
-                  <p className="text-xs text-muted-foreground mt-0.5">Loading...</p>
+                  <p className="text-[11px] text-muted-foreground">Loading...</p>
                 ) : (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {sleepDuration !== null ? `${sleepDuration} hours` : "8 hours"} · Reminders enabled
-                  </p>
+                  <p className="text-[11px] text-muted-foreground">{sleepDuration ?? 8}h · reminders</p>
                 )}
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             </button>
 
-            {/* App Analytics */}
-            <button
-              onClick={() => navigate("/app-analytics")}
-              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
-            >
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="w-4 h-4 text-primary" />
-              </div>
+            {/* Support & app - compact row */}
+            <button onClick={() => navigate("/app-analytics")} className={rowClass}>
+              <div className={iconClass}><BarChart3 className="w-3.5 h-3.5 text-primary" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm leading-tight">App Analytics</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Overview of app usage and engagement</p>
+                <p className="font-semibold text-[13px] leading-tight">App Analytics</p>
+                <p className="text-[11px] text-muted-foreground">Usage & engagement</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             </button>
 
-            {/* Rate us - Play Store in-app review (stars) or open Play Store */}
             <button
               onClick={async () => {
-                try {
-                  await requestAppReview();
-                } catch (e) {
+                try { await requestAppReview(); } catch (e) {
                   console.error("Rate us failed:", e);
                   toast.error("Could not open review. Please try again.");
                 }
               }}
-              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
+              className={rowClass}
             >
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Star className="w-4 h-4 text-primary" />
-              </div>
+              <div className={iconClass}><Star className="w-3.5 h-3.5 text-primary" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm leading-tight">Rate us</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Share your experience on the Play Store</p>
+                <p className="font-semibold text-[13px] leading-tight">Rate us</p>
+                <p className="text-[11px] text-muted-foreground">Play Store</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             </button>
 
-            {/* Feedback */}
-            <button
-              onClick={() => setShowFeedbackModal(true)}
-              className="w-full bg-card p-3 flex items-center gap-3 text-left active:bg-muted/50 transition-colors touch-manipulation"
-            >
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <MessageSquare className="w-4 h-4 text-primary" />
-              </div>
+            <button onClick={() => setShowFeedbackModal(true)} className={rowClass}>
+              <div className={iconClass}><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm leading-tight">Feedback & Bugs</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Help us improve the app</p>
+                <p className="font-semibold text-[13px] leading-tight">Feedback & Bugs</p>
+                <p className="text-[11px] text-muted-foreground">Help us improve</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             </button>
           </div>
         </div>
@@ -687,29 +636,26 @@ export default function Profile() {
           />
         )}
 
-        {/* Contributors Section - Compact */}
         <ContributorsSection />
 
-        {/* Logout */}
         <Button
           variant="destructive"
           onClick={handleLogout}
-          className="w-full h-10 rounded-xl"
+          className="w-full h-9 rounded-xl text-sm"
         >
-          <LogOut className="w-4 h-4 mr-2" />
+          <LogOut className="w-3.5 h-3.5 mr-1.5" />
           Logout
         </Button>
 
-        {/* Creator Credit */}
-        <div className="flex items-center justify-center gap-1.5 pt-1">
-          <span className="text-xs text-muted-foreground">Made with</span>
-          <Heart className="w-3 h-3 text-red-500 fill-red-500 animate-pulse" />
-          <span className="text-xs text-muted-foreground">by</span>
-          <a 
-            href="https://paramsavjani.in" 
-            target="_blank" 
+        <div className="flex items-center justify-center gap-1 pt-0.5">
+          <span className="text-[11px] text-muted-foreground">Made with</span>
+          <Heart className="w-2.5 h-2.5 text-red-500 fill-red-500" />
+          <span className="text-[11px] text-muted-foreground">by</span>
+          <a
+            href="https://paramsavjani.in"
+            target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-medium text-primary hover:underline"
+            className="text-[11px] font-medium text-primary hover:underline"
           >
             Param Savjani
           </a>
