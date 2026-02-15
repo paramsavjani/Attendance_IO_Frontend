@@ -47,12 +47,15 @@ export function SubjectCard({
   const percentage = backendPercentage !== undefined ? backendPercentage : (total > 0 ? (present / total) * 100 : 0);
   const classesNeeded = backendClassesNeeded !== undefined ? backendClassesNeeded : 0;
   const bunkable = backendBunkableClasses !== undefined ? backendBunkableClasses : 0;
-  
+
   const isSafe = percentage >= minRequired;
   const isWarning = percentage >= minRequired - 10 && percentage < minRequired;
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className={cn(
+      "bg-card border border-border rounded-xl overflow-hidden transition-all duration-300",
+      !isSafe && "border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent shadow-[0_4px_20px_-4px_rgba(239,68,68,0.1)]"
+    )}>
       {/* Header - always visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
