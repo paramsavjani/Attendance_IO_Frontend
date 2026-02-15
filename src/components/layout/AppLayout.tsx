@@ -200,10 +200,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Sliding Background */}
+          {/* Sliding Background - darker when active */}
           <div
             className={cn(
-              "absolute top-1 bottom-1 left-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 z-0",
+              "absolute top-1 bottom-1 left-1 rounded-xl bg-neutral-800/90 dark:bg-neutral-800/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.25)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)] backdrop-blur-xl border border-neutral-600/40 dark:border-neutral-600/50 z-0",
               !isDragging && "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
             )}
             style={{
@@ -224,8 +224,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                 className={cn(
                   "flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all duration-300 relative overflow-hidden group z-10",
                   isActive
-                    ? "text-primary-foreground dark:text-white"
-                    : "text-muted-foreground/80 hover:text-foreground active:scale-95 bg-transparent"
+                    ? "text-white"
+                    : "text-muted-foreground/80 active:scale-95 bg-transparent"
                 )}
               >
                 <item.icon className={cn("w-5 h-5 transition-transform duration-300", isActive && "scale-110 drop-shadow-sm")} />
