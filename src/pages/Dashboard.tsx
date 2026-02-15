@@ -49,17 +49,17 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
 
   const onTouchEnd = useCallback(() => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
+
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
+
     if (isLeftSwipe) {
       onSwipeLeft(); // Navigate to next day
     } else if (isRightSwipe) {
       onSwipeRight(); // Navigate to previous day
     }
-    
+
     touchStartX.current = null;
     touchEndX.current = null;
   }, [onSwipeLeft, onSwipeRight]);
@@ -70,18 +70,18 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
 export default function Dashboard() {
   const { student } = useAuth();
   const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState, attendanceIds } = useAttendance();
-  
+
   // Lab/Tutorial timetable states
   const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
   const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>([]);
   const [isLoadingLab, setIsLoadingLab] = useState(true);
   const [isLoadingTutorial, setIsLoadingTutorial] = useState(true);
-  
+
   // Lab/Tutorial attendance stats
-  const [labTutStats, setLabTutStats] = useState<Record<string, { 
-    subjectId: string; 
-    present: number; 
-    absent: number; 
+  const [labTutStats, setLabTutStats] = useState<Record<string, {
+    subjectId: string;
+    present: number;
+    absent: number;
     total: number;
     totalUntilEndDate: number;
     percentage: number;
@@ -89,11 +89,11 @@ export default function Dashboard() {
     bunkableClasses: number;
   }>>({});
   const [isLoadingLabTutStats, setIsLoadingLabTutStats] = useState(true);
-  
+
   const now = new Date();
   const currentHour = now.getHours();
   const [calendarOpen, setCalendarOpen] = useState(false);
-  
+
   // Extra classes state - stores subject IDs for extra classes added by user
   // Format: { [dateKey]: string[] } where string[] is array of subject IDs
   // Persist to localStorage
@@ -111,7 +111,7 @@ export default function Dashboard() {
     return {};
   });
   const [addClassDialogOpen, setAddClassDialogOpen] = useState(false);
-  
+
   // Track which extra class is being deleted (for loading state)
   const [deletingExtraClass, setDeletingExtraClass] = useState<{ subjectId: string; index: number } | null>(null);
 
@@ -152,12 +152,12 @@ export default function Dashboard() {
     };
     fetchSleepDuration();
   }, [student]);
-  
+
   // Get last class hour from schedule
   function getLastClassHour(schedule: { time: string; subject: any; endTime?: string }[]) {
     const classesWithSubjects = schedule.filter(s => s.subject);
     if (classesWithSubjects.length === 0) return null;
-    
+
     const lastClass = classesWithSubjects[classesWithSubjects.length - 1];
     // Use endTime if available (custom slots), otherwise parse from time string
     const endTime = lastClass.endTime || lastClass.time.split(" - ")[1];
@@ -283,7 +283,7 @@ export default function Dashboard() {
   // Refresh lab/tutorial stats when attendance is marked
   useEffect(() => {
     if (!student || isLoadingLabTutStats) return;
-    
+
     // Refresh stats after a short delay to allow backend to process
     const timeoutId = setTimeout(() => {
       const fetchLabTutStats = async () => {
@@ -324,10 +324,10 @@ export default function Dashboard() {
   function getScheduleForDate(date: Date, includeLabTutorial: boolean = true) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
-    
+
     const adjustedDay = dayOfWeek - 1;
     const daySlots = timetable.filter((slot) => slot.day === adjustedDay);
-    
+
     // Get standard slots (8-12) - always show all 5 slots
     const standardSlots = timeSlots.map((time, slotIndex) => {
       const slot = daySlots.find(s => s.timeSlot === slotIndex && !s.startTime);
@@ -413,7 +413,7 @@ export default function Dashboard() {
   function getLabTutorialScheduleForDate(date: Date) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
-    
+
     const adjustedDay = dayOfWeek - 1;
     const labDaySlots = labTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
     const tutorialDaySlots = tutorialTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
@@ -460,8 +460,8 @@ export default function Dashboard() {
   const todaySchedule = getScheduleForDate(now);
   const lastClassHour = getLastClassHour(todaySchedule);
   const showingTomorrowByDefault = lastClassHour !== null && currentHour >= lastClassHour + 1;
-  
-  const [selectedDate, setSelectedDate] = useState<Date>(() => 
+
+  const [selectedDate, setSelectedDate] = useState<Date>(() =>
     showingTomorrowByDefault ? addDays(now, 1) : now
   );
   const [classesStartDate, setClassesStartDate] = useState<Date | null>(null);
@@ -525,7 +525,7 @@ export default function Dashboard() {
 
   // Get extra classes for the selected date
   const extraClassesForDate = extraClasses[dateKey] || [];
-  
+
   // Create extra class slots from extra classes; assign extraClassIndex per subject so multiple extras of same subject get unique keys
   const extraClassSlots = useMemo(() => {
     const subjectCounts = new Map<string, number>();
@@ -547,7 +547,7 @@ export default function Dashboard() {
       };
     }).filter(Boolean) as any[];
   }, [extraClassesForDate, enrolledSubjects]);
-  
+
   // Combine regular schedule with extra classes
   const fullSchedule = useMemo(() => {
     return [...schedule, ...extraClassSlots];
@@ -620,7 +620,7 @@ export default function Dashboard() {
   // Helper to get attendance status with fallback to old format
   const getAttendanceStatus = (subjectId: string, slotIndex?: number | null, startTime?: string, endTime?: string, isCustom?: boolean) => {
     const fallbackKey = `${dateKey}-${subjectId}`; // Old format for backward compatibility
-    
+
     // Try time-specific key first
     let slotKey: string;
     if (slotIndex !== null && slotIndex !== undefined && !isCustom) {
@@ -630,7 +630,7 @@ export default function Dashboard() {
     } else {
       slotKey = fallbackKey;
     }
-    
+
     // Try time-specific key first, then fall back to old format
     return todayAttendance[slotKey] || todayAttendance[fallbackKey] || null;
   };
@@ -641,15 +641,15 @@ export default function Dashboard() {
     // Use user's custom minimum, then subject's minimumCriteria, then fallback to 75
     // Use ?? instead of || to respect 0 as a valid value
     const minRequired = subjectMinAttendance[subjectId] ?? subject?.minimumCriteria ?? 75;
-    
+
     // Always calculate percentage, even if stats don't exist or total is 0
     let percent = 0;
     if (stats && stats.total > 0) {
       percent = (stats.present / stats.total) * 100;
     }
-    
+
     const needsAttention = percent < minRequired;
-    
+
     return { percent, needsAttention, minRequired };
   };
 
@@ -673,7 +673,7 @@ export default function Dashboard() {
         (extraClassIndex === undefined || savingState.extraClassIndex === extraClassIndex)
       );
     }
-    
+
     // Check if time slot information matches
     if (slotIndex !== null && slotIndex !== undefined) {
       // Standard slot - check timeSlot
@@ -688,7 +688,7 @@ export default function Dashboard() {
   };
 
   const navigateDate = useCallback((direction: "prev" | "next") => {
-    setSelectedDate((prev) => 
+    setSelectedDate((prev) =>
       direction === "prev" ? subDays(prev, 1) : addDays(prev, 1)
     );
   }, []);
@@ -701,12 +701,14 @@ export default function Dashboard() {
 
   const [showPastDateWarning, setShowPastDateWarning] = useState(false);
   const [pendingAttendance, setPendingAttendance] = useState<{
-    subjectId: string; 
+    subjectId: string;
     status: 'present' | 'absent' | 'cancelled';
     timeSlot?: number | null;
     startTime?: string;
     endTime?: string;
   } | null>(null);
+
+  const [activeTab, setActiveTab] = useState("schedule");
 
   // Fetch attendance when date changes
   useEffect(() => {
@@ -714,8 +716,8 @@ export default function Dashboard() {
   }, [dateKey, fetchAttendanceForDate]);
 
   const handleMarkAttendance = async (
-    index: number, 
-    subjectId: string, 
+    index: number,
+    subjectId: string,
     status: 'present' | 'absent' | 'cancelled',
     timeSlot?: number | null,
     startTime?: string,
@@ -737,15 +739,15 @@ export default function Dashboard() {
       setShowPastDateWarning(true);
       return;
     }
-    
+
     await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
   };
 
   const confirmPastDateAttendance = async () => {
     if (pendingAttendance) {
       await markAttendance(
-        pendingAttendance.subjectId, 
-        dateKey, 
+        pendingAttendance.subjectId,
+        dateKey,
         pendingAttendance.status,
         pendingAttendance.timeSlot,
         pendingAttendance.startTime,
@@ -765,7 +767,7 @@ export default function Dashboard() {
       setCalendarOpen(false);
     }
   };
-  
+
   // Handle adding an extra class
   const handleAddClass = (subjectId: string) => {
     setExtraClasses((prev) => {
@@ -776,16 +778,16 @@ export default function Dashboard() {
     setAddClassDialogOpen(false);
     toast.success("Class added successfully");
   };
-  
+
   // Handle deleting an extra class
   // listIndex = index in extraClassesForDate (for removing from list); extraClassIndexForKey = per-subject index (for slot key)
   const handleDeleteExtraClass = async (subjectId: string, listIndex: number, extraClassIndexForKey: number) => {
     setDeletingExtraClass({ subjectId, index: listIndex });
-    
+
     try {
       const slotKey = `${dateKey}-${subjectId}-extra-${extraClassIndexForKey}`;
       const attendanceId = attendanceIds[slotKey];
-      
+
       // If attendance exists, delete it from backend
       if (attendanceId) {
         try {
@@ -796,14 +798,14 @@ export default function Dashboard() {
           if (!deleteResponse.ok) {
             throw new Error('Failed to delete attendance');
           }
-          
+
           // Remove from attendance state
           setTodayAttendance(prev => {
             const updated = { ...prev };
             delete updated[slotKey];
             return updated;
           });
-          
+
           setAttendanceIds(prev => {
             const updated = { ...prev };
             delete updated[slotKey];
@@ -815,12 +817,12 @@ export default function Dashboard() {
           // Continue to remove from UI even if backend deletion fails
         }
       }
-      
+
       // Remove from extra classes list by list index
       setExtraClasses((prev) => {
         const current = prev[dateKey] || [];
         const updated = current.filter((_, idx) => idx !== listIndex);
-        
+
         if (updated.length === 0) {
           const newState = { ...prev };
           delete newState[dateKey];
@@ -828,9 +830,9 @@ export default function Dashboard() {
         }
         return { ...prev, [dateKey]: updated };
       });
-      
+
       toast.success("Extra class removed");
-      
+
       // Refresh attendance data to update stats
       await fetchAttendanceForDate(dateKey);
     } finally {
@@ -864,7 +866,7 @@ export default function Dashboard() {
                 until first lecture
               </p>
               <p className="text-xs leading-snug text-violet-700/90 dark:text-violet-300/90 line-clamp-2">
-              Less than your usual sleep. Rest up.
+                Less than your usual sleep. Rest up.
               </p>
             </div>
           </div>
@@ -910,30 +912,37 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Tabs defaultValue="schedule" className="w-full flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-3 p-1 rounded-xl h-10 border border-white/20 dark:border-neutral-600/30 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md shadow-lg shadow-black/5 dark:shadow-black/20 transition-all duration-300">
-            <TabsTrigger 
-              value="schedule" 
-              className="rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-white/80 dark:data-[state=active]:bg-neutral-800/80 data-[state=active]:shadow-md data-[state=active]:backdrop-blur-sm data-[state=inactive]:text-muted-foreground hover:text-foreground"
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col overflow-hidden">
+          <TabsList className="relative grid w-full grid-cols-3 p-1 gap-1 h-12 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+            <div
+              className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+              style={{
+                width: 'calc((100% - 4px) / 3)',
+                transform: `translateX(${activeTab === 'schedule' ? '0%' : activeTab === 'lab-tutorial' ? '100%' : '200%'})`
+              }}
+            />
+            <TabsTrigger
+              value="schedule"
+              className="relative z-10 rounded-xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
             >
               Schedule
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="lab-tutorial"
-              className="rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-white/80 dark:data-[state=active]:bg-neutral-800/80 data-[state=active]:shadow-md data-[state=active]:backdrop-blur-sm data-[state=inactive]:text-muted-foreground hover:text-foreground"
+              className="relative z-10 rounded-xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
             >
               Lab & Tut
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="subjects"
-              className="rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-white/80 dark:data-[state=active]:bg-neutral-800/80 data-[state=active]:shadow-md data-[state=active]:backdrop-blur-sm data-[state=inactive]:text-muted-foreground hover:text-foreground"
+              className="relative z-10 rounded-xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
             >
               Subjects
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent 
-            value="schedule" 
+          <TabsContent
+            value="schedule"
             className="mt-3 flex-1 overflow-y-auto space-y-3 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200"
             onTouchStart={swipeHandlers.onTouchStart}
             onTouchMove={swipeHandlers.onTouchMove}
@@ -1044,7 +1053,7 @@ export default function Dashboard() {
                       const isExtraClass = (slot as any).isExtraClass === true;
                       // Calculate the index in the extra classes array (for deletion)
                       const extraClassIndex = isExtraClass ? index - schedule.length : -1;
-                      
+
                       if (!slot.subject) {
                         // Empty slot - same height as lecture slots
                         return (
@@ -1070,12 +1079,12 @@ export default function Dashboard() {
                       const status = isExtraClass
                         ? (todayAttendance[extraKey] ?? todayAttendance[`${dateKey}-${String(slot.subject.id)}`] ?? null)
                         : getAttendanceStatus(
-                            slot.subject.id,
-                            slot.slotIndex,
-                            slot.startTime,
-                            slot.endTime,
-                            slot.isCustom
-                          );
+                          slot.subject.id,
+                          slot.slotIndex,
+                          slot.startTime,
+                          slot.endTime,
+                          slot.isCustom
+                        );
                       // For lab/tutorial slots, use lab/tut specific stats; otherwise use overall stats
                       let percent = 0;
                       let needsAttention = false;
@@ -1109,24 +1118,24 @@ export default function Dashboard() {
                       );
 
                       return (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className="relative flex items-stretch gap-2 min-h-[64px] transition-all duration-300"
                         >
-                     
-                          
+
+
                           {/* Dot */}
                           <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                             <div className="flex-1" />
-                            <div 
+                            <div
                               className={cn(
                                 "flex-shrink-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all",
                                 status === 'present' ? "w-2.5 h-2.5 rounded-full bg-emerald-500" :
-                                status === 'absent' ? "w-2.5 h-2.5 rounded-full bg-destructive" :
-                                status === 'cancelled' ? "w-2.5 h-2.5 rounded-full bg-muted-foreground" :
-                                isCurrent ? "w-3 h-3 rounded-full bg-primary" :
-                                "w-2.5 h-2.5 rounded-full bg-neutral-500"
-                              )} 
+                                  status === 'absent' ? "w-2.5 h-2.5 rounded-full bg-destructive" :
+                                    status === 'cancelled' ? "w-2.5 h-2.5 rounded-full bg-muted-foreground" :
+                                      isCurrent ? "w-3 h-3 rounded-full bg-primary" :
+                                        "w-2.5 h-2.5 rounded-full bg-neutral-500"
+                              )}
                             >
                             </div>
                             <div className="flex-1" />
@@ -1156,11 +1165,11 @@ export default function Dashboard() {
                               "bg-card rounded-lg p-2 h-full transition-all relative overflow-hidden",
                               status === 'cancelled'
                                 ? "border border-dashed border-muted-foreground/30 bg-muted/30"
-                                : isCurrent 
-                                 ? "border-2 border-primary/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
-                                  : needsAttention 
-                                  ? "border-2 border-warning/40" 
-                                     
+                                : isCurrent
+                                  ? "border-2 border-primary/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                                  : needsAttention
+                                    ? "border-2 border-warning/40"
+
                                     : "border border-border"
                             )}>
                               {/* Subject info */}
@@ -1203,16 +1212,16 @@ export default function Dashboard() {
                                 ) : (
                                   <div className={cn(
                                     "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full flex-shrink-0",
-                                    needsAttention 
-                                      ? "bg-gradient-to-r from-destructive/15 to-orange-500/15" 
+                                    needsAttention
+                                      ? "bg-gradient-to-r from-destructive/15 to-orange-500/15"
                                       : percent >= 85
                                         ? "bg-gradient-to-r from-emerald-500/15 to-green-500/15"
                                         : "bg-gradient-to-r from-primary/10 to-blue-500/10"
                                   )}>
                                     <span className={cn(
                                       "text-xs font-bold tabular-nums",
-                                      needsAttention 
-                                        ? "text-destructive" 
+                                      needsAttention
+                                        ? "text-destructive"
                                         : percent >= 85
                                           ? "text-emerald-600"
                                           : "text-primary"
@@ -1227,8 +1236,8 @@ export default function Dashboard() {
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleMarkAttendance(
-                                    index, 
-                                    slot.subject!.id, 
+                                    index,
+                                    slot.subject!.id,
                                     "present",
                                     isExtraClass ? null : slot.slotIndex,
                                     isExtraClass ? undefined : slot.startTime,
@@ -1253,8 +1262,8 @@ export default function Dashboard() {
                                 </button>
                                 <button
                                   onClick={() => handleMarkAttendance(
-                                    index, 
-                                    slot.subject!.id, 
+                                    index,
+                                    slot.subject!.id,
                                     "absent",
                                     isExtraClass ? null : slot.slotIndex,
                                     isExtraClass ? undefined : slot.startTime,
@@ -1297,8 +1306,8 @@ export default function Dashboard() {
                                 ) : (
                                   <button
                                     onClick={() => handleMarkAttendance(
-                                      index, 
-                                      slot.subject!.id, 
+                                      index,
+                                      slot.subject!.id,
                                       "cancelled",
                                       slot.slotIndex,
                                       slot.startTime,
@@ -1355,7 +1364,7 @@ export default function Dashboard() {
                   const hasTutorial = tutorialTimetable.some(slot => slot.subjectId === subject.id && slot.startTime && slot.endTime);
                   return hasLab || hasTutorial;
                 });
-                
+
                 if (subjectsWithLabTut.length === 0) {
                   return (
                     <div className="text-center py-12">
@@ -1367,20 +1376,20 @@ export default function Dashboard() {
                     </div>
                   );
                 }
-                
+
                 return subjectsWithLabTut.map((subject) => {
                   // Get stats from backend
-                  const stats = labTutStats[subject.id] || { 
-                    subjectId: subject.id, 
-                    present: 0, 
-                    absent: 0, 
+                  const stats = labTutStats[subject.id] || {
+                    subjectId: subject.id,
+                    present: 0,
+                    absent: 0,
                     total: 0,
                     totalUntilEndDate: 0,
                     percentage: 0,
                     classesNeeded: 0,
                     bunkableClasses: 0
                   };
-                  
+
                   const minRequired = subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75;
 
                   return (
@@ -1419,11 +1428,11 @@ export default function Dashboard() {
             ) : (
               enrolledSubjects.map((subject) => {
                 // Always use today's stats for Subjects tab, regardless of selected date
-                const stats = subjectStatsToday[subject.id] || { 
-                  subjectId: subject.id, 
-                  present: 0, 
-                  absent: 0, 
-                  total: 0 
+                const stats = subjectStatsToday[subject.id] || {
+                  subjectId: subject.id,
+                  present: 0,
+                  absent: 0,
+                  total: 0
                 };
                 const minRequired = subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75;
 
@@ -1457,7 +1466,7 @@ export default function Dashboard() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base">Update Past Attendance?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              You are about to update attendance for {format(selectedDate, "MMM d, yyyy")}. 
+              You are about to update attendance for {format(selectedDate, "MMM d, yyyy")}.
               This will modify historical records.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1471,7 +1480,7 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       {/* Add a Class Dialog */}
       <Dialog open={addClassDialogOpen} onOpenChange={setAddClassDialogOpen}>
         <DialogContent className="max-w-[90vw] md:max-w-md rounded-xl">
@@ -1491,7 +1500,7 @@ export default function Dashboard() {
               const availableSubjects = enrolledSubjects.filter(
                 subject => !extraClassesForDate.includes(subject.id)
               );
-              
+
               if (availableSubjects.length === 0) {
                 return (
                   <p className="text-sm text-muted-foreground text-center py-4">
@@ -1499,7 +1508,7 @@ export default function Dashboard() {
                   </p>
                 );
               }
-              
+
               return availableSubjects.map((subject) => (
                 <button
                   key={subject.id}
