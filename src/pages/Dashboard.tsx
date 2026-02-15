@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO, setHours, setMinutes } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap, Plus, Trash2, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap, Plus, Trash2, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -973,15 +973,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {isFutureDate && !isSelectedTomorrow && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
-                <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Future date - You can only mark lectures as "cancelled"
-                </p>
-              </div>
-            )}
-
             {isBeforeStartDate && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
@@ -991,13 +982,6 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground/70 mt-0.5">
                   Classes start on {classesStartDate ? format(classesStartDate, "MMM d, yyyy") : ""}
                 </p>
-              </div>
-            )}
-
-            {!isBeforeStartDate && !isSelectedToday && !isFutureDate && (
-              <div className="flex items-center justify-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
-                <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">Past date</p>
               </div>
             )}
 
