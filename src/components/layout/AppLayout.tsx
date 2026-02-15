@@ -203,7 +203,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Sliding Background - darker when active */}
           <div
             className={cn(
-              "absolute top-1 bottom-1 left-1 rounded-xl bg-neutral-800/90 dark:bg-neutral-800/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.25)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)] backdrop-blur-xl border border-neutral-600/40 dark:border-neutral-600/50 z-0",
+              "absolute top-1 bottom-1 left-1 rounded-2xl bg-neutral-800/90 dark:bg-neutral-800/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.25)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)] backdrop-blur-xl border border-neutral-600/40 dark:border-neutral-600/50 z-0",
               !isDragging && "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
             )}
             style={{
@@ -222,7 +222,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 // Only allow click navigation if not dragging (handled by touchEnd mostly, but good safety)
                 onClick={() => !isDragging && handleNavigation(item.path)}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all duration-300 relative overflow-hidden group z-10",
+                  "flex flex-col items-center gap-1 py-1.5 px-0 rounded-2xl transition-all duration-300 relative overflow-hidden group z-10",
                   isActive
                     ? "text-white"
                     : "text-muted-foreground/80 active:scale-95 bg-transparent"
