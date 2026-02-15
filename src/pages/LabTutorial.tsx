@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
-import { AppLayout } from "@/components/layout/AppLayout";
+
 import { format, addDays, subDays, isToday, isBefore, isAfter, startOfDay, isTomorrow, parseISO } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { ChevronLeft, ChevronRight, Lock, CalendarSearch, Sun, Sunrise, Loader2, BookOpen, Laptop, GraduationCap } from "lucide-react";
@@ -28,17 +28,17 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
 
   const onTouchEnd = useCallback(() => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
+
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
+
     if (isLeftSwipe) {
       onSwipeLeft();
     } else if (isRightSwipe) {
       onSwipeRight();
     }
-    
+
     touchStartX.current = null;
     touchEndX.current = null;
   }, [onSwipeLeft, onSwipeRight]);
@@ -49,11 +49,11 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
 export default function LabTutorial() {
   const { student } = useAuth();
   const { enrolledSubjects } = useAttendance();
-  
+
   const now = new Date();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(now);
-  
+
   // Timetable states (view-only)
   const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
   const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>([]);
@@ -135,11 +135,11 @@ export default function LabTutorial() {
   function getScheduleForDate(date: Date, labTimetable: TimetableSlot[], tutorialTimetable: TimetableSlot[]) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
-    
+
     const adjustedDay = dayOfWeek - 1;
     const labDaySlots = labTimetable.filter((slot) => slot.day === adjustedDay);
     const tutorialDaySlots = tutorialTimetable.filter((slot) => slot.day === adjustedDay);
-    
+
     // Process lab slots - only custom slots with subjects
     const labSlots: Array<{
       time: string;
@@ -150,7 +150,7 @@ export default function LabTutorial() {
       isCustom: boolean;
       type: "lab" | "tutorial";
     }> = [];
-    
+
     // Lab custom slots only - filter to only show slots with subjects
     labDaySlots.forEach((slot) => {
       if (slot.startTime && slot.endTime && slot.subjectId) {
@@ -168,7 +168,7 @@ export default function LabTutorial() {
         }
       }
     });
-    
+
     // Process tutorial slots - only custom slots with subjects
     const tutorialSlots: Array<{
       time: string;
@@ -179,7 +179,7 @@ export default function LabTutorial() {
       isCustom: boolean;
       type: "lab" | "tutorial";
     }> = [];
-    
+
     // Tutorial custom slots only - filter to only show slots with subjects
     tutorialDaySlots.forEach((slot) => {
       if (slot.startTime && slot.endTime && slot.subjectId) {
@@ -213,7 +213,7 @@ export default function LabTutorial() {
   }
 
   const navigateDate = useCallback((direction: "prev" | "next") => {
-    setSelectedDate((prev) => 
+    setSelectedDate((prev) =>
       direction === "prev" ? subDays(prev, 1) : addDays(prev, 1)
     );
   }, []);
@@ -241,156 +241,156 @@ export default function LabTutorial() {
   const schedule = getScheduleForDate(selectedDate, labTimetable, tutorialTimetable);
 
   return (
-    <AppLayout>
-      <div className="h-full flex flex-col overflow-hidden pb-2">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">
-              {format(now, "EEEE, MMM d")}
-            </p>
-            <h1 className="text-lg font-semibold">
-              Lab & Tutorial
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg bg-secondary/50 transition-colors">
-                  <CalendarSearch className="w-4 h-4 text-muted-foreground" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-popover border-border z-50" align="end">
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-            {!isSelectedToday && (
-              <button
-                onClick={goToToday}
-                className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center gap-1.5 transition-colors"
-              >
-                <Sun className="w-3.5 h-3.5" />
-                Today
-              </button>
-            )}
-          </div>
-        </div>
 
-        <div className="w-full flex-1 flex flex-col overflow-hidden">
-          <div 
-            className="mt-3 flex-1 overflow-y-auto space-y-3"
-            onTouchStart={swipeHandlers.onTouchStart}
-            onTouchMove={swipeHandlers.onTouchMove}
-            onTouchEnd={swipeHandlers.onTouchEnd}
-          >
-            <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-0">
-              <button
-                onClick={() => navigateDate("prev")}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
+    <div className="h-full flex flex-col overflow-hidden pb-2">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">
+            {format(now, "EEEE, MMM d")}
+          </p>
+          <h1 className="text-lg font-semibold">
+            Lab & Tutorial
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg bg-secondary/50 transition-colors">
+                <CalendarSearch className="w-4 h-4 text-muted-foreground" />
               </button>
-              
-              <div className="text-center flex items-center gap-2">
-                {isSelectedToday && <Sun className="w-3.5 h-3.5 text-warning" />}
-                {isSelectedTomorrow && <Sunrise className="w-3.5 h-3.5 text-primary" />}
-                <span className="font-semibold text-sm">
-                  {isSelectedToday ? "Today" : isSelectedTomorrow ? "Tomorrow" : format(selectedDate, "EEE, MMM d")}
-                </span>
-              </div>
-              
-              <button
-                onClick={() => navigateDate("next")}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-popover border-border z-50" align="end">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          {!isSelectedToday && (
+            <button
+              onClick={goToToday}
+              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center gap-1.5 transition-colors"
+            >
+              <Sun className="w-3.5 h-3.5" />
+              Today
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="w-full flex-1 flex flex-col overflow-hidden">
+        <div
+          className="mt-3 flex-1 overflow-y-auto space-y-3"
+          onTouchStart={swipeHandlers.onTouchStart}
+          onTouchMove={swipeHandlers.onTouchMove}
+          onTouchEnd={swipeHandlers.onTouchEnd}
+        >
+          <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-0">
+            <button
+              onClick={() => navigateDate("prev")}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="text-center flex items-center gap-2">
+              {isSelectedToday && <Sun className="w-3.5 h-3.5 text-warning" />}
+              {isSelectedTomorrow && <Sunrise className="w-3.5 h-3.5 text-primary" />}
+              <span className="font-semibold text-sm">
+                {isSelectedToday ? "Today" : isSelectedTomorrow ? "Tomorrow" : format(selectedDate, "EEE, MMM d")}
+              </span>
             </div>
 
-            {isFutureDate && !isSelectedTomorrow && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
-                <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Future date
-                </p>
-              </div>
-            )}
+            <button
+              onClick={() => navigateDate("next")}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
 
-            {isPastDate && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
-                <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">Past date</p>
-              </div>
-            )}
+          {isFutureDate && !isSelectedTomorrow && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
+              <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Future date
+              </p>
+            </div>
+          )}
 
-            {isLoading ? (
-              <div className="text-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Loading schedule...</p>
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
-                <div className="space-y-3 pl-6">
-                  {schedule.map((slot, index) => (
-                    <div key={index} className="relative">
-                      <div className="absolute -left-[22px] top-1 w-4 h-4 rounded-full bg-background border-2 border-border flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                      </div>
-                      {/* Time display */}
-                      <div className="absolute -left-[70px] top-1 w-12 text-right">
-                        <p className="text-xs font-semibold leading-none">{formatTime(slot.startTime)}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{formatTime(slot.endTime)}</p>
-                      </div>
-                      <div className="w-full relative">
-                        <SubjectCard
-                          name={slot.subject.name}
-                          code={slot.subject.code}
-                          lecturePlace={slot.subject.lecturePlace}
-                          classroomLocation={slot.subject.classroomLocation}
-                          color={slot.subject.color}
-                          present={0}
-                          absent={0}
-                          total={0}
-                          minRequired={slot.subject.minimumCriteria ?? 75}
-                          hideBunkableInfo={true}
-                        />
-                        {/* Badge to show Lab or Tutorial */}
-                        <div className="absolute top-2 right-2">
-                          <div className={cn(
-                            "px-2 py-0.5 rounded-md text-[10px] font-medium",
-                            slot.type === "lab" 
-                              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                              : "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                          )}>
-                            {slot.type === "lab" ? (
-                              <div className="flex items-center gap-1">
-                                <Laptop className="w-2.5 h-2.5" />
-                                <span>Lab</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <GraduationCap className="w-2.5 h-2.5" />
-                                <span>Tutorial</span>
-                              </div>
-                            )}
-                          </div>
+          {isPastDate && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border/30">
+              <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">Past date</p>
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Loading schedule...</p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
+              <div className="space-y-3 pl-6">
+                {schedule.map((slot, index) => (
+                  <div key={index} className="relative">
+                    <div className="absolute -left-[22px] top-1 w-4 h-4 rounded-full bg-background border-2 border-border flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                    </div>
+                    {/* Time display */}
+                    <div className="absolute -left-[70px] top-1 w-12 text-right">
+                      <p className="text-xs font-semibold leading-none">{formatTime(slot.startTime)}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{formatTime(slot.endTime)}</p>
+                    </div>
+                    <div className="w-full relative">
+                      <SubjectCard
+                        name={slot.subject.name}
+                        code={slot.subject.code}
+                        lecturePlace={slot.subject.lecturePlace}
+                        classroomLocation={slot.subject.classroomLocation}
+                        color={slot.subject.color}
+                        present={0}
+                        absent={0}
+                        total={0}
+                        minRequired={slot.subject.minimumCriteria ?? 75}
+                        hideBunkableInfo={true}
+                      />
+                      {/* Badge to show Lab or Tutorial */}
+                      <div className="absolute top-2 right-2">
+                        <div className={cn(
+                          "px-2 py-0.5 rounded-md text-[10px] font-medium",
+                          slot.type === "lab"
+                            ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                            : "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                        )}>
+                          {slot.type === "lab" ? (
+                            <div className="flex items-center gap-1">
+                              <Laptop className="w-2.5 h-2.5" />
+                              <span>Lab</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <GraduationCap className="w-2.5 h-2.5" />
+                              <span>Tutorial</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
-    </AppLayout>
+    </div>
+
   );
 }
