@@ -225,7 +225,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   "flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all duration-300 relative overflow-hidden group z-10",
                   isActive
                     ? "text-primary-foreground dark:text-white"
-                    : "text-muted-foreground/80 hover:text-foreground hover:bg-white/10 dark:hover:bg-white/5 active:scale-95 bg-transparent"
+                    : "text-muted-foreground/80 hover:text-foreground active:scale-95 bg-transparent"
                 )}
               >
                 <item.icon className={cn("w-5 h-5 transition-transform duration-300", isActive && "scale-110 drop-shadow-sm")} />
