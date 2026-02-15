@@ -526,20 +526,23 @@ export default function Dashboard() {
   // Get extra classes for the selected date
   const extraClassesForDate = extraClasses[dateKey] || [];
   
-  // Create extra class slots from extra classes
+  // Create extra class slots from extra classes; assign extraClassIndex per subject so multiple extras of same subject get unique keys
   const extraClassSlots = useMemo(() => {
+    const subjectCounts = new Map<string, number>();
     return extraClassesForDate.map((subjectId) => {
       const subject = enrolledSubjects.find((s) => s.id === subjectId);
       if (!subject) return null;
-      
+      const extraClassIndex = subjectCounts.get(subjectId) ?? 0;
+      subjectCounts.set(subjectId, extraClassIndex + 1);
       return {
-        time: "", // No time for extra classes
+        time: "",
         slotIndex: null,
         startTime: "",
         endTime: "",
         subject: subject,
         isCustom: true,
-        isExtraClass: true, // Flag to identify extra classes
+        isExtraClass: true,
+        extraClassIndex,
         type: "lecture" as const,
       };
     }).filter(Boolean) as any[];
@@ -656,15 +659,19 @@ export default function Dashboard() {
     slotIndex?: number | null,
     startTime?: string,
     endTime?: string,
-    isExtraClass?: boolean
+    isExtraClass?: boolean,
+    extraClassIndex?: number
   ) => {
     if (!savingState || savingState.subjectId !== subjectId) {
       return false;
     }
-    
-    // For extra classes (no time info), check if savingState also has no time info
     if (isExtraClass) {
-      return !savingState.timeSlot && !savingState.startTime && !savingState.endTime;
+      return (
+        !savingState.timeSlot &&
+        !savingState.startTime &&
+        !savingState.endTime &&
+        (extraClassIndex === undefined || savingState.extraClassIndex === extraClassIndex)
+      );
     }
     
     // Check if time slot information matches
@@ -713,29 +720,25 @@ export default function Dashboard() {
     timeSlot?: number | null,
     startTime?: string,
     endTime?: string,
-    isExtraClass?: boolean
+    isExtraClass?: boolean,
+    extraClassIndex?: number
   ) => {
-    // For future dates: only allow "cancelled", block "present" and "absent"
     if (isFutureDate) {
       if (status === 'cancelled') {
-        // Allow marking cancelled for future dates
-        await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass);
+        await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
       } else {
-        // Block present/absent for future dates
         toast.error("You can only mark lectures as 'cancelled' for future dates");
       }
       return;
     }
 
-    // Show warning for past dates
     if (isPastDate) {
       setPendingAttendance({ subjectId, status, timeSlot, startTime, endTime });
       setShowPastDateWarning(true);
       return;
     }
     
-    // For today, mark directly
-    await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass);
+    await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
   };
 
   const confirmPastDateAttendance = async () => {
@@ -775,15 +778,12 @@ export default function Dashboard() {
   };
   
   // Handle deleting an extra class
-  const handleDeleteExtraClass = async (subjectId: string, extraClassIndex: number) => {
-    // Set loading state for this specific delete button
-    setDeletingExtraClass({ subjectId, index: extraClassIndex });
+  // listIndex = index in extraClassesForDate (for removing from list); extraClassIndexForKey = per-subject index (for slot key)
+  const handleDeleteExtraClass = async (subjectId: string, listIndex: number, extraClassIndexForKey: number) => {
+    setDeletingExtraClass({ subjectId, index: listIndex });
     
     try {
-      // For extra classes, we use the date-subject key (no time info)
-      // Note: If there are multiple extra classes of the same subject, they share the same slotKey
-      // So we'll delete the attendance record if it exists, and always remove from the list
-      const slotKey = `${dateKey}-${subjectId}`;
+      const slotKey = `${dateKey}-${subjectId}-extra-${extraClassIndexForKey}`;
       const attendanceId = attendanceIds[slotKey];
       
       // If attendance exists, delete it from backend
@@ -816,10 +816,10 @@ export default function Dashboard() {
         }
       }
       
-      // Remove from extra classes list by index
+      // Remove from extra classes list by list index
       setExtraClasses((prev) => {
         const current = prev[dateKey] || [];
-        const updated = current.filter((_, idx) => idx !== extraClassIndex);
+        const updated = current.filter((_, idx) => idx !== listIndex);
         
         if (updated.length === 0) {
           const newState = { ...prev };
@@ -1071,10 +1071,10 @@ export default function Dashboard() {
                         );
                       }
 
-                      // Get attendance status with fallback to old format
-                      // For extra classes, use the old format (no time info)
-                      const status = isExtraClass 
-                        ? (todayAttendance[`${dateKey}-${slot.subject.id}`] || null)
+                      // Get attendance status: extra classes use date-subjectId-extra-{index} (match normalized keys from API)
+                      const extraKey = `${dateKey}-${String(slot.subject.id)}-extra-${slot.extraClassIndex}`;
+                      const status = isExtraClass
+                        ? (todayAttendance[extraKey] ?? todayAttendance[`${dateKey}-${String(slot.subject.id)}`] ?? null)
                         : getAttendanceStatus(
                             slot.subject.id,
                             slot.slotIndex,
@@ -1110,7 +1110,8 @@ export default function Dashboard() {
                         slot.slotIndex,
                         slot.startTime,
                         slot.endTime,
-                        isExtraClass
+                        isExtraClass,
+                        isExtraClass ? slot.extraClassIndex : undefined
                       );
 
                       return (
@@ -1238,7 +1239,8 @@ export default function Dashboard() {
                                     isExtraClass ? null : slot.slotIndex,
                                     isExtraClass ? undefined : slot.startTime,
                                     isExtraClass ? undefined : slot.endTime,
-                                    isExtraClass
+                                    isExtraClass,
+                                    isExtraClass ? slot.extraClassIndex : undefined
                                   )}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
@@ -1263,7 +1265,8 @@ export default function Dashboard() {
                                     isExtraClass ? null : slot.slotIndex,
                                     isExtraClass ? undefined : slot.startTime,
                                     isExtraClass ? undefined : slot.endTime,
-                                    isExtraClass
+                                    isExtraClass,
+                                    isExtraClass ? slot.extraClassIndex : undefined
                                   )}
                                   disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
                                   className={cn(
@@ -1282,8 +1285,8 @@ export default function Dashboard() {
                                 </button>
                                 {isExtraClass ? (
                                   <button
-                                    onClick={() => handleDeleteExtraClass(slot.subject!.id, extraClassIndex)}
-                                    disabled={deletingExtraClass?.subjectId === slot.subject!.id && deletingExtraClass?.index === extraClassIndex}
+                                    onClick={() => handleDeleteExtraClass(slot.subject!.id, index - schedule.length, slot.extraClassIndex)}
+                                    disabled={deletingExtraClass?.subjectId === slot.subject!.id && deletingExtraClass?.index === index - schedule.length}
                                     className={cn(
                                       "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
                                       "bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20",
