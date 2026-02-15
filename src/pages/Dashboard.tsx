@@ -948,7 +948,7 @@ export default function Dashboard() {
             onTouchMove={swipeHandlers.onTouchMove}
             onTouchEnd={swipeHandlers.onTouchEnd}
           >
-            <div className="flex items-center justify-between gap-1 bg-secondary/30 dark:bg-neutral-800/60 rounded-full px-1 py-0.5">
+            <div className="flex items-center justify-between gap-1 bg-secondary/30 dark:bg-neutral-800/30 rounded-full px-1 py-0.5">
               <button
                 onClick={() => navigateDate("prev")}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
