@@ -911,22 +911,22 @@ export default function Dashboard() {
         </div>
 
         <Tabs defaultValue="schedule" className="w-full flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-3 bg-secondary/50 p-0.5 rounded-xl h-9">
+          <TabsList className="grid w-full grid-cols-3 p-1 rounded-xl h-10 border border-white/20 dark:border-neutral-600/30 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md shadow-lg shadow-black/5 dark:shadow-black/20 transition-all duration-300">
             <TabsTrigger 
               value="schedule" 
-              className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+              className="rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-white/80 dark:data-[state=active]:bg-neutral-800/80 data-[state=active]:shadow-md data-[state=active]:backdrop-blur-sm data-[state=inactive]:text-muted-foreground hover:text-foreground"
             >
               Schedule
             </TabsTrigger>
             <TabsTrigger 
               value="lab-tutorial"
-              className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+              className="rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-white/80 dark:data-[state=active]:bg-neutral-800/80 data-[state=active]:shadow-md data-[state=active]:backdrop-blur-sm data-[state=inactive]:text-muted-foreground hover:text-foreground"
             >
               Lab & Tut
             </TabsTrigger>
             <TabsTrigger 
               value="subjects"
-              className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+              className="rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-white/80 dark:data-[state=active]:bg-neutral-800/80 data-[state=active]:shadow-md data-[state=active]:backdrop-blur-sm data-[state=inactive]:text-muted-foreground hover:text-foreground"
             >
               Subjects
             </TabsTrigger>
@@ -934,12 +934,12 @@ export default function Dashboard() {
 
           <TabsContent 
             value="schedule" 
-            className="mt-3 flex-1 overflow-y-auto space-y-3"
+            className="mt-3 flex-1 overflow-y-auto space-y-3 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200"
             onTouchStart={swipeHandlers.onTouchStart}
             onTouchMove={swipeHandlers.onTouchMove}
             onTouchEnd={swipeHandlers.onTouchEnd}
           >
-            <div className="flex items-center justify-between gap-1 bg-secondary/30 rounded-full px-1 py-0.5">
+            <div className="flex items-center justify-between gap-1 bg-secondary/30 dark:bg-neutral-800/60 rounded-full px-1 py-0.5">
               <button
                 onClick={() => navigateDate("prev")}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
@@ -1333,7 +1333,7 @@ export default function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="lab-tutorial" className="mt-4 flex-1 overflow-y-auto space-y-2">
+          <TabsContent value="lab-tutorial" className="mt-4 flex-1 overflow-y-auto space-y-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200">
             {enrolledSubjects.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
@@ -1407,7 +1407,7 @@ export default function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="subjects" className="mt-4 flex-1 overflow-y-auto space-y-2">
+          <TabsContent value="subjects" className="mt-4 flex-1 overflow-y-auto space-y-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200">
             {enrolledSubjects.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
