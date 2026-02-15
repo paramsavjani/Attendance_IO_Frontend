@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
-import { AppLayout } from "@/components/layout/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin, BarChart3, Star } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,7 +59,7 @@ export default function Profile() {
         const response = await fetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
           credentials: 'include',
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setCurrentSemester(data);
@@ -79,7 +79,7 @@ export default function Profile() {
     };
 
     fetchCurrentSemester();
-    
+
     // Track profile page view
     trackAppEvent('profile_view', {
       timestamp: new Date().toISOString(),
@@ -92,7 +92,7 @@ export default function Profile() {
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, {
           method: "GET",
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setSleepDuration(data.sleepDurationHours);
@@ -120,10 +120,10 @@ export default function Profile() {
   const handleSaveSubjects = async (subjects: Subject[], hasConflicts?: boolean) => {
     setEnrolledSubjects(subjects);
     setShowSubjectEditor(false);
-    
+
     // Refresh timetable to get the updated slots from backend
     await refreshTimetable();
-    
+
     if (!hasConflicts) {
       toast.success(`Updated to ${subjects.length} subjects`);
     }
@@ -177,8 +177,8 @@ export default function Profile() {
       }
 
       // Update local state directly without API call
-      setEnrolledSubjects(enrolledSubjects.map(subject => 
-        subject.id === subjectId 
+      setEnrolledSubjects(enrolledSubjects.map(subject =>
+        subject.id === subjectId
           ? { ...subject, minimumCriteria: value }
           : subject
       ));
@@ -209,7 +209,7 @@ export default function Profile() {
 
   const handleSaveSleepDuration = async () => {
     const hoursNum = parseInt(editingSleepHours, 10);
-    
+
     // Validate value
     if (isNaN(hoursNum) || hoursNum < 1 || hoursNum > 20) {
       toast.error("Sleep duration must be less than 20 hours");
@@ -282,8 +282,8 @@ export default function Profile() {
       }
 
       // Update local state directly without API call
-      setEnrolledSubjects(enrolledSubjects.map(subject => 
-        subject.id === subjectId 
+      setEnrolledSubjects(enrolledSubjects.map(subject =>
+        subject.id === subjectId
           ? { ...subject, classroomLocation: value }
           : subject
       ));
@@ -309,7 +309,7 @@ export default function Profile() {
     }
 
     setIsSubmittingFeedback(true);
-    
+
     try {
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.SUBMIT_FEEDBACK, {
         method: 'POST',
@@ -354,671 +354,666 @@ export default function Profile() {
   const disabledRowClass = "w-full bg-card/50 py-2.5 px-3 flex items-center gap-2.5 text-left opacity-60";
 
   return (
-    <AppLayout>
-      <div className="space-y-2 pb-2">
-        {/* Profile Header - compact */}
-        <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-xl px-3 py-2.5 border border-border shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20">
-              <img 
-                src={student?.pictureUrl || "/user-icons/user2.png"} 
-                alt={student?.name || "Profile"} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = "/user-icons/user2.png";
-                }}
-              />
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-              <h1 className="text-base font-bold truncate leading-tight">{student?.isDemo ? "Demo User" : student?.name}</h1>
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-xs text-muted-foreground">{student?.rollNumber}</p>
-                {isLoadingSemester ? (
-                  <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/50">Loading...</span>
-                ) : currentSemester ? (
-                  <span className="text-[10px] font-medium text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
-                    {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
-                  </span>
-                ) : null}
-              </div>
+
+    <div className="space-y-2 pb-2">
+      {/* Profile Header - compact */}
+      <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-xl px-3 py-2.5 border border-border shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-primary/20">
+            <img
+              src={student?.pictureUrl || "/user-icons/user2.png"}
+              alt={student?.name || "Profile"}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "/user-icons/user2.png";
+              }}
+            />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+            <h1 className="text-base font-bold truncate leading-tight">{student?.isDemo ? "Demo User" : student?.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-muted-foreground">{student?.rollNumber}</p>
+              {isLoadingSemester ? (
+                <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/50">Loading...</span>
+              ) : currentSemester ? (
+                <span className="text-[10px] font-medium text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+                  {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Quick Actions - compact list */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="divide-y divide-border">
-            <button onClick={() => setShowSubjectEditor(true)} className={rowClass}>
-              <div className={iconClass}><BookOpen className="w-3.5 h-3.5 text-primary" /></div>
+      {/* Quick Actions - compact list */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="divide-y divide-border">
+          <button onClick={() => setShowSubjectEditor(true)} className={rowClass}>
+            <div className={iconClass}><BookOpen className="w-3.5 h-3.5 text-primary" /></div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[13px] leading-tight">My Subjects</p>
+              <p className="text-[11px] text-muted-foreground">{enrolledSubjects.length} enrolled</p>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          </button>
+
+          {enrolledSubjects.length > 0 ? (
+            <button onClick={() => setShowCriteriaModal(true)} className={rowClass}>
+              <div className={iconClass}><Target className="w-3.5 h-3.5 text-primary" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[13px] leading-tight">My Subjects</p>
-                <p className="text-[11px] text-muted-foreground">{enrolledSubjects.length} enrolled</p>
+                <p className="font-semibold text-[13px] leading-tight">Minimum Criteria</p>
+                <p className="text-[11px] text-muted-foreground">Targets by subject</p>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             </button>
-
-            {enrolledSubjects.length > 0 ? (
-              <button onClick={() => setShowCriteriaModal(true)} className={rowClass}>
-                <div className={iconClass}><Target className="w-3.5 h-3.5 text-primary" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px] leading-tight">Minimum Criteria</p>
-                  <p className="text-[11px] text-muted-foreground">Targets by subject</p>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              </button>
-            ) : (
-              <div className={disabledRowClass}>
-                <div className={iconClassMuted}><Target className="w-3.5 h-3.5 text-muted-foreground" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px] text-muted-foreground">Minimum Criteria</p>
-                  <p className="text-[11px] text-muted-foreground">Add subjects first</p>
-                </div>
+          ) : (
+            <div className={disabledRowClass}>
+              <div className={iconClassMuted}><Target className="w-3.5 h-3.5 text-muted-foreground" /></div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-[13px] text-muted-foreground">Minimum Criteria</p>
+                <p className="text-[11px] text-muted-foreground">Add subjects first</p>
               </div>
-            )}
+            </div>
+          )}
 
-            {enrolledSubjects.length > 0 ? (
-              <button onClick={() => setShowClassroomLocationModal(true)} className={rowClass}>
-                <div className={iconClass}><MapPin className="w-3.5 h-3.5 text-primary" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px] leading-tight">Classroom Location</p>
-                  <p className="text-[11px] text-muted-foreground">Per subject</p>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              </button>
-            ) : (
-              <div className={disabledRowClass}>
-                <div className={iconClassMuted}><MapPin className="w-3.5 h-3.5 text-muted-foreground" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px] text-muted-foreground">Classroom Location</p>
-                  <p className="text-[11px] text-muted-foreground">Add subjects first</p>
-                </div>
+          {enrolledSubjects.length > 0 ? (
+            <button onClick={() => setShowClassroomLocationModal(true)} className={rowClass}>
+              <div className={iconClass}><MapPin className="w-3.5 h-3.5 text-primary" /></div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-[13px] leading-tight">Classroom Location</p>
+                <p className="text-[11px] text-muted-foreground">Per subject</p>
               </div>
-            )}
-
-            {enrolledSubjects.length > 0 ? (
-              <button
-                onClick={() => {
-                  if (enrolledSubjects.length === 1) {
-                    setSelectedBaselineSubject(enrolledSubjects[0]);
-                    setShowBaselineDialog(true);
-                  } else {
-                    setShowBaselineDialog(true);
-                  }
-                }}
-                className={rowClass}
-              >
-                <div className={iconClass}><Calendar className="w-3.5 h-3.5 text-primary" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px] leading-tight">Previous Attendance</p>
-                  <p className="text-[11px] text-muted-foreground">Past data</p>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              </button>
-            ) : (
-              <div className={disabledRowClass}>
-                <div className={iconClassMuted}><Calendar className="w-3.5 h-3.5 text-muted-foreground" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px] text-muted-foreground">Previous Attendance</p>
-                  <p className="text-[11px] text-muted-foreground">Add subjects first</p>
-                </div>
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            </button>
+          ) : (
+            <div className={disabledRowClass}>
+              <div className={iconClassMuted}><MapPin className="w-3.5 h-3.5 text-muted-foreground" /></div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-[13px] text-muted-foreground">Classroom Location</p>
+                <p className="text-[11px] text-muted-foreground">Add subjects first</p>
               </div>
-            )}
+            </div>
+          )}
 
+          {enrolledSubjects.length > 0 ? (
             <button
-              onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
-              className={rowClass}
-            >
-              <div className={iconClass}><Moon className="w-3.5 h-3.5 text-primary" /></div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[13px] leading-tight">Sleep Duration</p>
-                {isLoadingSleepDuration ? (
-                  <p className="text-[11px] text-muted-foreground">Loading...</p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">{sleepDuration ?? 8}h · reminders</p>
-                )}
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            </button>
-
-            {/* Support & app - compact row */}
-            <button onClick={() => navigate("/app-analytics")} className={rowClass}>
-              <div className={iconClass}><BarChart3 className="w-3.5 h-3.5 text-primary" /></div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[13px] leading-tight">App Analytics</p>
-                <p className="text-[11px] text-muted-foreground">Usage & engagement</p>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            </button>
-
-            <button
-              onClick={async () => {
-                try { await requestAppReview(); } catch (e) {
-                  console.error("Rate us failed:", e);
-                  toast.error("Could not open review. Please try again.");
+              onClick={() => {
+                if (enrolledSubjects.length === 1) {
+                  setSelectedBaselineSubject(enrolledSubjects[0]);
+                  setShowBaselineDialog(true);
+                } else {
+                  setShowBaselineDialog(true);
                 }
               }}
               className={rowClass}
             >
-              <div className={iconClass}><Star className="w-3.5 h-3.5 text-primary" /></div>
+              <div className={iconClass}><Calendar className="w-3.5 h-3.5 text-primary" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[13px] leading-tight">Rate us</p>
-                <p className="text-[11px] text-muted-foreground">Play Store</p>
+                <p className="font-semibold text-[13px] leading-tight">Previous Attendance</p>
+                <p className="text-[11px] text-muted-foreground">Past data</p>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             </button>
-
-            <button onClick={() => setShowFeedbackModal(true)} className={rowClass}>
-              <div className={iconClass}><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
+          ) : (
+            <div className={disabledRowClass}>
+              <div className={iconClassMuted}><Calendar className="w-3.5 h-3.5 text-muted-foreground" /></div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[13px] leading-tight">Feedback & Bugs</p>
-                <p className="text-[11px] text-muted-foreground">Help us improve</p>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            </button>
-          </div>
-        </div>
-
-        {/* Sleep Duration Modal */}
-        <Dialog open={isEditingSleepDuration} onOpenChange={setIsEditingSleepDuration}>
-          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[92vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
-            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-3 border-b border-border">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-base">
-                  <Moon className="w-4 h-4 text-primary" />
-                  Sleep Duration
-                </DialogTitle>
-              </DialogHeader>
-              <p className="text-[10px] text-muted-foreground mt-0.5">How many hours do you sleep?</p>
-            </div>
-            
-            <div className="p-4 space-y-4 flex-1 min-h-0 overflow-y-auto">
-              {/* Value Display */}
-              <div className="text-center py-2">
-                <span className="text-4xl font-bold text-primary tabular-nums">{editingSleepHours}</span>
-                <span className="text-lg text-muted-foreground ml-1">hours</span>
-              </div>
-              
-              {/* Slider */}
-              <div className="px-2">
-                <Slider
-                  value={[parseInt(editingSleepHours) || 8]}
-                  onValueChange={(value) => setEditingSleepHours(value[0].toString())}
-                  min={1}
-                  max={20}
-                  step={1}
-                  disabled={isSavingSleepDuration}
-                  className="w-full"
-                />
-                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                  <span>1h</span>
-                  <span>10h</span>
-                  <span>20h</span>
-                </div>
+                <p className="font-semibold text-[13px] text-muted-foreground">Previous Attendance</p>
+                <p className="text-[11px] text-muted-foreground">Add subjects first</p>
               </div>
             </div>
-            
-            <div className="p-3 pt-0 flex gap-2 border-t border-border">
-              <Button
-                variant="outline"
-                onClick={handleCancelEditSleepDuration}
-                disabled={isSavingSleepDuration}
-                className="flex-1 h-10 rounded-lg text-sm"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveSleepDuration}
-                disabled={isSavingSleepDuration}
-                className="flex-1 gap-2 h-10 rounded-lg text-sm"
-              >
-                {isSavingSleepDuration ? (
-                  "Saving..."
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    Save
-                  </>
-                )}
-              </Button>
+          )}
+
+          <button
+            onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
+            className={rowClass}
+          >
+            <div className={iconClass}><Moon className="w-3.5 h-3.5 text-primary" /></div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[13px] leading-tight">Sleep Duration</p>
+              {isLoadingSleepDuration ? (
+                <p className="text-[11px] text-muted-foreground">Loading...</p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">{sleepDuration ?? 8}h · reminders</p>
+              )}
             </div>
-          </DialogContent>
-        </Dialog>
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          </button>
 
-        {/* Previous Attendance Dialog */}
-        {showBaselineDialog && enrolledSubjects.length > 1 && !selectedBaselineSubject && (
-          <Dialog open={showBaselineDialog} onOpenChange={(open) => {
-            setShowBaselineDialog(open);
-            if (!open) setSelectedBaselineSubject(null);
-          }}>
-            <DialogContent className="max-w-sm mx-auto rounded-xl">
-              <DialogHeader>
-                <DialogTitle className="text-base font-semibold">Select Subject</DialogTitle>
-                <p className="text-sm text-muted-foreground">Choose a subject to set previous attendance</p>
-              </DialogHeader>
-              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {enrolledSubjects.map((subject) => (
-                  <button
-                    key={subject.id}
-                    onClick={() => {
-                      setSelectedBaselineSubject(subject);
-                    }}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
-                  >
-                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                      {subject.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{subject.name}</p>
-                      <p className="text-xs text-muted-foreground">{subject.code}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+          {/* Support & app - compact row */}
+          <button onClick={() => navigate("/app-analytics")} className={rowClass}>
+            <div className={iconClass}><BarChart3 className="w-3.5 h-3.5 text-primary" /></div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[13px] leading-tight">App Analytics</p>
+              <p className="text-[11px] text-muted-foreground">Usage & engagement</p>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          </button>
 
-        {selectedBaselineSubject && (
-          <BaselineAttendanceDialog
-            open={showBaselineDialog}
-            onOpenChange={(open) => {
-              setShowBaselineDialog(open);
-              if (!open) {
-                setSelectedBaselineSubject(null);
+          <button
+            onClick={async () => {
+              try { await requestAppReview(); } catch (e) {
+                console.error("Rate us failed:", e);
+                toast.error("Could not open review. Please try again.");
               }
             }}
-            subjectId={selectedBaselineSubject.id}
-            subjectName={selectedBaselineSubject.name}
-            onSave={async () => {
-              // Refresh attendance data after saving baseline
-              await refreshEnrolledSubjects();
-            }}
-          />
-        )}
-
-        <ContributorsSection />
-
-        <Button
-          variant="destructive"
-          onClick={handleLogout}
-          className="w-full h-9 rounded-xl text-sm"
-        >
-          <LogOut className="w-3.5 h-3.5 mr-1.5" />
-          Logout
-        </Button>
-
-        <div className="flex items-center justify-center gap-1 pt-0.5">
-          <span className="text-[11px] text-muted-foreground">Made with</span>
-          <Heart className="w-2.5 h-2.5 text-red-500 fill-red-500" />
-          <span className="text-[11px] text-muted-foreground">by</span>
-          <a
-            href="https://paramsavjani.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] font-medium text-primary hover:underline"
+            className={rowClass}
           >
-            Param Savjani
-          </a>
-        </div>
+            <div className={iconClass}><Star className="w-3.5 h-3.5 text-primary" /></div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[13px] leading-tight">Rate us</p>
+              <p className="text-[11px] text-muted-foreground">Play Store</p>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          </button>
 
-        {/* Subject Editor Dialog */}
-        <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
-          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] h-[90vh] sm:h-auto overflow-hidden p-3 sm:p-4 flex flex-col top-[50%] translate-y-[-50%]">
-            <DialogHeader className="sr-only">
-              <DialogTitle>Edit Subjects</DialogTitle>
+          <button onClick={() => setShowFeedbackModal(true)} className={rowClass}>
+            <div className={iconClass}><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[13px] leading-tight">Feedback & Bugs</p>
+              <p className="text-[11px] text-muted-foreground">Help us improve</p>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          </button>
+        </div>
+      </div>
+
+      {/* Sleep Duration Modal */}
+      <Dialog open={isEditingSleepDuration} onOpenChange={setIsEditingSleepDuration}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[92vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
+          <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-3 border-b border-border">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <Moon className="w-4 h-4 text-primary" />
+                Sleep Duration
+              </DialogTitle>
             </DialogHeader>
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-              <SubjectSelector
-                selectedSubjects={enrolledSubjects}
-                onSave={handleSaveSubjects}
-                onCancel={() => setShowSubjectEditor(false)}
+            <p className="text-[10px] text-muted-foreground mt-0.5">How many hours do you sleep?</p>
+          </div>
+
+          <div className="p-4 space-y-4 flex-1 min-h-0 overflow-y-auto">
+            {/* Value Display */}
+            <div className="text-center py-2">
+              <span className="text-4xl font-bold text-primary tabular-nums">{editingSleepHours}</span>
+              <span className="text-lg text-muted-foreground ml-1">hours</span>
+            </div>
+
+            {/* Slider */}
+            <div className="px-2">
+              <Slider
+                value={[parseInt(editingSleepHours) || 8]}
+                onValueChange={(value) => setEditingSleepHours(value[0].toString())}
+                min={1}
+                max={20}
+                step={1}
+                disabled={isSavingSleepDuration}
+                className="w-full"
               />
+              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                <span>1h</span>
+                <span>10h</span>
+                <span>20h</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 pt-0 flex gap-2 border-t border-border">
+            <Button
+              variant="outline"
+              onClick={handleCancelEditSleepDuration}
+              disabled={isSavingSleepDuration}
+              className="flex-1 h-10 rounded-lg text-sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSleepDuration}
+              disabled={isSavingSleepDuration}
+              className="flex-1 gap-2 h-10 rounded-lg text-sm"
+            >
+              {isSavingSleepDuration ? (
+                "Saving..."
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  Save
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Previous Attendance Dialog */}
+      {showBaselineDialog && enrolledSubjects.length > 1 && !selectedBaselineSubject && (
+        <Dialog open={showBaselineDialog} onOpenChange={(open) => {
+          setShowBaselineDialog(open);
+          if (!open) setSelectedBaselineSubject(null);
+        }}>
+          <DialogContent className="max-w-sm mx-auto rounded-xl">
+            <DialogHeader>
+              <DialogTitle className="text-base font-semibold">Select Subject</DialogTitle>
+              <p className="text-sm text-muted-foreground">Choose a subject to set previous attendance</p>
+            </DialogHeader>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {enrolledSubjects.map((subject) => (
+                <button
+                  key={subject.id}
+                  onClick={() => {
+                    setSelectedBaselineSubject(subject);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                >
+                  <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
+                    {subject.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{subject.name}</p>
+                    <p className="text-xs text-muted-foreground">{subject.code}</p>
+                  </div>
+                </button>
+              ))}
             </div>
           </DialogContent>
         </Dialog>
+      )}
 
-        {/* Classroom Location Modal */}
-        <Dialog open={showClassroomLocationModal} onOpenChange={setShowClassroomLocationModal}>
-          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  Classroom Location
-                </DialogTitle>
-              </DialogHeader>
-              <p className="text-xs text-muted-foreground mt-1">Customize classroom location for each subject</p>
-            </div>
-            
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
-              {enrolledSubjects.map((subject) => {
-                const isEditing = Object.prototype.hasOwnProperty.call(editingClassroomLocation, subject.id);
-                const isSaving = isSavingClassroomLocation[subject.id] || false;
-                const currentValue = subject.classroomLocation ?? subject.lecturePlace ?? null;
-                const displayValue = currentValue || "Not set";
+      {selectedBaselineSubject && (
+        <BaselineAttendanceDialog
+          open={showBaselineDialog}
+          onOpenChange={(open) => {
+            setShowBaselineDialog(open);
+            if (!open) {
+              setSelectedBaselineSubject(null);
+            }
+          }}
+          subjectId={selectedBaselineSubject.id}
+          subjectName={selectedBaselineSubject.name}
+          onSave={async () => {
+            // Refresh attendance data after saving baseline
+            await refreshEnrolledSubjects();
+          }}
+        />
+      )}
 
-                return (
-                  <div
-                    key={subject.id}
-                    className={`rounded-xl border transition-all ${
-                      isEditing 
-                        ? 'border-primary/30 bg-primary/5 p-4' 
-                        : 'border-border bg-muted/30 p-3'
+      <ContributorsSection />
+
+      <Button
+        variant="destructive"
+        onClick={handleLogout}
+        className="w-full h-9 rounded-xl text-sm"
+      >
+        <LogOut className="w-3.5 h-3.5 mr-1.5" />
+        Logout
+      </Button>
+
+      <div className="flex items-center justify-center gap-1 pt-0.5">
+        <span className="text-[11px] text-muted-foreground">Made with</span>
+        <Heart className="w-2.5 h-2.5 text-red-500 fill-red-500" />
+        <span className="text-[11px] text-muted-foreground">by</span>
+        <a
+          href="https://paramsavjani.in"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] font-medium text-primary hover:underline"
+        >
+          Param Savjani
+        </a>
+      </div>
+
+      {/* Subject Editor Dialog */}
+      <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] h-[90vh] sm:h-auto overflow-hidden p-3 sm:p-4 flex flex-col top-[50%] translate-y-[-50%]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Edit Subjects</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <SubjectSelector
+              selectedSubjects={enrolledSubjects}
+              onSave={handleSaveSubjects}
+              onCancel={() => setShowSubjectEditor(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Classroom Location Modal */}
+      <Dialog open={showClassroomLocationModal} onOpenChange={setShowClassroomLocationModal}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                Classroom Location
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground mt-1">Customize classroom location for each subject</p>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+            {enrolledSubjects.map((subject) => {
+              const isEditing = Object.prototype.hasOwnProperty.call(editingClassroomLocation, subject.id);
+              const isSaving = isSavingClassroomLocation[subject.id] || false;
+              const currentValue = subject.classroomLocation ?? subject.lecturePlace ?? null;
+              const displayValue = currentValue || "Not set";
+
+              return (
+                <div
+                  key={subject.id}
+                  className={`rounded-xl border transition-all ${isEditing
+                      ? 'border-primary/30 bg-primary/5 p-4'
+                      : 'border-border bg-muted/30 p-3'
                     }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0 shadow-lg"
-                        style={{ backgroundColor: subject.color, boxShadow: `0 0 8px ${subject.color}40` }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{subject.name}</p>
-                        <p className="text-xs text-muted-foreground">{subject.code}</p>
-                      </div>
-                      {!isEditing && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground truncate max-w-[120px]">
-                            {displayValue}
-                          </span>
-                          <button
-                            onClick={() => handleEditClassroomLocation(subject.id, currentValue)}
-                            className="h-8 px-2.5 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0 shadow-lg"
+                      style={{ backgroundColor: subject.color, boxShadow: `0 0 8px ${subject.color}40` }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{subject.code}</p>
                     </div>
-                    
-                    {isEditing && (
-                      <div className="mt-4 space-y-4">
-                        {/* Input Field */}
-                        <div className="space-y-2">
-                          <Input
-                            value={editingClassroomLocation[subject.id] || ""}
-                            onChange={(e) => setEditingClassroomLocation(prev => ({ ...prev, [subject.id]: e.target.value }))}
-                            placeholder={subject.lecturePlace || "Enter classroom location"}
-                            disabled={isSaving}
-                            className="w-full"
-                            maxLength={50}
-                          />
-                          {subject.lecturePlace && (
-                            <p className="text-xs text-muted-foreground">
-                              Default: {subject.lecturePlace}
-                            </p>
-                          )}
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCancelEditClassroomLocation(subject.id)}
-                            disabled={isSaving}
-                            className="flex-1 h-9 rounded-lg"
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleSaveClassroomLocation(subject.id)}
-                            disabled={isSaving}
-                            className="flex-1 h-9 rounded-lg gap-1.5"
-                          >
-                            {isSaving ? (
-                              "Saving..."
-                            ) : (
-                              <>
-                                <Save className="w-3.5 h-3.5" />
-                                Save
-                              </>
-                            )}
-                          </Button>
-                        </div>
+                    {!isEditing && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground truncate max-w-[120px]">
+                          {displayValue}
+                        </span>
+                        <button
+                          onClick={() => handleEditClassroomLocation(subject.id, currentValue)}
+                          className="h-8 px-2.5 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-            
-            <div className="p-4 pt-0">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowClassroomLocationModal(false)}
-                className="w-full h-10 rounded-xl"
-              >
-                Done
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
-        {/* Minimum Criteria Modal - Premium Design */}
-        <Dialog open={showCriteriaModal} onOpenChange={setShowCriteriaModal}>
-          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-primary" />
-                  Minimum Criteria
-                </DialogTitle>
-              </DialogHeader>
-              <p className="text-xs text-muted-foreground mt-1">Set attendance targets for each subject</p>
-            </div>
-            
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
-              {enrolledSubjects.map((subject) => {
-                const isEditing = Object.prototype.hasOwnProperty.call(editingCriteria, subject.id);
-                const isSaving = isSavingCriteria[subject.id] || false;
-                const currentValue = subject.minimumCriteria;
-                const displayValue = currentValue !== null && currentValue !== undefined ? currentValue : 70;
-
-                return (
-                  <div
-                    key={subject.id}
-                    className={`rounded-xl border transition-all ${
-                      isEditing 
-                        ? 'border-primary/30 bg-primary/5 p-4' 
-                        : 'border-border bg-muted/30 p-3'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0 shadow-lg"
-                        style={{ backgroundColor: subject.color, boxShadow: `0 0 8px ${subject.color}40` }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{subject.name}</p>
-                        <p className="text-xs text-muted-foreground">{subject.code}</p>
+                  {isEditing && (
+                    <div className="mt-4 space-y-4">
+                      {/* Input Field */}
+                      <div className="space-y-2">
+                        <Input
+                          value={editingClassroomLocation[subject.id] || ""}
+                          onChange={(e) => setEditingClassroomLocation(prev => ({ ...prev, [subject.id]: e.target.value }))}
+                          placeholder={subject.lecturePlace || "Enter classroom location"}
+                          disabled={isSaving}
+                          className="w-full"
+                          maxLength={50}
+                        />
+                        {subject.lecturePlace && (
+                          <p className="text-xs text-muted-foreground">
+                            Default: {subject.lecturePlace}
+                          </p>
+                        )}
                       </div>
-                      {!isEditing && (
-                        <div className="flex items-center gap-2">
-                          <span className={`text-base font-bold tabular-nums ${
-                            displayValue >= 75 ? 'text-emerald-500' : displayValue >= 65 ? 'text-yellow-500' : 'text-red-500'
-                          }`}>
-                            {displayValue}%
-                          </span>
-                          <button
-                            onClick={() => handleEditCriteria(subject.id, currentValue)}
-                            className="h-8 px-2.5 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancelEditClassroomLocation(subject.id)}
+                          disabled={isSaving}
+                          className="flex-1 h-9 rounded-lg"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveClassroomLocation(subject.id)}
+                          disabled={isSaving}
+                          className="flex-1 h-9 rounded-lg gap-1.5"
+                        >
+                          {isSaving ? (
+                            "Saving..."
+                          ) : (
+                            <>
+                              <Save className="w-3.5 h-3.5" />
+                              Save
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                    
-                    {isEditing && (
-                      <div className="mt-4 space-y-4">
-                        {/* Value Display */}
-                        <div className="text-center">
-                          <span className={`text-3xl font-bold tabular-nums ${
-                            parseInt(editingCriteria[subject.id]) >= 75 ? 'text-emerald-500' : 
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-4 pt-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowClassroomLocationModal(false)}
+              className="w-full h-10 rounded-xl"
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Minimum Criteria Modal - Premium Design */}
+      <Dialog open={showCriteriaModal} onOpenChange={setShowCriteriaModal}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                Minimum Criteria
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground mt-1">Set attendance targets for each subject</p>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+            {enrolledSubjects.map((subject) => {
+              const isEditing = Object.prototype.hasOwnProperty.call(editingCriteria, subject.id);
+              const isSaving = isSavingCriteria[subject.id] || false;
+              const currentValue = subject.minimumCriteria;
+              const displayValue = currentValue !== null && currentValue !== undefined ? currentValue : 70;
+
+              return (
+                <div
+                  key={subject.id}
+                  className={`rounded-xl border transition-all ${isEditing
+                      ? 'border-primary/30 bg-primary/5 p-4'
+                      : 'border-border bg-muted/30 p-3'
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0 shadow-lg"
+                      style={{ backgroundColor: subject.color, boxShadow: `0 0 8px ${subject.color}40` }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{subject.name}</p>
+                      <p className="text-xs text-muted-foreground">{subject.code}</p>
+                    </div>
+                    {!isEditing && (
+                      <div className="flex items-center gap-2">
+                        <span className={`text-base font-bold tabular-nums ${displayValue >= 75 ? 'text-emerald-500' : displayValue >= 65 ? 'text-yellow-500' : 'text-red-500'
+                          }`}>
+                          {displayValue}%
+                        </span>
+                        <button
+                          onClick={() => handleEditCriteria(subject.id, currentValue)}
+                          className="h-8 px-2.5 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isEditing && (
+                    <div className="mt-4 space-y-4">
+                      {/* Value Display */}
+                      <div className="text-center">
+                        <span className={`text-3xl font-bold tabular-nums ${parseInt(editingCriteria[subject.id]) >= 75 ? 'text-emerald-500' :
                             parseInt(editingCriteria[subject.id]) >= 65 ? 'text-yellow-500' : 'text-red-500'
                           }`}>
-                            {editingCriteria[subject.id] || 0}
-                          </span>
-                          <span className="text-lg text-muted-foreground ml-1">%</span>
-                        </div>
-                        
-                        {/* Slider */}
-                        <div className="px-1">
-                          <Slider
-                            value={[parseInt(editingCriteria[subject.id]) || 0]}
-                            onValueChange={(value) => setEditingCriteria(prev => ({ ...prev, [subject.id]: value[0].toString() }))}
-                            min={0}
-                            max={100}
-                            step={5}
-                            disabled={isSaving}
-                            className="w-full"
-                          />
-                          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                            <span>0%</span>
-                            <span>50%</span>
-                            <span>100%</span>
-                          </div>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCancelEdit(subject.id)}
-                            disabled={isSaving}
-                            className="flex-1 h-9 rounded-lg"
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleSaveCriteria(subject.id)}
-                            disabled={isSaving}
-                            className="flex-1 h-9 rounded-lg gap-1.5"
-                          >
-                            {isSaving ? (
-                              "Saving..."
-                            ) : (
-                              <>
-                                <Save className="w-3.5 h-3.5" />
-                                Save
-                              </>
-                            )}
-                          </Button>
+                          {editingCriteria[subject.id] || 0}
+                        </span>
+                        <span className="text-lg text-muted-foreground ml-1">%</span>
+                      </div>
+
+                      {/* Slider */}
+                      <div className="px-1">
+                        <Slider
+                          value={[parseInt(editingCriteria[subject.id]) || 0]}
+                          onValueChange={(value) => setEditingCriteria(prev => ({ ...prev, [subject.id]: value[0].toString() }))}
+                          min={0}
+                          max={100}
+                          step={5}
+                          disabled={isSaving}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                          <span>0%</span>
+                          <span>50%</span>
+                          <span>100%</span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            <div className="p-4 pt-0">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowCriteriaModal(false)}
-                className="w-full h-10 rounded-xl"
-              >
-                Done
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
-        {/* Feedback Modal */}
-        <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
-          <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
-            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                  Send Feedback
-                </DialogTitle>
-              </DialogHeader>
-            </div>
-            
-            <div className="p-4 space-y-4">
-              {/* Feedback Type Selector */}
-              <div className="flex gap-2">
-                {feedbackTypes.map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => setFeedbackType(type.id)}
-                    className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
-                      feedbackType === type.id
-                        ? 'border-primary bg-primary/10 shadow-sm'
-                        : 'border-border hover:bg-muted/50'
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancelEdit(subject.id)}
+                          disabled={isSaving}
+                          className="flex-1 h-9 rounded-lg"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveCriteria(subject.id)}
+                          disabled={isSaving}
+                          className="flex-1 h-9 rounded-lg gap-1.5"
+                        >
+                          {isSaving ? (
+                            "Saving..."
+                          ) : (
+                            <>
+                              <Save className="w-3.5 h-3.5" />
+                              Save
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-4 pt-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowCriteriaModal(false)}
+              className="w-full h-10 rounded-xl"
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Feedback Modal */}
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
+          <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                Send Feedback
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Feedback Type Selector */}
+            <div className="flex gap-2">
+              {feedbackTypes.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setFeedbackType(type.id)}
+                  className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${feedbackType === type.id
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border hover:bg-muted/50'
                     }`}
-                  >
-                    <type.icon className={`w-5 h-5 ${feedbackType === type.id ? type.color : 'text-muted-foreground'}`} />
-                    <span className={`text-xs font-medium ${feedbackType === type.id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {type.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Title Input */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Title</label>
-                <Input
-                  placeholder="Brief summary..."
-                  value={feedbackTitle}
-                  onChange={(e) => setFeedbackTitle(e.target.value)}
-                  maxLength={100}
-                  disabled={isSubmittingFeedback}
-                />
-                <p className="text-xs text-muted-foreground text-right">{feedbackTitle.length}/100</p>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  placeholder="Describe in detail..."
-                  value={feedbackDescription}
-                  onChange={(e) => setFeedbackDescription(e.target.value)}
-                  maxLength={500}
-                  rows={4}
-                  disabled={isSubmittingFeedback}
-                  className="resize-none"
-                />
-                <p className="text-xs text-muted-foreground text-right">{feedbackDescription.length}/500</p>
-              </div>
+                >
+                  <type.icon className={`w-5 h-5 ${feedbackType === type.id ? type.color : 'text-muted-foreground'}`} />
+                  <span className={`text-xs font-medium ${feedbackType === type.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    {type.label}
+                  </span>
+                </button>
+              ))}
             </div>
 
-            <div className="p-4 pt-0 flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowFeedbackModal(false)}
+            {/* Title Input */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Title</label>
+              <Input
+                placeholder="Brief summary..."
+                value={feedbackTitle}
+                onChange={(e) => setFeedbackTitle(e.target.value)}
+                maxLength={100}
                 disabled={isSubmittingFeedback}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmitFeedback}
-                disabled={isSubmittingFeedback || !feedbackTitle.trim() || !feedbackDescription.trim()}
-                className="flex-1 gap-2"
-              >
-                {isSubmittingFeedback ? (
-                  <>Sending...</>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    Submit
-                  </>
-                )}
-              </Button>
+              />
+              <p className="text-xs text-muted-foreground text-right">{feedbackTitle.length}/100</p>
             </div>
-          </DialogContent>
-        </Dialog>
 
-      </div>
-    </AppLayout>
+            {/* Description */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                placeholder="Describe in detail..."
+                value={feedbackDescription}
+                onChange={(e) => setFeedbackDescription(e.target.value)}
+                maxLength={500}
+                rows={4}
+                disabled={isSubmittingFeedback}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground text-right">{feedbackDescription.length}/500</p>
+            </div>
+          </div>
+
+          <div className="p-4 pt-0 flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowFeedbackModal(false)}
+              disabled={isSubmittingFeedback}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitFeedback}
+              disabled={isSubmittingFeedback || !feedbackTitle.trim() || !feedbackDescription.trim()}
+              className="flex-1 gap-2"
+            >
+              {isSubmittingFeedback ? (
+                <>Sending...</>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Submit
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+    </div>
+
   );
 }

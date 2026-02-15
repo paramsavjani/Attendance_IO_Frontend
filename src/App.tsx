@@ -119,11 +119,13 @@ function AppUpdateChecker() {
   );
 }
 
+import { MainLayout } from "@/components/layout/MainLayout";
+
 function AppRoutes() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
   const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
   const location = useLocation();
-  
+
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";
 
@@ -155,97 +157,102 @@ function AppRoutes() {
         <Route
           path="/"
           element={
-            isAuthenticated 
-              ? hasCompletedOnboarding 
-                ? <Navigate to="/dashboard" replace /> 
+            isAuthenticated
+              ? hasCompletedOnboarding
+                ? <Navigate to="/dashboard" replace />
                 : hasSeenIntro
                   ? <Navigate to="/onboarding" replace />
                   : <Navigate to="/intro" replace />
               : <Navigate to="/login" replace />
           }
         />
-      <Route path="/login" element={<Login />} />
-      <Route path="/error-old-version" element={<ErrorOldVersion />} />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/delete-account" element={<DeleteAccount />} />
-      <Route
-        path="/intro"
-        element={
-          <ProtectedRoute>
-            {hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Intro />}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/onboarding"
-        element={
-          <ProtectedRoute>
-            {hasCompletedOnboarding 
-              ? <Navigate to="/dashboard" replace /> 
-              : !hasSeenIntro 
-                ? <Navigate to="/intro" replace />
-                : <SubjectOnboarding />}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            {hasCompletedOnboarding ? <Dashboard /> : <Navigate to="/onboarding" replace />}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/timetable"
-        element={
-          <ProtectedRoute>
-            <Timetable />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/lab-tutorial"
-        element={
-          <ProtectedRoute>
-            {hasCompletedOnboarding ? <LabTutorial /> : <Navigate to="/onboarding" replace />}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app-analytics"
-        element={
-          <ProtectedRoute>
-            <AppAnalyticsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/search"
-        element={
-          <ProtectedRoute>
-            <Search />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/analytics"
-        element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/error-old-version" element={<ErrorOldVersion />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/delete-account" element={<DeleteAccount />} />
+        <Route
+          path="/intro"
+          element={
+            <ProtectedRoute>
+              {hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Intro />}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              {hasCompletedOnboarding
+                ? <Navigate to="/dashboard" replace />
+                : !hasSeenIntro
+                  ? <Navigate to="/intro" replace />
+                  : <SubjectOnboarding />}
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Routes with Persistent MainLayout */}
+        <Route element={<MainLayout />}>
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                {hasCompletedOnboarding ? <Dashboard /> : <Navigate to="/onboarding" replace />}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/timetable"
+            element={
+              <ProtectedRoute>
+                <Timetable />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lab-tutorial"
+            element={
+              <ProtectedRoute>
+                {hasCompletedOnboarding ? <LabTutorial /> : <Navigate to="/onboarding" replace />}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app-analytics"
+            element={
+              <ProtectedRoute>
+                <AppAnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <Search />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </>
   );
 }
@@ -263,9 +270,9 @@ const App = () => (
                 <AppRoutes />
               </HashRouter>
             ) : (
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
             )}
             {!Capacitor.isNativePlatform() && <VercelAnalytics />}
           </NotificationPermissionGate>
