@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -27,6 +27,51 @@ const navItems = [
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const navRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragProgress, setDragProgress] = useState(0);
+  const startX = useRef(0);
+  const startProgress = useRef(0);
+
+  // Sync dragProgress with current route when not dragging
+  useEffect(() => {
+    if (!isDragging) {
+      const currentIndex = navItems.findIndex(i => location.pathname === i.path);
+      setDragProgress(Math.max(0, currentIndex));
+    }
+  }, [location.pathname, isDragging]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    startX.current = e.touches[0].clientX;
+    startProgress.current = dragProgress;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!navRef.current) return;
+
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - startX.current;
+    const itemWidth = navRef.current.offsetWidth / 5;
+    const progressDiff = diff / itemWidth;
+
+    // Clamp between 0 and 4 (number of items - 1)
+    const newProgress = Math.min(Math.max(startProgress.current + progressDiff, 0), 4);
+    setDragProgress(newProgress);
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    const targetIndex = Math.round(dragProgress);
+    const targetPath = navItems[targetIndex].path;
+
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    } else {
+      // If we didn't change route, snap back
+      setDragProgress(targetIndex);
+    }
+  };
 
   const handleRefresh = async () => {
     // Small delay for visual feedback
@@ -123,23 +168,37 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
 
       {/* Bottom Navigation - Mobile First */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl safe-area-bottom z-40 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)]">
-        <div className="relative grid grid-cols-5 p-1 gap-1 max-w-lg mx-auto">
+      <nav
+        className="fixed bottom-0 left-0 right-0 border-t border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl safe-area-bottom z-40 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] touch-none"
+      >
+        <div
+          ref={navRef}
+          className="relative grid grid-cols-5 p-1 gap-1 max-w-lg mx-auto"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Sliding Background */}
           <div
-            className="absolute top-1 bottom-1 left-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] z-0"
+            className={cn(
+              "absolute top-1 bottom-1 left-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 z-0",
+              !isDragging && "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            )}
             style={{
               width: 'calc((100% - 24px) / 5)',
-              transform: `translateX(calc(${Math.max(0, navItems.findIndex(i => location.pathname === i.path))} * (100% + 4px)))`
+              transform: `translateX(calc(${dragProgress} * (100% + 4px)))`
             }}
           />
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+          {navItems.map((item, index) => {
+            // Determine if this item is currently "active" based on drag progress
+            // We consider it active if the progress is closest to this index
+            const isActive = Math.round(dragProgress) === index;
 
             return (
               <button
                 key={item.path}
-                onClick={() => handleNavigation(item.path)}
+                // Only allow click navigation if not dragging (handled by touchEnd mostly, but good safety)
+                onClick={() => !isDragging && handleNavigation(item.path)}
                 className={cn(
                   "flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all duration-300 relative overflow-hidden group z-10",
                   isActive
