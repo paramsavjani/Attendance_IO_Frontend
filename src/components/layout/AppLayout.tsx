@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
+import {
+  LayoutDashboard,
   CalendarDays,
   Search,
   BarChart3,
@@ -52,22 +52,22 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-background flex flex-col"
       {...handlers}
     >
       {/* Pull to Refresh Indicator - Fixed at top */}
-      <div 
+      <div
         className={cn(
           "fixed top-0 left-0 right-0 z-50 flex flex-col items-center justify-center overflow-hidden",
           "transition-all duration-300 ease-out"
         )}
-        style={{ 
+        style={{
           height: pullDistance,
           opacity: progress > 0.1 ? 1 : 0,
         }}
       >
-        <div 
+        <div
           className={cn(
             "flex items-center justify-center w-9 h-9 rounded-full",
             "bg-card border border-border shadow-lg",
@@ -80,22 +80,22 @@ export function AppLayout({ children }: AppLayoutProps) {
           {isRefreshing ? (
             <Loader2 className="w-4 h-4 text-primary animate-spin" />
           ) : (
-            <svg 
+            <svg
               className="w-4 h-4 text-primary transition-transform duration-150"
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
               strokeWidth="2"
-              strokeLinecap="round" 
+              strokeLinecap="round"
               strokeLinejoin="round"
             >
               <path d="M12 5v14M5 12l7-7 7 7" />
             </svg>
           )}
         </div>
-        
+
         {/* Status text */}
-        <span 
+        <span
           className={cn(
             "text-[10px] font-medium text-muted-foreground mt-1",
             "transition-opacity duration-200",
@@ -107,13 +107,13 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       {/* Main Content - moves down with pull */}
-      <main 
+      <main
         data-scroll-container
         className={cn(
           "flex-1 pb-20 flex flex-col overflow-hidden safe-area-top",
           "transition-transform duration-300 ease-out"
         )}
-        style={{ 
+        style={{
           transform: `translateY(${pullDistance}px)`,
         }}
       >
@@ -123,23 +123,32 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
 
       {/* Bottom Navigation - Mobile First */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-bottom z-40">
-        <div className="flex items-center justify-around py-2 px-2 max-w-lg mx-auto">
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl safe-area-bottom z-40 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)]">
+        <div className="relative grid grid-cols-5 p-1 gap-1 max-w-lg mx-auto">
+          {/* Sliding Background */}
+          <div
+            className="absolute top-1 bottom-1 left-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] z-0"
+            style={{
+              width: 'calc((100% - 24px) / 5)',
+              transform: `translateX(calc(${Math.max(0, navItems.findIndex(i => location.pathname === i.path))} * (100% + 4px)))`
+            }}
+          />
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
+
             return (
               <button
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 px-2 rounded-xl transition-all",
+                  "flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all duration-300 relative overflow-hidden group z-10",
                   isActive
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground"
+                    ? "text-primary-foreground dark:text-white"
+                    : "text-muted-foreground/80 hover:text-foreground hover:bg-white/10 dark:hover:bg-white/5 active:scale-95 bg-transparent"
                 )}
               >
-                <item.icon className={cn("w-5 h-5", isActive && "scale-110")} />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <item.icon className={cn("w-5 h-5 transition-transform duration-300", isActive && "scale-110 drop-shadow-sm")} />
+                <span className={cn("text-[10px] font-bold transition-all duration-300", isActive ? "opacity-100" : "opacity-80 group-hover:opacity-100")}>{item.label}</span>
               </button>
             );
           })}
