@@ -1168,7 +1168,7 @@ export default function Dashboard() {
                                 : isCurrent
                                   ? "border-2 border-primary/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                                   : needsAttention
-                                    ? "border-2 border-warning/40"
+                                    ? "border border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent shadow-[0_4px_20px_-4px_rgba(239,68,68,0.1)] relative group"
 
                                     : "border border-border"
                             )}>
