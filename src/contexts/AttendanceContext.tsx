@@ -39,6 +39,7 @@ interface AttendanceContextType {
     timeSlot?: number | null;
     startTime?: string;
     endTime?: string;
+    extraClassIndex?: number;
   } | null; // Currently saving attendance
   markAttendance: (
     subjectId: string, 
@@ -47,7 +48,8 @@ interface AttendanceContextType {
     timeSlot?: number | null,
     startTime?: string,
     endTime?: string,
-    isExtraClass?: boolean
+    isExtraClass?: boolean,
+    extraClassIndex?: number
   ) => Promise<void>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
@@ -200,6 +202,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     timeSlot?: number | null;
     startTime?: string;
     endTime?: string;
+    extraClassIndex?: number;
   } | null>(null);
 
   // Track if we've successfully loaded data to prevent clearing on race conditions
@@ -289,23 +292,29 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         }
 
         // Convert attendance records to the format expected by the frontend
-        // Key format: date-subjectId-timeSlot or date-subjectId-startTime-endTime or date-subjectId (backward compatibility)
+        // Key format: date-subjectId-slotN | date-subjectId-start-end | date-subjectId-extra-N | date-subjectId (backward compat)
+        // Normalize so keys match regardless of API returning subjectId as string/number and lectureDate with or without time
         const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
         const idsMap: Record<string, number | null> = {};
+        const norm = (r: any) => ({
+          date: (r.lectureDate != null ? String(r.lectureDate) : '').slice(0, 10),
+          subjectId: String(r.subjectId ?? ''),
+        });
         data.todayAttendance?.forEach((record: any) => {
+          const { date: d, subjectId: sid } = norm(record);
           let slotKey: string;
-          if (record.timeSlot !== null && record.timeSlot !== undefined) {
-            // Standard time slot
-            slotKey = `${record.lectureDate}-${record.subjectId}-slot${record.timeSlot}`;
+          if (record.isExtraClass === true) {
+            const idx = record.extraClassIndex != null ? record.extraClassIndex : 0;
+            slotKey = `${d}-${sid}-extra-${idx}`;
+          } else if (record.timeSlot !== null && record.timeSlot !== undefined) {
+            slotKey = `${d}-${sid}-slot${record.timeSlot}`;
           } else if (record.startTime && record.endTime) {
-            // Custom time slot
-            slotKey = `${record.lectureDate}-${record.subjectId}-${record.startTime}-${record.endTime}`;
+            slotKey = `${d}-${sid}-${record.startTime}-${record.endTime}`;
           } else {
-            // Backward compatibility: no time info
-            slotKey = `${record.lectureDate}-${record.subjectId}`;
+            slotKey = `${d}-${sid}`;
           }
           attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
-          idsMap[slotKey] = record.attendanceId || null;
+          idsMap[slotKey] = record.attendanceId != null ? Number(record.attendanceId) : null;
         });
         setTodayAttendance(attendanceMap);
         setAttendanceIds(idsMap);
@@ -563,7 +572,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     timeSlot?: number | null,
     startTime?: string,
     endTime?: string,
-    isExtraClass?: boolean
+    isExtraClass?: boolean,
+    extraClassIndex?: number
   ) => {
     // Frontend guard: only allow "cancelled" for future dates, block "present" and "absent"
     try {
@@ -581,35 +591,33 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       // If parsing fails, allow request; backend should validate
     }
 
-    // Generate slot key based on time information
+    // Generate slot key based on time information (extra classes use date-subjectId-extra-{index})
     let slotKey: string;
-    if (timeSlot !== null && timeSlot !== undefined) {
-      // Standard time slot
+    if (isExtraClass) {
+      slotKey = (extraClassIndex !== undefined && extraClassIndex !== null)
+        ? `${date}-${subjectId}-extra-${extraClassIndex}`
+        : `${date}-${subjectId}`;
+    } else if (timeSlot !== null && timeSlot !== undefined) {
       slotKey = `${date}-${subjectId}-slot${timeSlot}`;
     } else if (startTime && endTime) {
-      // Custom time slot
       slotKey = `${date}-${subjectId}-${startTime}-${endTime}`;
     } else {
-      // Backward compatibility: no time info
       slotKey = `${date}-${subjectId}`;
     }
     
     const operationKey = `${slotKey}-${status}`;
     
-    // Prevent duplicate simultaneous operations for the same slot and status
     if (ongoingOperationsRef.current.has(operationKey)) {
       return;
     }
     
     ongoingOperationsRef.current.add(operationKey);
     
-    // Read current state from closure (should be up to date due to dependency array)
-    // Check both time-specific key and old format key for backward compatibility
-    const fallbackKey = `${date}-${subjectId}`; // Old format
+    const fallbackKey = `${date}-${subjectId}`;
     const previousStatus = todayAttendance[slotKey] || todayAttendance[fallbackKey] || null;
     const attendanceId = attendanceIds[slotKey] || attendanceIds[fallbackKey] || null;
 
-    setSavingState({ subjectId, action: status, timeSlot, startTime, endTime });
+    setSavingState({ subjectId, action: status, timeSlot, startTime, endTime, extraClassIndex });
 
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
@@ -683,9 +691,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         requestBody.endTime = endTime;
       }
       
-      // Add isExtraClass flag if this is an extra class
+      // Send extra-class flag so backend persists is_extra_class = true (send both keys for Jackson compatibility)
       if (isExtraClass) {
         requestBody.isExtraClass = true;
+        requestBody.extraClass = true;
+        if (extraClassIndex !== undefined && extraClassIndex !== null) {
+          requestBody.extraClassIndex = extraClassIndex;
+        }
       }
       
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
