@@ -939,28 +939,38 @@ export default function Dashboard() {
             onTouchMove={swipeHandlers.onTouchMove}
             onTouchEnd={swipeHandlers.onTouchEnd}
           >
-            <div className="flex items-center justify-between bg-secondary/30 rounded-full px-1 py-0">
+            <div className="flex items-center justify-between gap-1 bg-secondary/30 rounded-full px-1 py-0.5">
               <button
                 onClick={() => navigateDate("prev")}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              
-              <div className="text-center flex items-center gap-2">
-                {isSelectedToday && <Sun className="w-3.5 h-3.5 text-warning" />}
-                {isSelectedTomorrow && <Sunrise className="w-3.5 h-3.5 text-primary" />}
-                <span className="font-semibold text-sm">
+              <div className="text-center flex items-center gap-2 min-w-0 flex-1 justify-center">
+                {isSelectedToday && <Sun className="w-3.5 h-3.5 text-warning flex-shrink-0" />}
+                {isSelectedTomorrow && <Sunrise className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                <span className="font-semibold text-sm truncate">
                   {isSelectedToday ? "Today" : isSelectedTomorrow ? "Tomorrow" : format(selectedDate, "EEE, MMM d")}
                 </span>
               </div>
-              
-              <button
-                onClick={() => navigateDate("next")}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  onClick={() => navigateDate("next")}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-muted/50"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                {!isBeforeStartDate && (
+                  <button
+                    onClick={() => setAddClassDialogOpen(true)}
+                    className="h-9 pl-2.5 pr-3 rounded-full flex items-center gap-1.5 bg-neutral-900/80 dark:bg-neutral-900/80 text-white border border-neutral-700/50 dark:border-neutral-500/30 backdrop-blur-md hover:bg-neutral-800/90 dark:hover:bg-neutral-800/90 active:scale-[0.98] transition-all shadow-lg hover:shadow-xl font-medium text-xs"
+                    title="Add a class"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Add class</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Compact Notices */}
@@ -1319,21 +1329,6 @@ export default function Dashboard() {
                     })
                   )}
                 </div>
-              </div>
-            )}
-            
-            {/* Add a Class Button */}
-            {!isBeforeStartDate && (
-              <div className="flex justify-center">
-                <button
-                  onClick={() => setAddClassDialogOpen(true)}
-                  className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl bg-neutral-900/80 hover:bg-neutral-900 border border-neutral-700/50 hover:border-neutral-600 text-white font-medium text-sm transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-black/20 active:scale-[0.98] group backdrop-blur-sm"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-neutral-800/50 group-hover:bg-neutral-800 flex items-center justify-center border border-neutral-700/50 group-hover:border-neutral-600 transition-all duration-200">
-                    <Plus className="w-3.5 h-3.5 text-neutral-300 group-hover:text-white group-hover:rotate-90 transition-all duration-200" />
-                  </div>
-                  <span className="text-neutral-200 group-hover:text-white transition-colors">Add a Class</span>
-                </button>
               </div>
             )}
           </TabsContent>
