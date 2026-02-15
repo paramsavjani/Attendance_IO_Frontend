@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppLayout } from "@/components/layout/AppLayout";
+
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -86,14 +86,14 @@ export default function AppAnalyticsPage() {
     trackAppEvent("app_analytics_view", {
       action: "opened",
       openedAt: new Date().toISOString(),
-    }).catch(() => {});
+    }).catch(() => { });
     return () => {
       const durationSeconds = Math.round((Date.now() - openedAtRef.current) / 1000);
       trackAppEvent("app_analytics_view", {
         action: "closed",
         durationSeconds,
         closedAt: new Date().toISOString(),
-      }).catch(() => {});
+      }).catch(() => { });
     };
   }, []);
 
@@ -170,8 +170,8 @@ export default function AppAnalyticsPage() {
 
   const eventsByTypeList = data?.eventsByType
     ? Object.entries(data.eventsByType)
-        .filter(([eventType]) => eventType !== "app_analytics_view")
-        .sort(([, a], [, b]) => b - a)
+      .filter(([eventType]) => eventType !== "app_analytics_view")
+      .sort(([, a], [, b]) => b - a)
     : [];
 
   const [chartHeight, setChartHeight] = useState(200);
@@ -184,375 +184,375 @@ export default function AppAnalyticsPage() {
   }, []);
 
   return (
-    <AppLayout>
-      <div className="min-h-screen pb-6">
-        {/* Fixed header - always stuck to top */}
-        <header className="fixed top-0 left-0 right-0 z-30 bg-background border-b border-border safe-area-top">
-          <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6 sm:py-3 max-w-lg mx-auto min-h-[48px] sm:min-h-[52px]">
-            <button
-              type="button"
-              onClick={() => navigate("/profile")}
-              className="flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 rounded-xl bg-muted/60 hover:bg-muted active:scale-[0.98] text-foreground transition-colors touch-manipulation flex-shrink-0"
-              aria-label="Back to Profile"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex-1 min-w-0 py-0.5">
-              <h1 className="text-sm sm:text-base font-bold truncate leading-tight">App Analytics</h1>
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Usage & engagement</p>
-            </div>
+
+    <div className="min-h-screen pb-6">
+      {/* Fixed header - always stuck to top */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-background border-b border-border safe-area-top">
+        <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6 sm:py-3 max-w-lg mx-auto min-h-[48px] sm:min-h-[52px]">
+          <button
+            type="button"
+            onClick={() => navigate("/profile")}
+            className="flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 rounded-xl bg-muted/60 hover:bg-muted active:scale-[0.98] text-foreground transition-colors touch-manipulation flex-shrink-0"
+            aria-label="Back to Profile"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0 py-0.5">
+            <h1 className="text-sm sm:text-base font-bold truncate leading-tight">App Analytics</h1>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Usage & engagement</p>
           </div>
-        </header>
-
-        {/* Spacer so content starts below fixed header */}
-        <div className="h-[48px] sm:h-[52px]" aria-hidden />
-
-        <div className="space-y-3 sm:space-y-5 app-analytics-scrollbar -mx-1 px-1 pt-3 sm:pt-4">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 sm:py-20 gap-3">
-              <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground">Loading analytics…</p>
-            </div>
-          ) : data ? (
-            <>
-              {/* KPI cards - 2x2 mobile (compact), 4 cols desktop */}
-              <section>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                  <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
-                        Users
-                      </span>
-                    </div>
-                    <p className="text-lg sm:text-2xl font-bold tabular-nums leading-tight">
-                      {data.totalUsers.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
-                        <ClipboardCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-success" />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
-                        Attendance
-                      </span>
-                    </div>
-                    <p className="text-lg sm:text-2xl font-bold text-success tabular-nums leading-tight">
-                      {data.totalAttendance.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
-                        Events
-                      </span>
-                    </div>
-                    <p className="text-lg sm:text-2xl font-bold tabular-nums leading-tight">
-                      {data.totalEvents.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
-                        <LogIn className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-warning" />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
-                        Recent Open (7d)
-                      </span>
-                    </div>
-                    <p className="text-lg sm:text-2xl font-bold text-warning tabular-nums leading-tight">
-                      {data.recentLogins.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Period selector for day charts */}
-              <section className="flex items-center justify-between gap-2">
-                <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Day charts
-                </span>
-                <div className="flex rounded-lg border border-border bg-muted/50 p-0.5">
-                  {PERIOD_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setChartPeriod(opt.value)}
-                      className={cn(
-                        "px-2.5 py-1.5 rounded-md text-[11px] sm:text-xs font-medium transition-colors touch-manipulation",
-                        chartPeriod === opt.value
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              {/* Charts - side by side on large screens */}
-              <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-                {/* Attendance chart */}
-                <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
-                  <div className="mb-3">
-                    <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
-                      Attendance (last {chartPeriod} days)
-                    </h2>
-                  </div>
-                  {attendanceChartData.length > 0 ? (
-                    <div className="w-full" style={{ height: chartHeight }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={attendanceChartData}
-                          margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
-                        >
-                          <defs>
-                            <linearGradient id="appAnalyticsAttendance" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.35} />
-                              <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={false}
-                            tickLine={false}
-                            interval="preserveStartEnd"
-                          />
-                          <YAxis
-                            tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={false}
-                            tickLine={false}
-                            width={24}
-                            tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              fontSize: "11px",
-                            }}
-                            formatter={(value: number) => [value, "Attendance"]}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="count"
-                            stroke="hsl(var(--success))"
-                            strokeWidth={2}
-                            fill="url(#appAnalyticsAttendance)"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
-                      No attendance data
-                    </div>
-                  )}
-                </div>
-
-                {/* App opens chart */}
-                <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
-                  <div className="mb-3">
-                    <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
-                      <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                      App opens (last {chartPeriod} days)
-                    </h2>
-                  </div>
-                  {appOpensChartData.length > 0 ? (
-                    <div className="w-full" style={{ height: chartHeight }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={appOpensChartData}
-                          margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={false}
-                            tickLine={false}
-                            interval="preserveStartEnd"
-                          />
-                          <YAxis
-                            tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={false}
-                            tickLine={false}
-                            width={24}
-                            tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              fontSize: "11px",
-                            }}
-                            formatter={(value: number) => [value, "App Opens"]}
-                          />
-                          <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
-                      No app opens data
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Summary strip - stacks on narrow mobile */}
-              <section>
-                <div className="rounded-xl sm:rounded-2xl border border-border bg-gradient-to-r from-card to-muted/20 p-2.5 sm:p-4 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-4">
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-5 h-5 sm:w-5 sm:h-5 text-success" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Attendance avg (last {chartPeriod}d, weekdays)</p>
-                      <p className="text-base sm:text-lg font-bold text-success tabular-nums">{avgAttendancePerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
-                    </div>
-                  </div>
-                  <div className="h-6 w-px bg-border hidden sm:block self-center" />
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Smartphone className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">App opens avg (weekdays)</p>
-                      <p className="text-base sm:text-lg font-bold text-primary tabular-nums">{avgAppOpensPerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Attendance by hour (24h) */}
-              <section>
-                <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                  Attendance by hour (last 30 days)
-                </h2>
-                <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
-                  {attendanceByHourData.length > 0 ? (
-                    <div className="w-full" style={{ height: chartHeight }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={attendanceByHourData}
-                          margin={{ top: 8, right: 4, left: -8, bottom: 0 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={false}
-                            tickLine={false}
-                            interval={2}
-                          />
-                          <YAxis
-                            tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={false}
-                            tickLine={false}
-                            width={24}
-                            tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              fontSize: "11px",
-                            }}
-                            formatter={(value: number) => [value, "Attendance"]}
-                            labelFormatter={(label) => (label ? `Hour: ${label}` : "")}
-                          />
-                          <Bar dataKey="count" fill="hsl(var(--success) / 0.85)" radius={[2, 2, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
-                      No attendance by hour data
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Events by type - compact, small fonts */}
-              <section>
-                <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-muted-foreground" />
-                  Events by type
-                </h2>
-                <div className="rounded-xl sm:rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-                  {eventsByTypeList.length > 0 ? (
-                    <ul className="divide-y divide-border">
-                      {eventsByTypeList.map(([eventType, count]) => {
-                        const isAppOpen = eventType === "app_open";
-                        const isWeb = eventType.includes("web");
-                        return (
-                          <li
-                            key={eventType}
-                            className="flex items-center justify-between px-3 py-2.5 min-h-[44px] sm:min-h-[40px] hover:bg-muted/30 active:bg-muted/40 transition-colors touch-manipulation"
-                          >
-                            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                              <div
-                                className={cn(
-                                  "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                                  isAppOpen ? "bg-primary/10 text-primary" : isWeb ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground"
-                                )}
-                              >
-                                {isAppOpen || eventType === "login" ? (
-                                  <Smartphone className="w-4 h-4" />
-                                ) : isWeb ? (
-                                  <Globe className="w-4 h-4" />
-                                ) : (
-                                  <Activity className="w-4 h-4" />
-                                )}
-                              </div>
-                              <span className="text-xs font-medium truncate text-foreground">{formatEventName(eventType)}</span>
-                            </div>
-                            <span className="text-xs font-bold tabular-nums text-muted-foreground ml-2 flex-shrink-0">
-                              {count.toLocaleString()}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <div className="px-3 py-8 text-center text-[11px] text-muted-foreground">
-                      No events recorded yet
-                    </div>
-                  )}
-                </div>
-              </section>
-            </>
-          ) : (
-            !loading && (
-              <div className="rounded-xl border border-border bg-card p-8 sm:p-10 text-center">
-                <p className="text-xs text-muted-foreground mb-3">Unable to load analytics.</p>
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  Try again
-                </button>
-              </div>
-            )
-          )}
         </div>
+      </header>
+
+      {/* Spacer so content starts below fixed header */}
+      <div className="h-[48px] sm:h-[52px]" aria-hidden />
+
+      <div className="space-y-3 sm:space-y-5 app-analytics-scrollbar -mx-1 px-1 pt-3 sm:pt-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 sm:py-20 gap-3">
+            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-primary" />
+            <p className="text-xs text-muted-foreground">Loading analytics…</p>
+          </div>
+        ) : data ? (
+          <>
+            {/* KPI cards - 2x2 mobile (compact), 4 cols desktop */}
+            <section>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+                <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
+                      Users
+                    </span>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums leading-tight">
+                    {data.totalUsers.toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
+                      <ClipboardCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-success" />
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
+                      Attendance
+                    </span>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold text-success tabular-nums leading-tight">
+                    {data.totalAttendance.toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
+                      Events
+                    </span>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums leading-tight">
+                    {data.totalEvents.toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
+                      <LogIn className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-warning" />
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide truncate">
+                      Recent Open (7d)
+                    </span>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold text-warning tabular-nums leading-tight">
+                    {data.recentLogins.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Period selector for day charts */}
+            <section className="flex items-center justify-between gap-2">
+              <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Day charts
+              </span>
+              <div className="flex rounded-lg border border-border bg-muted/50 p-0.5">
+                {PERIOD_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setChartPeriod(opt.value)}
+                    className={cn(
+                      "px-2.5 py-1.5 rounded-md text-[11px] sm:text-xs font-medium transition-colors touch-manipulation",
+                      chartPeriod === opt.value
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Charts - side by side on large screens */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+              {/* Attendance chart */}
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+                <div className="mb-3">
+                  <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
+                    Attendance (last {chartPeriod} days)
+                  </h2>
+                </div>
+                {attendanceChartData.length > 0 ? (
+                  <div className="w-full" style={{ height: chartHeight }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={attendanceChartData}
+                        margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="appAnalyticsAttendance" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={24}
+                          tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            fontSize: "11px",
+                          }}
+                          formatter={(value: number) => [value, "Attendance"]}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke="hsl(var(--success))"
+                          strokeWidth={2}
+                          fill="url(#appAnalyticsAttendance)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
+                    No attendance data
+                  </div>
+                )}
+              </div>
+
+              {/* App opens chart */}
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+                <div className="mb-3">
+                  <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                    App opens (last {chartPeriod} days)
+                  </h2>
+                </div>
+                {appOpensChartData.length > 0 ? (
+                  <div className="w-full" style={{ height: chartHeight }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={appOpensChartData}
+                        margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={24}
+                          tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            fontSize: "11px",
+                          }}
+                          formatter={(value: number) => [value, "App Opens"]}
+                        />
+                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
+                    No app opens data
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Summary strip - stacks on narrow mobile */}
+            <section>
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-gradient-to-r from-card to-muted/20 p-2.5 sm:p-4 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-4">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-5 h-5 sm:w-5 sm:h-5 text-success" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Attendance avg (last {chartPeriod}d, weekdays)</p>
+                    <p className="text-base sm:text-lg font-bold text-success tabular-nums">{avgAttendancePerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
+                  </div>
+                </div>
+                <div className="h-6 w-px bg-border hidden sm:block self-center" />
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Smartphone className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">App opens avg (weekdays)</p>
+                    <p className="text-base sm:text-lg font-bold text-primary tabular-nums">{avgAppOpensPerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Attendance by hour (24h) */}
+            <section>
+              <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                Attendance by hour (last 30 days)
+              </h2>
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+                {attendanceByHourData.length > 0 ? (
+                  <div className="w-full" style={{ height: chartHeight }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={attendanceByHourData}
+                        margin={{ top: 8, right: 4, left: -8, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          interval={2}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={24}
+                          tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            fontSize: "11px",
+                          }}
+                          formatter={(value: number) => [value, "Attendance"]}
+                          labelFormatter={(label) => (label ? `Hour: ${label}` : "")}
+                        />
+                        <Bar dataKey="count" fill="hsl(var(--success) / 0.85)" radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
+                    No attendance by hour data
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Events by type - compact, small fonts */}
+            <section>
+              <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-muted-foreground" />
+                Events by type
+              </h2>
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+                {eventsByTypeList.length > 0 ? (
+                  <ul className="divide-y divide-border">
+                    {eventsByTypeList.map(([eventType, count]) => {
+                      const isAppOpen = eventType === "app_open";
+                      const isWeb = eventType.includes("web");
+                      return (
+                        <li
+                          key={eventType}
+                          className="flex items-center justify-between px-3 py-2.5 min-h-[44px] sm:min-h-[40px] hover:bg-muted/30 active:bg-muted/40 transition-colors touch-manipulation"
+                        >
+                          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                            <div
+                              className={cn(
+                                "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                                isAppOpen ? "bg-primary/10 text-primary" : isWeb ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground"
+                              )}
+                            >
+                              {isAppOpen || eventType === "login" ? (
+                                <Smartphone className="w-4 h-4" />
+                              ) : isWeb ? (
+                                <Globe className="w-4 h-4" />
+                              ) : (
+                                <Activity className="w-4 h-4" />
+                              )}
+                            </div>
+                            <span className="text-xs font-medium truncate text-foreground">{formatEventName(eventType)}</span>
+                          </div>
+                          <span className="text-xs font-bold tabular-nums text-muted-foreground ml-2 flex-shrink-0">
+                            {count.toLocaleString()}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="px-3 py-8 text-center text-[11px] text-muted-foreground">
+                    No events recorded yet
+                  </div>
+                )}
+              </div>
+            </section>
+          </>
+        ) : (
+          !loading && (
+            <div className="rounded-xl border border-border bg-card p-8 sm:p-10 text-center">
+              <p className="text-xs text-muted-foreground mb-3">Unable to load analytics.</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Try again
+              </button>
+            </div>
+          )
+        )}
       </div>
-    </AppLayout>
+    </div>
+
   );
 }
