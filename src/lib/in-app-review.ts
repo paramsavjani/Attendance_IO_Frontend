@@ -1,7 +1,7 @@
 /**
  * Request in-app review (Play Store / App Store).
- * On native: shows the system star rating dialog and submits from within the app.
- * If the dialog doesn't show (quota/debug) or the API throws, opens Play Store in-app.
+ * On native: shows the system star rating dialog. If it doesn't show and openPlayStoreIfDialogFails
+ * is true (e.g. user tapped "Rate us"), opens Play Store; otherwise does nothing.
  * On web: opens the Play Store page in a new tab.
  *
  * Testing the in-app review dialog on Android:
@@ -34,28 +34,32 @@ async function openPlayStoreOnNative(): Promise<void> {
   }
 }
 
-export async function requestAppReview(): Promise<void> {
+export type RequestAppReviewOptions = {
+  /** If true and the in-app dialog doesn't show on native, open Play Store. Use for "Rate us" button. Default false (e.g. auto prompt). */
+  openPlayStoreIfDialogFails?: boolean;
+};
+
+export async function requestAppReview(options?: RequestAppReviewOptions): Promise<void> {
   const isNative = Capacitor.isNativePlatform();
+  const openPlayStoreIfDialogFails = options?.openPlayStoreIfDialogFails ?? false;
 
   if (!isNative) {
     window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
     return;
   }
 
-  // Try in-app review first (may not show in debug builds)
   try {
     const { InAppReview } = await import("@capacitor-community/in-app-review");
     await InAppReview.requestReview();
   } catch (_) {
-    // Ignore; we'll open Play Store below
-  }
-
-  // On native, always open Play Store so the button always does something visible
-  try {
-    toast.info("Opening Play Store…");
-    await openPlayStoreOnNative();
-  } catch (error) {
-    console.error("Failed to open Play Store:", error);
-    toast.error("Could not open Play Store. Please try again.");
+    if (openPlayStoreIfDialogFails) {
+      try {
+        toast.info("Opening Play Store…");
+        await openPlayStoreOnNative();
+      } catch (error) {
+        console.error("Failed to open Play Store:", error);
+        toast.error("Could not open Play Store. Please try again.");
+      }
+    }
   }
 }

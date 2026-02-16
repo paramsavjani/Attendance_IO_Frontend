@@ -28,10 +28,13 @@ import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useState } from "react";
 import { checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
+import { requestAppReview } from "@/lib/in-app-review";
 
 const queryClient = new QueryClient();
 
 const NON_CRITICAL_UPDATE_SHOWN_DATE_KEY = "attendance_io_non_critical_update_shown_date";
+const LAST_REVIEW_PROMPT_DATE_KEY = "attendance_io_last_review_prompt_date";
+const REVIEW_PROMPT_INTERVAL_DAYS = 2;
 
 function getTodayDateString(): string {
   return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -53,6 +56,46 @@ function markNonCriticalUpdateShownToday(): void {
   } catch {
     // ignore
   }
+}
+
+function getLastReviewPromptDate(): string | null {
+  try {
+    return localStorage.getItem(LAST_REVIEW_PROMPT_DATE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function shouldShowReviewPrompt(): boolean {
+  const last = getLastReviewPromptDate();
+  if (!last) return true;
+  const lastDate = new Date(last);
+  const now = new Date();
+  const daysSince = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+  return daysSince >= REVIEW_PROMPT_INTERVAL_DAYS;
+}
+
+function markReviewPromptShown(): void {
+  try {
+    localStorage.setItem(LAST_REVIEW_PROMPT_DATE_KEY, new Date().toISOString());
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Prompts in-app review every 2 days on app open (native only). Does not redirect to Play Store.
+ */
+function InAppReviewPrompt() {
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !shouldShowReviewPrompt()) return;
+    const timer = setTimeout(() => {
+      requestAppReview();
+      markReviewPromptShown();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+  return null;
 }
 
 /**
@@ -152,6 +195,7 @@ function AppRoutes() {
     <>
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
+      {!isErrorPage && isAuthenticated && <InAppReviewPrompt />}
       {!isErrorPage && isAuthenticated && <FeatureAnnouncement />}
       <Routes>
         <Route
