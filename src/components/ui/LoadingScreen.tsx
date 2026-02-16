@@ -22,7 +22,7 @@ export const LoadingScreen: FC<{ className?: string }> = ({ className }) => {
           <img 
             src="/logo.png" 
             alt="Attendance IO" 
-            className="relative z-10 w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] animate-pulse" 
+            className="relative z-10 w-20 h-20 object-contain" 
           />
         </div>
 
