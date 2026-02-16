@@ -80,7 +80,7 @@ export function ContributorsSection() {
 
       <div className="grid grid-cols-1 gap-2">
         {ideaContributors.length > 0 && (
-          <div className="relative overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/5 backdrop-blur-sm transition-all hover:bg-yellow-500/10">
+          <div className="relative overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/10 backdrop-blur-md transition-all hover:bg-yellow-500/20">
             <button
               onClick={() => setExpandedSection(expandedSection === 'ideas' ? null : 'ideas')}
               className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"
@@ -133,7 +133,7 @@ export function ContributorsSection() {
         )}
 
         {testers.length > 0 && (
-          <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 backdrop-blur-sm transition-all hover:bg-blue-500/10">
+          <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/10 backdrop-blur-md transition-all hover:bg-blue-500/20">
             <button
               onClick={() => setExpandedSection(expandedSection === 'testers' ? null : 'testers')}
               className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"
