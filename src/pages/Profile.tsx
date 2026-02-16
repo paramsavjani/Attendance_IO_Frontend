@@ -360,7 +360,7 @@ export default function Profile() {
       {/* Profile Header - Premium Glass Card */}
       {/* Profile Header - Premium Glass Card */}
       {/* Profile Header - Premium Glass Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-xl p-3 shadow-xl">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur-xl py-2.5 px-3 shadow-xl">
         {/* Decorative background gradients */}
         <div className="absolute -top-12 -right-12 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
         <div className="absolute -bottom-12 -left-12 h-24 w-24 rounded-full bg-blue-500/20 blur-2xl" />
@@ -368,7 +368,7 @@ export default function Profile() {
         <div className="relative z-10 flex items-center gap-3">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 blur-md opacity-40 animate-pulse" />
-            <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-white/20 shadow-inner">
+            <div className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-white/20 shadow-inner">
               <img
                 src={student?.pictureUrl || "/user-icons/user2.png"}
                 alt={student?.name || "Profile"}
@@ -381,7 +381,7 @@ export default function Profile() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="truncate text-lg font-bold tracking-tight text-white mb-0.5">
+            <h1 className="truncate text-base font-bold tracking-tight text-white mb-0.5">
               {student?.isDemo ? "Demo User" : student?.name}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -404,46 +404,47 @@ export default function Profile() {
 
       {/* Quick Actions - compact list */}
       {/* Quick Actions Grid */}
-      <h2 className="text-xs font-semibold text-white/60 ml-1 mt-3 mb-1.5 uppercase tracking-wider">Manage</h2>
+      {/* Quick Actions Grid */}
+      <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Manage</h2>
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => setShowSubjectEditor(true)}
-          className="group relative flex flex-col items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
+          className="group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
         >
-          <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400 ring-1 ring-inset ring-blue-500/20 transition-transform group-hover:scale-110">
-            <BookOpen className="h-4 w-4" />
+          <div className="rounded-md bg-blue-500/10 p-1.5 text-blue-400 ring-1 ring-inset ring-blue-500/20 transition-transform group-hover:scale-110">
+            <BookOpen className="h-3.5 w-3.5" />
           </div>
           <div className="text-left">
-            <p className="font-semibold text-sm text-white">Subjects</p>
-            <p className="text-[10px] text-white/40">{enrolledSubjects.length} enrolled</p>
+            <p className="font-semibold text-xs text-white">Subjects</p>
+            <p className="text-[9px] text-white/40">{enrolledSubjects.length} enrolled</p>
           </div>
         </button>
 
         <button
           onClick={() => enrolledSubjects.length > 0 ? setShowCriteriaModal(true) : null}
-          className={`group relative flex flex-col items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
+          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
             }`}
         >
-          <div className="rounded-lg bg-purple-500/10 p-2 text-purple-400 ring-1 ring-inset ring-purple-500/20 transition-transform group-hover:scale-110">
-            <Target className="h-4 w-4" />
+          <div className="rounded-md bg-purple-500/10 p-1.5 text-purple-400 ring-1 ring-inset ring-purple-500/20 transition-transform group-hover:scale-110">
+            <Target className="h-3.5 w-3.5" />
           </div>
           <div className="text-left">
-            <p className="font-semibold text-sm text-white">Criteria</p>
-            <p className="text-[10px] text-white/40">Set targets</p>
+            <p className="font-semibold text-xs text-white">Criteria</p>
+            <p className="text-[9px] text-white/40">Set targets</p>
           </div>
         </button>
 
         <button
           onClick={() => enrolledSubjects.length > 0 ? setShowClassroomLocationModal(true) : null}
-          className={`group relative flex flex-col items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
+          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
             }`}
         >
-          <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400 ring-1 ring-inset ring-emerald-500/20 transition-transform group-hover:scale-110">
-            <MapPin className="h-4 w-4" />
+          <div className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-400 ring-1 ring-inset ring-emerald-500/20 transition-transform group-hover:scale-110">
+            <MapPin className="h-3.5 w-3.5" />
           </div>
           <div className="text-left">
-            <p className="font-semibold text-sm text-white">Locations</p>
-            <p className="text-[10px] text-white/40">Classrooms</p>
+            <p className="font-semibold text-xs text-white">Locations</p>
+            <p className="text-[9px] text-white/40">Classrooms</p>
           </div>
         </button>
 
@@ -456,51 +457,52 @@ export default function Profile() {
               setShowBaselineDialog(true);
             }
           }}
-          className={`group relative flex flex-col items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
+          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
             }`}
         >
-          <div className="rounded-lg bg-orange-500/10 p-2 text-orange-400 ring-1 ring-inset ring-orange-500/20 transition-transform group-hover:scale-110">
-            <Calendar className="h-4 w-4" />
+          <div className="rounded-md bg-orange-500/10 p-1.5 text-orange-400 ring-1 ring-inset ring-orange-500/20 transition-transform group-hover:scale-110">
+            <Calendar className="h-3.5 w-3.5" />
           </div>
           <div className="text-left">
-            <p className="font-semibold text-sm text-white">Import Data</p>
-            <p className="text-[10px] text-white/40">Add existing stats</p>
+            <p className="font-semibold text-xs text-white">Import Data</p>
+            <p className="text-[9px] text-white/40">Add existing stats</p>
           </div>
         </button>
       </div>
 
       {/* Sleep Duration Feature Card */}
-      <h2 className="text-xs font-semibold text-white/60 ml-1 mt-3 mb-1.5 uppercase tracking-wider">Preferences</h2>
+      <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Preferences</h2>
       <button
         onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
-        className="group relative w-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-3 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-[0.98] touch-manipulation"
+        className="group relative w-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-[0.98] touch-manipulation"
       >
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 h-20 w-20 rounded-full bg-indigo-500/5 blur-xl transition-all group-hover:bg-indigo-500/10" />
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-indigo-500/5 blur-xl transition-all group-hover:bg-indigo-500/10" />
         <div className="relative z-10 flex items-center gap-3">
-          <div className="rounded-lg bg-indigo-500/10 p-2 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
-            <Moon className="h-5 w-5" />
+          <div className="rounded-md bg-indigo-500/10 p-1.5 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
+            <Moon className="h-4 w-4" />
           </div>
           <div className="flex-1 text-left">
-            <p className="font-semibold text-sm text-white">Sleep Duration</p>
-            <p className="text-[10px] text-white/50">
+            <p className="font-semibold text-xs text-white">Sleep Duration</p>
+            <p className="text-[9px] text-white/50">
               {isLoadingSleepDuration ? "Loading..." : `${sleepDuration ?? 8} hours per night`}
             </p>
           </div>
-          <ChevronRight className="h-4 w-4 text-white/30" />
+          <ChevronRight className="h-3.5 w-3.5 text-white/30" />
         </div>
       </button>
 
       {/* App Actions Grid */}
-      <h2 className="text-xs font-semibold text-white/60 ml-1 mt-3 mb-1.5 uppercase tracking-wider">Application</h2>
+      {/* App Actions Grid */}
+      <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Application</h2>
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => navigate("/app-analytics")}
           className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
         >
-          <div className="rounded-lg bg-pink-500/10 p-1.5 text-pink-400">
+          <div className="rounded-md bg-pink-500/10 p-1.5 text-pink-400">
             <BarChart3 className="h-3.5 w-3.5" />
           </div>
-          <span className="text-xs font-medium text-white">Analytics</span>
+          <span className="text-[10px] font-medium text-white">Analytics</span>
         </button>
 
         <button
@@ -512,30 +514,30 @@ export default function Profile() {
           }}
           className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
         >
-          <div className="rounded-lg bg-yellow-500/10 p-1.5 text-yellow-400">
+          <div className="rounded-md bg-yellow-500/10 p-1.5 text-yellow-400">
             <Star className="h-3.5 w-3.5" />
           </div>
-          <span className="text-xs font-medium text-white">Rate Us</span>
+          <span className="text-[10px] font-medium text-white">Rate Us</span>
         </button>
 
         <button
           onClick={() => setShowFeedbackModal(true)}
           className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
         >
-          <div className="rounded-lg bg-cyan-500/10 p-1.5 text-cyan-400">
+          <div className="rounded-md bg-cyan-500/10 p-1.5 text-cyan-400">
             <MessageSquare className="h-3.5 w-3.5" />
           </div>
-          <span className="text-xs font-medium text-white">Feedback</span>
+          <span className="text-[10px] font-medium text-white">Feedback</span>
         </button>
 
         <button
           onClick={handleLogout}
           className="group flex items-center gap-2 rounded-xl border border-red-500/10 bg-red-500/5 p-2.5 transition-all hover:bg-red-500/10 hover:border-red-500/20 active:scale-95 touch-manipulation"
         >
-          <div className="rounded-lg bg-red-500/10 p-1.5 text-red-400">
+          <div className="rounded-md bg-red-500/10 p-1.5 text-red-400">
             <LogOut className="h-3.5 w-3.5" />
           </div>
-          <span className="text-xs font-medium text-red-400">Logout</span>
+          <span className="text-[10px] font-medium text-red-400">Logout</span>
         </button>
       </div>
 
@@ -661,7 +663,7 @@ export default function Profile() {
 
 
 
-      <div className="flex items-center justify-center pt-2 pb-4">
+      <div className="flex items-center justify-center pt-1 pb-2">
         <a
           href="https://paramsavjani.in"
           target="_blank"
