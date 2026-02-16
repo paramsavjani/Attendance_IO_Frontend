@@ -673,7 +673,7 @@ export default function Profile() {
           <span className="text-[10px] font-medium tracking-wide text-white/40 group-hover:text-white/60 transition-colors">
             MADE WITH <span className="text-red-500/80 animate-pulse">❤️</span> BY
           </span>
-          <span className="text-[10px] font-bold tracking-widest text-white/50 group-hover:text-white/90 transition-colors">
+          <span className="text-[10px] font-bold tracking-widest text-blue-400/90 group-hover:text-white/90 transition-colors">
             PARAM SAVJANI
           </span>
         </a>
