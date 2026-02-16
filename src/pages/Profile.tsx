@@ -668,11 +668,12 @@ export default function Profile() {
           href="https://paramsavjani.in"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-2 rounded-full border border-white/5 bg-black/20 px-4 py-1.5 backdrop-blur-md transition-all hover:bg-black/40 hover:scale-105 active:scale-95"
+          className="group flex items-center gap-1.5 rounded-full border border-white/5 bg-white/[0.02] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.05] hover:scale-105 active:scale-95"
         >
-          <span className="text-[10px] text-white/40 font-medium tracking-wide">DESIGNED BY</span>
-          <div className="h-3 w-px bg-white/10" />
-          <span className="text-[10px] bg-blue-400 bg-clip-text text-transparent font-bold tracking-wider group-hover:opacity-80 transition-opacity">
+          <span className="text-[10px] font-medium tracking-wide text-white/40 group-hover:text-white/60 transition-colors">
+            MADE WITH <span className="text-red-500/80 animate-pulse">❤️</span> BY
+          </span>
+          <span className="text-[10px] font-bold tracking-widest text-white/50 group-hover:text-white/90 transition-colors">
             PARAM SAVJANI
           </span>
         </a>
