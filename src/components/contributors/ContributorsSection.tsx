@@ -80,13 +80,13 @@ export function ContributorsSection() {
 
       <div className="grid grid-cols-1 gap-2">
         {ideaContributors.length > 0 && (
-          <div className="relative overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/5 backdrop-blur-sm transition-all hover:bg-yellow-500/10">
+          <div className="relative overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] backdrop-blur-md transition-all">
             <button
               onClick={() => setExpandedSection(expandedSection === 'ideas' ? null : 'ideas')}
               className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"
             >
               <div className="flex items-center gap-2.5">
-                <div className="rounded-md bg-yellow-500/20 p-1.5 text-yellow-400">
+                <div className="rounded-md bg-emerald-500/20 p-1.5 text-emerald-400">
                   <Lightbulb className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
@@ -108,7 +108,7 @@ export function ContributorsSection() {
                   {displayedIdeas.map((contributor) => (
                     <span
                       key={contributor.id}
-                      className="px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 rounded text-[10px] font-medium shadow-sm"
+                      className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded text-[10px] font-medium shadow-sm"
                     >
                       {contributor.name}
                     </span>
@@ -122,7 +122,7 @@ export function ContributorsSection() {
                       e.stopPropagation();
                       setShowAllIdeas(!showAllIdeas);
                     }}
-                    className="mt-2 h-6 text-[10px] px-2 text-yellow-500/80 hover:text-yellow-400 hover:bg-transparent"
+                    className="mt-2 h-6 text-[10px] px-2 text-emerald-500/80 hover:text-emerald-400 hover:bg-transparent"
                   >
                     {showAllIdeas ? 'Show Less' : `+${ideaContributors.length - INITIAL_DISPLAY_COUNT} more`}
                   </Button>
@@ -133,7 +133,7 @@ export function ContributorsSection() {
         )}
 
         {testers.length > 0 && (
-          <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 backdrop-blur-sm transition-all hover:bg-blue-500/10">
+          <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/[0.07] backdrop-blur-md transition-all">
             <button
               onClick={() => setExpandedSection(expandedSection === 'testers' ? null : 'testers')}
               className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"

@@ -360,7 +360,7 @@ export default function Profile() {
       {/* Profile Header - Premium Glass Card */}
       {/* Profile Header - Premium Glass Card */}
       {/* Profile Header - Premium Glass Card */}
-      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur-xl py-2.5 px-3 shadow-xl">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-xl py-2.5 px-3 shadow-xl">
         {/* Decorative background gradients */}
         <div className="absolute -top-12 -right-12 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
         <div className="absolute -bottom-12 -left-12 h-24 w-24 rounded-full bg-blue-500/20 blur-2xl" />
@@ -389,7 +389,7 @@ export default function Profile() {
                 {student?.rollNumber}
               </span>
               {isLoadingSemester ? (
-                <span className="inline-flex items-center rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] text-white/50 animate-pulse">
+                <span className="inline-flex items-center rounded-md bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/50 animate-pulse">
                   Loading...
                 </span>
               ) : currentSemester ? (
@@ -409,7 +409,7 @@ export default function Profile() {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => setShowSubjectEditor(true)}
-          className="group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
+          className="group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
         >
           <div className="rounded-md bg-blue-500/10 p-1.5 text-blue-400 ring-1 ring-inset ring-blue-500/20 transition-transform group-hover:scale-110">
             <BookOpen className="h-3.5 w-3.5" />
@@ -422,7 +422,7 @@ export default function Profile() {
 
         <button
           onClick={() => enrolledSubjects.length > 0 ? setShowCriteriaModal(true) : null}
-          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
+          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.08] hover:border-white/15 active:scale-95' : 'opacity-40 cursor-not-allowed'
             }`}
         >
           <div className="rounded-md bg-purple-500/10 p-1.5 text-purple-400 ring-1 ring-inset ring-purple-500/20 transition-transform group-hover:scale-110">
@@ -436,7 +436,7 @@ export default function Profile() {
 
         <button
           onClick={() => enrolledSubjects.length > 0 ? setShowClassroomLocationModal(true) : null}
-          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
+          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.08] hover:border-white/15 active:scale-95' : 'opacity-40 cursor-not-allowed'
             }`}
         >
           <div className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-400 ring-1 ring-inset ring-emerald-500/20 transition-transform group-hover:scale-110">
@@ -457,7 +457,7 @@ export default function Profile() {
               setShowBaselineDialog(true);
             }
           }}
-          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.05] hover:border-white/10 active:scale-95' : 'opacity-40 cursor-not-allowed'
+          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.08] hover:border-white/15 active:scale-95' : 'opacity-40 cursor-not-allowed'
             }`}
         >
           <div className="rounded-md bg-orange-500/10 p-1.5 text-orange-400 ring-1 ring-inset ring-orange-500/20 transition-transform group-hover:scale-110">
@@ -474,7 +474,7 @@ export default function Profile() {
       <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Preferences</h2>
       <button
         onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
-        className="group relative w-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-[0.98] touch-manipulation"
+        className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
       >
         <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-indigo-500/5 blur-xl transition-all group-hover:bg-indigo-500/10" />
         <div className="relative z-10 flex items-center gap-3">
@@ -497,7 +497,7 @@ export default function Profile() {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => navigate("/app-analytics")}
-          className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
+          className="group flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
         >
           <div className="rounded-md bg-pink-500/10 p-1.5 text-pink-400">
             <BarChart3 className="h-3.5 w-3.5" />
@@ -512,7 +512,7 @@ export default function Profile() {
               toast.error("Could not open review. Please try again.");
             }
           }}
-          className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
+          className="group flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
         >
           <div className="rounded-md bg-yellow-500/10 p-1.5 text-yellow-400">
             <Star className="h-3.5 w-3.5" />
@@ -522,7 +522,7 @@ export default function Profile() {
 
         <button
           onClick={() => setShowFeedbackModal(true)}
-          className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 transition-all hover:bg-white/[0.05] hover:border-white/10 active:scale-95 touch-manipulation"
+          className="group flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
         >
           <div className="rounded-md bg-cyan-500/10 p-1.5 text-cyan-400">
             <MessageSquare className="h-3.5 w-3.5" />
@@ -532,12 +532,12 @@ export default function Profile() {
 
         <button
           onClick={handleLogout}
-          className="group flex items-center gap-2 rounded-xl border border-red-500/10 bg-red-500/5 p-2.5 transition-all hover:bg-red-500/10 hover:border-red-500/20 active:scale-95 touch-manipulation"
+          className="flex items-center gap-2 rounded-xl border border-red-500/25 bg-red-500/5 p-2.5 touch-manipulation"
         >
-          <div className="rounded-md bg-red-500/10 p-1.5 text-red-400">
+          <div className="rounded-md bg-red-500/15 p-1.5 text-red-400 ring-1 ring-inset ring-red-500/20">
             <LogOut className="h-3.5 w-3.5" />
           </div>
-          <span className="text-[10px] font-medium text-red-400">Logout</span>
+          <span className="text-[10px] font-semibold text-red-400">Logout</span>
         </button>
       </div>
 
@@ -668,7 +668,7 @@ export default function Profile() {
           href="https://paramsavjani.in"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-1.5 rounded-full border border-white/5 bg-white/[0.02] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.05] hover:scale-105 active:scale-95"
+          className="group flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:scale-105 active:scale-95"
         >
           <span className="text-[10px] font-medium tracking-wide text-white/40 group-hover:text-white/60 transition-colors">
             MADE WITH <span className="text-red-500/80 animate-pulse">❤️</span> BY
