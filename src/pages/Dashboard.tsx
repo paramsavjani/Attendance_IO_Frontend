@@ -1019,22 +1019,31 @@ export default function Dashboard() {
 
                 <div className="space-y-0">
                   {isLoadingAttendance ? (
-                    // Loading skeleton - compact
-                    fullSchedule.map((slot, index) => (
-                      <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
+                    // Loading skeleton - matches card layout (5 items)
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <div key={index} className="relative flex items-stretch gap-2 min-h-[80px]">
                         <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
                           <div className="flex-1" />
-                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30 animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20 animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                           <div className="flex-1" />
                         </div>
-                        <div className="w-9 flex-shrink-0 flex flex-col justify-center">
-                          <div className="h-3 w-8 bg-muted rounded animate-pulse" />
-                          <div className="h-2 w-6 bg-muted rounded mt-0.5 animate-pulse" />
+                        <div className="w-9 flex-shrink-0 flex flex-col justify-center gap-1">
+                          <div className="h-3 w-8 bg-muted/50 rounded animate-pulse" />
+                          <div className="h-2 w-6 bg-muted/50 rounded animate-pulse" />
                         </div>
                         <div className="flex-1 py-1">
-                          <div className="bg-card border border-border rounded-lg p-2 h-full animate-pulse">
-                            <div className="h-3 w-20 bg-muted rounded mb-1" />
-                            <div className="h-2 w-12 bg-muted rounded" />
+                          <div className="bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/10 backdrop-blur-md rounded-xl p-2 h-full animate-pulse flex flex-col justify-between gap-1.5 shadow-sm">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-1.5 w-full">
+                                <div className="h-3.5 w-24 bg-muted/50 rounded" />
+                                <div className="h-2.5 w-16 bg-muted/40 rounded" />
+                              </div>
+                              <div className="h-4 w-10 bg-muted/40 rounded-full" />
+                            </div>
+                            <div className="flex gap-1.5 mt-auto">
+                              <div className="flex-1 h-7 bg-muted/50 rounded-lg" />
+                              <div className="flex-1 h-7 bg-muted/50 rounded-lg" />
+                            </div>
                           </div>
                         </div>
                       </div>
