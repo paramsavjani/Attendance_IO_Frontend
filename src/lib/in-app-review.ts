@@ -13,20 +13,18 @@
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
+const PLAY_STORE_APP_ID = "com.attendanceio.app";
+const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${PLAY_STORE_APP_ID}`;
 
+/** Opens the Play Store app on Android / App Store on iOS. Falls back to browser if needed. */
 async function openPlayStoreOnNative(): Promise<void> {
   try {
-    const { Browser } = await import("@capacitor/browser");
-    await Browser.open({ url: PLAY_STORE_URL });
+    const { NativeMarket } = await import("@capacitor-community/native-market");
+    await NativeMarket.openStoreListing({ appId: PLAY_STORE_APP_ID });
   } catch {
-    const marketUrl = PLAY_STORE_URL.replace(
-      "https://play.google.com/store/apps/details",
-      "market://details"
-    );
     try {
       const { Browser } = await import("@capacitor/browser");
-      await Browser.open({ url: marketUrl });
+      await Browser.open({ url: PLAY_STORE_URL });
     } catch {
       window.open(PLAY_STORE_URL, "_blank");
     }
