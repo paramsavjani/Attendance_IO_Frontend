@@ -12,6 +12,7 @@ import { UpdateDialog } from "@/components/UpdateDialog";
 import { NotificationPermissionGate } from "@/components/NotificationPermissionGate";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import Timetable from "./pages/Timetable";
 import LabTutorial from "./pages/LabTutorial";
 import Profile from "./pages/Profile";
@@ -131,21 +132,13 @@ function AppRoutes() {
 
   // Show loading while checking authentication status
   if (isLoadingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
-        <div>Loading...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Wait for enrolled subjects to load before making routing decisions
   // Only show loading if authenticated (unauthenticated users should see login)
   if (isAuthenticated && isLoadingEnrolledSubjects) {
-    return (
-      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
-        <div>Loading...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
