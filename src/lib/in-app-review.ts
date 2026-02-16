@@ -1,8 +1,7 @@
 /**
  * Request in-app review (Play Store / App Store).
- * On native: shows the system star rating dialog. If it doesn't show and openPlayStoreIfDialogFails
- * is true (e.g. user tapped "Rate us"), opens Play Store; otherwise does nothing.
- * On web: opens the Play Store page in a new tab.
+ * With openPlayStoreOnly (e.g. "Rate us" button): opens Play Store directly, no in-app popup.
+ * Without options (e.g. auto prompt): on native shows in-app review only; if it doesn't show, does nothing. On web opens Play Store.
  *
  * Testing the in-app review dialog on Android:
  * - The dialog is controlled by Google and may not show in debug builds or if shown recently.
@@ -35,14 +34,30 @@ async function openPlayStoreOnNative(): Promise<void> {
 }
 
 export type RequestAppReviewOptions = {
-  /** If true and the in-app dialog doesn't show on native, open Play Store. Use for "Rate us" button. Default false (e.g. auto prompt). */
-  openPlayStoreIfDialogFails?: boolean;
+  /** If true, skip in-app review and open Play Store directly. Use for "Rate us" button. */
+  openPlayStoreOnly?: boolean;
 };
 
 export async function requestAppReview(options?: RequestAppReviewOptions): Promise<void> {
   const isNative = Capacitor.isNativePlatform();
-  const openPlayStoreIfDialogFails = options?.openPlayStoreIfDialogFails ?? false;
+  const openPlayStoreOnly = options?.openPlayStoreOnly ?? false;
 
+  // "Rate us" button: go straight to Play Store (no in-app popup)
+  if (openPlayStoreOnly) {
+    if (isNative) {
+      try {
+        await openPlayStoreOnNative();
+      } catch (error) {
+        console.error("Failed to open Play Store:", error);
+        toast.error("Could not open Play Store. Please try again.");
+      }
+    } else {
+      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
+    }
+    return;
+  }
+
+  // Auto prompt: in-app review only; if it doesn't show, do nothing
   if (!isNative) {
     window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
     return;
@@ -52,14 +67,6 @@ export async function requestAppReview(options?: RequestAppReviewOptions): Promi
     const { InAppReview } = await import("@capacitor-community/in-app-review");
     await InAppReview.requestReview();
   } catch (_) {
-    if (openPlayStoreIfDialogFails) {
-      try {
-        toast.info("Opening Play Store…");
-        await openPlayStoreOnNative();
-      } catch (error) {
-        console.error("Failed to open Play Store:", error);
-        toast.error("Could not open Play Store. Please try again.");
-      }
-    }
+    // Do not open Play Store for auto prompt
   }
 }
