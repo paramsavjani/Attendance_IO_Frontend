@@ -34,7 +34,7 @@ const queryClient = new QueryClient();
 
 const NON_CRITICAL_UPDATE_SHOWN_DATE_KEY = "attendance_io_non_critical_update_shown_date";
 const LAST_REVIEW_PROMPT_DATE_KEY = "attendance_io_last_review_prompt_date";
-const REVIEW_PROMPT_INTERVAL_DAYS = 2;
+const REVIEW_PROMPT_INTERVAL_DAYS = 35;
 
 function getTodayDateString(): string {
   return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
