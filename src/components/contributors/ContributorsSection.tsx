@@ -83,15 +83,15 @@ export function ContributorsSection() {
           <div className="relative overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/5 backdrop-blur-sm transition-all hover:bg-yellow-500/10">
             <button
               onClick={() => setExpandedSection(expandedSection === 'ideas' ? null : 'ideas')}
-              className="w-full flex items-center justify-between p-3 active:scale-[0.99] transition-transform touch-manipulation"
+              className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"
             >
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-yellow-500/20 p-2 text-yellow-400">
-                  <Lightbulb className="w-4 h-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="rounded-md bg-yellow-500/20 p-1.5 text-yellow-400">
+                  <Lightbulb className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-semibold text-white">Feature Ideas</p>
-                  <p className="text-[10px] text-white/50">{ideaContributors.length} contributors</p>
+                  <p className="text-[10px] font-semibold text-white">Feature Ideas</p>
+                  <p className="text-[9px] text-white/50">{ideaContributors.length} contributors</p>
                 </div>
               </div>
               {expandedSection === 'ideas' ? (
@@ -136,15 +136,15 @@ export function ContributorsSection() {
           <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 backdrop-blur-sm transition-all hover:bg-blue-500/10">
             <button
               onClick={() => setExpandedSection(expandedSection === 'testers' ? null : 'testers')}
-              className="w-full flex items-center justify-between p-3 active:scale-[0.99] transition-transform touch-manipulation"
+              className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"
             >
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-500/20 p-2 text-blue-400">
-                  <Users className="w-4 h-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="rounded-md bg-blue-500/20 p-1.5 text-blue-400">
+                  <Users className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-semibold text-white">Beta Testers</p>
-                  <p className="text-[10px] text-white/50">{testers.length} heroes</p>
+                  <p className="text-[10px] font-semibold text-white">Beta Testers</p>
+                  <p className="text-[9px] text-white/50">{testers.length} heroes</p>
                 </div>
               </div>
               {expandedSection === 'testers' ? (
