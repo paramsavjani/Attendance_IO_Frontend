@@ -920,19 +920,19 @@ export default function Dashboard() {
             />
             <TabsTrigger
               value="schedule"
-              className="relative z-10 rounded-xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
+              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
             >
               Schedule
             </TabsTrigger>
             <TabsTrigger
               value="lab-tutorial"
-              className="relative z-10 rounded-xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
+              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
             >
               Lab & Tut
             </TabsTrigger>
             <TabsTrigger
               value="subjects"
-              className="relative z-10 rounded-xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
+              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
             >
               Subjects
             </TabsTrigger>
