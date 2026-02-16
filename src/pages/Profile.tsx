@@ -532,12 +532,12 @@ export default function Profile() {
 
         <button
           onClick={handleLogout}
-          className="group flex items-center gap-2 rounded-xl border border-red-500/10 bg-red-500/5 p-2.5 transition-all hover:bg-red-500/10 hover:border-red-500/20 active:scale-95 touch-manipulation"
+          className="group flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-2.5 transition-all hover:bg-red-500/20 hover:border-red-500/30 active:scale-95 touch-manipulation shadow-sm hover:shadow-red-500/10"
         >
-          <div className="rounded-md bg-red-500/10 p-1.5 text-red-400">
+          <div className="rounded-md bg-red-500/20 p-1.5 text-red-400 ring-1 ring-inset ring-red-500/20 transition-transform group-hover:scale-110">
             <LogOut className="h-3.5 w-3.5" />
           </div>
-          <span className="text-[10px] font-medium text-red-400">Logout</span>
+          <span className="text-[10px] font-semibold text-red-400 group-hover:text-red-300 transition-colors">Logout</span>
         </button>
       </div>
 
