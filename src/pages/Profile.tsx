@@ -492,7 +492,7 @@ export default function Profile() {
 
           <button
             onClick={async () => {
-              try { await requestAppReview(); } catch (e) {
+              try { await requestAppReview({ openPlayStoreIfDialogFails: true }); } catch (e) {
                 console.error("Rate us failed:", e);
                 toast.error("Could not open review. Please try again.");
               }
