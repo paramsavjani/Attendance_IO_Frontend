@@ -477,21 +477,27 @@ export default function AppAnalyticsPage() {
               </div>
             </section>
 
-            {/* Attendance by hour (24h) - all time from 5 Jan 2026 */}
+            {/* Attendance by hour (24h) - cyan theme */}
             <section>
-              <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                Attendance by hour
-              </h2>
-              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm overflow-hidden">
+                <h2 className="text-[11px] sm:text-xs font-semibold text-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                  Attendance by hour
+                </h2>
                 {attendanceByHourData.length > 0 ? (
                   <div className="w-full" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={attendanceByHourData}
-                        margin={{ top: 8, right: 4, left: -8, bottom: 0 }}
+                        margin={{ top: 12, right: 8, left: 4, bottom: 4 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <defs>
+                          <linearGradient id="attendanceByHourCyan" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(187, 70%, 52%)" stopOpacity={1} />
+                            <stop offset="100%" stopColor="hsl(187, 65%, 42%)" stopOpacity={0.9} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.8} />
                         <XAxis
                           dataKey="label"
                           tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
@@ -503,20 +509,21 @@ export default function AppAnalyticsPage() {
                           tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={false}
                           tickLine={false}
-                          width={24}
+                          width={28}
                           tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
                         />
                         <Tooltip
                           contentStyle={{
                             backgroundColor: "hsl(var(--card))",
                             border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
+                            borderRadius: "10px",
                             fontSize: "11px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                           }}
                           formatter={(value: number) => [value, "Attendance"]}
                           labelFormatter={(label) => (label ? `Hour: ${label}` : "")}
                         />
-                        <Bar dataKey="count" fill="hsl(var(--success) / 0.85)" radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="count" fill="url(#attendanceByHourCyan)" radius={[6, 6, 0, 0]} maxBarSize={32} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -528,50 +535,58 @@ export default function AppAnalyticsPage() {
               </div>
             </section>
 
-            {/* Total attendance by day of week (all time from 5 Jan 2026) */}
+            {/* Total attendance by day of week - light purple theme */}
             <section>
-              <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                Total attendance by day of week
-              </h2>
-              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm overflow-hidden">
+                <h2 className="text-[11px] sm:text-xs font-semibold text-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+                  Total attendance by day of week
+                </h2>
                 {attendanceByDayOfWeekData.length > 0 ? (
                   <div className="w-full" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={attendanceByDayOfWeekData}
-                        margin={{ top: 8, right: 4, left: -8, bottom: 0 }}
+                        margin={{ top: 12, right: 8, left: 4, bottom: 4 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <defs>
+                          <linearGradient id="attendanceByDayPurple" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(270, 55%, 72%)" stopOpacity={1} />
+                            <stop offset="100%" stopColor="hsl(270, 50%, 58%)" stopOpacity={0.95} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgb(63 63 70)" vertical={false} opacity={0.8} />
                         <XAxis
                           dataKey="label"
-                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          tick={{ fontSize: 9, fill: "rgb(161 161 170)" }}
                           axisLine={false}
                           tickLine={false}
                         />
                         <YAxis
-                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          tick={{ fontSize: 9, fill: "rgb(161 161 170)" }}
                           axisLine={false}
                           tickLine={false}
-                          width={24}
+                          width={28}
                           tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
                         />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
+                            backgroundColor: "rgb(24 24 27)",
+                            border: "1px solid rgb(63 63 70)",
+                            borderRadius: "10px",
                             fontSize: "11px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                            color: "rgb(250 250 250)",
                           }}
                           formatter={(value: number) => [value, "Attendance"]}
                           labelFormatter={(label) => (label ? `Day: ${label}` : "")}
                         />
-                        <Bar dataKey="count" fill="hsl(var(--success) / 0.85)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="count" fill="url(#attendanceByDayPurple)" radius={[8, 8, 0, 0]} maxBarSize={48} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-center h-[180px] text-xs text-zinc-400 rounded-lg bg-zinc-800/50">
                     No attendance by day data
                   </div>
                 )}
