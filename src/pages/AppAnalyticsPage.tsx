@@ -51,7 +51,7 @@ interface AppAnalyticsData {
   attendanceByHour?: HourCount[];
 }
 
-type ChartPeriod = 5 | 15 | 30;
+type ChartPeriod = 5 | 15 | 30 | "all";
 
 function formatEventName(type: string): string {
   return type
@@ -73,12 +73,14 @@ const PERIOD_OPTIONS: { value: ChartPeriod; label: string }[] = [
   { value: 5, label: "5 days" },
   { value: 15, label: "15 days" },
   { value: 30, label: "30 days" },
+  { value: "all", label: "All time" },
 ];
 
 export default function AppAnalyticsPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<AppAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chartsLoading, setChartsLoading] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>(15);
   const openedAtRef = useRef<number>(Date.now());
 
@@ -98,9 +100,17 @@ export default function AppAnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    setData(null);
-    authenticatedFetch(API_CONFIG.ENDPOINTS.ANALYTICS_APP, { method: "GET" })
+    const isPeriodChange = data !== null;
+    if (!isPeriodChange) {
+      setLoading(true);
+      setData(null);
+    } else {
+      setChartsLoading(true);
+    }
+    const url = chartPeriod === "all"
+      ? `${API_CONFIG.ENDPOINTS.ANALYTICS_APP}?range=all`
+      : API_CONFIG.ENDPOINTS.ANALYTICS_APP;
+    authenticatedFetch(url, { method: "GET" })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load analytics");
         return res.json();
@@ -110,13 +120,16 @@ export default function AppAnalyticsPage() {
         console.error(err);
         toast.error("Failed to load app analytics");
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        setLoading(false);
+        setChartsLoading(false);
+      });
+  }, [chartPeriod]);
 
   const attendanceChartData = useMemo(() => {
     const list = data?.attendanceLast30Days ?? [];
     if (!list.length) return [];
-    const sliced = list.slice(-chartPeriod);
+    const sliced = chartPeriod === "all" ? list : list.slice(-chartPeriod);
     return sliced.map((d) => ({
       date: d.date,
       label: formatChartDate(d.date),
@@ -127,7 +140,7 @@ export default function AppAnalyticsPage() {
   const appOpensChartData = useMemo(() => {
     const list = data?.appOpensLast30Days ?? [];
     if (!list.length) return [];
-    const sliced = list.slice(-chartPeriod);
+    const sliced = chartPeriod === "all" ? list : list.slice(-chartPeriod);
     return sliced.map((d) => ({
       date: d.date,
       label: formatChartDate(d.date),
@@ -297,17 +310,22 @@ export default function AppAnalyticsPage() {
               </div>
             </section>
 
-            {/* Charts - side by side on large screens */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+            {/* Charts - one per row on all screens */}
+            <section className="grid grid-cols-1 gap-4 sm:gap-5">
               {/* Attendance chart */}
-              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm relative">
                 <div className="mb-3">
                   <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
-                    Attendance (last {chartPeriod} days)
+                    {chartPeriod === "all" ? "Attendance (all time)" : `Attendance (last ${chartPeriod} days)`}
                   </h2>
                 </div>
-                {attendanceChartData.length > 0 ? (
+                {chartsLoading ? (
+                  <div className="w-full flex flex-col items-center justify-center rounded-lg bg-muted/30 gap-2" style={{ height: chartHeight }}>
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <p className="text-xs text-muted-foreground">Loading…</p>
+                  </div>
+                ) : attendanceChartData.length > 0 ? (
                   <div className="w-full" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
@@ -362,14 +380,19 @@ export default function AppAnalyticsPage() {
               </div>
 
               {/* App opens chart */}
-              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm relative">
                 <div className="mb-3">
                   <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
                     <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                    App opens (last {chartPeriod} days)
+                    {chartPeriod === "all" ? "App opens (all time)" : `App opens (last ${chartPeriod} days)`}
                   </h2>
                 </div>
-                {appOpensChartData.length > 0 ? (
+                {chartsLoading ? (
+                  <div className="w-full flex flex-col items-center justify-center rounded-lg bg-muted/30 gap-2" style={{ height: chartHeight }}>
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <p className="text-xs text-muted-foreground">Loading…</p>
+                  </div>
+                ) : appOpensChartData.length > 0 ? (
                   <div className="w-full" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
@@ -420,7 +443,7 @@ export default function AppAnalyticsPage() {
                     <TrendingUp className="w-5 h-5 sm:w-5 sm:h-5 text-success" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">Attendance avg (last {chartPeriod}d, weekdays)</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{chartPeriod === "all" ? "Attendance avg (all time, weekdays)" : `Attendance avg (last ${chartPeriod}d, weekdays)`}</p>
                     <p className="text-base sm:text-lg font-bold text-success tabular-nums">{avgAttendancePerDay.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">/ day</span></p>
                   </div>
                 </div>
@@ -437,11 +460,11 @@ export default function AppAnalyticsPage() {
               </div>
             </section>
 
-            {/* Attendance by hour (24h) */}
+            {/* Attendance by hour (24h) - all time from 5 Jan 2026 */}
             <section>
               <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                Attendance by hour (last 30 days)
+                Attendance by hour
               </h2>
               <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
                 {attendanceByHourData.length > 0 ? (
