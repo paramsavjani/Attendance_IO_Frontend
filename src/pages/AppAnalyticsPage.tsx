@@ -164,14 +164,16 @@ export default function AppAnalyticsPage() {
     }));
   }, [data?.attendanceByHour]);
 
-  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Saturday first: backend returns 0=Sun, 1=Mon, ..., 6=Sat
+  const DAY_NAMES_SAT_FIRST = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
   const attendanceByDayOfWeekData = useMemo(() => {
     const list = data?.attendanceByDayOfWeek ?? [];
     if (!list.length) return [];
-    return list.map((d) => ({
-      dayOfWeek: d.dayOfWeek,
-      label: DAY_NAMES[d.dayOfWeek] ?? String(d.dayOfWeek),
-      count: d.count,
+    const byDow = new Map(list.map((d) => [d.dayOfWeek, d.count]));
+    return [6, 0, 1, 2, 3, 4, 5].map((dow, i) => ({
+      dayOfWeek: dow,
+      label: DAY_NAMES_SAT_FIRST[i],
+      count: byDow.get(dow) ?? 0,
     }));
   }, [data?.attendanceByDayOfWeek]);
 
@@ -545,25 +547,25 @@ export default function AppAnalyticsPage() {
                 {attendanceByDayOfWeekData.length > 0 ? (
                   <div className="w-full" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
+                      <AreaChart
                         data={attendanceByDayOfWeekData}
                         margin={{ top: 12, right: 8, left: 4, bottom: 4 }}
                       >
                         <defs>
-                          <linearGradient id="attendanceByDayPurple" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(270, 55%, 72%)" stopOpacity={1} />
-                            <stop offset="100%" stopColor="hsl(270, 50%, 58%)" stopOpacity={0.95} />
+                          <linearGradient id="attendanceByDayPurpleFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(270, 55%, 72%)" stopOpacity={0.4} />
+                            <stop offset="95%" stopColor="hsl(270, 50%, 58%)" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgb(63 63 70)" vertical={false} opacity={0.8} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.8} />
                         <XAxis
                           dataKey="label"
-                          tick={{ fontSize: 9, fill: "rgb(161 161 170)" }}
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={false}
                           tickLine={false}
                         />
                         <YAxis
-                          tick={{ fontSize: 9, fill: "rgb(161 161 170)" }}
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={false}
                           tickLine={false}
                           width={28}
@@ -571,22 +573,27 @@ export default function AppAnalyticsPage() {
                         />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "rgb(24 24 27)",
-                            border: "1px solid rgb(63 63 70)",
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
                             borderRadius: "10px",
                             fontSize: "11px",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-                            color: "rgb(250 250 250)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                           }}
                           formatter={(value: number) => [value, "Attendance"]}
                           labelFormatter={(label) => (label ? `Day: ${label}` : "")}
                         />
-                        <Bar dataKey="count" fill="url(#attendanceByDayPurple)" radius={[8, 8, 0, 0]} maxBarSize={48} />
-                      </BarChart>
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke="hsl(270, 50%, 62%)"
+                          strokeWidth={2}
+                          fill="url(#attendanceByDayPurpleFill)"
+                        />
+                      </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[180px] text-xs text-zinc-400 rounded-lg bg-zinc-800/50">
+                  <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
                     No attendance by day data
                   </div>
                 )}
