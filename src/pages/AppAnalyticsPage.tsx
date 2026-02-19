@@ -40,6 +40,11 @@ interface HourCount {
   count: number;
 }
 
+interface DayOfWeekCount {
+  dayOfWeek: number;
+  count: number;
+}
+
 interface AppAnalyticsData {
   totalUsers: number;
   totalAttendance: number;
@@ -49,6 +54,7 @@ interface AppAnalyticsData {
   attendanceLast30Days?: DailyCount[];
   appOpensLast30Days?: DailyCount[];
   attendanceByHour?: HourCount[];
+  attendanceByDayOfWeek?: DayOfWeekCount[];
 }
 
 type ChartPeriod = 5 | 15 | 30 | "all";
@@ -158,6 +164,17 @@ export default function AppAnalyticsPage() {
     }));
   }, [data?.attendanceByHour]);
 
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const attendanceByDayOfWeekData = useMemo(() => {
+    const list = data?.attendanceByDayOfWeek ?? [];
+    if (!list.length) return [];
+    return list.map((d) => ({
+      dayOfWeek: d.dayOfWeek,
+      label: DAY_NAMES[d.dayOfWeek] ?? String(d.dayOfWeek),
+      count: d.count,
+    }));
+  }, [data?.attendanceByDayOfWeek]);
+
   // Attendance avg: weekdays only (exclude Saturday & Sunday)
   const avgAttendancePerDay = useMemo(() => {
     if (!attendanceChartData.length) return 0;
@@ -230,7 +247,7 @@ export default function AppAnalyticsPage() {
           <>
             {/* KPI cards - 2x2 mobile (compact), 4 cols desktop */}
             <section>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="rounded-lg sm:rounded-xl border border-border bg-card p-2.5 sm:p-4 shadow-sm min-h-[64px] sm:min-h-0 flex flex-col justify-center">
                   <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -506,6 +523,56 @@ export default function AppAnalyticsPage() {
                 ) : (
                   <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
                     No attendance by hour data
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Total attendance by day of week (all time from 5 Jan 2026) */}
+            <section>
+              <h2 className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                Total attendance by day of week
+              </h2>
+              <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-sm">
+                {attendanceByDayOfWeekData.length > 0 ? (
+                  <div className="w-full" style={{ height: chartHeight }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={attendanceByDayOfWeekData}
+                        margin={{ top: 8, right: 4, left: -8, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={24}
+                          tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            fontSize: "11px",
+                          }}
+                          formatter={(value: number) => [value, "Attendance"]}
+                          labelFormatter={(label) => (label ? `Day: ${label}` : "")}
+                        />
+                        <Bar dataKey="count" fill="hsl(var(--success) / 0.85)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[180px] text-xs text-muted-foreground rounded-lg bg-muted/30">
+                    No attendance by day data
                   </div>
                 )}
               </div>
