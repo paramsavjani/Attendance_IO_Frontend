@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface CurrentSemester {
   year: number;
@@ -986,18 +985,20 @@ export default function Profile() {
           </div>
           <div className="p-4 space-y-5 flex-1 min-h-0 overflow-y-auto">
             <div className="space-y-3">
-              <Label className="text-xs font-semibold">Daily reminder</Label>            
+              <Label className="text-xs font-semibold">Daily reminder</Label>
               <div className="space-y-2">
                 {[
                   { hour: 18, label: "6:00 PM" },
                   { hour: 20, label: "8:00 PM" },
                   { hour: 22, label: "10:00 PM" },
                 ].map(({ hour, label }) => (
-                  <div
+                  <label
                     key={hour}
-                    className="flex items-center space-x-2 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                    htmlFor={`remind-${hour}`}
+                    className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer"
                   >
-                    <Checkbox
+                    <span className="text-xs font-semibold pointer-events-none">{label}</span>
+                    <Switch
                       id={`remind-${hour}`}
                       checked={dailyReminderHours.includes(hour)}
                       onCheckedChange={(checked) => {
@@ -1005,25 +1006,27 @@ export default function Profile() {
                           checked ? [...prev, hour].sort((a, b) => a - b) : prev.filter((h) => h !== hour)
                         );
                       }}
+                      className="data-[state=unchecked]:bg-muted data-[state=unchecked]:border-input"
                     />
-                    <Label htmlFor={`remind-${hour}`} className="flex-1 cursor-pointer text-xs font-normal">
-                      {label}
-                    </Label>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <div className="space-y-0.5">
-                <Label htmlFor="after-lecture" className="text-xs font-semibold">After lecture</Label>
+            <label
+              htmlFor="after-lecture"
+              className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer"
+            >
+              <div className="space-y-0.5 pointer-events-none">
+                <span className="text-xs font-semibold block">After lecture</span>
                 <p className="text-[11px] text-muted-foreground">Remind me 5 min after a lecture ends if I haven&apos;t marked attendance</p>
               </div>
               <Switch
                 id="after-lecture"
                 checked={afterLectureReminderEnabled}
                 onCheckedChange={setAfterLectureReminderEnabled}
+                className="data-[state=unchecked]:bg-muted data-[state=unchecked]:border-input"
               />
-            </div>
+            </label>
           </div>
           <div className="p-3 pt-0 flex gap-2 border-t border-border">
             <Button
