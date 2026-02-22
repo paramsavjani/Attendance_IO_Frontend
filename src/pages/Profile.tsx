@@ -605,7 +605,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="p-3 pt-0 flex gap-2 border-t border-border">
+          <div className="p-3 pt-2 flex gap-2">
             <Button
               variant="outline"
               onClick={handleCancelEditSleepDuration}
@@ -1027,7 +1027,7 @@ export default function Profile() {
               />
             </label>
           </div>
-          <div className="p-2.5 pt-0 flex gap-1.5 border-t border-border">
+          <div className="p-2.5 pt-2 flex gap-1.5">
             <Button
               variant="outline"
               onClick={() => setShowNotificationPreferences(false)}
