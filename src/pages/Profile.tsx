@@ -986,8 +986,7 @@ export default function Profile() {
           </div>
           <div className="p-4 space-y-5 flex-1 min-h-0 overflow-y-auto">
             <div className="space-y-3">
-              <Label className="text-xs font-semibold">Daily reminder</Label>
-              <p className="text-[11px] text-muted-foreground">Remind me to mark attendance at (choose any):</p>
+              <Label className="text-xs font-semibold">Daily reminder</Label>            
               <div className="space-y-2">
                 {[
                   { hour: 18, label: "Afternoon (6 PM)" },
@@ -1013,7 +1012,6 @@ export default function Profile() {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-muted-foreground">Leave all unchecked for no daily reminder.</p>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div className="space-y-0.5">
