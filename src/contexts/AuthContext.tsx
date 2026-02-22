@@ -14,6 +14,9 @@ interface Student {
   sid?: string;
   phone?: string;
   isDemo?: boolean;
+  /** Selected hours for daily reminder: 18 = 6 PM, 20 = 8 PM, 22 = 10 PM. Empty = off. */
+  dailyReminderHours?: number[];
+  afterLectureReminderEnabled?: boolean;
 }
 
 interface EnrolledSubject {
@@ -100,6 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           sid: userData.sid,
           phone: userData.phone,
           isDemo: userData.isDemo || false,
+          dailyReminderHours: Array.isArray(userData.dailyReminderHours) ? userData.dailyReminderHours : [],
+          afterLectureReminderEnabled: userData.afterLectureReminderEnabled !== false,
         };
         setStudent(studentData);
         
