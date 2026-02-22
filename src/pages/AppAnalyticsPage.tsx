@@ -349,7 +349,7 @@ export default function AppAnalyticsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={attendanceChartData}
-                        margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
+                        margin={{ top: 6, right: 4, left: 0, bottom: 0 }}
                       >
                         <defs>
                           <linearGradient id="appAnalyticsAttendance" x1="0" y1="0" x2="0" y2="1">
@@ -369,8 +369,10 @@ export default function AppAnalyticsPage() {
                           tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={false}
                           tickLine={false}
-                          width={24}
+                          width={28}
                           tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                          allowDecimals={false}
+                          tickCount={5}
                         />
                         <Tooltip
                           contentStyle={{
@@ -416,7 +418,7 @@ export default function AppAnalyticsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={appOpensChartData}
-                        margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
+                        margin={{ top: 6, right: 4, left: 0, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                         <XAxis
@@ -430,8 +432,10 @@ export default function AppAnalyticsPage() {
                           tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={false}
                           tickLine={false}
-                          width={24}
+                          width={28}
                           tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                          allowDecimals={false}
+                          tickCount={5}
                         />
                         <Tooltip
                           contentStyle={{
