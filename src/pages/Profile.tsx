@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin, BarChart3, Star } from "lucide-react";
+import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin, BarChart3, Star, Bell } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -21,6 +21,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CurrentSemester {
   year: number;
@@ -28,7 +31,7 @@ interface CurrentSemester {
 }
 
 export default function Profile() {
-  const { student, logout } = useAuth();
+  const { student, logout, checkAuth } = useAuth();
   const { enrolledSubjects, setEnrolledSubjects, refreshEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
@@ -52,6 +55,10 @@ export default function Profile() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [showBaselineDialog, setShowBaselineDialog] = useState(false);
   const [selectedBaselineSubject, setSelectedBaselineSubject] = useState<Subject | null>(null);
+  const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
+  const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
+  const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
+  const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -486,6 +493,26 @@ export default function Profile() {
             <p className="text-[9px] text-white/50">
               {isLoadingSleepDuration ? "Loading..." : `${sleepDuration ?? 8} hours per night`}
             </p>
+          </div>
+          <ChevronRight className="h-3.5 w-3.5 text-white/30" />
+        </div>
+      </button>
+
+      <button
+        onClick={() => {
+          setDailyReminderHours(student?.dailyReminderHours ?? []);
+          setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
+          setShowNotificationPreferences(true);
+        }}
+        className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
+      >
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="rounded-md bg-amber-500/10 p-1.5 text-amber-400 ring-1 ring-inset ring-amber-500/20">
+            <Bell className="h-4 w-4" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-semibold text-xs text-white">Notification reminders</p>
+            <p className="text-[9px] text-white/50">Daily & after lecture</p>
           </div>
           <ChevronRight className="h-3.5 w-3.5 text-white/30" />
         </div>
@@ -938,6 +965,107 @@ export default function Profile() {
               className="w-full h-10 rounded-xl"
             >
               Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notification preferences modal */}
+      <Dialog open={showNotificationPreferences} onOpenChange={setShowNotificationPreferences}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[92vh] overflow-hidden p-0 flex flex-col">
+          <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent p-3 border-b border-border">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <Bell className="w-4 h-4 text-amber-500" />
+                Notification reminders
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Choose when you want attendance reminders. You can turn them off.
+            </p>
+          </div>
+          <div className="p-4 space-y-5 flex-1 min-h-0 overflow-y-auto">
+            <div className="space-y-3">
+              <Label className="text-xs font-semibold">Daily reminder</Label>
+              <p className="text-[11px] text-muted-foreground">Remind me to mark attendance at (choose any):</p>
+              <div className="space-y-2">
+                {[
+                  { hour: 18, label: "Afternoon (6 PM)" },
+                  { hour: 20, label: "Evening (8 PM)" },
+                  { hour: 22, label: "Night (10 PM)" },
+                ].map(({ hour, label }) => (
+                  <div
+                    key={hour}
+                    className="flex items-center space-x-2 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                  >
+                    <Checkbox
+                      id={`remind-${hour}`}
+                      checked={dailyReminderHours.includes(hour)}
+                      onCheckedChange={(checked) => {
+                        setDailyReminderHours((prev) =>
+                          checked ? [...prev, hour].sort((a, b) => a - b) : prev.filter((h) => h !== hour)
+                        );
+                      }}
+                    />
+                    <Label htmlFor={`remind-${hour}`} className="flex-1 cursor-pointer text-xs font-normal">
+                      {label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground">Leave all unchecked for no daily reminder.</p>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="after-lecture" className="text-xs font-semibold">After lecture</Label>
+                <p className="text-[11px] text-muted-foreground">Remind me 5 min after a lecture ends if I haven&apos;t marked attendance</p>
+              </div>
+              <Switch
+                id="after-lecture"
+                checked={afterLectureReminderEnabled}
+                onCheckedChange={setAfterLectureReminderEnabled}
+              />
+            </div>
+          </div>
+          <div className="p-3 pt-0 flex gap-2 border-t border-border">
+            <Button
+              variant="outline"
+              onClick={() => setShowNotificationPreferences(false)}
+              disabled={savingNotificationPrefs}
+              className="flex-1 h-10 rounded-lg text-sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                setSavingNotificationPrefs(true);
+                try {
+                  const res = await authenticatedFetch(API_CONFIG.ENDPOINTS.NOTIFICATION_PREFERENCES, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      dailyReminderHours,
+                      afterLectureReminderEnabled,
+                    }),
+                  });
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err?.error || "Failed to save");
+                  }
+                  await checkAuth();
+                  setShowNotificationPreferences(false);
+                  toast.success("Notification preferences saved");
+                } catch (e) {
+                  console.error(e);
+                  toast.error(e instanceof Error ? e.message : "Failed to save preferences");
+                } finally {
+                  setSavingNotificationPrefs(false);
+                }
+              }}
+              disabled={savingNotificationPrefs}
+              className="flex-1 gap-2 h-10 rounded-lg text-sm"
+            >
+              {savingNotificationPrefs ? "Saving..." : <><Save className="w-3.5 h-3.5" /> Save</>}
             </Button>
           </div>
         </DialogContent>
