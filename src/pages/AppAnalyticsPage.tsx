@@ -495,7 +495,7 @@ export default function AppAnalyticsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={attendanceByHourData}
-                        margin={{ top: 12, right: 8, left: 4, bottom: 4 }}
+                        margin={{ top: 6, right: 4, left: 0, bottom: 0 }}
                       >
                         <defs>
                           <linearGradient id="attendanceByHourCyan" x1="0" y1="0" x2="0" y2="1">
@@ -506,7 +506,7 @@ export default function AppAnalyticsPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.8} />
                         <XAxis
                           dataKey="label"
-                          tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
+                          tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                           axisLine={false}
                           tickLine={false}
                           interval={2}
@@ -517,6 +517,8 @@ export default function AppAnalyticsPage() {
                           tickLine={false}
                           width={28}
                           tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                          allowDecimals={false}
+                          tickCount={5}
                         />
                         <Tooltip
                           contentStyle={{
@@ -553,7 +555,7 @@ export default function AppAnalyticsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={attendanceByDayOfWeekData}
-                        margin={{ top: 12, right: 8, left: 4, bottom: 4 }}
+                        margin={{ top: 6, right: 4, left: 0, bottom: 0 }}
                       >
                         <defs>
                           <linearGradient id="attendanceByDayPurpleFill" x1="0" y1="0" x2="0" y2="1">
@@ -574,6 +576,8 @@ export default function AppAnalyticsPage() {
                           tickLine={false}
                           width={28}
                           tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                          allowDecimals={false}
+                          tickCount={5}
                         />
                         <Tooltip
                           contentStyle={{
