@@ -1006,7 +1006,7 @@ export default function Profile() {
                           checked ? [...prev, hour].sort((a, b) => a - b) : prev.filter((h) => h !== hour)
                         );
                       }}
-                      className="data-[state=unchecked]:bg-muted data-[state=unchecked]:border-input"
+                      className="data-[state=unchecked]:bg-zinc-500 data-[state=unchecked]:border-zinc-500"
                     />
                   </label>
                 ))}
@@ -1024,7 +1024,7 @@ export default function Profile() {
                 id="after-lecture"
                 checked={afterLectureReminderEnabled}
                 onCheckedChange={setAfterLectureReminderEnabled}
-                className="data-[state=unchecked]:bg-muted data-[state=unchecked]:border-input"
+                className="data-[state=unchecked]:bg-zinc-500 data-[state=unchecked]:border-zinc-500"
               />
             </label>
           </div>
