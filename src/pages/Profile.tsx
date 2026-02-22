@@ -989,9 +989,9 @@ export default function Profile() {
               <Label className="text-xs font-semibold">Daily reminder</Label>            
               <div className="space-y-2">
                 {[
-                  { hour: 18, label: "Afternoon (6 PM)" },
-                  { hour: 20, label: "Evening (8 PM)" },
-                  { hour: 22, label: "Night (10 PM)" },
+                  { hour: 18, label: "6:00 PM" },
+                  { hour: 20, label: "8:00 PM" },
+                  { hour: 22, label: "10:00 PM" },
                 ].map(({ hour, label }) => (
                   <div
                     key={hour}
