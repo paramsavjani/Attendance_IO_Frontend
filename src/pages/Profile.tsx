@@ -476,46 +476,45 @@ export default function Profile() {
         </button>
       </div>
 
-      {/* Sleep Duration Feature Card */}
+      {/* Sleep Duration & Notification - one row */}
       <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Preferences</h2>
-      <button
-        onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
-        className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
-      >
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-indigo-500/5 blur-xl transition-all group-hover:bg-indigo-500/10" />
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="rounded-md bg-indigo-500/10 p-1.5 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
-            <Moon className="h-4 w-4" />
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
+          className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
+        >
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-indigo-500/5 blur-xl transition-all group-hover:bg-indigo-500/10" />
+          <div className="relative z-10 flex flex-col items-start gap-1.5">
+            <div className="rounded-md bg-indigo-500/10 p-1.5 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
+              <Moon className="h-4 w-4" />
+            </div>
+            <div className="text-left min-w-0">
+              <p className="font-semibold text-xs text-white">Sleep</p>
+              <p className="text-[9px] text-white/50 truncate">
+                {isLoadingSleepDuration ? "…" : `${sleepDuration ?? 8} hrs/night`}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 text-left">
-            <p className="font-semibold text-xs text-white">Sleep Duration</p>
-            <p className="text-[9px] text-white/50">
-              {isLoadingSleepDuration ? "Loading..." : `${sleepDuration ?? 8} hours per night`}
-            </p>
+        </button>
+        <button
+          onClick={() => {
+            setDailyReminderHours(student?.dailyReminderHours ?? []);
+            setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
+            setShowNotificationPreferences(true);
+          }}
+          className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
+        >
+          <div className="relative z-10 flex flex-col items-start gap-1.5">
+            <div className="rounded-md bg-amber-500/10 p-1.5 text-amber-400 ring-1 ring-inset ring-amber-500/20">
+              <Bell className="h-4 w-4" />
+            </div>
+            <div className="text-left min-w-0">
+              <p className="font-semibold text-xs text-white">Notifications</p>
+              <p className="text-[9px] text-white/50">Daily & after lecture</p>
+            </div>
           </div>
-          <ChevronRight className="h-3.5 w-3.5 text-white/30" />
-        </div>
-      </button>
-
-      <button
-        onClick={() => {
-          setDailyReminderHours(student?.dailyReminderHours ?? []);
-          setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
-          setShowNotificationPreferences(true);
-        }}
-        className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
-      >
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="rounded-md bg-amber-500/10 p-1.5 text-amber-400 ring-1 ring-inset ring-amber-500/20">
-            <Bell className="h-4 w-4" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-semibold text-xs text-white">Notification reminders</p>
-            <p className="text-[9px] text-white/50">Daily & after lecture</p>
-          </div>
-          <ChevronRight className="h-3.5 w-3.5 text-white/30" />
-        </div>
-      </button>
+        </button>
+      </div>
 
       {/* App Actions Grid */}
       {/* App Actions Grid */}
