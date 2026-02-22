@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -67,9 +68,33 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
   return { onTouchStart, onTouchMove, onTouchEnd };
 }
 
+const DOUBLE_BACK_PRESS_MS = 1000;
+
 export default function Dashboard() {
   const { student } = useAuth();
   const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState, attendanceIds } = useAttendance();
+  const lastBackPressAt = useRef<number | null>(null);
+
+  // On home (Dashboard) only: double back button closes the app
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let listenerHandle: { remove: () => Promise<void> } | undefined;
+    (async () => {
+      const { App } = await import("@capacitor/app");
+      listenerHandle = await App.addListener("backButton", () => {
+        const now = Date.now();
+        if (lastBackPressAt.current !== null && now - lastBackPressAt.current <= DOUBLE_BACK_PRESS_MS) {
+          lastBackPressAt.current = null;
+          App.exitApp();
+        } else {
+          lastBackPressAt.current = now;
+        }
+      });
+    })();
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, []);
 
   // Lab/Tutorial timetable states
   const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
