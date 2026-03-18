@@ -26,12 +26,8 @@ export default function NoInternet() {
 
           <Button onClick={handleRefresh} className="w-full h-12 text-base font-medium gap-2">
             <RefreshCw className="w-4 h-4" />
-            Refresh App
+            Refresh
           </Button>
-
-          <p className="text-xs text-muted-foreground">
-            Tap refresh after your internet connection is back to reload the app.
-          </p>
         </div>
       </div>
     </div>
