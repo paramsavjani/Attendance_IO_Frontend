@@ -28,7 +28,7 @@ import DeleteAccount from "./pages/DeleteAccount";
 import ErrorOldVersion from "./pages/ErrorOldVersion";
 import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
 import { Capacitor } from "@capacitor/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_CONFIG, checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 
@@ -167,7 +167,7 @@ function AppUpdateChecker() {
 import { MainLayout } from "@/components/layout/MainLayout";
 
 function AppRoutes() {
-  const { isAuthenticated, isLoadingAuth } = useAuth();
+  const { isAuthenticated, isLoadingAuth, checkAuth } = useAuth();
   const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
   const location = useLocation();
   const isNativeApp = Capacitor.isNativePlatform();
@@ -177,10 +177,13 @@ function AppRoutes() {
   const [isBackendAvailableOnNative, setIsBackendAvailableOnNative] = useState<boolean | null>(
     isNativeApp ? null : true
   );
+  // Track previous backend state so we know when it transitions to available
+  const prevBackendAvailableRef = useRef<boolean | null>(isNativeApp ? null : true);
 
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";
 
+  // Track online/offline state
   useEffect(() => {
     if (!isNativeApp) return;
 
@@ -198,6 +201,9 @@ function AppRoutes() {
     };
   }, [isNativeApp]);
 
+  // When internet is available, check backend health with retries.
+  // Retries prevent false "Backend Updating" flashes right after the network
+  // comes back (the OS fires "online" before the route is actually usable).
   useEffect(() => {
     if (!isNativeApp) return;
 
@@ -207,33 +213,98 @@ function AppRoutes() {
     }
 
     let isCancelled = false;
+    const sleep = (ms: number) => new Promise<void>((res) => setTimeout(res, ms));
+    // Delays before retry 1, 2, 3 (ms)
+    const retryDelays = [1500, 3000, 5000];
 
-    const checkBackendHealth = async () => {
+    const checkWithRetries = async () => {
       setIsBackendAvailableOnNative(null);
 
-      try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/actuator/health`, {
-          method: "GET",
-          cache: "no-store",
-        });
+      for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+        if (isCancelled) return;
 
-        if (!isCancelled) {
-          setIsBackendAvailableOnNative(response.ok);
+        // Wait before every attempt except the first
+        if (attempt > 0) {
+          await sleep(retryDelays[attempt - 1]);
+          if (isCancelled) return;
         }
-      } catch (error) {
-        console.error("Backend health check failed:", error);
-        if (!isCancelled) {
-          setIsBackendAvailableOnNative(false);
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          const response = await fetch(`${API_CONFIG.BASE_URL}/actuator/health`, {
+            method: "GET",
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+
+          if (!isCancelled && response.ok) {
+            setIsBackendAvailableOnNative(true);
+            return;
+          }
+        } catch {
+          // swallow and retry
         }
+      }
+
+      if (!isCancelled) {
+        setIsBackendAvailableOnNative(false);
       }
     };
 
-    checkBackendHealth();
+    checkWithRetries();
 
     return () => {
       isCancelled = true;
     };
   }, [isNativeApp, isOfflineOnNative]);
+
+  // While "Backend Updating" is visible, keep polling every 15 s.
+  // When the backend comes back the screen disappears automatically — no manual refresh needed.
+  useEffect(() => {
+    if (!isNativeApp || isBackendAvailableOnNative !== false) return;
+
+    let isCancelled = false;
+
+    const poll = async () => {
+      if (isCancelled) return;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(`${API_CONFIG.BASE_URL}/actuator/health`, {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (!isCancelled && response.ok) {
+          setIsBackendAvailableOnNative(true);
+        }
+      } catch {
+        // still down, keep waiting
+      }
+    };
+
+    const intervalId = setInterval(poll, 15_000);
+    return () => {
+      isCancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [isNativeApp, isBackendAvailableOnNative]);
+
+  // When backend transitions from unavailable/loading → available, re-run auth
+  // so a user with a valid token lands on the dashboard, not the login page.
+  useEffect(() => {
+    if (
+      isNativeApp &&
+      isBackendAvailableOnNative === true &&
+      prevBackendAvailableRef.current !== true
+    ) {
+      checkAuth();
+    }
+    prevBackendAvailableRef.current = isBackendAvailableOnNative;
+  }, [isNativeApp, isBackendAvailableOnNative, checkAuth]);
 
   if (isOfflineOnNative) {
     return <NoInternet />;
