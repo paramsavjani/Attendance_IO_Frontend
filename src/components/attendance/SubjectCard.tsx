@@ -19,6 +19,7 @@ interface SubjectCardProps {
   onMinChange?: (value: number) => void;
   defaultExpanded?: boolean;
   hideBunkableInfo?: boolean; // Hide "Can Bunk" and "Total Classes" sections (for search view)
+  suppressLowAttendanceStyling?: boolean;
 }
 
 export type { SubjectCardProps };
@@ -40,6 +41,7 @@ export function SubjectCard({
   onMinChange,
   defaultExpanded = false,
   hideBunkableInfo = false,
+  suppressLowAttendanceStyling = false,
 }: SubjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -54,7 +56,9 @@ export function SubjectCard({
   return (
     <div className={cn(
       "bg-card border border-border rounded-xl overflow-hidden transition-all duration-300",
-      !isSafe && "border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent shadow-[0_4px_20px_-4px_rgba(239,68,68,0.1)]"
+      !suppressLowAttendanceStyling &&
+        !isSafe &&
+        "border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent shadow-[0_4px_20px_-4px_rgba(239,68,68,0.1)]"
     )}>
       {/* Header - always visible */}
       <button
@@ -76,9 +80,11 @@ export function SubjectCard({
         <div className="flex items-center gap-2">
           <p className={cn(
             "text-xl font-bold",
-            isSafe && "text-success",
-            isWarning && "text-warning",
-            !isSafe && !isWarning && "text-destructive"
+            isSafe
+              ? "text-success"
+              : isWarning
+                ? "text-warning"
+                : "text-destructive"
           )}>
             {percentage.toFixed(0)}%
           </p>
@@ -143,7 +149,9 @@ export function SubjectCard({
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "text-sm font-bold",
-                  isSafe ? "text-success" : "text-destructive"
+                  isSafe
+                    ? "text-success"
+                    : "text-destructive"
                 )}>
                   {percentage.toFixed(2)}%
                 </span>
@@ -158,7 +166,11 @@ export function SubjectCard({
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
-                  isSafe ? "bg-success" : isWarning ? "bg-warning" : "bg-destructive"
+                  isSafe
+                    ? "bg-success"
+                    : isWarning
+                      ? "bg-warning"
+                      : "bg-destructive"
                 )}
                 style={{ width: `${Math.min(percentage, 100)}%` }}
               />
