@@ -151,6 +151,7 @@ export default function Dashboard() {
   // When sleep warning targets tomorrow, we need tomorrow's attendance (cancelled slots). Context only has selected date.
   const [attendanceForSleepTargetDate, setAttendanceForSleepTargetDate] = useState<Record<string, "present" | "absent" | "cancelled" | null> | null>(null);
   const [sleepTargetDateKey, setSleepTargetDateKey] = useState<string | null>(null);
+  const [hasLoadedSleepTargetAttendance, setHasLoadedSleepTargetAttendance] = useState(false);
 
   // Persist extra classes to localStorage whenever they change
   useEffect(() => {
@@ -518,13 +519,19 @@ export default function Dashboard() {
     if (now.getHours() < 15) {
       setAttendanceForSleepTargetDate(null);
       setSleepTargetDateKey(null);
+      setHasLoadedSleepTargetAttendance(false);
       return;
     }
     const tomorrowKey = format(addDays(now, 1), "yyyy-MM-dd");
     const fetchTomorrowAttendance = async () => {
+      setHasLoadedSleepTargetAttendance(false);
       try {
         const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${tomorrowKey}`, { method: "GET" });
-        if (!response.ok) return;
+        if (!response.ok) {
+          setAttendanceForSleepTargetDate(null);
+          setSleepTargetDateKey(null);
+          return;
+        }
         const data = await response.json();
         const attendanceMap: Record<string, "present" | "absent" | "cancelled" | null> = {};
         data.todayAttendance?.forEach((record: { lectureDate: string; subjectId: string; timeSlot?: number | null; startTime?: string; endTime?: string; status: string }) => {
@@ -543,6 +550,8 @@ export default function Dashboard() {
       } catch {
         setAttendanceForSleepTargetDate(null);
         setSleepTargetDateKey(null);
+      } finally {
+        setHasLoadedSleepTargetAttendance(true);
       }
     };
     fetchTomorrowAttendance();
@@ -593,12 +602,15 @@ export default function Dashboard() {
 
     let attendanceToUse: Record<string, "present" | "absent" | "cancelled" | null> | null = null;
     if (targetDateKey === dateKey) {
-      const contextHasDataForTarget = Object.keys(todayAttendance).some((k) => k.startsWith(targetDateKey));
-      if (!contextHasDataForTarget) return null;
+      if (isLoadingAttendance) return null;
       attendanceToUse = todayAttendance;
     } else {
-      if (sleepTargetDateKey !== targetDateKey || attendanceForSleepTargetDate == null) return null;
-      attendanceToUse = attendanceForSleepTargetDate;
+      if (!hasLoadedSleepTargetAttendance) return null;
+      if (sleepTargetDateKey !== targetDateKey || attendanceForSleepTargetDate == null) {
+        attendanceToUse = {};
+      } else {
+        attendanceToUse = attendanceForSleepTargetDate;
+      }
     }
 
     const slotKeyForAttendance = (slot: { subject: { id: string } | null; slotIndex?: number | null; startTime?: string; endTime?: string; isCustom?: boolean }) => {
