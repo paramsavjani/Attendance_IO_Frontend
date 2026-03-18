@@ -1,8 +1,10 @@
 import { RefreshCw, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getToken } from "@/lib/token";
 
 export default function BackendUpdating() {
   const handleRefresh = () => {
+    window.location.hash = getToken() ? "/dashboard" : "/login";
     window.location.reload();
   };
 
