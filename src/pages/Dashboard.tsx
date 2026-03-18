@@ -72,7 +72,7 @@ const DOUBLE_BACK_PRESS_MS = 1000;
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, savingState, attendanceIds } = useAttendance();
+  const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, isLoadingTimetable, savingState, attendanceIds } = useAttendance();
   const lastBackPressAt = useRef<number | null>(null);
 
   // On home (Dashboard) only: double back button closes the app
@@ -645,6 +645,29 @@ export default function Dashboard() {
     return { hours, minutes };
   }, [sleepWarningTick, sleepDurationHours, timetable, enrolledSubjects, labTimetable, tutorialTimetable, todayAttendance, dateKey, attendanceForSleepTargetDate, sleepTargetDateKey]);
 
+  const isSleepWarningLoading = useMemo(() => {
+    if (sleepDurationHours == null) return true;
+    if (isLoadingTimetable || isLoadingAttendance || isLoadingLab || isLoadingTutorial) return true;
+
+    const now = new Date();
+    const targetDateKey = format(startOfDay(now.getHours() >= 15 ? addDays(now, 1) : now), "yyyy-MM-dd");
+    const isCheckingToday = targetDateKey === dateKey;
+
+    if (isCheckingToday) {
+      return false;
+    }
+
+    return !hasLoadedSleepTargetAttendance;
+  }, [
+    sleepDurationHours,
+    isLoadingTimetable,
+    isLoadingAttendance,
+    isLoadingLab,
+    isLoadingTutorial,
+    dateKey,
+    hasLoadedSleepTargetAttendance,
+  ]);
+
   const isSelectedToday = isToday(selectedDate);
   const isSelectedTomorrow = isTomorrow(selectedDate);
   const isFutureDate = isBefore(startOfDay(now), startOfDay(selectedDate));
@@ -889,7 +912,7 @@ export default function Dashboard() {
   return (
     <>
       <DemoBanner isDemo={student?.isDemo || false} />
-      {sleepWarning && (
+      {!isSleepWarningLoading && sleepWarning && (
         <div className="mb-2 overflow-hidden rounded-xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-indigo-50 dark:border-violet-500/20 dark:from-violet-950/40 dark:to-indigo-950/30 shadow-sm">
           <div className="flex gap-2 px-3 py-2">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/50">
