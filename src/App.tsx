@@ -21,6 +21,7 @@ import Analytics from "./pages/Analytics";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
 import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
+import NoInternet from "./pages/NoInternet";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
 import ErrorOldVersion from "./pages/ErrorOldVersion";
@@ -168,9 +169,33 @@ function AppRoutes() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
   const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
   const location = useLocation();
+  const [isOfflineOnNative, setIsOfflineOnNative] = useState(
+    Capacitor.isNativePlatform() && typeof navigator !== "undefined" ? !navigator.onLine : false
+  );
 
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const updateNetworkState = () => {
+      setIsOfflineOnNative(!navigator.onLine);
+    };
+
+    updateNetworkState();
+    window.addEventListener("online", updateNetworkState);
+    window.addEventListener("offline", updateNetworkState);
+
+    return () => {
+      window.removeEventListener("online", updateNetworkState);
+      window.removeEventListener("offline", updateNetworkState);
+    };
+  }, []);
+
+  if (isOfflineOnNative) {
+    return <NoInternet />;
+  }
 
   // Show loading while checking authentication status
   if (isLoadingAuth) {
