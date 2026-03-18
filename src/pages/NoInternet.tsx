@@ -1,8 +1,10 @@
 import { WifiOff, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getToken } from "@/lib/token";
 
 export default function NoInternet() {
   const handleRefresh = () => {
+    window.location.hash = getToken() ? "/dashboard" : "/login";
     window.location.reload();
   };
 
