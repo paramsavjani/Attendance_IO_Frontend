@@ -594,6 +594,9 @@ export default function Dashboard() {
   const sleepWarning = useMemo(() => {
     const now = new Date();
     const currentHour = now.getHours();
+    // Only show between 17:00 (evening check) and 05:59 (early-morning check).
+    // After 6 AM the reminder is no longer actionable.
+    if (currentHour >= 6 && currentHour < 15) return null;
     const sleepHours = sleepDurationHours ?? 8;
     const checkDate = currentHour >= 15 ? addDays(now, 1) : now;
     const targetDate = startOfDay(checkDate);
