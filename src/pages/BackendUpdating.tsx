@@ -27,10 +27,6 @@ export default function BackendUpdating() {
             <RefreshCw className="w-4 h-4" />
             Refresh App
           </Button>
-
-          <p className="text-xs text-muted-foreground">
-            Your internet is connected, but Attendance IO backend is temporarily unavailable.
-          </p>
         </div>
       </div>
     </div>
