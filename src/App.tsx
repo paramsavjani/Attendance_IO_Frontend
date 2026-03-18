@@ -21,6 +21,7 @@ import Analytics from "./pages/Analytics";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
 import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
+import BackendUpdating from "./pages/BackendUpdating";
 import NoInternet from "./pages/NoInternet";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
@@ -28,7 +29,7 @@ import ErrorOldVersion from "./pages/ErrorOldVersion";
 import { FeatureAnnouncement } from "@/components/FeatureAnnouncement";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useState } from "react";
-import { checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
+import { API_CONFIG, checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 
 const queryClient = new QueryClient();
@@ -169,15 +170,19 @@ function AppRoutes() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
   const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
   const location = useLocation();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [isOfflineOnNative, setIsOfflineOnNative] = useState(
-    Capacitor.isNativePlatform() && typeof navigator !== "undefined" ? !navigator.onLine : false
+    isNativeApp && typeof navigator !== "undefined" ? !navigator.onLine : false
+  );
+  const [isBackendAvailableOnNative, setIsBackendAvailableOnNative] = useState<boolean | null>(
+    isNativeApp ? null : true
   );
 
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    if (!isNativeApp) return;
 
     const updateNetworkState = () => {
       setIsOfflineOnNative(!navigator.onLine);
@@ -191,10 +196,59 @@ function AppRoutes() {
       window.removeEventListener("online", updateNetworkState);
       window.removeEventListener("offline", updateNetworkState);
     };
-  }, []);
+  }, [isNativeApp]);
+
+  useEffect(() => {
+    if (!isNativeApp) return;
+
+    if (isOfflineOnNative) {
+      setIsBackendAvailableOnNative(null);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const checkBackendHealth = async () => {
+      setIsBackendAvailableOnNative(null);
+
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/actuator/health`, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!isCancelled) {
+          setIsBackendAvailableOnNative(response.ok);
+        }
+      } catch (error) {
+        console.error("Backend health check failed:", error);
+        if (!isCancelled) {
+          setIsBackendAvailableOnNative(false);
+        }
+      }
+    };
+
+    checkBackendHealth();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isNativeApp, isOfflineOnNative]);
 
   if (isOfflineOnNative) {
     return <NoInternet />;
+  }
+
+  if (isNativeApp && isBackendAvailableOnNative === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
+  if (isNativeApp && isBackendAvailableOnNative === false) {
+    return <BackendUpdating />;
   }
 
   // Show loading while checking authentication status
