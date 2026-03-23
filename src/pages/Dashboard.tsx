@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { Shield } from "lucide-react";
 import { TimetableSlot } from "@/types/attendance";
 import { toast } from "sonner";
 import {
@@ -773,6 +774,32 @@ export default function Dashboard() {
 
   const [activeTab, setActiveTab] = useState("schedule");
 
+  // Official vs Total view
+  const [dashboardView, setDashboardView] = useState<"total" | "official">("total");
+  const [officialStats, setOfficialStats] = useState<{ subjectId: string; present: number; absent: number; total: number; percentage: number }[]>([]);
+  const [officialCutoffDate, setOfficialCutoffDate] = useState<string | null>(null);
+  const [isLoadingOfficial, setIsLoadingOfficial] = useState(false);
+
+  useEffect(() => {
+    if (dashboardView !== "official") return;
+    const fetchOfficial = async () => {
+      setIsLoadingOfficial(true);
+      try {
+        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?view=official`);
+        if (response.ok) {
+          const data = await response.json();
+          setOfficialStats(data.subjectStats || []);
+          setOfficialCutoffDate(data.officialCutoffDate || null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch official attendance:", err);
+      } finally {
+        setIsLoadingOfficial(false);
+      }
+    };
+    fetchOfficial();
+  }, [dashboardView]);
+
   // Fetch attendance when date changes
   useEffect(() => {
     fetchAttendanceForDate(dateKey);
@@ -972,6 +999,78 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Official / Total View Toggle */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary/30 dark:bg-neutral-800/30 mb-2">
+          <button
+            onClick={() => setDashboardView("total")}
+            className={cn(
+              "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              dashboardView === "total"
+                ? "bg-white/80 dark:bg-white/10 text-foreground shadow-sm"
+                : "text-muted-foreground/70 hover:text-foreground"
+            )}
+          >
+            Total Attendance
+          </button>
+          <button
+            onClick={() => setDashboardView("official")}
+            className={cn(
+              "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5",
+              dashboardView === "official"
+                ? "bg-white/80 dark:bg-white/10 text-foreground shadow-sm"
+                : "text-muted-foreground/70 hover:text-foreground"
+            )}
+          >
+            <Shield className="w-3 h-3" />
+            Official
+          </button>
+        </div>
+
+        {dashboardView === "official" ? (
+          <div className="flex-1 overflow-y-auto space-y-3">
+            {officialCutoffDate && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <div className="w-2 h-2 rounded-full bg-blue-400" />
+                <span className="text-xs font-medium text-blue-400">
+                  Official Institute Attendance (till {officialCutoffDate})
+                </span>
+              </div>
+            )}
+            {isLoadingOfficial ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : officialStats.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">
+                <Shield className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">No official attendance data available</p>
+                <p className="text-xs mt-1">Data will appear once the institute publishes it</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {officialStats.map((stat) => {
+                  const subject = enrolledSubjects.find(s => s.id === stat.subjectId);
+                  const percentage = stat.percentage || (stat.total > 0 ? (stat.present * 100 / stat.total) : 0);
+                  const minRequired = subject ? (subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75) : 75;
+                  return (
+                    <SubjectCard
+                      key={stat.subjectId}
+                      name={subject?.name || `Subject ${stat.subjectId}`}
+                      code={subject?.code}
+                      color={subject?.color || "220 70% 55%"}
+                      present={stat.present}
+                      absent={stat.absent}
+                      total={stat.total}
+                      minRequired={minRequired}
+                      percentage={percentage}
+                      hideBunkableInfo
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col overflow-hidden">
           <TabsList className="relative grid w-full grid-cols-3 p-1 gap-1 h-11 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
             <div
@@ -1527,6 +1626,7 @@ export default function Dashboard() {
             )}
           </TabsContent>
         </Tabs>
+        )}
       </div>
 
       {/* Past Date Warning Dialog */}
