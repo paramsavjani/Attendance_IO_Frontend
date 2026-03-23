@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
-import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2, Search, ChevronRight, Calendar } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { SemesterSelector, Semester } from "@/components/filters/SemesterSelector";
+import { Input } from "@/components/ui/input";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { trackAppEvent } from "@/contexts/AuthContext";
@@ -31,7 +33,174 @@ interface AllSemestersData {
   semesterWise: SemesterWiseData[];
 }
 
-export default function Analytics() {
+interface SubjectEntry {
+  subjectId: string;
+  subjectCode: string;
+  subjectName: string;
+  color: string;
+  totalStudents: number;
+  averageAttendancePercentage: number;
+  cutoffDate: string | null;
+}
+
+interface SubjectAnalysisData {
+  subjects: SubjectEntry[];
+}
+
+type AnalyticsTab = "my" | "subjects";
+
+function getPercentageColor(pct: number): string {
+  if (pct >= 75) return "text-green-400";
+  if (pct >= 50) return "text-yellow-400";
+  return "text-red-400";
+}
+
+function getBarColor(pct: number): string {
+  if (pct >= 75) return "bg-green-500";
+  if (pct >= 50) return "bg-yellow-500";
+  return "bg-red-500";
+}
+
+function SubjectAnalysisSection() {
+  const navigate = useNavigate();
+  const [data, setData] = useState<SubjectAnalysisData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(API_CONFIG.ENDPOINTS.SUBJECT_ANALYSIS);
+        if (response.ok) {
+          const result = await response.json();
+          setData(result);
+        }
+      } catch (err) {
+        console.error("Failed to fetch subject analysis:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const filteredSubjects = useMemo(() => {
+    if (!data) return [];
+    if (!query.trim()) return data.subjects;
+    const q = query.toLowerCase().trim();
+    return data.subjects.filter(
+      (s) =>
+        s.subjectCode.toLowerCase().includes(q) ||
+        s.subjectName.toLowerCase().includes(q)
+    );
+  }, [data, query]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!data || data.subjects.length === 0) {
+    return (
+      <div className="text-center py-20 text-muted-foreground">
+        No official attendance data available
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Cutoff info */}
+      {data.subjects[0]?.cutoffDate && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20">
+          <Calendar className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs text-primary">
+            Official data till {data.subjects[0].cutoffDate}
+          </span>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search subjects..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-9 bg-card border-border"
+        />
+      </div>
+
+      {/* Subject List */}
+      {filteredSubjects.length === 0 ? (
+        <div className="text-center py-10 text-muted-foreground text-sm">
+          No subjects match your search
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {filteredSubjects.map((subject) => (
+            <button
+              key={subject.subjectId}
+              onClick={() => navigate(`/subject-analysis/${subject.subjectCode}`)}
+              className="w-full text-left rounded-2xl bg-card border border-border p-4 hover:bg-accent/50 transition-colors active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div
+                      className="w-1 h-8 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: subject.color }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm truncate">
+                        {subject.subjectName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {subject.subjectCode}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 mt-2.5 ml-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Users className="w-3.5 h-3.5" />
+                      <span>{subject.totalStudents}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          getPercentageColor(subject.averageAttendancePercentage)
+                        )}
+                      >
+                        {subject.averageAttendancePercentage.toFixed(1)}% avg
+                      </span>
+                    </div>
+                    <div className="flex-1 ml-1">
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={cn("h-full rounded-full transition-all", getBarColor(subject.averageAttendancePercentage))}
+                          style={{ width: `${Math.min(100, subject.averageAttendancePercentage)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MyAnalyticsSection() {
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [overallData, setOverallData] = useState<AllSemestersData | null>(null);
@@ -39,12 +208,10 @@ export default function Analytics() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSemester, setIsLoadingSemester] = useState(false);
 
-  // Fetch semesters and overall analytics on mount
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch semesters
         const semestersResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.ANALYTICS_SEMESTERS, {
           method: "GET",
         });
@@ -59,9 +226,8 @@ export default function Analytics() {
           setSemesters(formattedSemesters);
         }
 
-        // Fetch overall analytics with timeout (increased since we use DB view + cache)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         try {
           const analyticsResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.ANALYTICS, {
@@ -94,28 +260,21 @@ export default function Analytics() {
     };
 
     fetchData();
-
-    // Track analytics page view
-    trackAppEvent('analytics_view', {
-      timestamp: new Date().toISOString(),
-    }).catch(console.error);
   }, []);
 
-  // Fetch specific semester analytics when selected
   useEffect(() => {
     if (!selectedSemester || !overallData) return;
 
     const fetchSemesterData = async () => {
       setIsLoadingSemester(true);
       try {
-        // Find semester ID from overall data
         const semester = overallData.semesters.find(
           s => s.label === selectedSemester.label
         );
 
         if (semester) {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
 
           try {
             const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.ANALYTICS_SEMESTER(semester.id.toString()), {
@@ -151,7 +310,6 @@ export default function Analytics() {
     fetchSemesterData();
   }, [selectedSemester, overallData]);
 
-  // Get current stats based on selection
   const stats = useMemo(() => {
     if (!overallData) {
       return {
@@ -172,7 +330,6 @@ export default function Analytics() {
     return overallData.overall;
   }, [selectedSemester, overallData, semesterData]);
 
-  // Get semester-wise data for display
   const semesterWiseData = useMemo(() => {
     if (!overallData) return [];
     return overallData.semesterWise;
@@ -180,25 +337,15 @@ export default function Analytics() {
 
   if (isLoading) {
     return (
-
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
-
     );
   }
 
   return (
-
     <div className="space-y-5">
-      {/* Header with Semester Selector */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold">Analytics</h1>
-          <p className="text-sm text-muted-foreground">
-            {selectedSemester ? `${selectedSemester.label} statistics` : "Overall attendance statistics"}
-          </p>
-        </div>
+      <div className="flex items-end justify-end">
         <SemesterSelector
           selectedSemester={selectedSemester}
           onSemesterChange={setSelectedSemester}
@@ -270,7 +417,7 @@ export default function Analytics() {
             </div>
           </div>
 
-          {/* Semester-wise Stats - Only show when viewing all semesters */}
+          {/* Semester-wise Stats */}
           {!selectedSemester && semesterWiseData.length > 0 && (
             <div className="bg-card rounded-xl p-4 border border-border">
               <h3 className="font-semibold mb-1">Attendance by Semester</h3>
@@ -381,6 +528,56 @@ export default function Analytics() {
         </>
       )}
     </div>
+  );
+}
 
+export default function Analytics() {
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>("my");
+
+  useEffect(() => {
+    trackAppEvent('analytics_view', {
+      timestamp: new Date().toISOString(),
+    }).catch(console.error);
+  }, []);
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-bold">Analytics</h1>
+        <p className="text-sm text-muted-foreground">
+          {activeTab === "my" ? "Your attendance statistics" : "Official institute subject data"}
+        </p>
+      </div>
+
+      {/* Tab Toggle */}
+      <div className="flex rounded-xl bg-muted p-1 gap-1">
+        <button
+          onClick={() => setActiveTab("my")}
+          className={cn(
+            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+            activeTab === "my"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          My Analytics
+        </button>
+        <button
+          onClick={() => setActiveTab("subjects")}
+          className={cn(
+            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+            activeTab === "subjects"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          Subject Analysis
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "my" ? <MyAnalyticsSection /> : <SubjectAnalysisSection />}
+    </div>
   );
 }
