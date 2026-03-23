@@ -112,10 +112,10 @@ function SubjectAnalysisSection() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {/* Cutoff info */}
       {data.subjects[0]?.cutoffDate && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
           <Calendar className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs text-primary">
             Official data till {data.subjects[0].cutoffDate}
