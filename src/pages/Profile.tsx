@@ -520,7 +520,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <ContributorsSection className="space-y-2 border-t border-white/[0.08] px-3 pb-2 pt-3 dark:border-white/[0.06]" />
+        <ContributorsSection className="space-y-2" />
       </div>
 
       {/* Sleep Duration Modal */}
