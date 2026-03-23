@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, BarChart3, ShieldCheck, Bell, Megaphone, ArrowRight, Zap, Gift, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
+import confetti from "canvas-confetti";
 
 const POPUP_STORAGE_PREFIX = "aio_popup_";
 
@@ -115,6 +116,41 @@ export function ServerPopup() {
   const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
 
+  const fireConfetti = useCallback(() => {
+    const duration = 10;
+    const end = Date.now() + duration;
+
+    const burst = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"],
+        zIndex: 9999,
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"],
+        zIndex: 9999,
+      });
+      if (Date.now() < end) requestAnimationFrame(burst);
+    };
+
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"],
+      zIndex: 9999,
+    });
+
+    burst();
+  }, []);
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -136,7 +172,10 @@ export function ServerPopup() {
           setPopup(toShow);
           timer = setTimeout(() => {
             setOpen(true);
-            setTimeout(() => setIsVisible(true), 50);
+            setTimeout(() => {
+              setIsVisible(true);
+              fireConfetti();
+            }, 50);
           }, 600);
         }
       } catch {
@@ -148,7 +187,7 @@ export function ServerPopup() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [fireConfetti]);
 
   const close = () => {
     if (popup) markPopupShown(popup);
