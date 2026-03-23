@@ -3,6 +3,7 @@ import { Lightbulb, Users, Loader2, ChevronDown, ChevronUp, Crown } from "lucide
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Contributor {
   id: number;
@@ -12,7 +13,11 @@ interface Contributor {
 
 const INITIAL_DISPLAY_COUNT = 6;
 
-export function ContributorsSection() {
+type ContributorsSectionProps = {
+  className?: string;
+};
+
+export function ContributorsSection({ className }: ContributorsSectionProps) {
   const [ideaContributors, setIdeaContributors] = useState<Contributor[]>([]);
   const [testers, setTesters] = useState<Contributor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +56,7 @@ export function ContributorsSection() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-2.5">
+      <div className={cn("flex items-center justify-center py-2.5", className)}>
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
       </div>
     );
@@ -71,7 +76,7 @@ export function ContributorsSection() {
   const hasMoreTesters = testers.length > INITIAL_DISPLAY_COUNT;
 
   return (
-    <div className="space-y-3 pt-2">
+    <div className={cn("space-y-3 pt-2", className)}>
       <div className="flex items-center justify-center gap-2 mb-2 opacity-60">
         <div className="h-px w-12 bg-gradient-to-r from-transparent to-white/30" />
         <span className="text-[10px] font-medium uppercase tracking-widest text-white/50">Hall of Fame</span>
