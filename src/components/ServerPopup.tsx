@@ -5,7 +5,11 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, BarChart3, ShieldCheck, Bell, Megaphone, ArrowRight, Zap, Gift, Search } from "lucide-react";
+import {
+  Sparkles, BarChart3, ShieldCheck, Bell, Megaphone, ArrowRight,
+  Zap, Gift, Search, Star, Rocket, PartyPopper, Info, CheckCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import confetti from "canvas-confetti";
@@ -21,6 +25,7 @@ interface PopupFeature {
 interface PopupAction {
   label: string;
   route: string;
+  icon?: string;
 }
 
 interface ServerPopupData {
@@ -28,25 +33,36 @@ interface ServerPopupData {
   enabled: boolean;
   type: "once" | "daily" | "weekly" | string;
   date: string | null;
+  icon?: string;
   title: string;
   subtitle?: string;
   features: PopupFeature[];
   primaryAction: PopupAction | null;
   dismissLabel: string | null;
   showDismiss?: boolean;
+  confetti?: boolean;
 }
 
-function getIcon(name: string) {
-  switch (name) {
-    case "chart": return BarChart3;
-    case "shield": return ShieldCheck;
-    case "bell": return Bell;
-    case "megaphone": return Megaphone;
-    case "zap": return Zap;
-    case "gift": return Gift;
-    case "search": return Search;
-    default: return Sparkles;
-  }
+const ICON_MAP: Record<string, LucideIcon> = {
+  sparkles: Sparkles,
+  chart: BarChart3,
+  shield: ShieldCheck,
+  bell: Bell,
+  megaphone: Megaphone,
+  zap: Zap,
+  gift: Gift,
+  search: Search,
+  star: Star,
+  rocket: Rocket,
+  party: PartyPopper,
+  info: Info,
+  check: CheckCircle,
+  arrow: ArrowRight,
+};
+
+function getIcon(name?: string): LucideIcon {
+  if (!name) return Sparkles;
+  return ICON_MAP[name] || Sparkles;
 }
 
 function getTodayStr(): string {
@@ -117,7 +133,7 @@ export function ServerPopup() {
   const navigate = useNavigate();
 
   const fireConfetti = useCallback(() => {
-    const duration = 10;
+    const duration = 1500;
     const end = Date.now() + duration;
 
     const burst = () => {
@@ -174,7 +190,7 @@ export function ServerPopup() {
             setOpen(true);
             setTimeout(() => {
               setIsVisible(true);
-              fireConfetti();
+              if (toShow.confetti !== false) fireConfetti();
             }, 50);
           }, 600);
         }
@@ -209,6 +225,10 @@ export function ServerPopup() {
   if (!popup) return null;
 
   const showDismiss = popup.showDismiss !== false && popup.dismissLabel !== null;
+  const HeaderIcon = getIcon(popup.icon);
+  const ActionIcon = popup.primaryAction?.icon
+    ? getIcon(popup.primaryAction.icon)
+    : ArrowRight;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && (showDismiss ? close() : undefined)}>
@@ -232,7 +252,7 @@ export function ServerPopup() {
 
           <div className="relative flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-primary/15 backdrop-blur-sm border border-primary/20">
-              <Sparkles className="h-6 w-6 text-primary" />
+              <HeaderIcon className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h2 className="text-lg font-bold tracking-tight">{popup.title}</h2>
@@ -282,7 +302,7 @@ export function ServerPopup() {
               onClick={handlePrimary}
             >
               {popup.primaryAction.label}
-              <ArrowRight className="h-4 w-4" />
+              <ActionIcon className="h-4 w-4" />
             </Button>
           )}
           {showDismiss && (

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
-import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2, Search, ChevronRight, Calendar } from "lucide-react";
+import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2, Search, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { SemesterSelector, Semester } from "@/components/filters/SemesterSelector";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,7 @@ function getBarColor(pct: number): string {
   return "bg-red-500";
 }
 
-function SubjectAnalysisSection() {
+function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | null) => void }) {
   const navigate = useNavigate();
   const [data, setData] = useState<SubjectAnalysisData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,6 +74,7 @@ function SubjectAnalysisSection() {
         if (response.ok) {
           const result = await response.json();
           setData(result);
+          onCutoffDate?.(result.subjects?.[0]?.cutoffDate ?? null);
         }
       } catch (err) {
         console.error("Failed to fetch subject analysis:", err);
@@ -82,7 +83,7 @@ function SubjectAnalysisSection() {
       }
     };
     fetchData();
-  }, []);
+  }, [onCutoffDate]);
 
   const filteredSubjects = useMemo(() => {
     if (!data) return [];
@@ -113,16 +114,6 @@ function SubjectAnalysisSection() {
 
   return (
     <div className="space-y-2.5">
-      {/* Cutoff info */}
-      {data.subjects[0]?.cutoffDate && (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
-          <Calendar className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs text-primary">
-            Official data till {data.subjects[0].cutoffDate}
-          </span>
-        </div>
-      )}
-
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -145,11 +136,11 @@ function SubjectAnalysisSection() {
             <button
               key={subject.subjectId}
               onClick={() => navigate(`/subject-analysis/${subject.subjectCode}`)}
-              className="w-full text-left rounded-2xl bg-card border border-border p-4 hover:bg-accent/50 transition-colors active:scale-[0.98]"
+              className="w-full text-left rounded-2xl bg-card border border-border px-4 py-3 active:scale-[0.98]"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-0.5">
                     <div
                       className="w-1 h-8 rounded-full flex-shrink-0"
                       style={{ backgroundColor: subject.color }}
@@ -164,7 +155,7 @@ function SubjectAnalysisSection() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 mt-2.5 ml-3">
+                  <div className="flex items-center gap-4 mt-2 ml-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Users className="w-3.5 h-3.5" />
                       <span>{subject.totalStudents}</span>
@@ -431,7 +422,7 @@ function MyAnalyticsSection() {
                       const sem = semesters.find(s => s.label === item.semester);
                       if (sem) setSelectedSemester(sem);
                     }}
-                    className="bg-background rounded-lg p-3 border border-border text-left hover:border-primary/50 transition-colors"
+                    className="bg-background rounded-lg p-3 border border-border text-left"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs text-muted-foreground font-medium">{item.semester}</span>
@@ -533,6 +524,7 @@ function MyAnalyticsSection() {
 
 export default function Analytics() {
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("subjects");
+  const [cutoffDate, setCutoffDate] = useState<string | null>(null);
 
   useEffect(() => {
     trackAppEvent('analytics_view', {
@@ -541,24 +533,31 @@ export default function Analytics() {
   }, []);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold">Analytics</h1>
-        <p className="text-sm text-muted-foreground">
-          {activeTab === "my" ? "Overall attendance statistics" : "Official institute subject data"}
-        </p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-bold">Analytics</h1>
+          <p className="text-sm text-muted-foreground">
+            {activeTab === "my" ? "Overall attendance statistics" : "Official institute subject data"}
+          </p>
+        </div>
+        {activeTab === "subjects" && cutoffDate && (
+          <span className="text-[11px] text-primary bg-primary/10 border border-primary/20 rounded-lg px-2.5 py-1 whitespace-nowrap mt-0.5 font-medium">
+            Till {new Date(cutoffDate + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
+        )}
       </div>
 
       {/* Tab Toggle */}
-      <div className="flex rounded-xl bg-muted p-1 gap-1">
+      <div className="flex rounded-xl bg-muted p-0.5 gap-0.5">
         <button
           onClick={() => setActiveTab("my")}
           className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+            "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium transition-all",
             activeTab === "my"
               ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground"
           )}
         >
           General
@@ -566,10 +565,10 @@ export default function Analytics() {
         <button
           onClick={() => setActiveTab("subjects")}
           className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+            "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium transition-all",
             activeTab === "subjects"
               ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground"
           )}
         >
           Subject Analysis
@@ -577,7 +576,7 @@ export default function Analytics() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === "my" ? <MyAnalyticsSection /> : <SubjectAnalysisSection />}
+      {activeTab === "my" ? <MyAnalyticsSection /> : <SubjectAnalysisSection onCutoffDate={setCutoffDate} />}
     </div>
   );
 }
