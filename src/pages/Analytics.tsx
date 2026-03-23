@@ -543,20 +543,27 @@ export default function Analytics() {
           </p>
         </div>
         {activeTab === "subjects" && cutoffDate && (
-          <span className="text-[11px] text-primary bg-primary/10 border border-primary/20 rounded-lg px-2.5 py-1 whitespace-nowrap mt-0.5 font-medium">
+          <span className="text-sm text-primary bg-primary/10 border border-primary/20 rounded-xl px-3.5 py-1.5 whitespace-nowrap mt-0.5 font-semibold">
             Till {new Date(cutoffDate + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
           </span>
         )}
       </div>
 
       {/* Tab Toggle */}
-      <div className="flex rounded-xl bg-muted p-0.5 gap-0.5">
+      <div className="relative flex rounded-2xl p-1 gap-1 border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+        <div
+          className="absolute top-1 bottom-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+          style={{
+            width: 'calc((100% - 12px) / 2)',
+            left: activeTab === "my" ? '4px' : 'calc(50% + 2px)',
+          }}
+        />
         <button
           onClick={() => setActiveTab("my")}
           className={cn(
-            "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium transition-all",
+            "flex-1 py-1.5 px-3 rounded-xl text-sm font-medium transition-colors duration-200 relative z-10",
             activeTab === "my"
-              ? "bg-background text-foreground shadow-sm"
+              ? "text-foreground"
               : "text-muted-foreground"
           )}
         >
@@ -565,9 +572,9 @@ export default function Analytics() {
         <button
           onClick={() => setActiveTab("subjects")}
           className={cn(
-            "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium transition-all",
+            "flex-1 py-1.5 px-3 rounded-xl text-sm font-medium transition-colors duration-200 relative z-10",
             activeTab === "subjects"
-              ? "bg-background text-foreground shadow-sm"
+              ? "text-foreground"
               : "text-muted-foreground"
           )}
         >
