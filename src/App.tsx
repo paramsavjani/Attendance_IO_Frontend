@@ -18,7 +18,6 @@ import Profile from "./pages/Profile";
 import AppAnalyticsPage from "./pages/AppAnalyticsPage";
 import Search from "./pages/Search";
 import Analytics from "./pages/Analytics";
-import SubjectAnalysis from "./pages/SubjectAnalysis";
 import SubjectAnalysisDetail from "./pages/SubjectAnalysisDetail";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
 import Intro from "./pages/Intro";
@@ -442,14 +441,6 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <Analytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subject-analysis"
-            element={
-              <ProtectedRoute>
-                <SubjectAnalysis />
               </ProtectedRoute>
             }
           />
