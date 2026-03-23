@@ -184,7 +184,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           transform: `translateY(${pullDistance}px)`,
         }}
       >
-        <div className="p-4 max-w-lg mx-auto flex-1 flex flex-col overflow-hidden w-full">
+        <div className="p-4 max-w-lg mx-auto flex-1 flex min-w-0 flex-col overflow-hidden w-full">
           {children}
         </div>
       </main>
