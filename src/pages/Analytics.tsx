@@ -532,7 +532,7 @@ function MyAnalyticsSection() {
 }
 
 export default function Analytics() {
-  const [activeTab, setActiveTab] = useState<AnalyticsTab>("my");
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>("subjects");
 
   useEffect(() => {
     trackAppEvent('analytics_view', {
@@ -546,7 +546,7 @@ export default function Analytics() {
       <div>
         <h1 className="text-xl font-bold">Analytics</h1>
         <p className="text-sm text-muted-foreground">
-          {activeTab === "my" ? "Your attendance statistics" : "Official institute subject data"}
+          {activeTab === "my" ? "Overall attendance statistics" : "Official institute subject data"}
         </p>
       </div>
 
@@ -561,7 +561,7 @@ export default function Analytics() {
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          My Analytics
+          General
         </button>
         <button
           onClick={() => setActiveTab("subjects")}
