@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
+import { Search as SearchIcon, User, ChevronLeft, ChevronDown, BarChart3 } from "lucide-react";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -57,6 +58,7 @@ interface StudentAttendanceData {
 
 
 export default function Search() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const studentIdParam = searchParams.get("studentId");
 
@@ -397,6 +399,12 @@ export default function Search() {
           </div>
         ) : (
           <>
+            {/* Official Data Badge */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <div className="w-2 h-2 rounded-full bg-blue-400" />
+              <span className="text-xs font-medium text-blue-400">Official Institute Attendance</span>
+            </div>
+
             {/* Student Profile Card with Overall Attendance */}
             {overallAttendance && (
               <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
@@ -623,6 +631,21 @@ export default function Search() {
           className="pl-12 py-6 text-base rounded-xl bg-card border-border"
         />
       </div>
+
+      {/* Subject Analysis Link */}
+      <button
+        onClick={() => navigate("/subject-analysis")}
+        className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent/50 transition-colors"
+      >
+        <div className="p-2 rounded-lg bg-primary/10">
+          <BarChart3 className="w-4 h-4 text-primary" />
+        </div>
+        <div className="text-left flex-1">
+          <p className="text-sm font-medium">Subject Analysis</p>
+          <p className="text-xs text-muted-foreground">View attendance stats for all subjects</p>
+        </div>
+        <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90" />
+      </button>
 
       {/* Results */}
       {query.length === 0 && (
