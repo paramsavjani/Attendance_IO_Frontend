@@ -352,10 +352,13 @@ export default function Profile() {
     { id: 'suggestion' as const, label: 'Suggestion', icon: Lightbulb, color: 'text-yellow-500' },
   ];
 
-  const essentialsRow =
-    "group flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors touch-manipulation hover:bg-white/[0.06] active:bg-white/[0.08] dark:hover:bg-neutral-800/90 dark:active:bg-neutral-800";
-  const appTile =
-    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-white/[0.1] bg-white/[0.05] px-3 py-2.5 text-left transition-all hover:border-white/18 hover:bg-white/[0.09] active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.08]";
+  /** Simple bordered actions — one flat list: Subjects + 8 grid buttons */
+  const profileGridBtn =
+    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-white/[0.12] bg-white/[0.03] px-3 py-2.5 text-left transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]";
+  const profileSubjectsBtn =
+    "group flex w-full items-center gap-3.5 rounded-xl border border-white/[0.12] bg-white/[0.03] px-4 py-3.5 text-left transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99] touch-manipulation dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]";
+  const profileLogoutBtn =
+    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-red-500/35 bg-red-500/[0.06] px-3 py-2.5 text-left transition-all hover:border-red-500/50 hover:bg-red-500/12 active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-red-500/40 dark:bg-red-500/10 dark:hover:bg-red-500/15";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 pb-6">
@@ -403,79 +406,68 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Settings — list (5 essentials + application) */}
-      <div className="relative shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] shadow-[0_8px_32px_-12px_rgba(0,0,0,0.45)] backdrop-blur-xl dark:border-white/[0.08] dark:from-neutral-950 dark:via-neutral-950/95 dark:to-black dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.85)]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10" />
+      {/* Settings — Subjects first, then 8 bordered buttons (no section headings / nested boxes) */}
+      <div className="relative shrink-0 overflow-hidden rounded-xl">
+        
 
-        {/* Top 5 — darker inset panel in dark theme */}
-        <div className="border-b border-white/[0.08] bg-white/[0.02] px-1 pt-2 pb-1 dark:border-white/[0.06] dark:bg-black/50">
-          <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40 dark:text-white/50">
-            Essentials
-          </p>
-          <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03] dark:border-white/[0.08] dark:bg-neutral-950 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-            <button type="button" onClick={() => setShowSubjectEditor(true)} className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]")}>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400 shadow-inner ring-1 ring-blue-500/25 transition-transform group-active:scale-95 dark:bg-blue-500/10 dark:ring-blue-500/20">
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Subjects</p>
-                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">{enrolledSubjects.length} enrolled · edit your list</p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
-            </button>
+        <div className="flex flex-col gap-2 p-0">
+          <button type="button" onClick={() => setShowSubjectEditor(true)} className={profileSubjectsBtn}>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400 transition-transform group-active:scale-95 dark:bg-blue-500/10">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Subjects</p>
+              <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">{enrolledSubjects.length} enrolled · edit your list</p>
+            </div>
+            <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+          </button>
 
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               disabled={enrolledSubjects.length === 0}
               onClick={() => enrolledSubjects.length > 0 && setShowCriteriaModal(true)}
-              className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]", enrolledSubjects.length === 0 && "cursor-not-allowed opacity-45 hover:bg-transparent active:bg-transparent dark:hover:bg-transparent dark:active:bg-transparent")}
+              className={cn(
+                profileGridBtn,
+                enrolledSubjects.length === 0 &&
+                  "cursor-not-allowed opacity-45 hover:border-white/[0.12] hover:bg-white/[0.03] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04]"
+              )}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-400 shadow-inner ring-1 ring-violet-500/25 transition-transform group-active:scale-95 dark:bg-violet-500/10 dark:ring-violet-500/20">
-                <Target className="h-5 w-5" />
+              <div className="rounded-lg bg-violet-500/15 p-1.5 text-violet-400 dark:bg-violet-500/12">
+                <Target className="h-3.5 w-3.5" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Attendance criteria</p>
-                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">Minimum % per subject</p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+              <span className="text-[11px] font-semibold text-white">Criteria</span>
             </button>
-
             <button
               type="button"
               disabled={enrolledSubjects.length === 0}
               onClick={() => enrolledSubjects.length > 0 && setShowClassroomLocationModal(true)}
-              className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]", enrolledSubjects.length === 0 && "cursor-not-allowed opacity-45 hover:bg-transparent active:bg-transparent dark:hover:bg-transparent dark:active:bg-transparent")}
+              className={cn(
+                profileGridBtn,
+                enrolledSubjects.length === 0 &&
+                  "cursor-not-allowed opacity-45 hover:border-white/[0.12] hover:bg-white/[0.03] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04]"
+              )}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 shadow-inner ring-1 ring-emerald-500/25 transition-transform group-active:scale-95 dark:bg-emerald-500/10 dark:ring-emerald-500/20">
-                <MapPin className="h-5 w-5" />
+              <div className="rounded-lg bg-emerald-500/15 p-1.5 text-emerald-400 dark:bg-emerald-500/12">
+                <MapPin className="h-3.5 w-3.5" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Class locations</p>
-                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">Where you sit for each subject</p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+              <span className="text-[11px] font-semibold text-white">Locations</span>
             </button>
-
             <button
               type="button"
               onClick={() => {
                 setEditingSleepHours(sleepDuration?.toString() || "8");
                 setIsEditingSleepDuration(true);
               }}
-              className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]")}
+              className={profileGridBtn}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-400 shadow-inner ring-1 ring-indigo-500/25 transition-transform group-active:scale-95 dark:bg-indigo-500/10 dark:ring-indigo-500/20">
-                <Moon className="h-5 w-5" />
+              <div className="rounded-lg bg-indigo-500/15 p-1.5 text-indigo-400 dark:bg-indigo-500/12">
+                <Moon className="h-3.5 w-3.5" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Sleep</p>
-                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">
-                  {isLoadingSleepDuration ? "Loading…" : `${sleepDuration ?? 8} hours per night · rest reminders`}
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+              <span className="text-[11px] font-semibold text-white">
+                {isLoadingSleepDuration ? "Sleep" : `${sleepDuration ?? 8}h sleep`}
+              </span>
             </button>
-
             <button
               type="button"
               onClick={() => {
@@ -483,28 +475,15 @@ export default function Profile() {
                 setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
                 setShowNotificationPreferences(true);
               }}
-              className={essentialsRow}
+              className={profileGridBtn}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 shadow-inner ring-1 ring-amber-500/25 transition-transform group-active:scale-95 dark:bg-amber-500/10 dark:ring-amber-500/20">
-                <Bell className="h-5 w-5" />
+              <div className="rounded-lg bg-amber-500/15 p-1.5 text-amber-400 dark:bg-amber-500/12">
+                <Bell className="h-3.5 w-3.5" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Notifications</p>
-                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">Daily summary &amp; after-class nudges</p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+              <span className="text-[11px] font-semibold text-white">Notifications</span>
             </button>
-          </div>
-        </div>
-
-        {/* Application — 2-column grid (as before) */}
-        <div className="border-t border-white/[0.06] px-3 pb-3 pt-3 dark:border-white/[0.06]">
-          <p className="mb-2.5 px-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40 dark:text-white/45">
-            Application
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => navigate("/app-analytics")} className={appTile}>
-              <div className="rounded-lg bg-pink-500/15 p-1.5 text-pink-400 ring-1 ring-inset ring-pink-500/25 dark:bg-pink-500/12">
+            <button type="button" onClick={() => navigate("/app-analytics")} className={profileGridBtn}>
+              <div className="rounded-lg bg-pink-500/15 p-1.5 text-pink-400 dark:bg-pink-500/12">
                 <BarChart3 className="h-3.5 w-3.5" />
               </div>
               <span className="text-[11px] font-semibold text-white">Analytics</span>
@@ -519,25 +498,21 @@ export default function Profile() {
                   toast.error("Could not open review. Please try again.");
                 }
               }}
-              className={appTile}
+              className={profileGridBtn}
             >
-              <div className="rounded-lg bg-yellow-500/15 p-1.5 text-yellow-400 ring-1 ring-inset ring-yellow-500/25 dark:bg-yellow-500/12">
+              <div className="rounded-lg bg-yellow-500/15 p-1.5 text-yellow-400 dark:bg-yellow-500/12">
                 <Star className="h-3.5 w-3.5" />
               </div>
               <span className="text-[11px] font-semibold text-white">Rate us</span>
             </button>
-            <button type="button" onClick={() => setShowFeedbackModal(true)} className={appTile}>
-              <div className="rounded-lg bg-cyan-500/15 p-1.5 text-cyan-400 ring-1 ring-inset ring-cyan-500/25 dark:bg-cyan-500/12">
+            <button type="button" onClick={() => setShowFeedbackModal(true)} className={profileGridBtn}>
+              <div className="rounded-lg bg-cyan-500/15 p-1.5 text-cyan-400 dark:bg-cyan-500/12">
                 <MessageSquare className="h-3.5 w-3.5" />
               </div>
               <span className="text-[11px] font-semibold text-white">Feedback</span>
             </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3 py-2.5 text-left transition-all hover:border-red-500/45 hover:bg-red-500/12 active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-red-500/35 dark:bg-red-500/10"
-            >
-              <div className="rounded-lg bg-red-500/20 p-1.5 text-red-400 ring-1 ring-inset ring-red-500/30">
+            <button type="button" onClick={handleLogout} className={profileLogoutBtn}>
+              <div className="rounded-lg bg-red-500/25 p-1.5 text-red-400">
                 <LogOut className="h-3.5 w-3.5" />
               </div>
               <span className="text-[11px] font-bold text-red-400">Log out</span>
@@ -545,8 +520,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Hall of Fame — directly under Application; hidden if no contributors */}
-        <ContributorsSection className="space-y-2 border-t border-white/[0.06] px-2 pb-1 pt-3 dark:border-white/[0.06]" />
+        <ContributorsSection className="space-y-2 border-t border-white/[0.08] px-3 pb-2 pt-3 dark:border-white/[0.06]" />
       </div>
 
       {/* Sleep Duration Modal */}
