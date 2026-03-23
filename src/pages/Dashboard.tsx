@@ -6,13 +6,30 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO, setHours, setMinutes } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
-import { ChevronLeft, ChevronRight, CalendarSearch, Sun, Sunrise, Loader2, Check, X, Ban, BookOpen, Laptop, GraduationCap, Plus, Trash2, Moon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarSearch,
+  Sun,
+  Sunrise,
+  Loader2,
+  Check,
+  X,
+  Ban,
+  BookOpen,
+  Laptop,
+  GraduationCap,
+  Plus,
+  Trash2,
+  Moon,
+  Info,
+  ShieldCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
-import { Shield } from "lucide-react";
 import { TimetableSlot } from "@/types/attendance";
 import { toast } from "sonner";
 import {
@@ -73,7 +90,22 @@ const DOUBLE_BACK_PRESS_MS = 1000;
 
 export default function Dashboard() {
   const { student } = useAuth();
-  const { enrolledSubjects, timetable, subjectStats, subjectStatsToday, subjectMinAttendance, todayAttendance, markAttendance, setSubjectMin, fetchAttendanceForDate, isLoadingAttendance, isLoadingTimetable, savingState, attendanceIds } = useAttendance();
+  const {
+    enrolledSubjects,
+    timetable,
+    subjectStats,
+    subjectStatsToday,
+    subjectMinAttendance,
+    todayAttendance,
+    markAttendance,
+    setSubjectMin,
+    fetchAttendanceForDate,
+    isLoadingAttendance,
+    isLoadingTimetable,
+    savingState,
+    attendanceIds,
+    trackingOfficialCutoffDate,
+  } = useAttendance();
   const lastBackPressAt = useRef<number | null>(null);
 
   // On home (Dashboard) only: double back button closes the app
@@ -773,15 +805,15 @@ export default function Dashboard() {
   } | null>(null);
 
   const [activeTab, setActiveTab] = useState("schedule");
+  /** Total (your tracking) vs Official (institute) — only used inside Subjects tab */
+  const [subjectsAttendanceView, setSubjectsAttendanceView] = useState<"total" | "official">("total");
 
-  // Official vs Total view
-  const [dashboardView, setDashboardView] = useState<"total" | "official">("total");
   const [officialStats, setOfficialStats] = useState<{ subjectId: string; present: number; absent: number; total: number; percentage: number }[]>([]);
   const [officialCutoffDate, setOfficialCutoffDate] = useState<string | null>(null);
   const [isLoadingOfficial, setIsLoadingOfficial] = useState(false);
 
   useEffect(() => {
-    if (dashboardView !== "official") return;
+    if (activeTab !== "subjects" || subjectsAttendanceView !== "official") return;
     const fetchOfficial = async () => {
       setIsLoadingOfficial(true);
       try {
@@ -798,7 +830,26 @@ export default function Dashboard() {
       }
     };
     fetchOfficial();
-  }, [dashboardView]);
+  }, [activeTab, subjectsAttendanceView]);
+
+  const officialBySubjectId = useMemo(() => {
+    const m = new Map<string, (typeof officialStats)[number]>();
+    officialStats.forEach((s) => m.set(s.subjectId, s));
+    return m;
+  }, [officialStats]);
+
+  const formatCutoffDisplay = useCallback((iso: string | null | undefined) => {
+    if (iso == null || String(iso).trim() === "") return null;
+    const d = String(iso).slice(0, 10);
+    try {
+      return format(parseISO(d), "MMM d, yyyy");
+    } catch {
+      return d;
+    }
+  }, []);
+
+  const trackingCutoffLabel = formatCutoffDisplay(trackingOfficialCutoffDate);
+  const instituteCutoffLabel = formatCutoffDisplay(officialCutoffDate ?? trackingOfficialCutoffDate);
 
   // Fetch attendance when date changes
   useEffect(() => {
@@ -962,7 +1013,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-      <div className="h-full flex flex-col overflow-hidden pb-2">
+      <div className="flex h-full min-w-0 flex-col overflow-hidden pb-2">
         {/* Header - matching timetable style */}
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -999,102 +1050,30 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Official / Total View Toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary/30 dark:bg-neutral-800/30 mb-2">
-          <button
-            onClick={() => setDashboardView("total")}
-            className={cn(
-              "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all",
-              dashboardView === "total"
-                ? "bg-white/80 dark:bg-white/10 text-foreground shadow-sm"
-                : "text-muted-foreground/70 hover:text-foreground"
-            )}
-          >
-            Total Attendance
-          </button>
-          <button
-            onClick={() => setDashboardView("official")}
-            className={cn(
-              "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5",
-              dashboardView === "official"
-                ? "bg-white/80 dark:bg-white/10 text-foreground shadow-sm"
-                : "text-muted-foreground/70 hover:text-foreground"
-            )}
-          >
-            <Shield className="w-3 h-3" />
-            Official
-          </button>
-        </div>
-
-        {dashboardView === "official" ? (
-          <div className="flex-1 overflow-y-auto space-y-3">
-            {officialCutoffDate && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                <div className="w-2 h-2 rounded-full bg-blue-400" />
-                <span className="text-xs font-medium text-blue-400">
-                  Official Institute Attendance (till {officialCutoffDate})
-                </span>
-              </div>
-            )}
-            {isLoadingOfficial ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              </div>
-            ) : officialStats.length === 0 ? (
-              <div className="text-center py-20 text-muted-foreground">
-                <Shield className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">No official attendance data available</p>
-                <p className="text-xs mt-1">Data will appear once the institute publishes it</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {officialStats.map((stat) => {
-                  const subject = enrolledSubjects.find(s => s.id === stat.subjectId);
-                  const percentage = stat.percentage || (stat.total > 0 ? (stat.present * 100 / stat.total) : 0);
-                  const minRequired = subject ? (subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75) : 75;
-                  return (
-                    <SubjectCard
-                      key={stat.subjectId}
-                      name={subject?.name || `Subject ${stat.subjectId}`}
-                      code={subject?.code}
-                      color={subject?.color || "220 70% 55%"}
-                      present={stat.present}
-                      absent={stat.absent}
-                      total={stat.total}
-                      minRequired={minRequired}
-                      percentage={percentage}
-                      hideBunkableInfo
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0 flex-1 flex flex-col overflow-hidden">
           <TabsList className="relative grid w-full grid-cols-3 p-1 gap-1 h-11 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
             <div
               className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
               style={{
-                width: 'calc((100% - 4px) / 3)',
-                transform: `translateX(${activeTab === 'schedule' ? '0%' : activeTab === 'lab-tutorial' ? '100%' : '200%'})`
+                width: "calc((100% - 4px) / 3)",
+                transform: `translateX(${activeTab === "schedule" ? "0%" : activeTab === "lab-tutorial" ? "100%" : "200%"})`
               }}
             />
             <TabsTrigger
               value="schedule"
-              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
+              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
             >
               Schedule
             </TabsTrigger>
             <TabsTrigger
               value="lab-tutorial"
-              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
+              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
             >
               Lab & Tut
             </TabsTrigger>
             <TabsTrigger
               value="subjects"
-              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground"
+              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
             >
               Subjects
             </TabsTrigger>
@@ -1102,7 +1081,7 @@ export default function Dashboard() {
 
           <TabsContent
             value="schedule"
-            className="mt-3 flex-1 overflow-y-auto space-y-3 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200"
+            className="mt-3 min-w-0 flex-1 overflow-y-auto overflow-x-hidden space-y-3 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200"
             onTouchStart={swipeHandlers.onTouchStart}
             onTouchMove={swipeHandlers.onTouchMove}
             onTouchEnd={swipeHandlers.onTouchEnd}
@@ -1510,7 +1489,7 @@ export default function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="lab-tutorial" className="mt-4 flex-1 overflow-y-auto space-y-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200">
+          <TabsContent value="lab-tutorial" className="mt-4 min-w-0 flex-1 overflow-y-auto overflow-x-hidden space-y-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200">
             {enrolledSubjects.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
@@ -1584,7 +1563,7 @@ export default function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="subjects" className="mt-4 flex-1 overflow-y-auto space-y-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200">
+          <TabsContent value="subjects" className="mt-4 min-w-0 flex-1 overflow-y-auto overflow-x-hidden space-y-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200">
             {enrolledSubjects.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
@@ -1594,39 +1573,221 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground/70 mt-0.5">Enroll in subjects to see them here</p>
               </div>
             ) : (
-              enrolledSubjects.map((subject) => {
-                // Always use today's stats for Subjects tab, regardless of selected date
-                const stats = subjectStatsToday[subject.id] || {
-                  subjectId: subject.id,
-                  present: 0,
-                  absent: 0,
-                  total: 0
-                };
-                const minRequired = subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75;
+              <>
+                <div className="sticky top-0 z-10 pt-0 pb-2 mb-2 bg-background/90 dark:bg-background/85 backdrop-blur-md border-b border-border/40">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="relative flex-1 grid grid-cols-2 p-1 gap-1 h-10 min-h-10 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]"
+                      role="group"
+                      aria-label="Choose attendance source"
+                    >
+                      <div
+                        className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-none"
+                        style={{
+                          width: "calc((100% - 4px) / 2)",
+                          transform: `translateX(${subjectsAttendanceView === "total" ? "0%" : "100%"})`,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setSubjectsAttendanceView("total")}
+                        className={cn(
+                          "relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 px-1",
+                          subjectsAttendanceView === "total"
+                            ? "text-foreground"
+                            : "text-muted-foreground/70 hover:text-foreground"
+                        )}
+                      >
+                        My tracking
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSubjectsAttendanceView("official")}
+                        className={cn(
+                          "relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1 px-1",
+                          subjectsAttendanceView === "official"
+                            ? "text-foreground"
+                            : "text-muted-foreground/70 hover:text-foreground"
+                        )}
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 shrink-0 opacity-90" aria-hidden />
+                        Institute
+                      </button>
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-10 w-10 shrink-0 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]"
+                          aria-label="How subject attendance is calculated"
+                        >
+                          <Info className="w-4 h-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[min(calc(100vw-2rem),20rem)] p-3.5 text-left rounded-xl border-border/80 shadow-lg z-50"
+                        align="end"
+                        sideOffset={6}
+                      >
+                        <p className="text-xs font-semibold text-foreground mb-3">How these numbers work</p>
+                        <div className="space-y-3.5">
+                          <div>
+                            <p className="text-[11px] font-bold text-foreground uppercase tracking-wide mb-1.5">
+                              My tracking
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {trackingCutoffLabel ? (
+                                <>
+                                  Your total follows your college&apos;s official lecture record{" "}
+                                  <span className="font-medium text-foreground">through {trackingCutoffLabel}</span>
+                                  . After that, we add only the regular lectures you mark in this app
+                                  (present / absent / cancelled). Lab &amp; tutorial hours are counted in the{" "}
+                                  <span className="font-medium text-foreground">Lab &amp; Tut</span> tab.
+                                </>
+                              ) : (
+                                <>
+                                  When your college publishes official lecture totals, we use them as a baseline
+                                  up to their cutoff date, then add what you mark here. There&apos;s no institute
+                                  cutoff on file yet—so right now these totals are driven mainly by your own marks
+                                  and timetable.
+                                </>
+                              )}
+                            </p>
+                          </div>
+                          <div className="h-px bg-border/60" />
+                          <div>
+                            <p className="text-[11px] font-bold text-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                              <ShieldCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                              Institute official
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {instituteCutoffLabel ? (
+                                <>
+                                  This is exactly what your institute uploaded—frozen through{" "}
+                                  <span className="font-medium text-foreground">{instituteCutoffLabel}</span>
+                                  . It won&apos;t change when you mark attendance in the app; switch to{" "}
+                                  <span className="font-medium text-foreground">My tracking</span> to see your
+                                  blended total.
+                                </>
+                              ) : (
+                                <>
+                                  Pure institute figures per subject. Open this tab once to load the latest batch;
+                                  when your college provides a cutoff, it also appears in the blue banner above
+                                  the list.
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
 
-                return (
-                  <SubjectCard
-                    key={subject.id}
-                    name={subject.name}
-                    lecturePlace={subject.lecturePlace}
-                    classroomLocation={subject.classroomLocation}
-                    color={subject.color}
-                    present={stats.present}
-                    absent={stats.absent}
-                    total={stats.total}
-                    totalUntilEndDate={stats.totalUntilEndDate}
-                    minRequired={minRequired}
-                    percentage={stats.percentage}
-                    classesNeeded={stats.classesNeeded}
-                    bunkableClasses={stats.bunkableClasses}
-                    onMinChange={(val) => setSubjectMin(subject.id, val)}
-                  />
-                );
-              })
+                {subjectsAttendanceView === "total" ? (
+                  enrolledSubjects.map((subject) => {
+                    const stats = subjectStatsToday[subject.id] || {
+                      subjectId: subject.id,
+                      present: 0,
+                      absent: 0,
+                      total: 0
+                    };
+                    const minRequired = subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75;
+
+                    return (
+                      <SubjectCard
+                        key={subject.id}
+                        name={subject.name}
+                        lecturePlace={subject.lecturePlace}
+                        classroomLocation={subject.classroomLocation}
+                        color={subject.color}
+                        present={stats.present}
+                        absent={stats.absent}
+                        total={stats.total}
+                        totalUntilEndDate={stats.totalUntilEndDate}
+                        minRequired={minRequired}
+                        percentage={stats.percentage}
+                        classesNeeded={stats.classesNeeded}
+                        bunkableClasses={stats.bunkableClasses}
+                        onMinChange={(val) => setSubjectMin(subject.id, val)}
+                      />
+                    );
+                  })
+                ) : (
+                  <>
+                    {officialCutoffDate && (
+                      <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-2">
+                        <ShieldCheck className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                            Official data cutoff
+                          </p>
+                          <p className="text-[11px] text-blue-600/90 dark:text-blue-400/90 mt-0.5">
+                            Institute numbers are shown through{" "}
+                            <span className="font-medium">{officialCutoffDate}</span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {isLoadingOfficial ? (
+                      <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        <p className="text-sm">Loading institute attendance…</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {enrolledSubjects.map((subject) => {
+                          const stat = officialBySubjectId.get(subject.id);
+                          const minRequired =
+                            subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75;
+
+                          if (!stat) {
+                            return (
+                              <SubjectCard
+                                key={subject.id}
+                                noInstituteAttendance
+                                name={subject.name}
+                                code={subject.code}
+                                lecturePlace={subject.lecturePlace}
+                                classroomLocation={subject.classroomLocation}
+                                color={subject.color}
+                                present={0}
+                                absent={0}
+                                total={0}
+                                minRequired={minRequired}
+                                hideBunkableInfo
+                              />
+                            );
+                          }
+
+                          const percentage =
+                            stat.percentage || (stat.total > 0 ? (stat.present * 100) / stat.total : 0);
+
+                          return (
+                            <SubjectCard
+                              key={subject.id}
+                              name={subject.name}
+                              code={subject.code}
+                              lecturePlace={subject.lecturePlace}
+                              classroomLocation={subject.classroomLocation}
+                              color={subject.color}
+                              present={stat.present}
+                              absent={stat.absent}
+                              total={stat.total}
+                              minRequired={minRequired}
+                              percentage={percentage}
+                              hideBunkableInfo
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>
-        )}
       </div>
 
       {/* Past Date Warning Dialog */}
