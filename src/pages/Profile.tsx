@@ -408,9 +408,7 @@ export default function Profile() {
 
       {/* Settings — Subjects first, then 8 bordered buttons (no section headings / nested boxes) */}
       <div className="relative shrink-0 overflow-hidden rounded-xl">
-        
-
-        <div className="flex flex-col gap-2 p-0">
+        <div className="flex flex-col gap-3 px-3.5 pt-4 pb-2">
           <button type="button" onClick={() => setShowSubjectEditor(true)} className={profileSubjectsBtn}>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400 transition-transform group-active:scale-95 dark:bg-blue-500/10">
               <BookOpen className="h-5 w-5" />
@@ -520,7 +518,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <ContributorsSection className="space-y-2" />
+        <ContributorsSection className="mt-4 space-y-2 border-t border-white/10 px-3.5 pb-4 pt-5 dark:border-white/10" />
       </div>
 
       {/* Sleep Duration Modal */}
