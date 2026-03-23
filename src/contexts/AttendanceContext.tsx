@@ -60,6 +60,8 @@ interface AttendanceContextType {
   refreshEnrolledSubjects: () => Promise<void>;
   refreshTimetable: () => Promise<void>;
   fetchAttendanceForDate: (date?: string) => Promise<void>;
+  /** Latest institute cutoff used when blending official baseline + your marks (total / "My tracking" view) */
+  trackingOfficialCutoffDate: string | null;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
@@ -194,6 +196,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   // Store attendance IDs for deletion
   const [attendanceIds, setAttendanceIds] = useState<Record<string, number | null>>({});
 
+  /** From GET /api/attendance — institute baseline date for combined totals */
+  const [trackingOfficialCutoffDate, setTrackingOfficialCutoffDate] = useState<string | null>(null);
+
   // Loading states
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
   const [savingState, setSavingState] = useState<{ 
@@ -223,6 +228,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setSubjectStatsToday({});
         setTodayAttendance({});
         setAttendanceIds({});
+        setTrackingOfficialCutoffDate(null);
         hasLoadedDataRef.current = false;
         lastStudentIdRef.current = null;
       }
@@ -242,6 +248,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setSubjectStatsToday({});
       setTodayAttendance({});
       setAttendanceIds({});
+      setTrackingOfficialCutoffDate(null);
       hasLoadedDataRef.current = false;
     }
 
@@ -291,6 +298,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           setSubjectStatsToday(statsMap);
         }
 
+        const cutoffRaw = data.officialCutoffDate;
+        setTrackingOfficialCutoffDate(
+          cutoffRaw != null && String(cutoffRaw).trim() !== ""
+            ? String(cutoffRaw).slice(0, 10)
+            : null
+        );
+
         // Convert attendance records to the format expected by the frontend
         // Key format: date-subjectId-slotN | date-subjectId-start-end | date-subjectId-extra-N | date-subjectId (backward compat)
         // Normalize so keys match regardless of API returning subjectId as string/number and lectureDate with or without time
@@ -326,6 +340,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           setSubjectStatsToday({});
           setTodayAttendance({});
           setAttendanceIds({});
+          setTrackingOfficialCutoffDate(null);
           hasLoadedDataRef.current = false;
         }
       }
@@ -338,6 +353,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setSubjectStatsToday({});
         setTodayAttendance({});
         setAttendanceIds({});
+        setTrackingOfficialCutoffDate(null);
       }
     } finally {
       if (!silent) {
@@ -373,6 +389,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
             bunkableClasses: stat.bunkableClasses,
           };
         });
+
+        const todayCutoffRaw = data.officialCutoffDate;
+        setTrackingOfficialCutoffDate(
+          todayCutoffRaw != null && String(todayCutoffRaw).trim() !== ""
+            ? String(todayCutoffRaw).slice(0, 10)
+            : null
+        );
         
         // Debug: Log first subject stats to verify new fields are present
         if (data.subjectStats && data.subjectStats.length > 0) {
@@ -781,6 +804,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         refreshEnrolledSubjects,
         refreshTimetable,
         fetchAttendanceForDate: fetchAttendanceData,
+        trackingOfficialCutoffDate,
       }}
     >
       {children}
