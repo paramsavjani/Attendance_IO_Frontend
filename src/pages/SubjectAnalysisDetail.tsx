@@ -118,12 +118,12 @@ export default function SubjectAnalysisDetail() {
   const stats = useMemo(() => {
     if (!data || data.students.length === 0) return null;
     const percentages = data.students.map((s) => s.attendancePercentage);
-    const below75 = data.students.filter((s) => s.attendancePercentage < 75).length;
+    const below70 = data.students.filter((s) => s.attendancePercentage < 70).length;
     return {
       highest: Math.max(...percentages),
       lowest: Math.min(...percentages),
-      below75,
-      above75: data.students.length - below75,
+      below70,
+      above70: data.students.length - below70,
     };
   }, [data]);
 
@@ -226,20 +226,20 @@ export default function SubjectAnalysisDetail() {
         {stats && (
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-green-400">{stats.above75} above 75%</span>
-              <span className="text-red-400">{stats.below75} below 75%</span>
+              <span className="text-green-400">{stats.above70} above 70%</span>
+              <span className="text-red-400">{stats.below70} below 70%</span>
             </div>
             <div className="h-2 rounded-full bg-muted overflow-hidden flex">
               <div
                 className="h-full bg-green-500 transition-all"
                 style={{
-                  width: `${(stats.above75 / data.totalStudents) * 100}%`,
+                  width: `${(stats.above70 / data.totalStudents) * 100}%`,
                 }}
               />
               <div
                 className="h-full bg-red-500 transition-all"
                 style={{
-                  width: `${(stats.below75 / data.totalStudents) * 100}%`,
+                  width: `${(stats.below70 / data.totalStudents) * 100}%`,
                 }}
               />
             </div>
