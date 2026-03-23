@@ -44,6 +44,7 @@ export const API_CONFIG = {
     SUBJECT_ANALYSIS: `${API_BASE_URL}/api/subjects/analysis`,
     TRACK_EVENT: `${API_BASE_URL}/api/event/track`,
     CHECK_APP_UPDATE: `${API_BASE_URL}/api/app/check-update`,
+    POPUPS: `${API_BASE_URL}/api/app/popups`,
   },
 } as const;
 
