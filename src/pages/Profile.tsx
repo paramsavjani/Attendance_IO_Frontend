@@ -4,11 +4,10 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, User, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, Calendar, MapPin, BarChart3, Star, Bell } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, MapPin, BarChart3, Star, Bell } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
-import { BaselineAttendanceDialog } from "@/components/attendance/BaselineAttendanceDialog";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 interface CurrentSemester {
   year: number;
@@ -31,7 +31,7 @@ interface CurrentSemester {
 
 export default function Profile() {
   const { student, logout, checkAuth } = useAuth();
-  const { enrolledSubjects, setEnrolledSubjects, refreshEnrolledSubjects, refreshTimetable } = useAttendance();
+  const { enrolledSubjects, setEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
@@ -52,8 +52,6 @@ export default function Profile() {
   const [feedbackTitle, setFeedbackTitle] = useState("");
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
-  const [showBaselineDialog, setShowBaselineDialog] = useState(false);
-  const [selectedBaselineSubject, setSelectedBaselineSubject] = useState<Subject | null>(null);
   const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
   const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
@@ -354,27 +352,22 @@ export default function Profile() {
     { id: 'suggestion' as const, label: 'Suggestion', icon: Lightbulb, color: 'text-yellow-500' },
   ];
 
-  const rowClass = "w-full bg-card py-2.5 px-3 flex items-center gap-2.5 text-left active:bg-muted/50 transition-colors touch-manipulation";
-  const iconClass = "w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0";
-  const iconClassMuted = "w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0";
-  const disabledRowClass = "w-full bg-card/50 py-2.5 px-3 flex items-center gap-2.5 text-left opacity-60";
+  const essentialsRow =
+    "group flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors touch-manipulation hover:bg-white/[0.06] active:bg-white/[0.08] dark:hover:bg-neutral-800/90 dark:active:bg-neutral-800";
+  const appTile =
+    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-white/[0.1] bg-white/[0.05] px-3 py-2.5 text-left transition-all hover:border-white/18 hover:bg-white/[0.09] active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.08]";
 
   return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-6">
+      {/* Hero */}
+      <div className="relative shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.09] via-white/[0.04] to-transparent px-4 py-4 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-10 h-36 w-36 rounded-full bg-blue-500/20 blur-3xl" />
 
-    <div className="space-y-2 pb-2">
-      {/* Profile Header - compact */}
-      {/* Profile Header - Premium Glass Card */}
-      {/* Profile Header - Premium Glass Card */}
-      {/* Profile Header - Premium Glass Card */}
-      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-xl py-2.5 px-3 shadow-xl">
-        {/* Decorative background gradients */}
-        <div className="absolute -top-12 -right-12 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
-        <div className="absolute -bottom-12 -left-12 h-24 w-24 rounded-full bg-blue-500/20 blur-2xl" />
-
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 blur-md opacity-40 animate-pulse" />
-            <div className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-white/20 shadow-inner">
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-violet-500 opacity-50 blur-md" />
+            <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white/25 shadow-lg ring-2 ring-white/10">
               <img
                 src={student?.pictureUrl || "/user-icons/user2.png"}
                 alt={student?.name || "Profile"}
@@ -386,21 +379,23 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="flex-1 min-w-0">
-            <h1 className="truncate text-base font-bold tracking-tight text-white mb-0.5">
+          <div className="min-w-0 flex-1">
+            <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-white/45">Profile</p>
+            <h1 className="truncate text-lg font-bold tracking-tight text-white">
               {student?.isDemo ? "Demo User" : student?.name}
             </h1>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white/80 ring-1 ring-inset ring-white/10">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-lg bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/85 ring-1 ring-inset ring-white/10">
                 {student?.rollNumber}
               </span>
               {isLoadingSemester ? (
-                <span className="inline-flex items-center rounded-md bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/50 animate-pulse">
-                  Loading...
+                <span className="inline-flex items-center rounded-lg bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/45 animate-pulse">
+                  Semester…
                 </span>
               ) : currentSemester ? (
-                <span className="inline-flex items-center rounded-md bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground ring-1 ring-inset ring-primary/30">
-                  {currentSemester.year} {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
+                <span className="inline-flex items-center rounded-lg bg-primary/25 px-2 py-0.5 text-[10px] font-semibold text-primary-foreground ring-1 ring-inset ring-primary/35">
+                  {currentSemester.year}{" "}
+                  {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
                 </span>
               ) : null}
             </div>
@@ -408,162 +403,150 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Quick Actions - compact list */}
-      {/* Quick Actions Grid */}
-      {/* Quick Actions Grid */}
-      <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Manage</h2>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => setShowSubjectEditor(true)}
-          className="group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
-        >
-          <div className="rounded-md bg-blue-500/10 p-1.5 text-blue-400 ring-1 ring-inset ring-blue-500/20 transition-transform group-hover:scale-110">
-            <BookOpen className="h-3.5 w-3.5" />
-          </div>
-          <div className="text-left">
-            <p className="font-semibold text-xs text-white">Subjects</p>
-            <p className="text-[9px] text-white/40">{enrolledSubjects.length} enrolled</p>
-          </div>
-        </button>
+      {/* Settings — list (5 essentials + application) */}
+      <div className="relative shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] shadow-[0_8px_32px_-12px_rgba(0,0,0,0.45)] backdrop-blur-xl dark:border-white/[0.08] dark:from-neutral-950 dark:via-neutral-950/95 dark:to-black dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.85)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10" />
 
-        <button
-          onClick={() => enrolledSubjects.length > 0 ? setShowCriteriaModal(true) : null}
-          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.08] hover:border-white/15 active:scale-95' : 'opacity-40 cursor-not-allowed'
-            }`}
-        >
-          <div className="rounded-md bg-purple-500/10 p-1.5 text-purple-400 ring-1 ring-inset ring-purple-500/20 transition-transform group-hover:scale-110">
-            <Target className="h-3.5 w-3.5" />
-          </div>
-          <div className="text-left">
-            <p className="font-semibold text-xs text-white">Criteria</p>
-            <p className="text-[9px] text-white/40">Set targets</p>
-          </div>
-        </button>
+        {/* Top 5 — darker inset panel in dark theme */}
+        <div className="border-b border-white/[0.08] bg-white/[0.02] px-1 pt-2 pb-1 dark:border-white/[0.06] dark:bg-black/50">
+          <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40 dark:text-white/50">
+            Essentials
+          </p>
+          <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03] dark:border-white/[0.08] dark:bg-neutral-950 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+            <button type="button" onClick={() => setShowSubjectEditor(true)} className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]")}>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400 shadow-inner ring-1 ring-blue-500/25 transition-transform group-active:scale-95 dark:bg-blue-500/10 dark:ring-blue-500/20">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Subjects</p>
+                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">{enrolledSubjects.length} enrolled · edit your list</p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+            </button>
 
-        <button
-          onClick={() => enrolledSubjects.length > 0 ? setShowClassroomLocationModal(true) : null}
-          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.08] hover:border-white/15 active:scale-95' : 'opacity-40 cursor-not-allowed'
-            }`}
-        >
-          <div className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-400 ring-1 ring-inset ring-emerald-500/20 transition-transform group-hover:scale-110">
-            <MapPin className="h-3.5 w-3.5" />
-          </div>
-          <div className="text-left">
-            <p className="font-semibold text-xs text-white">Locations</p>
-            <p className="text-[9px] text-white/40">Classrooms</p>
-          </div>
-        </button>
+            <button
+              type="button"
+              disabled={enrolledSubjects.length === 0}
+              onClick={() => enrolledSubjects.length > 0 && setShowCriteriaModal(true)}
+              className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]", enrolledSubjects.length === 0 && "cursor-not-allowed opacity-45 hover:bg-transparent active:bg-transparent dark:hover:bg-transparent dark:active:bg-transparent")}
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-400 shadow-inner ring-1 ring-violet-500/25 transition-transform group-active:scale-95 dark:bg-violet-500/10 dark:ring-violet-500/20">
+                <Target className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Attendance criteria</p>
+                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">Minimum % per subject</p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+            </button>
 
-        <button
-          onClick={() => {
-            if (enrolledSubjects.length === 1) {
-              setSelectedBaselineSubject(enrolledSubjects[0]);
-              setShowBaselineDialog(true);
-            } else if (enrolledSubjects.length > 1) {
-              setShowBaselineDialog(true);
-            }
-          }}
-          className={`group relative flex flex-col items-start gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all ${enrolledSubjects.length > 0 ? 'hover:bg-white/[0.08] hover:border-white/15 active:scale-95' : 'opacity-40 cursor-not-allowed'
-            }`}
-        >
-          <div className="rounded-md bg-orange-500/10 p-1.5 text-orange-400 ring-1 ring-inset ring-orange-500/20 transition-transform group-hover:scale-110">
-            <Calendar className="h-3.5 w-3.5" />
-          </div>
-          <div className="text-left">
-            <p className="font-semibold text-xs text-white">Import Data</p>
-            <p className="text-[9px] text-white/40">Add existing stats</p>
-          </div>
-        </button>
-      </div>
+            <button
+              type="button"
+              disabled={enrolledSubjects.length === 0}
+              onClick={() => enrolledSubjects.length > 0 && setShowClassroomLocationModal(true)}
+              className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]", enrolledSubjects.length === 0 && "cursor-not-allowed opacity-45 hover:bg-transparent active:bg-transparent dark:hover:bg-transparent dark:active:bg-transparent")}
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 shadow-inner ring-1 ring-emerald-500/25 transition-transform group-active:scale-95 dark:bg-emerald-500/10 dark:ring-emerald-500/20">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Class locations</p>
+                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">Where you sit for each subject</p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+            </button>
 
-      {/* Sleep Duration & Notification - one row */}
-      <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Preferences</h2>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => { setEditingSleepHours(sleepDuration?.toString() || "8"); setIsEditingSleepDuration(true); }}
-          className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
-        >
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-indigo-500/5 blur-xl transition-all group-hover:bg-indigo-500/10" />
-          <div className="relative z-10 flex flex-col items-start gap-1.5">
-            <div className="rounded-md bg-indigo-500/10 p-1.5 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
-              <Moon className="h-4 w-4" />
-            </div>
-            <div className="text-left min-w-0">
-              <p className="font-semibold text-xs text-white">Sleep</p>
-              <p className="text-[9px] text-white/50 truncate">
-                {isLoadingSleepDuration ? "…" : `${sleepDuration ?? 8} hrs/night`}
-              </p>
-            </div>
-          </div>
-        </button>
-        <button
-          onClick={() => {
-            setDailyReminderHours(student?.dailyReminderHours ?? []);
-            setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
-            setShowNotificationPreferences(true);
-          }}
-          className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-[0.98] touch-manipulation"
-        >
-          <div className="relative z-10 flex flex-col items-start gap-1.5">
-            <div className="rounded-md bg-amber-500/10 p-1.5 text-amber-400 ring-1 ring-inset ring-amber-500/20">
-              <Bell className="h-4 w-4" />
-            </div>
-            <div className="text-left min-w-0">
-              <p className="font-semibold text-xs text-white">Notifications</p>
-              <p className="text-[9px] text-white/50">Daily & after lecture</p>
-            </div>
-          </div>
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingSleepHours(sleepDuration?.toString() || "8");
+                setIsEditingSleepDuration(true);
+              }}
+              className={cn(essentialsRow, "border-b border-white/[0.06] dark:border-white/[0.08]")}
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-400 shadow-inner ring-1 ring-indigo-500/25 transition-transform group-active:scale-95 dark:bg-indigo-500/10 dark:ring-indigo-500/20">
+                <Moon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Sleep</p>
+                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">
+                  {isLoadingSleepDuration ? "Loading…" : `${sleepDuration ?? 8} hours per night · rest reminders`}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+            </button>
 
-      {/* App Actions Grid */}
-      {/* App Actions Grid */}
-      <h2 className="text-[10px] font-semibold text-white/60 ml-1 mt-2 mb-1 uppercase tracking-wider">Application</h2>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => navigate("/app-analytics")}
-          className="group flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
-        >
-          <div className="rounded-md bg-pink-500/10 p-1.5 text-pink-400">
-            <BarChart3 className="h-3.5 w-3.5" />
+            <button
+              type="button"
+              onClick={() => {
+                setDailyReminderHours(student?.dailyReminderHours ?? []);
+                setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
+                setShowNotificationPreferences(true);
+              }}
+              className={essentialsRow}
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 shadow-inner ring-1 ring-amber-500/25 transition-transform group-active:scale-95 dark:bg-amber-500/10 dark:ring-amber-500/20">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Notifications</p>
+                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">Daily summary &amp; after-class nudges</p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+            </button>
           </div>
-          <span className="text-[10px] font-medium text-white">Analytics</span>
-        </button>
+        </div>
 
-        <button
-          onClick={async () => {
-            try { await requestAppReview({ openPlayStoreOnly: true }); } catch (e) {
-              console.error("Rate us failed:", e);
-              toast.error("Could not open review. Please try again.");
-            }
-          }}
-          className="group flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
-        >
-          <div className="rounded-md bg-yellow-500/10 p-1.5 text-yellow-400">
-            <Star className="h-3.5 w-3.5" />
+        {/* Application — 2-column grid (as before) */}
+        <div className="border-t border-white/[0.06] px-3 pb-3 pt-3 dark:border-white/[0.06]">
+          <p className="mb-2.5 px-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40 dark:text-white/45">
+            Application
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => navigate("/app-analytics")} className={appTile}>
+              <div className="rounded-lg bg-pink-500/15 p-1.5 text-pink-400 ring-1 ring-inset ring-pink-500/25 dark:bg-pink-500/12">
+                <BarChart3 className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-[11px] font-semibold text-white">Analytics</span>
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await requestAppReview({ openPlayStoreOnly: true });
+                } catch (e) {
+                  console.error("Rate us failed:", e);
+                  toast.error("Could not open review. Please try again.");
+                }
+              }}
+              className={appTile}
+            >
+              <div className="rounded-lg bg-yellow-500/15 p-1.5 text-yellow-400 ring-1 ring-inset ring-yellow-500/25 dark:bg-yellow-500/12">
+                <Star className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-[11px] font-semibold text-white">Rate us</span>
+            </button>
+            <button type="button" onClick={() => setShowFeedbackModal(true)} className={appTile}>
+              <div className="rounded-lg bg-cyan-500/15 p-1.5 text-cyan-400 ring-1 ring-inset ring-cyan-500/25 dark:bg-cyan-500/12">
+                <MessageSquare className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-[11px] font-semibold text-white">Feedback</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3 py-2.5 text-left transition-all hover:border-red-500/45 hover:bg-red-500/12 active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-red-500/35 dark:bg-red-500/10"
+            >
+              <div className="rounded-lg bg-red-500/20 p-1.5 text-red-400 ring-1 ring-inset ring-red-500/30">
+                <LogOut className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-[11px] font-bold text-red-400">Log out</span>
+            </button>
           </div>
-          <span className="text-[10px] font-medium text-white">Rate Us</span>
-        </button>
+        </div>
 
-        <button
-          onClick={() => setShowFeedbackModal(true)}
-          className="group flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2.5 transition-all hover:bg-white/[0.08] hover:border-white/15 active:scale-95 touch-manipulation"
-        >
-          <div className="rounded-md bg-cyan-500/10 p-1.5 text-cyan-400">
-            <MessageSquare className="h-3.5 w-3.5" />
-          </div>
-          <span className="text-[10px] font-medium text-white">Feedback</span>
-        </button>
-
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 rounded-xl border border-red-500/25 bg-red-500/5 p-2.5 touch-manipulation"
-        >
-          <div className="rounded-md bg-red-500/15 p-1.5 text-red-400 ring-1 ring-inset ring-red-500/20">
-            <LogOut className="h-3.5 w-3.5" />
-          </div>
-          <span className="text-[10px] font-semibold text-red-400">Logout</span>
-        </button>
+        {/* Hall of Fame — directly under Application; hidden if no contributors */}
+        <ContributorsSection className="space-y-2 border-t border-white/[0.06] px-2 pb-1 pt-3 dark:border-white/[0.06]" />
       </div>
 
       {/* Sleep Duration Modal */}
@@ -632,63 +615,7 @@ export default function Profile() {
         </DialogContent>
       </Dialog>
 
-      {/* Previous Attendance Dialog */}
-      {showBaselineDialog && enrolledSubjects.length > 1 && !selectedBaselineSubject && (
-        <Dialog open={showBaselineDialog} onOpenChange={(open) => {
-          setShowBaselineDialog(open);
-          if (!open) setSelectedBaselineSubject(null);
-        }}>
-          <DialogContent className="max-w-sm mx-auto rounded-xl">
-            <DialogHeader>
-              <DialogTitle className="text-base font-semibold">Select Subject</DialogTitle>
-              <p className="text-sm text-muted-foreground">Choose a subject to set previous attendance</p>
-            </DialogHeader>
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-              {enrolledSubjects.map((subject) => (
-                <button
-                  key={subject.id}
-                  onClick={() => {
-                    setSelectedBaselineSubject(subject);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
-                >
-                  <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                    {subject.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{subject.name}</p>
-                    <p className="text-xs text-muted-foreground">{subject.code}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {selectedBaselineSubject && (
-        <BaselineAttendanceDialog
-          open={showBaselineDialog}
-          onOpenChange={(open) => {
-            setShowBaselineDialog(open);
-            if (!open) {
-              setSelectedBaselineSubject(null);
-            }
-          }}
-          subjectId={selectedBaselineSubject.id}
-          subjectName={selectedBaselineSubject.name}
-          onSave={async () => {
-            // Refresh attendance data after saving baseline
-            await refreshEnrolledSubjects();
-          }}
-        />
-      )}
-
-      <ContributorsSection />
-
-
-
-      <div className="flex items-center justify-center pt-1 pb-2">
+      <div className="flex shrink-0 items-center justify-center pt-2 pb-1">
         <a
           href="https://paramsavjani.in"
           target="_blank"
