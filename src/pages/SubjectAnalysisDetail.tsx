@@ -132,7 +132,7 @@ export default function SubjectAnalysisDetail() {
       <div className="flex flex-col gap-4 h-full">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/subject-analysis")}
+            onClick={() => navigate("/analytics")}
             className="p-2 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -151,7 +151,7 @@ export default function SubjectAnalysisDetail() {
       <div className="flex flex-col gap-4 h-full">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/subject-analysis")}
+            onClick={() => navigate("/analytics")}
             className="p-2 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -170,7 +170,7 @@ export default function SubjectAnalysisDetail() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate("/subject-analysis")}
+          onClick={() => navigate("/analytics")}
           className="p-2 rounded-xl bg-card border border-border hover:bg-accent transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
