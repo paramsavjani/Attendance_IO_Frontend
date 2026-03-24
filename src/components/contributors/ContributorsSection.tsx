@@ -77,7 +77,7 @@ export function ContributorsSection({ className }: ContributorsSectionProps) {
 
   return (
     <div className={cn("space-y-3 pt-2", className)}>
-      <div className="flex items-center justify-center gap-2 mb-2 opacity-60">
+      <div className="flex items-center justify-center gap-2 mb-1 opacity-60">
         <div className="h-px w-12 bg-gradient-to-r from-transparent to-white/30" />
         <span className="text-[10px] font-medium uppercase tracking-widest text-white/50">Hall of Fame</span>
         <div className="h-px w-12 bg-gradient-to-l from-transparent to-white/30" />
