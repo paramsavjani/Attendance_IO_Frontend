@@ -12,7 +12,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
+import { requestAppReview } from "@/lib/in-app-review";
+import { RateAppServerPopup } from "@/components/RateAppServerPopup";
 import confetti from "canvas-confetti";
+
+/**
+ * Popup JSON (GET /api/app/popups): primaryAction may use
+ * - route + optional action "navigate" (default): go to route
+ * - action "rate_app" | "in_app_review": shown in RateAppServerPopup (update-style dialog), not feature UI
+ */
 
 const POPUP_STORAGE_PREFIX = "aio_popup_";
 
@@ -24,7 +32,10 @@ interface PopupFeature {
 
 interface PopupAction {
   label: string;
-  route: string;
+  /** Used when action is omitted or "navigate" */
+  route?: string;
+  /** Overrides navigation when set */
+  action?: "navigate" | "rate_app" | "in_app_review";
   icon?: string;
 }
 
@@ -100,6 +111,11 @@ function shouldShowPopup(popup: ServerPopupData): boolean {
   } catch {
     return false;
   }
+}
+
+function isReviewPopup(p: ServerPopupData): boolean {
+  const a = p.primaryAction?.action;
+  return a === "rate_app" || a === "in_app_review";
 }
 
 function markPopupShown(popup: ServerPopupData): void {
@@ -188,10 +204,12 @@ export function ServerPopup() {
           setPopup(toShow);
           timer = setTimeout(() => {
             setOpen(true);
-            setTimeout(() => {
-              setIsVisible(true);
-              if (toShow.confetti !== false) fireConfetti();
-            }, 50);
+            if (!isReviewPopup(toShow)) {
+              setTimeout(() => {
+                setIsVisible(true);
+                if (toShow.confetti !== false) fireConfetti();
+              }, 50);
+            }
           }, 600);
         }
       } catch {
@@ -207,24 +225,56 @@ export function ServerPopup() {
 
   const close = () => {
     if (popup) markPopupShown(popup);
+    if (popup && isReviewPopup(popup)) {
+      setOpen(false);
+      return;
+    }
     setIsVisible(false);
     setTimeout(() => setOpen(false), 200);
   };
 
   const handlePrimary = () => {
     if (popup) markPopupShown(popup);
+    const primary = popup?.primaryAction;
+    const behavior =
+      primary?.action ??
+      (primary?.route ? ("navigate" as const) : undefined);
+
+    if (behavior === "rate_app" || behavior === "in_app_review") {
+      setOpen(false);
+      if (behavior === "rate_app") void requestAppReview({ openPlayStoreOnly: true });
+      else void requestAppReview();
+      return;
+    }
+
     setIsVisible(false);
     setTimeout(() => {
       setOpen(false);
-      if (popup?.primaryAction?.route) {
-        navigate(popup.primaryAction.route);
-      }
+      if (primary?.route) navigate(primary.route);
     }, 200);
   };
 
   if (!popup) return null;
 
   const showDismiss = popup.showDismiss !== false && popup.dismissLabel !== null;
+
+  if (isReviewPopup(popup) && popup.primaryAction) {
+    return (
+      <RateAppServerPopup
+        open={open}
+        title={popup.title}
+        subtitle={popup.subtitle}
+        features={popup.features.map((f) => ({ title: f.title, description: f.description }))}
+        primaryLabel={popup.primaryAction.label}
+        reviewAction={popup.primaryAction.action as "rate_app" | "in_app_review"}
+        showDismiss={showDismiss}
+        dismissLabel={popup.dismissLabel}
+        onLater={close}
+        onPrimary={handlePrimary}
+      />
+    );
+  }
+
   const HeaderIcon = getIcon(popup.icon);
   const ActionIcon = popup.primaryAction?.icon
     ? getIcon(popup.primaryAction.icon)
