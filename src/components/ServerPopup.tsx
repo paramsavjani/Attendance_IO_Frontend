@@ -20,6 +20,10 @@ import confetti from "canvas-confetti";
  * Popup JSON (GET /api/app/popups): primaryAction may use
  * - route + optional action "navigate" (default): go to route
  * - action "rate_app" | "in_app_review": shown in RateAppServerPopup (update-style dialog), not feature UI
+ *
+ * Scheduling `type` (localStorage key = aio_popup_{id}):
+ * - once / daily / weekly: unchanged
+ * - every_days: re-show after `intervalDays` full days (default 7). Set intervalDays in BE JSON (e.g. 15).
  */
 
 const POPUP_STORAGE_PREFIX = "aio_popup_";
@@ -42,7 +46,9 @@ interface PopupAction {
 interface ServerPopupData {
   id: string;
   enabled: boolean;
-  type: "once" | "daily" | "weekly" | string;
+  type: "once" | "daily" | "weekly" | "every_days" | string;
+  /** With type every_days: minimum days between impressions (default 7). */
+  intervalDays?: number;
   date: string | null;
   icon?: string;
   title: string;
@@ -89,10 +95,35 @@ function getWeekKey(): string {
   return `${now.getFullYear()}-W${week}`;
 }
 
+const MS_PER_DAY = 86400000;
+
+function parseEveryDaysStored(stored: string | null): number | null {
+  if (!stored) return null;
+  try {
+    const parsed = JSON.parse(stored) as { at?: number };
+    if (typeof parsed?.at === "number" && !Number.isNaN(parsed.at)) {
+      return parsed.at;
+    }
+  } catch {
+    const legacyMs = parseInt(stored, 10);
+    if (!Number.isNaN(legacyMs) && legacyMs > 1e12) return legacyMs;
+  }
+  return null;
+}
+
 function shouldShowPopup(popup: ServerPopupData): boolean {
   const key = POPUP_STORAGE_PREFIX + popup.id;
   try {
     const stored = localStorage.getItem(key);
+
+    if (popup.type === "every_days") {
+      const days = Math.max(1, Math.floor(Number(popup.intervalDays) || 7));
+      const lastMs = parseEveryDaysStored(stored);
+      if (lastMs == null) return true;
+      const elapsedDays = (Date.now() - lastMs) / MS_PER_DAY;
+      return elapsedDays >= days;
+    }
+
     switch (popup.type) {
       case "once":
         return stored !== "shown";
@@ -121,6 +152,10 @@ function isReviewPopup(p: ServerPopupData): boolean {
 function markPopupShown(popup: ServerPopupData): void {
   const key = POPUP_STORAGE_PREFIX + popup.id;
   try {
+    if (popup.type === "every_days") {
+      localStorage.setItem(key, JSON.stringify({ at: Date.now() }));
+      return;
+    }
     switch (popup.type) {
       case "once":
         localStorage.setItem(key, "shown");
@@ -256,7 +291,9 @@ export function ServerPopup() {
 
   if (!popup) return null;
 
-  const showDismiss = popup.showDismiss !== false && popup.dismissLabel !== null;
+  const showDismiss = isReviewPopup(popup)
+    ? Boolean(popup.dismissLabel?.trim())
+    : popup.showDismiss !== false && popup.dismissLabel !== null;
 
   if (isReviewPopup(popup) && popup.primaryAction) {
     return (
