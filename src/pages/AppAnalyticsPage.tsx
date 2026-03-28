@@ -416,10 +416,16 @@ export default function AppAnalyticsPage() {
                 ) : appOpensChartData.length > 0 ? (
                   <div className="w-full" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
+                      <AreaChart
                         data={appOpensChartData}
                         margin={{ top: 6, right: 4, left: 0, bottom: 0 }}
                       >
+                        <defs>
+                          <linearGradient id="appAnalyticsAppOpens" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                         <XAxis
                           dataKey="label"
@@ -446,8 +452,14 @@ export default function AppAnalyticsPage() {
                           }}
                           formatter={(value: number) => [value, "App Opens"]}
                         />
-                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          fill="url(#appAnalyticsAppOpens)"
+                        />
+                      </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
