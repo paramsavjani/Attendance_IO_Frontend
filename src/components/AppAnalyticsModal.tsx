@@ -24,8 +24,6 @@ import { cn } from "@/lib/utils";
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   ResponsiveContainer,
@@ -362,7 +360,7 @@ export function AppAnalyticsModal({ open, onOpenChange }: AppAnalyticsModalProps
                 {appOpensChartData.length > 0 ? (
                   <div className="w-full" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
+                      <AreaChart
                         data={appOpensChartData}
                         margin={{
                           top: 6,
@@ -371,6 +369,12 @@ export function AppAnalyticsModal({ open, onOpenChange }: AppAnalyticsModalProps
                           bottom: 0,
                         }}
                       >
+                        <defs>
+                          <linearGradient id="colorAppOpens" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid
                           strokeDasharray="3 3"
                           stroke="hsl(var(--border))"
@@ -400,12 +404,14 @@ export function AppAnalyticsModal({ open, onOpenChange }: AppAnalyticsModalProps
                           formatter={(value: number) => [value, "App Opens"]}
                           labelFormatter={(label) => `Date: ${label}`}
                         />
-                        <Bar
+                        <Area
+                          type="monotone"
                           dataKey="count"
-                          fill="hsl(var(--primary))"
-                          radius={[4, 4, 0, 0]}
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          fill="url(#colorAppOpens)"
                         />
-                      </BarChart>
+                      </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
