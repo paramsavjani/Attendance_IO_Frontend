@@ -23,6 +23,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { posthog } from "@/lib/posthog";
 
 interface CurrentSemester {
   year: number;
@@ -131,6 +132,7 @@ export default function Profile() {
     if (!hasConflicts) {
       toast.success(`Updated to ${subjects.length} subjects`);
     }
+    posthog.capture('subjects_updated', { subjectCount: subjects.length });
     // If hasConflicts is true, the SubjectSelector already showed the conflict modal
   };
 
@@ -188,6 +190,7 @@ export default function Profile() {
       ));
 
       toast.success("Minimum criteria updated successfully");
+      posthog.capture('minimum_criteria_updated', { subjectId, value });
       handleCancelEdit(subjectId);
     } catch (error: any) {
       console.error('Error updating minimum criteria:', error);
@@ -240,6 +243,7 @@ export default function Profile() {
       setSleepDuration(hoursNum);
       setIsEditingSleepDuration(false);
       toast.success("Sleep duration updated successfully");
+      posthog.capture('sleep_duration_updated', { hours: hoursNum });
     } catch (error: any) {
       console.error('Error updating sleep duration:', error);
       toast.error(error.message || 'Failed to update sleep duration');
@@ -293,6 +297,7 @@ export default function Profile() {
       ));
 
       toast.success("Classroom location updated successfully");
+      posthog.capture('classroom_location_updated', { subjectId });
       handleCancelEditClassroomLocation(subjectId);
     } catch (error: any) {
       console.error('Error updating classroom location:', error);
@@ -334,6 +339,7 @@ export default function Profile() {
 
       const result = await response.json();
       toast.success(result.message || "Thank you for your feedback!");
+      posthog.capture('feedback_submitted', { feedbackType });
       setShowFeedbackModal(false);
       setFeedbackTitle("");
       setFeedbackDescription("");
@@ -954,6 +960,7 @@ export default function Profile() {
                   await checkAuth();
                   setShowNotificationPreferences(false);
                   toast.success("Notification preferences saved");
+                  posthog.capture('notification_preferences_updated', { dailyReminderHours, afterLectureReminderEnabled });
                 } catch (e) {
                   console.error(e);
                   toast.error(e instanceof Error ? e.message : "Failed to save preferences");

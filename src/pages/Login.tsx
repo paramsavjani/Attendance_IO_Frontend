@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { posthog } from "@/lib/posthog";
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +66,9 @@ export default function Login() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    posthog.capture('google_sign_in_initiated', {
+      platform: Capacitor.isNativePlatform() ? 'mobile' : 'web',
+    });
     try {
       await handleGoogleLogin();
       // User will be redirected to Google, so we don't need to handle response here
