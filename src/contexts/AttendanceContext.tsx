@@ -6,6 +6,7 @@ import { useAuth } from "./AuthContext";
 import { hexToHslLightened } from "@/lib/utils";
 import { toast } from "sonner";
 import { isAfter, parseISO, startOfDay } from "date-fns";
+import { posthog } from "@/lib/posthog";
 
 const DEFAULT_MIN = 75;
 
@@ -684,6 +685,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
       // Refresh from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
+      posthog.capture('attendance_unmarked', { subjectId, date, previousStatus });
       setSavingState(null);
       ongoingOperationsRef.current.delete(operationKey);
       return;
@@ -755,6 +757,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           return { ...prev, [slotKey]: result.attendanceId };
         });
       }
+
+      posthog.capture('attendance_marked', { subjectId, date, status, isExtraClass: !!isExtraClass });
 
       // Refresh attendance data from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);

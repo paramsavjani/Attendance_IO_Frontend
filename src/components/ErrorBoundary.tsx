@@ -1,4 +1,5 @@
 import React from "react";
+import { posthog } from "@/lib/posthog";
 
 type Props = {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     // Keep a console trail for Android Studio / logcat debugging.
     // eslint-disable-next-line no-console
     console.error("App crashed:", error);
+    posthog.captureException(error instanceof Error ? error : new Error(String(error)));
   }
 
   render() {

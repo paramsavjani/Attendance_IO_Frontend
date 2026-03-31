@@ -1,0 +1,67 @@
+[
+  {
+    "event": "user_logged_in",
+    "description": "Fired when a user successfully authenticates via Google OAuth and the auth check succeeds",
+    "file": "src/contexts/AuthContext.tsx"
+  },
+  {
+    "event": "user_logged_out",
+    "description": "Fired when a user explicitly clicks the logout button",
+    "file": "src/contexts/AuthContext.tsx"
+  },
+  {
+    "event": "google_sign_in_initiated",
+    "description": "Fired when the user taps the Google sign-in button on the Login page",
+    "file": "src/pages/Login.tsx"
+  },
+  {
+    "event": "attendance_marked",
+    "description": "Fired when attendance is recorded (present, absent, or cancelled) for a subject slot",
+    "file": "src/contexts/AttendanceContext.tsx"
+  },
+  {
+    "event": "attendance_unmarked",
+    "description": "Fired when attendance is toggled off by clicking the same status again",
+    "file": "src/contexts/AttendanceContext.tsx"
+  },
+  {
+    "event": "onboarding_completed",
+    "description": "Fired when the new-user onboarding flow finishes (subjects saved + sleep dialog dismissed)",
+    "file": "src/pages/SubjectOnboarding.tsx"
+  },
+  {
+    "event": "subjects_updated",
+    "description": "Fired when a user saves an updated subject list from the Profile subject editor",
+    "file": "src/pages/Profile.tsx"
+  },
+  {
+    "event": "feedback_submitted",
+    "description": "Fired on successful submission of feedback, bug report, or suggestion from the Profile page",
+    "file": "src/pages/Profile.tsx"
+  },
+  {
+    "event": "minimum_criteria_updated",
+    "description": "Fired when a user saves a new minimum attendance criteria value for a subject",
+    "file": "src/pages/Profile.tsx"
+  },
+  {
+    "event": "classroom_location_updated",
+    "description": "Fired when a user saves a classroom location for a subject",
+    "file": "src/pages/Profile.tsx"
+  },
+  {
+    "event": "sleep_duration_updated",
+    "description": "Fired when a user saves a new sleep duration preference in Profile",
+    "file": "src/pages/Profile.tsx"
+  },
+  {
+    "event": "notification_preferences_updated",
+    "description": "Fired when a user saves changes to daily reminder or after-lecture notification settings",
+    "file": "src/pages/Profile.tsx"
+  },
+  {
+    "event": "app_error_caught",
+    "description": "Fired by ErrorBoundary when an unhandled React render error is caught; includes error details",
+    "file": "src/components/ErrorBoundary.tsx"
+  }
+]
