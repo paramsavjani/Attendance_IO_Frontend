@@ -6,6 +6,7 @@ import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { SleepDurationDialog } from "@/components/sleep/SleepDurationDialog";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
+import { posthog } from "@/lib/posthog";
 
 export default function SubjectOnboarding() {
   const navigate = useNavigate();
@@ -26,7 +27,8 @@ export default function SubjectOnboarding() {
     await refreshEnrolledSubjects();
     await refreshTimetable();
     completeOnboarding();
-    
+    posthog.capture('onboarding_completed');
+
     if (pendingNavigation) {
       if (pendingNavigation.hasConflicts) {
         toast.warning("Subjects saved! Please resolve timetable conflicts.");
@@ -44,7 +46,8 @@ export default function SubjectOnboarding() {
     await refreshEnrolledSubjects();
     await refreshTimetable();
     completeOnboarding();
-    
+    posthog.capture('onboarding_completed');
+
     if (pendingNavigation) {
       if (pendingNavigation.hasConflicts) {
         toast.warning("Subjects saved! Please resolve timetable conflicts.");

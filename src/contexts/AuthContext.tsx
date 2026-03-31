@@ -3,6 +3,7 @@ import { API_CONFIG, authenticatedFetch, getAppBuildNumber } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { initializePushNotifications, clearFcmToken } from "@/lib/notifications";
 import { getToken, setToken, removeToken } from "@/lib/token";
+import { posthog } from "@/lib/posthog";
 
 interface Student {
   id: string;
@@ -107,7 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           afterLectureReminderEnabled: userData.afterLectureReminderEnabled !== false,
         };
         setStudent(studentData);
-        
+        posthog.identify(studentData.id, {
+          name: studentData.name,
+          email: studentData.email,
+          rollNumber: studentData.rollNumber,
+          isDemo: studentData.isDemo ?? false,
+          platform: Capacitor.isNativePlatform() ? "mobile" : "web",
+        });
+
         // If using the init endpoint, also set enrolled subjects
         if (isInitialLoad && userData.subjects) {
           setEnrolledSubjects(userData.subjects);
@@ -166,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (token) {
       setToken(token);
+      posthog.capture('user_logged_in', { platform: 'web' });
       // Remove token from URL
       urlParams.delete("token");
       const newUrl = window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : '');
@@ -206,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (token) {
             await Browser.close();
             setToken(token);
+            posthog.capture('user_logged_in', { platform: 'mobile' });
             await checkAuth();
             // Initialize push notifications after successful login
             if (Capacitor.isNativePlatform()) {
@@ -242,6 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setToken(exchangeData.token);
           }
 
+          posthog.capture('user_logged_in', { platform: 'mobile' });
           await checkAuth();
           // Initialize push notifications after successful login
           if (Capacitor.isNativePlatform()) {
@@ -297,6 +308,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
+      posthog.capture('user_logged_out');
+      posthog.reset();
       setStudent(null);
       setEnrolledSubjects([]);
       removeToken();
