@@ -81,7 +81,9 @@ export default function Search() {
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const wasProfileOpenRef = useRef(false);
 
   // ── Search history API helpers ──────────────────────────────────────────────
 
@@ -108,7 +110,7 @@ export default function Search() {
           createdAt: new Date().toISOString(),
         },
         ...filtered,
-      ].slice(0, 10);
+      ];
     });
     try {
       await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, {
@@ -194,6 +196,25 @@ export default function Search() {
       setSelectedStudent(null);
     }
   }, [studentIdParam, students, setSearchParams]);
+
+  // Focus input and show history when user returns from a profile.
+  useEffect(() => {
+    if (studentIdParam || selectedStudent) {
+      wasProfileOpenRef.current = true;
+      return;
+    }
+    if (!wasProfileOpenRef.current) return;
+
+    wasProfileOpenRef.current = false;
+    setShowAllHistory(false);
+    setShowHistory(true);
+    setQuery("");
+
+    const id = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [studentIdParam, selectedStudent]);
 
   // ── Fetch student from attendance data when navigating directly by URL ───────
 
@@ -643,6 +664,7 @@ export default function Search() {
   // ── Search / history view ────────────────────────────────────────────────────
 
   const historyVisible = showHistory && query.trim() === "" && searchHistory.length > 0;
+  const recentHistory = searchHistory.slice(0, 5);
 
   return (
     <div className="space-y-4">
@@ -663,7 +685,10 @@ export default function Search() {
           ref={inputRef}
           placeholder="Search by name or roll number..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (showAllHistory) setShowAllHistory(false);
+          }}
           onFocus={() => setShowHistory(true)}
           onBlur={() => setShowHistory(false)}
           className="pl-12 py-6 text-base rounded-xl bg-card border-border"
@@ -679,16 +704,18 @@ export default function Search() {
               </span>
               <button
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={clearAllHistory}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+                onClick={() => {
+                  setShowAllHistory(true);
+                  setShowHistory(false);
+                }}
+                className="text-xs text-primary hover:underline"
               >
-                <Trash2 className="w-3 h-3" />
-                Clear all
+                Show all
               </button>
             </div>
 
             {/* History items — profile cards */}
-            {searchHistory.map((item) => (
+            {recentHistory.map((item) => (
               <div
                 key={item.id}
                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 border-b border-border/40 last:border-0 transition-colors"
@@ -738,8 +765,67 @@ export default function Search() {
         )}
       </div>
 
+      {/* Full history view */}
+      {showAllHistory && query.trim() === "" && searchHistory.length > 0 && (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+            <h3 className="text-sm font-semibold">All history</h3>
+            <button
+              onClick={clearAllHistory}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              Clear all
+            </button>
+          </div>
+
+          <div className="max-h-[45vh] overflow-y-auto">
+            {searchHistory.map((item) => (
+              <div
+                key={`all-${item.id}`}
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 border-b border-border/40 last:border-0 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-primary/10 shrink-0 overflow-hidden">
+                  <img
+                    src={item.viewedStudentPictureUrl || "/user-icons/user2.png"}
+                    alt={item.viewedStudentName}
+                    className="w-9 h-9 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/user-icons/user2.png";
+                    }}
+                  />
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowAllHistory(false);
+                    setSearchParams((prev) => {
+                      const newParams = new URLSearchParams(prev);
+                      newParams.set("studentId", item.viewedStudentId);
+                      return newParams;
+                    });
+                  }}
+                  className="flex-1 text-left min-w-0"
+                >
+                  <p className="text-sm font-medium truncate">{item.viewedStudentName}</p>
+                  <p className="text-xs text-muted-foreground">{item.viewedStudentRollNumber}</p>
+                </button>
+
+                <button
+                  onClick={() => deleteHistoryItem(item.id)}
+                  className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors shrink-0"
+                  aria-label="Remove"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
-      {query.length === 0 && !historyVisible && (
+      {query.length === 0 && !historyVisible && !showAllHistory && (
         <div className="text-center py-16 text-muted-foreground">
           <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
           <p className="text-sm">Search for any student</p>
