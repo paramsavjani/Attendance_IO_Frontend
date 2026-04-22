@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, User, ChevronLeft, ChevronDown } from "lucide-react";
+import { Search as SearchIcon, ChevronLeft, ChevronDown, X, Trash2 } from "lucide-react";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -56,6 +56,14 @@ interface StudentAttendanceData {
   semesters?: SemesterData[];
 }
 
+interface SearchHistoryItem {
+  id: string;
+  viewedStudentId: string;
+  viewedStudentName: string;
+  viewedStudentRollNumber: string;
+  viewedStudentPictureUrl: string | null;
+  createdAt: string | null;
+}
 
 export default function Search() {
   const navigate = useNavigate();
@@ -71,14 +79,80 @@ export default function Search() {
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [currentSemester, setCurrentSemester] = useState<{ year: number; type: string } | null>(null);
 
-  // Handle browser/Capacitor back button
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) {
-      // Browser: URL params handle navigation automatically
-      return;
-    }
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    // Capacitor: Handle hardware back button
+  // ── Search history API helpers ──────────────────────────────────────────────
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, { credentials: "include" });
+      if (res.ok) setSearchHistory(await res.json());
+    } catch {
+      // silent
+    }
+  };
+
+  const saveToHistory = async (student: Student) => {
+    // Optimistic update: bump to top, deduplicate by student id
+    setSearchHistory((prev) => {
+      const filtered = prev.filter((h) => h.viewedStudentId !== student.id);
+      return [
+        {
+          id: `tmp-${Date.now()}`,
+          viewedStudentId: student.id,
+          viewedStudentName: student.name,
+          viewedStudentRollNumber: student.rollNumber,
+          viewedStudentPictureUrl: student.pictureUrl ?? null,
+          createdAt: new Date().toISOString(),
+        },
+        ...filtered,
+      ].slice(0, 10);
+    });
+    try {
+      await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewedStudentId: student.id }),
+      });
+    } catch {
+      // silent
+    }
+  };
+
+  const deleteHistoryItem = async (id: string) => {
+    setSearchHistory((prev) => prev.filter((h) => h.id !== id));
+    try {
+      await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY_DELETE(id), {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch {
+      toast.error("Failed to delete");
+      fetchHistory();
+    }
+  };
+
+  const clearAllHistory = async () => {
+    setSearchHistory([]);
+    try {
+      await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch {
+      toast.error("Failed to clear history");
+      fetchHistory();
+    }
+  };
+
+  // ── Back-button handling (Capacitor) ────────────────────────────────────────
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
     let listenerHandle: { remove: () => Promise<void> } | undefined;
 
     (async () => {
@@ -86,14 +160,12 @@ export default function Search() {
 
       listenerHandle = await App.addListener("backButton", ({ canGoBack }) => {
         if (studentIdParam) {
-          // If viewing a profile, go back to search results
           setSearchParams((prev) => {
             const newParams = new URLSearchParams(prev);
             newParams.delete("studentId");
             return newParams;
           });
         } else if (canGoBack) {
-          // Otherwise, let the default behavior handle it
           window.history.back();
         }
       });
@@ -104,45 +176,39 @@ export default function Search() {
     };
   }, [studentIdParam, setSearchParams]);
 
-  // Sync selectedStudent with URL parameter
+  // ── Sync selectedStudent with URL param ─────────────────────────────────────
+
   useEffect(() => {
     if (studentIdParam) {
-      // Find the student from the current students list
-      const student = students.find(s => s.id === studentIdParam);
+      const student = students.find((s) => s.id === studentIdParam);
       if (student) {
         setSelectedStudent(student);
       } else if (students.length > 0) {
-        // Student ID in URL but not in current search results - clear it
-        // This can happen if user navigated via browser history
         setSearchParams((prev) => {
           const newParams = new URLSearchParams(prev);
           newParams.delete("studentId");
           return newParams;
         });
       }
-      // If students.length === 0, we might still be loading or haven't searched yet
-      // Don't clear the param in that case - wait for search to complete or fetch attendance
     } else {
       setSelectedStudent(null);
     }
   }, [studentIdParam, students, setSearchParams]);
 
-  // Fetch student info from attendance when studentIdParam exists but student not found in search results
+  // ── Fetch student from attendance data when navigating directly by URL ───────
+
   useEffect(() => {
     const fetchStudentFromAttendance = async () => {
-      if (!studentIdParam || selectedStudent || students.length > 0) {
-        return; // Don't fetch if student is already selected or if we have search results
-      }
+      if (!studentIdParam || selectedStudent || students.length > 0) return;
 
       setIsLoadingAttendance(true);
       try {
         const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(studentIdParam);
-        const response = await fetch(url, { credentials: 'include' });
+        const response = await fetch(url, { credentials: "include" });
 
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
 
-          // Create student object from attendance data
           const student: Student = {
             id: data.studentId,
             name: data.studentName,
@@ -152,40 +218,36 @@ export default function Search() {
 
           setSelectedStudent(student);
 
-          // Convert hex colors to HSL format for subjects
           if (data.subjects) {
-            data.subjects = data.subjects.map(subj => ({
+            data.subjects = data.subjects.map((subj) => ({
               ...subj,
-              color: hexToHslLightened(subj.color || "#3B82F6")
+              color: hexToHslLightened(subj.color || "#3B82F6"),
             }));
           }
 
           if (data.semesters) {
-            data.semesters = data.semesters.map(sem => ({
+            data.semesters = data.semesters.map((sem) => ({
               ...sem,
-              subjects: sem.subjects.map(subj => ({
+              subjects: sem.subjects.map((subj) => ({
                 ...subj,
-                color: hexToHslLightened(subj.color || "#3B82F6")
-              }))
+                color: hexToHslLightened(subj.color || "#3B82F6"),
+              })),
             }));
           }
 
           setAttendanceData(data);
         } else if (response.status === 404) {
-          // Student not found, clear the param
           setSearchParams((prev) => {
             const newParams = new URLSearchParams(prev);
             newParams.delete("studentId");
             return newParams;
           });
-          toast.error('Student not found');
+          toast.error("Student not found");
         } else {
-          console.error('Failed to fetch attendance');
-          toast.error('Failed to load student data');
+          toast.error("Failed to load student data");
         }
-      } catch (error) {
-        console.error('Error fetching attendance:', error);
-        toast.error('Error loading student data');
+      } catch {
+        toast.error("Error loading student data");
       } finally {
         setIsLoadingAttendance(false);
       }
@@ -194,77 +256,68 @@ export default function Search() {
     fetchStudentFromAttendance();
   }, [studentIdParam, selectedStudent, students.length, setSearchParams]);
 
-  // Fetch current semester on mount
+  // ── On mount: fetch semester + search history ────────────────────────────────
+
   useEffect(() => {
     const fetchCurrentSemester = async () => {
       try {
         const response = await fetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
-          credentials: 'include',
+          credentials: "include",
         });
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentSemester(data);
-        }
-      } catch (error) {
-        console.error('Error fetching current semester:', error);
+        if (response.ok) setCurrentSemester(await response.json());
+      } catch {
+        // ignore
       }
     };
     fetchCurrentSemester();
+    fetchHistory();
 
-    // Track search page view (only when not viewing a specific profile)
     if (!studentIdParam) {
-      trackAppEvent('search_view', {
-        timestamp: new Date().toISOString(),
-      }).catch(console.error);
+      trackAppEvent("search_view", { timestamp: new Date().toISOString() }).catch(console.error);
     }
   }, [studentIdParam]);
 
-  // Search students when query changes
+  // ── Live search with debounce ────────────────────────────────────────────────
+
   useEffect(() => {
     const searchStudents = async () => {
       if (query.trim().length === 0) {
         setStudents([]);
         return;
       }
-
-      if (query.trim().length < 2) {
-        return; // Don't search for very short queries
-      }
+      if (query.trim().length < 2) return;
 
       setIsSearching(true);
       try {
         const response = await fetch(
           `${API_CONFIG.ENDPOINTS.SEARCH_STUDENTS}?query=${encodeURIComponent(query)}`,
-          { credentials: 'include' }
+          { credentials: "include" }
         );
 
         if (response.ok) {
           const data = await response.json();
           setStudents(data);
-
-          // Track search event
-          trackAppEvent('search_performed', {
+          trackAppEvent("search_performed", {
             query: query.trim(),
             resultsCount: data.length,
             timestamp: new Date().toISOString(),
           }).catch(console.error);
         } else {
-          console.error('Failed to search students');
-          toast.error('Failed to search students');
+          toast.error("Failed to search students");
         }
-      } catch (error) {
-        console.error('Error searching students:', error);
-        toast.error('Error searching students');
+      } catch {
+        toast.error("Error searching students");
       } finally {
         setIsSearching(false);
       }
     };
 
-    const timeoutId = setTimeout(searchStudents, 300); // Debounce
-    return () => clearTimeout(timeoutId);
+    const id = setTimeout(searchStudents, 300);
+    return () => clearTimeout(id);
   }, [query]);
 
-  // Fetch attendance when student is selected
+  // ── Fetch attendance when a student is selected ──────────────────────────────
+
   useEffect(() => {
     const fetchAttendance = async () => {
       if (!selectedStudent) {
@@ -272,52 +325,45 @@ export default function Search() {
         return;
       }
 
-      // Track profile open event when a student is selected
-      trackAppEvent('profile_open', {
+      trackAppEvent("profile_open", {
         studentId: selectedStudent.id,
         studentName: selectedStudent.name,
         timestamp: new Date().toISOString(),
       }).catch(console.error);
 
-      // Skip if we already have attendance data for this student
-      if (attendanceData && attendanceData.studentId === selectedStudent.id) {
-        return;
-      }
+      if (attendanceData && attendanceData.studentId === selectedStudent.id) return;
 
       setIsLoadingAttendance(true);
       try {
         const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
-        const response = await fetch(url, { credentials: 'include' });
+        const response = await fetch(url, { credentials: "include" });
 
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
 
-          // Convert hex colors to HSL format for subjects
           if (data.subjects) {
-            data.subjects = data.subjects.map(subj => ({
+            data.subjects = data.subjects.map((subj) => ({
               ...subj,
-              color: hexToHslLightened(subj.color || "#3B82F6")
+              color: hexToHslLightened(subj.color || "#3B82F6"),
             }));
           }
 
           if (data.semesters) {
-            data.semesters = data.semesters.map(sem => ({
+            data.semesters = data.semesters.map((sem) => ({
               ...sem,
-              subjects: sem.subjects.map(subj => ({
+              subjects: sem.subjects.map((subj) => ({
                 ...subj,
-                color: hexToHslLightened(subj.color || "#3B82F6")
-              }))
+                color: hexToHslLightened(subj.color || "#3B82F6"),
+              })),
             }));
           }
 
           setAttendanceData(data);
         } else {
-          console.error('Failed to fetch attendance');
-          toast.error('Failed to load attendance data');
+          toast.error("Failed to load attendance data");
         }
-      } catch (error) {
-        console.error('Error fetching attendance:', error);
-        toast.error('Error loading attendance data');
+      } catch {
+        toast.error("Error loading attendance data");
       } finally {
         setIsLoadingAttendance(false);
       }
@@ -326,60 +372,51 @@ export default function Search() {
     fetchAttendance();
   }, [selectedStudent, selectedSemester]);
 
-  // Filter semesters based on selected semester
+  // ── Derived data ─────────────────────────────────────────────────────────────
+
   const filteredSemesters = useMemo(() => {
-    if (!attendanceData?.semesters || !selectedSemester) {
-      return attendanceData?.semesters || [];
-    }
-    return attendanceData.semesters.filter(sem =>
-      sem.semester.year === selectedSemester.year &&
-      sem.semester.type.toLowerCase() === selectedSemester.term.toLowerCase()
+    if (!attendanceData?.semesters || !selectedSemester) return attendanceData?.semesters || [];
+    return attendanceData.semesters.filter(
+      (sem) =>
+        sem.semester.year === selectedSemester.year &&
+        sem.semester.type.toLowerCase() === selectedSemester.term.toLowerCase()
     );
   }, [attendanceData, selectedSemester]);
 
-  // Find current semester data
   const currentSemesterData = useMemo(() => {
     if (!attendanceData?.semesters || !currentSemester) return null;
-    return attendanceData.semesters.find(sem =>
-      sem.semester.year === currentSemester.year &&
-      sem.semester.type.toLowerCase() === currentSemester.type.toLowerCase()
+    return attendanceData.semesters.find(
+      (sem) =>
+        sem.semester.year === currentSemester.year &&
+        sem.semester.type.toLowerCase() === currentSemester.type.toLowerCase()
     );
   }, [attendanceData, currentSemester]);
 
-  // Calculate overall attendance for current semester only
   const overallAttendance = useMemo(() => {
     if (!currentSemesterData) return null;
-
     let totalPresent = 0;
     let totalAbsent = 0;
     let totalClasses = 0;
-
-    // Sum up attendance from current semester only
-    currentSemesterData.subjects.forEach(subject => {
+    currentSemesterData.subjects.forEach((subject) => {
       totalPresent += subject.present;
       totalAbsent += subject.absent;
       totalClasses += subject.total;
     });
-
-    const percentage = totalClasses > 0 ? (totalPresent / totalClasses) * 100 : 0;
-
     return {
       present: totalPresent,
       absent: totalAbsent,
       total: totalClasses,
-      percentage: percentage,
+      percentage: totalClasses > 0 ? (totalPresent / totalClasses) * 100 : 0,
     };
   }, [currentSemesterData]);
 
+  // ── Student profile view ─────────────────────────────────────────────────────
+
   if (selectedStudent) {
     return (
-
       <div className="space-y-4">
-        {/* Back button */}
         <button
           onClick={() => {
-            // Remove studentId from URL to go back to search results
-            // This works with browser history - when URL changes, browser history is updated
             setSearchParams((prev) => {
               const newParams = new URLSearchParams(prev);
               newParams.delete("studentId");
@@ -399,16 +436,13 @@ export default function Search() {
           </div>
         ) : (
           <>
-            {/* Official Data Badge */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
               <div className="w-2 h-2 rounded-full bg-blue-400" />
               <span className="text-xs font-medium text-blue-400">Official Institute Attendance</span>
             </div>
 
-            {/* Student Profile Card with Overall Attendance */}
             {overallAttendance && (
               <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
-                {/* Student Info */}
                 <div className="flex items-center gap-2 md:gap-3">
                   <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                     <img
@@ -426,32 +460,36 @@ export default function Search() {
                   </div>
                 </div>
 
-                {/* Overall Attendance */}
                 <div className="space-y-2">
-                  {/* Percentage Display */}
                   <div className="text-center">
                     <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Overall Attendance</p>
-                    <p className={cn(
-                      "text-3xl md:text-4xl font-bold",
-                      overallAttendance.percentage >= 75 ? "text-success" :
-                        overallAttendance.percentage >= 60 ? "text-warning" : "text-destructive"
-                    )}>
+                    <p
+                      className={cn(
+                        "text-3xl md:text-4xl font-bold",
+                        overallAttendance.percentage >= 75
+                          ? "text-success"
+                          : overallAttendance.percentage >= 60
+                          ? "text-warning"
+                          : "text-destructive"
+                      )}
+                    >
                       {overallAttendance.percentage.toFixed(1)}%
                     </p>
                   </div>
 
-                  {/* Progress Bar */}
                   <div>
                     <div className="relative h-2 md:h-2.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all",
-                          overallAttendance.percentage >= 75 ? "bg-success" :
-                            overallAttendance.percentage >= 60 ? "bg-warning" : "bg-destructive"
+                          overallAttendance.percentage >= 75
+                            ? "bg-success"
+                            : overallAttendance.percentage >= 60
+                            ? "bg-warning"
+                            : "bg-destructive"
                         )}
                         style={{ width: `${Math.min(overallAttendance.percentage, 100)}%` }}
                       />
-                      {/* 75% threshold marker */}
                       <div
                         className="absolute top-0 w-0.5 h-full bg-foreground/30"
                         style={{ left: "75%" }}
@@ -459,7 +497,6 @@ export default function Search() {
                     </div>
                   </div>
 
-                  {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-2 md:gap-3 pt-1">
                     <div className="text-center">
                       <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Present</p>
@@ -478,7 +515,6 @@ export default function Search() {
               </div>
             )}
 
-            {/* Current Semester - Only if no filter applied */}
             {!selectedSemester && currentSemesterData && (
               <div>
                 <h3 className="font-semibold text-sm mb-2">
@@ -509,12 +545,9 @@ export default function Search() {
               </div>
             )}
 
-            {/* Filtered Semester Data */}
             {selectedSemester && (
               <div>
-                <h3 className="font-semibold text-sm mb-2">
-                  {selectedSemester.label} Attendance
-                </h3>
+                <h3 className="font-semibold text-sm mb-2">{selectedSemester.label} Attendance</h3>
                 <div className="space-y-2">
                   {filteredSemesters.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
@@ -544,16 +577,16 @@ export default function Search() {
               </div>
             )}
 
-            {/* Previous Semesters - Collapsed view without filter */}
             {!selectedSemester && attendanceData?.semesters && (
               <div>
                 <h3 className="font-semibold text-sm mb-2">Previous Semesters</h3>
                 <div className="space-y-2">
                   {attendanceData.semesters
-                    .filter(sem =>
-                      !currentSemester ||
-                      sem.semester.year !== currentSemester.year ||
-                      sem.semester.type.toLowerCase() !== currentSemester.type.toLowerCase()
+                    .filter(
+                      (sem) =>
+                        !currentSemester ||
+                        sem.semester.year !== currentSemester.year ||
+                        sem.semester.type.toLowerCase() !== currentSemester.type.toLowerCase()
                     )
                     .map((sem) => (
                       <Collapsible key={`${sem.semester.year}-${sem.semester.type}`}>
@@ -563,7 +596,7 @@ export default function Search() {
                               {sem.semester.type} {sem.semester.year}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {sem.subjects.length} subject{sem.subjects.length !== 1 ? 's' : ''}
+                              {sem.subjects.length} subject{sem.subjects.length !== 1 ? "s" : ""}
                             </p>
                           </div>
                           <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
@@ -604,14 +637,16 @@ export default function Search() {
           </>
         )}
       </div>
-
     );
   }
 
-  return (
+  // ── Search / history view ────────────────────────────────────────────────────
 
+  const historyVisible = showHistory && query.trim() === "" && searchHistory.length > 0;
+
+  return (
     <div className="space-y-4">
-      {/* Semester Filter at Top */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-sm">Search Students</h2>
         <SemesterSelector
@@ -621,19 +656,90 @@ export default function Search() {
         />
       </div>
 
-      {/* Search Input */}
+      {/* Search input + history dropdown */}
       <div className="relative">
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
         <Input
+          ref={inputRef}
           placeholder="Search by name or roll number..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setShowHistory(true)}
+          onBlur={() => setShowHistory(false)}
           className="pl-12 py-6 text-base rounded-xl bg-card border-border"
         />
+
+        {/* History dropdown */}
+        {historyVisible && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-3 bg-card border border-border rounded-xl overflow-hidden shadow-xl">
+            {/* Header row */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60">
+              <span className="text-xs font-medium text-muted-foreground tracking-wide uppercase">
+                Recent
+              </span>
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={clearAllHistory}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+                Clear all
+              </button>
+            </div>
+
+            {/* History items — profile cards */}
+            {searchHistory.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 border-b border-border/40 last:border-0 group transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-primary/10 shrink-0 overflow-hidden">
+                  <img
+                    src={item.viewedStudentPictureUrl || "/user-icons/user2.png"}
+                    alt={item.viewedStudentName}
+                    className="w-9 h-9 rounded-full object-cover"
+                    onError={(e) => { e.currentTarget.src = "/user-icons/user2.png"; }}
+                  />
+                </div>
+
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setShowHistory(false);
+                    setSearchParams((prev) => {
+                      const newParams = new URLSearchParams(prev);
+                      newParams.set("studentId", item.viewedStudentId);
+                      return newParams;
+                    });
+                  }}
+                  className="flex-1 text-left min-w-0"
+                >
+                  <p className="text-sm font-medium truncate">{item.viewedStudentName}</p>
+                  <p className="text-xs text-muted-foreground">{item.viewedStudentRollNumber}</p>
+                </button>
+
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteHistoryItem(item.id);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-1 rounded transition-all"
+                  aria-label="Remove"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Results */}
-      {query.length === 0 && (
+      {/* Empty state */}
+      {query.length === 0 && !historyVisible && (
         <div className="text-center py-16 text-muted-foreground">
           <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
           <p className="text-sm">Search for any student</p>
@@ -643,25 +749,28 @@ export default function Search() {
         </div>
       )}
 
+      {/* Searching indicator */}
       {isSearching && (
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">Searching...</p>
         </div>
       )}
 
+      {/* No results */}
       {!isSearching && query.length >= 2 && students.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-sm">No students found</p>
         </div>
       )}
 
+      {/* Results */}
       {!isSearching && students.length > 0 && (
         <div className="space-y-2">
           {students.map((student) => (
             <button
               key={student.id}
               onClick={() => {
-                // Update URL with studentId to maintain browser history
+                saveToHistory(student);
                 setSearchParams((prev) => {
                   const newParams = new URLSearchParams(prev);
                   newParams.set("studentId", student.id);
@@ -689,6 +798,5 @@ export default function Search() {
         </div>
       )}
     </div>
-
   );
 }
