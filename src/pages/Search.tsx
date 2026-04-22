@@ -87,9 +87,12 @@ export default function Search() {
 
   // ── Search history API helpers ──────────────────────────────────────────────
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (showAll = false) => {
     try {
-      const res = await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, { credentials: "include" });
+      const endpoint = showAll
+        ? `${API_CONFIG.ENDPOINTS.SEARCH_HISTORY}?all=true`
+        : `${API_CONFIG.ENDPOINTS.SEARCH_HISTORY}?limit=5`;
+      const res = await fetch(endpoint, { credentials: "include" });
       if (res.ok) setSearchHistory(await res.json());
     } catch {
       // silent
@@ -133,7 +136,7 @@ export default function Search() {
       });
     } catch {
       toast.error("Failed to delete");
-      fetchHistory();
+      fetchHistory(showAllHistory);
     }
   };
 
@@ -146,7 +149,7 @@ export default function Search() {
       });
     } catch {
       toast.error("Failed to clear history");
-      fetchHistory();
+      fetchHistory(showAllHistory);
     }
   };
 
@@ -704,7 +707,8 @@ export default function Search() {
               </span>
               <button
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
+                onClick={async () => {
+                  await fetchHistory(true);
                   setShowAllHistory(true);
                   setShowHistory(false);
                 }}
