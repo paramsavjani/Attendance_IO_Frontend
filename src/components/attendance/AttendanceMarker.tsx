@@ -230,6 +230,15 @@ export function AttendanceMarkerSkeleton() {
 
 /* ---------- Action Button ---------- */
 
+function triggerHaptic() {
+  try {
+    // Web Vibration API — works in Android WebView, silent on iOS/web
+    navigator.vibrate?.(8);
+  } catch {
+    // ignore
+  }
+}
+
 function ActionButton({
   active,
   onClick,
@@ -282,7 +291,7 @@ function ActionButton({
 
   return (
     <button
-      onClick={onClick}
+      onClick={() => { triggerHaptic(); onClick(); }}
       disabled={disabled}
       className={cn(
         baseStyles,
