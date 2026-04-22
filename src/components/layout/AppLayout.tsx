@@ -184,7 +184,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           transform: `translateY(${pullDistance}px)`,
         }}
       >
-        <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto overflow-x-hidden p-4">
+        <div
+          key={location.key}
+          className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto overflow-x-hidden p-4 animate-page-enter"
+        >
           {children}
         </div>
       </main>
