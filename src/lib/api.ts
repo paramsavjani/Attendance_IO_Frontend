@@ -16,6 +16,8 @@ export const API_CONFIG = {
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,
     SEARCH_STUDENTS: `${API_BASE_URL}/api/search/students`,
     STUDENT_ATTENDANCE: (studentId: string) => `${API_BASE_URL}/api/search/student/${studentId}/attendance`,
+    SEARCH_HISTORY: `${API_BASE_URL}/api/search/history`,
+    SEARCH_HISTORY_DELETE: (id: string) => `${API_BASE_URL}/api/search/history/${id}`,
     SUBJECTS_CURRENT: `${API_BASE_URL}/api/subjects/current`,
     SUBJECT_SCHEDULES: (subjectIds: string[]) => `${API_BASE_URL}/api/subjects/schedules?subjectIds=${subjectIds.join(',')}`,
     ENROLLED_SUBJECTS: `${API_BASE_URL}/api/student/enrollment/subjects`,
