@@ -1,6 +1,25 @@
 import { cn } from "@/lib/utils";
 import { ChevronDown, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+function AnimatedBar({ width, className }: { width: number; className: string }) {
+  const [animatedWidth, setAnimatedWidth] = useState(0);
+
+  useEffect(() => {
+    const id1 = requestAnimationFrame(() => {
+      const id2 = requestAnimationFrame(() => setAnimatedWidth(width));
+      return () => cancelAnimationFrame(id2);
+    });
+    return () => cancelAnimationFrame(id1);
+  }, [width]);
+
+  return (
+    <div
+      className={className}
+      style={{ width: `${animatedWidth}%`, transition: "width 0.65s cubic-bezier(0.4, 0, 0.2, 1)" }}
+    />
+  );
+}
 
 interface SubjectCardProps {
   name: string;
@@ -224,16 +243,12 @@ export function SubjectCard({
               </div>
             </div>
             <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-              <div
+              <AnimatedBar
+                width={Math.min(percentage, 100)}
                 className={cn(
-                  "h-full rounded-full transition-all",
-                  isSafe
-                    ? "bg-success"
-                    : isWarning
-                      ? "bg-warning"
-                      : "bg-destructive"
+                  "h-full rounded-full",
+                  isSafe ? "bg-success" : isWarning ? "bg-warning" : "bg-destructive"
                 )}
-                style={{ width: `${Math.min(percentage, 100)}%` }}
               />
               {/* Threshold marker */}
               <div
