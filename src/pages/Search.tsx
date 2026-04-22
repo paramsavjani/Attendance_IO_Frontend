@@ -691,7 +691,7 @@ export default function Search() {
             {searchHistory.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 border-b border-border/40 last:border-0 group transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 border-b border-border/40 last:border-0 transition-colors"
               >
                 <div className="w-9 h-9 rounded-full bg-primary/10 shrink-0 overflow-hidden">
                   <img
@@ -727,7 +727,7 @@ export default function Search() {
                     e.stopPropagation();
                     deleteHistoryItem(item.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground p-1 rounded transition-all"
+                  className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors shrink-0"
                   aria-label="Remove"
                 >
                   <X className="w-3.5 h-3.5" />
