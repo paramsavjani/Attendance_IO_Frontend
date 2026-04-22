@@ -230,6 +230,21 @@
   animation: live-pulse 2s ease-in-out infinite;
 }
 
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: pageEnter 0.22s ease-out forwards;
+}
+
 /* Custom dark scrollbar (global) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
