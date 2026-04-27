@@ -709,6 +709,8 @@ export default function Dashboard() {
   const isFutureDate = isBefore(startOfDay(now), startOfDay(selectedDate));
   const isPastDate = isBefore(startOfDay(selectedDate), startOfDay(now));
   const isBeforeStartDate = classesStartDate ? isBefore(startOfDay(selectedDate), startOfDay(classesStartDate)) : false;
+  const EXAM_PERIOD_START = new Date(2026, 4, 1); // May 1, 2026
+  const isExamPeriod = startOfDay(selectedDate) >= startOfDay(EXAM_PERIOD_START);
   const canMarkAttendance = true; // Allow marking for any date
 
   // Calculate if a subject needs attention (below minimum requirement)
@@ -805,6 +807,21 @@ export default function Dashboard() {
   } | null>(null);
 
   const [activeTab, setActiveTab] = useState("schedule");
+  const [showExamPopup, setShowExamPopup] = useState(false);
+
+  useEffect(() => {
+    const today = new Date();
+    const popupEnabledFrom = new Date(2026, 3, 25); // April 28, 2026
+    if (today >= popupEnabledFrom && !localStorage.getItem('examSeasonPopup_may2026')) {
+      setShowExamPopup(true);
+    }
+  }, []);
+
+  const dismissExamPopup = () => {
+    localStorage.setItem('examSeasonPopup_may2026', '1');
+    setShowExamPopup(false);
+  };
+
   /** Total (your tracking) vs Official (institute) — only used inside Subjects tab */
   const [subjectsAttendanceView, setSubjectsAttendanceView] = useState<"total" | "official">("total");
 
@@ -1107,7 +1124,7 @@ export default function Dashboard() {
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
-                {!isBeforeStartDate && (
+                {!isBeforeStartDate && !isExamPeriod && (
                   <button
                     onClick={() => setAddClassDialogOpen(true)}
                     className="h-9 pl-2.5 pr-3 rounded-full flex items-center gap-1.5 bg-neutral-900/80 dark:bg-neutral-900/80 text-white border border-neutral-700/50 dark:border-neutral-500/30 backdrop-blur-md hover:bg-neutral-800/90 dark:hover:bg-neutral-800/90 active:scale-[0.98] transition-all shadow-lg hover:shadow-xl font-medium text-xs"
@@ -1130,7 +1147,18 @@ export default function Dashboard() {
               </div>
             )}
 
-            {isBeforeStartDate && (
+            {isExamPeriod && (
+              <div className="text-center py-14">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <GraduationCap className="w-7 h-7 text-primary" />
+                </div>
+                <p className="font-semibold text-sm text-foreground">Exam Season</p>
+                <p className="text-xs text-muted-foreground mt-1.5">No regular classes from May 1st onwards.</p>
+                <p className="text-xs text-primary font-medium mt-3">Best of luck for your exams! 💪</p>
+              </div>
+            )}
+
+            {!isExamPeriod && isBeforeStartDate && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
                   <Sun className="w-6 h-6 text-muted-foreground/50" />
@@ -1142,7 +1170,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {!isBeforeStartDate && fullSchedule.length === 0 && (
+            {!isExamPeriod && !isBeforeStartDate && fullSchedule.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
                   <BookOpen className="w-6 h-6 text-muted-foreground/50" />
@@ -1153,7 +1181,7 @@ export default function Dashboard() {
             )}
 
             {/* Timeline Schedule - matching timetable structure */}
-            {!isBeforeStartDate && fullSchedule.length > 0 && (
+            {!isExamPeriod && !isBeforeStartDate && fullSchedule.length > 0 && (
               <div className="relative">
                 {/* Vertical line */}
                 <div className="absolute left-[5px] top-4 bottom-4 w-[2px] bg-border rounded-full" />
@@ -1857,6 +1885,61 @@ export default function Dashboard() {
                 </button>
               ));
             })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Exam Season Popup — shown once from April 28 */}
+      <Dialog open={showExamPopup} onOpenChange={(open) => !open && dismissExamPopup()}>
+        <DialogContent className="max-w-[85vw] md:max-w-sm rounded-3xl border-border/40 p-0 overflow-hidden">
+          {/* Top gradient band */}
+          {/* <div className="h-1.5 w-full bg-gradient-to-r from-primary/60 via-primary to-primary/60" /> */}
+
+          <div className="px-6 pt-5 pb-6 flex flex-col gap-5">
+            {/* Icon + heading */}
+            <div className="flex flex-col items-center gap-2 text-center">
+              {/* <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <GraduationCap className="w-7 h-7 text-primary" />
+              </div> */}
+              <div>
+                <h2 className="text-lg font-bold text-foreground leading-tight">Thank You!</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">for using Attendance.io</p>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-2xl bg-secondary/50 border border-border/40 px-3 py-3 text-center">
+                <p className="text-2xl font-bold text-primary leading-none">1000+</p>
+                <p className="text-[10px] text-muted-foreground mt-1 font-medium">Students</p>
+              </div>
+              <div className="rounded-2xl bg-secondary/50 border border-border/40 px-3 py-3 text-center">
+                <p className="text-2xl font-bold text-primary leading-none">~1000</p>
+                <p className="text-[10px] text-muted-foreground mt-1 font-medium">Daily Opens</p>
+              </div>
+            </div>
+
+            {/* Message */}
+            <div className="rounded-2xl bg-muted/40 border border-border/40 px-4 py-3.5 text-center space-y-2">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Built this for myself. Turns out 1000+ of you had the same problem — that means a lot.
+              </p>
+              <p className="text-sm font-semibold text-foreground">Best of luck for your exams. 🍀</p>
+            </div>
+
+            {/* Sign-off */}
+            <div className="text-center -mt-1 space-y-0.5">
+              <p className="text-xs text-muted-foreground">See you in the new semester! 👋</p>
+              <p className="text-xs text-white italic">— Param Savjani</p>
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={dismissExamPopup}
+              className="w-full h-10 rounded-2xl bg-secondary border border-border/60 text-foreground text-sm font-semibold transition-all active:scale-[0.98] hover:bg-secondary/80"
+            >
+              Got it, thanks!
+            </button>
           </div>
         </DialogContent>
       </Dialog>
