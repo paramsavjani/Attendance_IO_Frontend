@@ -1,4 +1,4 @@
-import { ReactNode, useState, useRef, useEffect } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -33,68 +33,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const startX = useRef(0);
   const startProgress = useRef(0);
 
-  // Sync dragProgress with current route when not dragging
-  useEffect(() => {
-    if (!isDragging) {
-      const currentIndex = navItems.findIndex(i => location.pathname === i.path);
-      setDragProgress(Math.max(0, currentIndex));
-    }
-  }, [location.pathname, isDragging]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!navRef.current) return;
-
-    // Calculate which item was touched
-    const navRect = navRef.current.getBoundingClientRect();
-    const touchX = e.touches[0].clientX;
-
-    // Account for the grid gap and padding in the calculation if needed,
-    // but simple division usually works well enough for "intent".
-    // Width includes padding (4px total) + gaps (16px total). 
-    // It's a grid of 5 equal columns.
-    const itemWidth = navRect.width / 5;
-    const relativeX = touchX - navRect.left;
-    const touchedIndex = Math.floor(relativeX / itemWidth);
-
-    // Get current active index
-    const currentIndex = navItems.findIndex(i => location.pathname === i.path);
-
-    // Only start dragging if touching the active tab (or very close to it)
-    if (touchedIndex === currentIndex) {
-      setIsDragging(true);
-      startX.current = touchX;
-      startProgress.current = dragProgress;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!navRef.current || !isDragging) return;
-
-    const currentX = e.touches[0].clientX;
-    const diff = currentX - startX.current;
-    const itemWidth = navRef.current.offsetWidth / 5;
-    const progressDiff = diff / itemWidth;
-
-    // Clamp between 0 and 4 (number of items - 1)
-    const newProgress = Math.min(Math.max(startProgress.current + progressDiff, 0), 4);
-    setDragProgress(newProgress);
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDragging) return;
-
-    setIsDragging(false);
-    const targetIndex = Math.round(dragProgress);
-    const targetPath = navItems[targetIndex].path;
-
-    if (location.pathname !== targetPath) {
-      navigate(targetPath);
-    } else {
-      // If we didn't change route, snap back
-      setDragProgress(targetIndex);
-    }
-  };
-
   const handleRefresh = async () => {
     // Small delay for visual feedback
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -116,6 +54,67 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const handleNavigation = (path: string) => {
     navigate(path);
+  };
+
+  const isActiveRoute = (path: string) => {
+    if (location.pathname === path) return true;
+
+    if (path === "/analytics" && location.pathname.startsWith("/subject-analysis")) {
+      return true;
+    }
+
+    return false;
+  };
+
+  useEffect(() => {
+    if (isDragging) return;
+    const currentIndex = navItems.findIndex((item) => isActiveRoute(item.path));
+    setDragProgress(Math.max(0, currentIndex));
+  }, [location.pathname, isDragging]);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement | null;
+    const button = target?.closest("button[data-nav-index]");
+    if (!button || !navRef.current) return;
+
+    const touchedIndex = Number(button.getAttribute("data-nav-index"));
+    const currentIndex = navItems.findIndex((item) => isActiveRoute(item.path));
+
+    if (touchedIndex !== currentIndex) return;
+
+    setIsDragging(true);
+    startX.current = e.touches[0].clientX;
+    startProgress.current = dragProgress;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || !navRef.current) return;
+
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - startX.current;
+    const itemWidth = navRef.current.offsetWidth / navItems.length;
+    const progressDiff = diff / itemWidth;
+    const newProgress = Math.min(
+      Math.max(startProgress.current + progressDiff, 0),
+      navItems.length - 1
+    );
+
+    setDragProgress(newProgress);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+    const targetIndex = Math.round(dragProgress);
+    const targetPath = navItems[targetIndex].path;
+
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+      return;
+    }
+
+    setDragProgress(targetIndex);
   };
 
   return (
@@ -177,7 +176,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main
         data-scroll-container
         className={cn(
-          "flex-1 pb-20 flex flex-col overflow-hidden safe-area-top",
+          "flex-1 pb-24 flex flex-col overflow-hidden safe-area-top",
           "transition-transform duration-300 ease-out"
         )}
         style={{
@@ -192,47 +191,57 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </main>
 
-      {/* Bottom Navigation - Mobile First */}
+      {/* Floating pill bottom navigation */}
       <nav
-        className="fixed bottom-0 left-0 right-0 border-t border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl safe-area-bottom z-40 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] touch-none"
+        className="fixed bottom-3 left-1/2 z-40 -translate-x-1/2 safe-area-bottom"
       >
         <div
           ref={navRef}
-          className="relative grid grid-cols-5 p-1 gap-1 max-w-lg mx-auto"
+          className={cn(
+            "liquid-nav flex items-center gap-1.5 rounded-full p-2",
+            "border-border/70 bg-card/85",
+            "min-w-[320px] justify-center"
+          )}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
-          {/* Sliding Background - darker when active */}
-          <div
-            className={cn(
-              "absolute top-1 bottom-1 left-1 rounded-2xl bg-neutral-800/90 dark:bg-neutral-800/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.25)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)] backdrop-blur-xl border border-neutral-600/40 dark:border-neutral-600/50 z-0",
-              !isDragging && "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
-            )}
-            style={{
-              width: 'calc((100% - 24px) / 5)',
-              transform: `translateX(calc(${dragProgress} * (100% + 4px)))`
-            }}
-          />
           {navItems.map((item, index) => {
-            // Determine if this item is currently "active" based on drag progress
-            // We consider it active if the progress is closest to this index
-            const isActive = Math.round(dragProgress) === index;
+            const isActive = isDragging
+              ? Math.round(dragProgress) === index
+              : isActiveRoute(item.path);
 
             return (
               <button
                 key={item.path}
-                // Only allow click navigation if not dragging (handled by touchEnd mostly, but good safety)
-                onClick={() => !isDragging && handleNavigation(item.path)}
+                data-nav-index={index}
+                onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-1.5 px-0 rounded-2xl transition-all duration-300 relative overflow-hidden group z-10",
+                  "group relative flex items-center gap-1.5 rounded-full px-3.5 py-2.5",
+                  "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "active:scale-95",
                   isActive
-                    ? "text-white"
-                    : "text-muted-foreground/80 active:scale-95 bg-transparent"
+                    ? "bg-primary/20 text-foreground shadow-[0_2px_14px_-3px_hsl(var(--primary)/0.55),0_0_0_1px_hsl(var(--primary)/0.35)_inset]"
+                    : "text-muted-foreground hover:text-foreground/90"
                 )}
+                aria-current={isActive ? "page" : undefined}
               >
-                <item.icon className={cn("w-5 h-5 transition-transform duration-300", isActive && "scale-110 drop-shadow-sm")} />
-                <span className={cn("text-[10px] font-bold transition-all duration-300", isActive ? "opacity-100" : "opacity-80 group-hover:opacity-100")}>{item.label}</span>
+                <item.icon
+                  className={cn(
+                    "h-[18px] w-[18px] shrink-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    isActive && "scale-105 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.45)]"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "overflow-hidden whitespace-nowrap text-[12px] font-semibold tracking-[-0.01em]",
+                    "max-w-0 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    isActive && "max-w-20 pl-0.5 opacity-100"
+                  )}
+                >
+                  {item.label}
+                </span>
               </button>
             );
           })}
