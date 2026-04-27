@@ -219,7 +219,7 @@ export default function AppAnalyticsPage() {
 
     <div className="min-h-screen pb-6">
       {/* Fixed header - always stuck to top */}
-      <header className="fixed top-0 left-0 right-0 z-30 bg-background border-b border-border safe-area-top">
+      <header className="fixed top-0 left-0 right-0 z-30 bg-background border-b border-border">
         <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6 sm:py-3 max-w-lg mx-auto min-h-[48px] sm:min-h-[52px]">
           <button
             type="button"
@@ -236,11 +236,8 @@ export default function AppAnalyticsPage() {
         </div>
       </header>
 
-      {/* Spacer mirrors fixed header height including notch inset */}
-      <div
-        className="h-[calc(48px+env(safe-area-inset-top,0px))] sm:h-[52px]"
-        aria-hidden
-      />
+      {/* Spacer matches fixed header height */}
+      <div className="h-[48px] sm:h-[52px]" aria-hidden />
 
       <div className="space-y-3 sm:space-y-5 app-analytics-scrollbar -mx-1 px-1 pt-3 sm:pt-4">
         {loading ? (
