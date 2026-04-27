@@ -200,7 +200,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           className={cn(
             "liquid-nav flex items-center gap-1.5 rounded-full p-2",
             "border-border/70 bg-card/85",
-            "min-w-[320px] justify-center"
+            "max-w-[calc(100vw-16px)] justify-center"
           )}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
