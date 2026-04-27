@@ -236,8 +236,11 @@ export default function AppAnalyticsPage() {
         </div>
       </header>
 
-      {/* Spacer so content starts below fixed header */}
-      <div className="h-[48px] sm:h-[52px]" aria-hidden />
+      {/* Spacer mirrors fixed header height including notch inset */}
+      <div
+        className="h-[calc(48px+env(safe-area-inset-top,0px))] sm:h-[52px]"
+        aria-hidden
+      />
 
       <div className="space-y-3 sm:space-y-5 app-analytics-scrollbar -mx-1 px-1 pt-3 sm:pt-4">
         {loading ? (
