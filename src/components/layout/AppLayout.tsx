@@ -222,7 +222,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   "active:scale-95",
                   isActive
-                    ? "bg-primary/20 text-foreground shadow-[0_2px_14px_-3px_hsl(var(--primary)/0.55),0_0_0_1px_hsl(var(--primary)/0.35)_inset]"
+                    ? "bg-primary/20 text-foreground shadow-[0_2px_14px_-50px_hsl(var(--primary)/0.55),0_0_0_1px_hsl(var(--primary)/0.35)_inset]"
                     : "text-muted-foreground hover:text-foreground/90"
                 )}
                 aria-current={isActive ? "page" : undefined}
