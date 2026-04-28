@@ -1,7 +1,7 @@
 {
   "name": "attendance-io",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.246",
   "type": "module",
   "scripts": {
     "dev": "vite",
