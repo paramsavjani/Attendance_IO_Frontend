@@ -4,7 +4,8 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, MapPin, BarChart3, Star, Bell } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import packageJson from "../../package.json";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -587,7 +588,28 @@ export default function Profile() {
         </DialogContent>
       </Dialog>
 
-      <div className="flex shrink-0 items-center justify-center pt-2 pb-1">
+      <div className="flex shrink-0 flex-col items-center gap-2 pt-2 pb-1">
+        {/* GitHub link + version */}
+        <div className="flex items-center gap-2">
+          <a
+            href="https://github.com/paramsavjani/Attendance_IO_Frontend"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.05] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.12] hover:border-white/20 hover:scale-105 active:scale-95"
+          >
+            <Github className="h-3.5 w-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
+            <span className="text-[10px] font-semibold tracking-wide text-white/50 group-hover:text-white/80 transition-colors">
+              Star on GitHub
+            </span>
+            <span className="ml-0.5 inline-flex items-center rounded-sm bg-yellow-500/20 px-1 py-0.5 text-[9px] font-bold text-yellow-400/90">
+              ★
+            </span>
+          </a>
+          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-medium text-white/30 tracking-wider">
+            v{packageJson.version}
+          </span>
+        </div>
+
         <a
           href="https://paramsavjani.in"
           target="_blank"
