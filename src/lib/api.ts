@@ -28,6 +28,7 @@ export const API_CONFIG = {
     UPDATE_SLEEP_DURATION: `${API_BASE_URL}/api/student/enrollment/sleep-duration`,
     GET_BASELINE_ATTENDANCE: (subjectId: string) => `${API_BASE_URL}/api/student/enrollment/baseline-attendance/${subjectId}`,
     SAVE_BASELINE_ATTENDANCE: `${API_BASE_URL}/api/student/enrollment/baseline-attendance`,
+    TIME_SLOTS: `${API_BASE_URL}/api/time-slots`,
     TIMETABLE: `${API_BASE_URL}/api/timetable`,
     LAB_TIMETABLE: `${API_BASE_URL}/api/lab-timetable`,
     TUTORIAL_TIMETABLE: `${API_BASE_URL}/api/tutorial-timetable`,
