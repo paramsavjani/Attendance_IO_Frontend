@@ -1,9 +1,8 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, Fragment } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { timeSlots } from "@/data/mockData";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO, setHours, setMinutes } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import {
@@ -135,6 +134,10 @@ export default function Dashboard() {
   const [isLoadingLab, setIsLoadingLab] = useState(true);
   const [isLoadingTutorial, setIsLoadingTutorial] = useState(true);
 
+  // Standard lecture time slots, fetched from backend (do not hardcode - the institute
+  // timetable can include slots beyond the classic 8am-12:50pm morning block, e.g. afternoon lectures)
+  const [lectureSlots, setLectureSlots] = useState<{ index: number; startTime: string; endTime: string }[]>([]);
+
   // Lab/Tutorial attendance stats
   const [labTutStats, setLabTutStats] = useState<Record<string, {
     subjectId: string;
@@ -211,6 +214,22 @@ export default function Dashboard() {
     };
     fetchSleepDuration();
   }, [student]);
+
+  // Fetch standard lecture time slots (dynamic - varies by semester's timetable)
+  useEffect(() => {
+    const fetchLectureSlots = async () => {
+      try {
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIME_SLOTS, { method: "GET" });
+        if (response.ok) {
+          const data = await response.json();
+          setLectureSlots(data);
+        }
+      } catch (error) {
+        console.error('Error fetching time slots:', error);
+      }
+    };
+    fetchLectureSlots();
+  }, []);
 
   // Get last class hour from schedule
   function getLastClassHour(schedule: { time: string; subject: any; endTime?: string }[]) {
@@ -379,7 +398,7 @@ export default function Dashboard() {
     return () => clearTimeout(timeoutId);
   }, [todayAttendance, student, isLoadingLabTutStats]);
 
-  // Get schedule for any date - returns standard slots (8-12) + custom slots + lab/tutorial
+  // Get schedule for any date - returns standard lecture slots + custom slots + lab/tutorial
   function getScheduleForDate(date: Date, includeLabTutorial: boolean = true) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
@@ -387,14 +406,14 @@ export default function Dashboard() {
     const adjustedDay = dayOfWeek - 1;
     const daySlots = timetable.filter((slot) => slot.day === adjustedDay);
 
-    // Get standard slots (8-12) - always show all 5 slots
-    const standardSlots = timeSlots.map((time, slotIndex) => {
+    // Get standard lecture slots (dynamic from backend - includes afternoon slots) - always show all
+    const standardSlots = lectureSlots.map(({ index: slotIndex, startTime, endTime }) => {
       const slot = daySlots.find(s => s.timeSlot === slotIndex && !s.startTime);
       return {
-        time,
+        time: `${startTime} - ${endTime}`,
         slotIndex,
-        startTime: time.split(" - ")[0],
-        endTime: time.split(" - ")[1],
+        startTime,
+        endTime,
         subject: slot?.subjectId ? enrolledSubjects.find((s) => s.id === slot.subjectId) || null : null,
         isCustom: false,
         type: "lecture" as const,
@@ -541,7 +560,7 @@ export default function Dashboard() {
       });
   }, []);
 
-  const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable]);
+  const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
   const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
 
@@ -596,7 +615,7 @@ export default function Dashboard() {
   // Create extra class slots from extra classes; assign extraClassIndex per subject so multiple extras of same subject get unique keys
   const extraClassSlots = useMemo(() => {
     const subjectCounts = new Map<string, number>();
-    return extraClassesForDate.map((subjectId) => {
+    return extraClassesForDate.map((subjectId, listIdx) => {
       const subject = enrolledSubjects.find((s) => s.id === subjectId);
       if (!subject) return null;
       const extraClassIndex = subjectCounts.get(subjectId) ?? 0;
@@ -610,6 +629,9 @@ export default function Dashboard() {
         isCustom: true,
         isExtraClass: true,
         extraClassIndex,
+        // Position in extraClassesForDate (for deletion). Stored explicitly so it stays
+        // correct regardless of how fullSchedule is trimmed/reordered for display.
+        extraListIndex: listIdx,
         type: "lecture" as const,
       };
     }).filter(Boolean) as any[];
@@ -617,8 +639,27 @@ export default function Dashboard() {
 
   // Combine regular schedule with extra classes
   const fullSchedule = useMemo(() => {
-    return [...schedule, ...extraClassSlots];
+    const combined = [...schedule, ...extraClassSlots];
+    // Trim leading & trailing empty (no-subject) lecture slots so the timeline spans
+    // just the student's actual class day (gaps between classes are kept). This keeps
+    // the view clean now that lecture slots span both morning and afternoon - a student
+    // with only morning classes won't see a wall of empty afternoon slots.
+    const firstWithSubject = combined.findIndex((s) => s.subject);
+    if (firstWithSubject === -1) return []; // no classes at all -> show the "No classes" empty state
+    let lastWithSubject = combined.length - 1;
+    while (lastWithSubject >= 0 && !combined[lastWithSubject].subject) lastWithSubject--;
+    return combined.slice(firstWithSubject, lastWithSubject + 1);
   }, [schedule, extraClassSlots]);
+
+  // Index of the first afternoon slot (start hour >= 13:00). Used to render a
+  // morning/afternoon divider. -1 (or 0) means no divider needed (all-morning or all-afternoon day).
+  const firstAfternoonIndex = useMemo(() => {
+    return fullSchedule.findIndex((s: any) => {
+      const st = s.startTime || (s.time ? s.time.split(" - ")[0] : "");
+      const h = st ? parseInt(st.split(":")[0]) : null;
+      return h !== null && h >= 13;
+    });
+  }, [fullSchedule]);
 
   // If time until first lecture is less than user's sleep duration, show warning at top.
   // Ignore cancelled classes when finding the first lecture.
@@ -1199,26 +1240,43 @@ export default function Dashboard() {
                       const startHour = timeStart ? parseInt(timeStart.split(":")[0]) : null;
                       const isCurrent = isSelectedToday && startHour !== null && startHour === currentHour;
                       const isExtraClass = (slot as any).isExtraClass === true;
-                      // Calculate the index in the extra classes array (for deletion)
-                      const extraClassIndex = isExtraClass ? index - schedule.length : -1;
+                      // Position in the extra classes list (for deletion). Read from the slot
+                      // itself so it stays correct even though fullSchedule is trimmed for display.
+                      const extraClassIndex = isExtraClass ? ((slot as any).extraListIndex ?? -1) : -1;
+
+                      // Show a divider before the first afternoon slot (only when the day
+                      // also has morning slots), separating the morning and afternoon blocks.
+                      const showAfternoonDivider = firstAfternoonIndex > 0 && index === firstAfternoonIndex;
+                      const afternoonDivider = showAfternoonDivider ? (
+                        <div className="relative flex items-center gap-2 py-1.5 pl-[1px]">
+                          <div className="w-2.5 flex-shrink-0 flex justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                          </div>
+                          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">Afternoon</span>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                      ) : null;
 
                       if (!slot.subject) {
                         // Empty slot - same height as lecture slots
                         return (
-                          <div key={index} className="relative flex items-stretch gap-2 min-h-[64px]">
-                            <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
-                              <div className="flex-1" />
-                              <div className="w-2 h-2 rounded-full bg-muted-foreground/70 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                              <div className="flex-1" />
+                          <Fragment key={index}>
+                            {afternoonDivider}
+                            <div className="relative flex items-stretch gap-2 min-h-[64px]">
+                              <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
+                                <div className="flex-1" />
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground/70 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                <div className="flex-1" />
+                              </div>
+                              <div className="w-9 flex-shrink-0 flex flex-col justify-center">
+                                <p className="text-xs font-semibold leading-none text-muted-foreground/70">{formatTime(timeStart)}</p>
+                                <p className="text-[9px] text-muted-foreground/70">{formatTime(timeEnd)}</p>
+                              </div>
+                              <div className="flex-1 py-1 flex items-center">
+                                <p className="text-[10px] text-muted-foreground/70">Free</p>
+                              </div>
                             </div>
-                            <div className="w-9 flex-shrink-0 flex flex-col justify-center">
-                              <p className="text-xs font-semibold leading-none text-muted-foreground/70">{formatTime(timeStart)}</p>
-                              <p className="text-[9px] text-muted-foreground/70">{formatTime(timeEnd)}</p>
-                            </div>
-                            <div className="flex-1 py-1 flex items-center">
-                              <p className="text-[10px] text-muted-foreground/70">Free</p>
-                            </div>
-                          </div>
+                          </Fragment>
                         );
                       }
 
@@ -1266,8 +1324,9 @@ export default function Dashboard() {
                       );
 
                       return (
+                        <Fragment key={index}>
+                        {afternoonDivider}
                         <div
-                          key={index}
                           className="relative flex items-stretch gap-2 min-h-[64px] transition-all duration-300"
                         >
 
@@ -1436,8 +1495,8 @@ export default function Dashboard() {
                                 </button>
                                 {isExtraClass ? (
                                   <button
-                                    onClick={() => handleDeleteExtraClass(slot.subject!.id, index - schedule.length, slot.extraClassIndex)}
-                                    disabled={deletingExtraClass?.subjectId === slot.subject!.id && deletingExtraClass?.index === index - schedule.length}
+                                    onClick={() => handleDeleteExtraClass(slot.subject!.id, extraClassIndex, slot.extraClassIndex)}
+                                    disabled={deletingExtraClass?.subjectId === slot.subject!.id && deletingExtraClass?.index === extraClassIndex}
                                     className={cn(
                                       "h-7 w-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center",
                                       "bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20",
@@ -1482,6 +1541,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                         </div>
+                        </Fragment>
                       );
                     })
                   )}
