@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-import { timeSlots, days } from "@/data/mockData";
+import { days } from "@/data/mockData";
 import { TimetableSlot } from "@/types/attendance";
 import { cn } from "@/lib/utils";
 import { trackAppEvent } from "@/contexts/AuthContext";
@@ -368,6 +368,10 @@ export default function Timetable() {
   const [timetable, setTimetable] = useState<TimetableSlot[]>([]);
   const [originalTimetable, setOriginalTimetable] = useState<TimetableSlot[]>([]);
 
+  // Standard lecture time slots, fetched from backend (do not hardcode - the institute
+  // timetable can include slots beyond the classic 8am-12:50pm morning block, e.g. afternoon lectures)
+  const [lectureSlots, setLectureSlots] = useState<{ index: number; startTime: string; endTime: string }[]>([]);
+
   // Lab/Tutorial timetable states
   const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
   const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>([]);
@@ -428,6 +432,26 @@ export default function Timetable() {
       navigate(-1);
     }
   };
+
+  // Fetch standard lecture time slots (dynamic - varies by semester's timetable)
+  useEffect(() => {
+    const fetchLectureSlots = async () => {
+      try {
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIME_SLOTS, {
+          method: "GET",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setLectureSlots(data);
+        }
+      } catch (error) {
+        console.error('Error fetching time slots:', error);
+      }
+    };
+
+    fetchLectureSlots();
+  }, []);
 
   // Fetch lecture timetable
   useEffect(() => {
@@ -545,15 +569,15 @@ export default function Timetable() {
 
   // Get all slots (standard + custom) for a day, sorted by time
   const getAllSlotsForDay = (day: number) => {
-    const standardSlots = timeSlots.slice(0, 6).map((time, timeIndex) => {
+    const standardSlots = lectureSlots.map(({ index: timeIndex, startTime, endTime }) => {
       const slot = timetable.find((s) => s.day === day && s.timeSlot === timeIndex && !s.startTime);
       return {
         type: 'standard' as const,
         timeSlot: timeIndex,
-        time,
+        time: `${startTime} - ${endTime}`,
         slot,
-        startTime: time.split(" - ")[0],
-        endTime: time.split(" - ")[1],
+        startTime,
+        endTime,
       };
     });
 
@@ -1288,11 +1312,9 @@ export default function Timetable() {
                 {days[selectedSlot.day]} · {
                   selectedSlot.type === "lab" ? "Lab" :
                     selectedSlot.type === "tutorial" ? "Tutorial" :
-                      selectedSlot.timeSlot !== null
-                        ? timeSlots[selectedSlot.timeSlot]
-                        : selectedSlot.startTime && selectedSlot.endTime
-                          ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
-                          : ""
+                      selectedSlot.startTime && selectedSlot.endTime
+                        ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
+                        : ""
                 }
               </p>
             )}
