@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import {
   Dialog,
   DialogContent,
@@ -7,24 +8,40 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, BarChart3, ShieldCheck, Bell, Megaphone, ArrowRight,
-  Zap, Gift, Search, Star, Rocket, PartyPopper, Info, CheckCircle,
+  Zap, Gift, Search, Star, Rocket, PartyPopper, Info, CheckCircle, Github,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { RateAppServerPopup } from "@/components/RateAppServerPopup";
+import { StarRepoServerPopup } from "@/components/StarRepoServerPopup";
 import confetti from "canvas-confetti";
 
 /**
- * Popup JSON (GET /api/app/popups): primaryAction may use
+ * Popup JSON (GET /api/app/popups): primaryAction/secondaryAction may use
  * - route + optional action "navigate" (default): go to route
  * - action "rate_app" | "in_app_review": shown in RateAppServerPopup (update-style dialog), not feature UI
+ * - action "open_url" + url: opens an external link (Capacitor in-app browser on native,
+ *   new tab on web) without closing the popup, so a second action button stays clickable
  *
  * Scheduling `type` (localStorage key = aio_popup_{id}):
  * - once / daily / weekly: unchanged
  * - every_days: re-show after `intervalDays` full days (default 7). Set intervalDays in BE JSON (e.g. 15).
  */
+
+async function openExternalUrl(url: string): Promise<void> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url });
+      return;
+    } catch {
+      // fall through to window.open
+    }
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 const POPUP_STORAGE_PREFIX = "aio_popup_";
 
@@ -39,7 +56,9 @@ interface PopupAction {
   /** Used when action is omitted or "navigate" */
   route?: string;
   /** Overrides navigation when set */
-  action?: "navigate" | "rate_app" | "in_app_review";
+  action?: "navigate" | "rate_app" | "in_app_review" | "open_url";
+  /** Used when action is "open_url" */
+  url?: string;
   icon?: string;
 }
 
@@ -55,6 +74,7 @@ interface ServerPopupData {
   subtitle?: string;
   features: PopupFeature[];
   primaryAction: PopupAction | null;
+  secondaryAction?: PopupAction | null;
   dismissLabel: string | null;
   showDismiss?: boolean;
   confetti?: boolean;
@@ -75,6 +95,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   info: Info,
   check: CheckCircle,
   arrow: ArrowRight,
+  github: Github,
 };
 
 function getIcon(name?: string): LucideIcon {
@@ -147,6 +168,10 @@ function shouldShowPopup(popup: ServerPopupData): boolean {
 function isReviewPopup(p: ServerPopupData): boolean {
   const a = p.primaryAction?.action;
   return a === "rate_app" || a === "in_app_review";
+}
+
+function isLinkPopup(p: ServerPopupData): boolean {
+  return p.primaryAction?.action === "open_url";
 }
 
 function markPopupShown(popup: ServerPopupData): void {
@@ -268,12 +293,10 @@ export function ServerPopup() {
     setTimeout(() => setOpen(false), 200);
   };
 
-  const handlePrimary = () => {
+  const runAction = (action: PopupAction | null | undefined) => {
     if (popup) markPopupShown(popup);
-    const primary = popup?.primaryAction;
-    const behavior =
-      primary?.action ??
-      (primary?.route ? ("navigate" as const) : undefined);
+    if (!action) return;
+    const behavior = action.action ?? (action.route ? ("navigate" as const) : undefined);
 
     if (behavior === "rate_app" || behavior === "in_app_review") {
       setOpen(false);
@@ -282,12 +305,22 @@ export function ServerPopup() {
       return;
     }
 
+    if (behavior === "open_url") {
+      // Opens in an overlay (native) or new tab (web); keep the popup open so a
+      // second action button (e.g. a companion repo link) stays clickable.
+      if (action.url) void openExternalUrl(action.url);
+      return;
+    }
+
     setIsVisible(false);
     setTimeout(() => {
       setOpen(false);
-      if (primary?.route) navigate(primary.route);
+      if (action.route) navigate(action.route);
     }, 200);
   };
+
+  const handlePrimary = () => runAction(popup?.primaryAction);
+  const handleSecondary = () => runAction(popup?.secondaryAction);
 
   if (!popup) return null;
 
@@ -308,6 +341,23 @@ export function ServerPopup() {
         dismissLabel={popup.dismissLabel}
         onLater={close}
         onPrimary={handlePrimary}
+      />
+    );
+  }
+
+  if (isLinkPopup(popup) && popup.primaryAction) {
+    return (
+      <StarRepoServerPopup
+        open={open}
+        title={popup.title}
+        subtitle={popup.subtitle}
+        primaryLabel={popup.primaryAction.label}
+        onPrimary={handlePrimary}
+        secondaryLabel={popup.secondaryAction?.label}
+        onSecondary={popup.secondaryAction ? handleSecondary : undefined}
+        showDismiss={showDismiss}
+        dismissLabel={popup.dismissLabel}
+        onLater={close}
       />
     );
   }
