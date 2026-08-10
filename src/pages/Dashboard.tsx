@@ -231,18 +231,6 @@ export default function Dashboard() {
     fetchLectureSlots();
   }, []);
 
-  // Get last class hour from schedule
-  function getLastClassHour(schedule: { time: string; subject: any; endTime?: string }[]) {
-    const classesWithSubjects = schedule.filter(s => s.subject);
-    if (classesWithSubjects.length === 0) return null;
-
-    const lastClass = classesWithSubjects[classesWithSubjects.length - 1];
-    // Use endTime if available (custom slots), otherwise parse from time string
-    const endTime = lastClass.endTime || lastClass.time.split(" - ")[1];
-    const hour = parseInt(endTime.split(":")[0]);
-    return hour < 8 ? hour + 12 : hour;
-  }
-
   // Helper to format time for display
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
@@ -534,10 +522,13 @@ export default function Dashboard() {
     return allSlots;
   }
 
-  // Determine if showing tomorrow's schedule
-  const todaySchedule = getScheduleForDate(now);
-  const lastClassHour = getLastClassHour(todaySchedule);
-  const showingTomorrowByDefault = lastClassHour !== null && currentHour >= lastClassHour + 1;
+  // Determine if showing tomorrow's schedule: default to tomorrow once it's past 5:50 PM,
+  // since that's after the day's classes are effectively over.
+  const CLASSES_OVER_HOUR = 17;
+  const CLASSES_OVER_MINUTE = 50;
+  const showingTomorrowByDefault =
+    currentHour > CLASSES_OVER_HOUR ||
+    (currentHour === CLASSES_OVER_HOUR && now.getMinutes() >= CLASSES_OVER_MINUTE);
 
   const [selectedDate, setSelectedDate] = useState<Date>(() =>
     showingTomorrowByDefault ? addDays(now, 1) : now
