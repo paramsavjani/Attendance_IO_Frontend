@@ -1,6 +1,5 @@
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -8,8 +7,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Github, Star } from "lucide-react";
+import { GitHubIcon } from "@/components/icons/GitHubIcon";
+import { Star } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type RepoRow = {
+  label: string;
+  onClick: () => void;
+};
 
 type StarRepoServerPopupProps = {
   open: boolean;
@@ -24,10 +29,33 @@ type StarRepoServerPopupProps = {
   onLater: () => void;
 };
 
+function RepoLinkCard({ label, onClick }: RepoRow) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "group flex flex-col items-center gap-2.5 py-4 px-3 rounded-2xl text-center",
+        "bg-card border border-border/60",
+        "hover:border-border hover:bg-accent/50 active:scale-[0.97]",
+        "transition-all duration-150",
+      )}
+    >
+      <div className="relative">
+        <GitHubIcon className="h-7 w-7 text-foreground" />
+        <div className="absolute -bottom-1 -right-1.5 p-[3px] rounded-full bg-amber-400 ring-2 ring-card group-hover:ring-accent/50">
+          <Star className="h-2 w-2 text-amber-950 fill-amber-950" />
+        </div>
+      </div>
+      <span className="text-xs font-semibold leading-tight">{label}</span>
+    </button>
+  );
+}
+
 /**
  * Server-driven "star the repo(s)" prompt. Purpose-built (not the generic feature-card
- * ServerPopup) to match the clean, branded look of UpdateDialog/RateAppServerPopup:
- * icon badge + short copy + one or two full-width branded buttons.
+ * ServerPopup): the real GitHub mark up top, then each repo as an equal-weight card
+ * side by side, so it reads as "pick a repo to star" rather than a stack of buttons.
  */
 export function StarRepoServerPopup({
   open,
@@ -41,6 +69,8 @@ export function StarRepoServerPopup({
   dismissLabel,
   onLater,
 }: StarRepoServerPopupProps) {
+  const hasSecondary = Boolean(secondaryLabel && onSecondary);
+
   return (
     <AlertDialog
       open={open}
@@ -51,7 +81,7 @@ export function StarRepoServerPopup({
       }}
     >
       <AlertDialogContent
-        className="sm:max-w-[400px] max-w-[92vw]"
+        className="sm:max-w-[380px] max-w-[92vw] p-0 overflow-hidden gap-0"
         onEscapeKeyDown={(e) => {
           if (!showDismiss) e.preventDefault();
         }}
@@ -62,54 +92,44 @@ export function StarRepoServerPopup({
           if (!showDismiss) e.preventDefault();
         }}
       >
-        <AlertDialogHeader className="items-center text-center space-y-3">
-          <div className="p-3 rounded-2xl bg-foreground/5 border border-border/60">
-            <Github className="h-7 w-7" />
+        <div className="relative px-6 pt-8 pb-5 flex flex-col items-center text-center overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative p-3.5 rounded-2xl bg-foreground text-background shadow-lg">
+            <GitHubIcon className="h-6 w-6" />
           </div>
-          <AlertDialogTitle className="text-lg font-bold tracking-tight">
-            {title}
-          </AlertDialogTitle>
-          {subtitle && (
-            <AlertDialogDescription asChild>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[32ch]">
-                {subtitle}
-              </p>
-            </AlertDialogDescription>
+
+          <AlertDialogHeader className="relative items-center space-y-1.5 mt-4">
+            <AlertDialogTitle className="text-lg font-bold tracking-tight">
+              {title}
+            </AlertDialogTitle>
+            {subtitle && (
+              <AlertDialogDescription asChild>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-[30ch]">
+                  {subtitle}
+                </p>
+              </AlertDialogDescription>
+            )}
+          </AlertDialogHeader>
+        </div>
+
+        <div className={cn("px-5 pb-3 grid gap-2.5", hasSecondary ? "grid-cols-2" : "grid-cols-1")}>
+          <RepoLinkCard label={primaryLabel} onClick={onPrimary} />
+          {hasSecondary && (
+            <RepoLinkCard label={secondaryLabel as string} onClick={onSecondary as () => void} />
           )}
-        </AlertDialogHeader>
+        </div>
 
-        <AlertDialogFooter className="flex-col sm:flex-col gap-2 sm:justify-start sm:space-x-0">
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault();
-              onPrimary();
-            }}
-            className="w-full h-11 rounded-xl gap-2 font-semibold text-sm bg-foreground hover:bg-foreground/90 text-background shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            <Star className="h-4 w-4 fill-current" strokeWidth={2} />
-            {primaryLabel}
-          </AlertDialogAction>
-
-          {secondaryLabel && onSecondary && (
-            <Button
-              variant="outline"
-              className="w-full h-11 rounded-xl gap-2 font-semibold text-sm"
-              onClick={onSecondary}
-            >
-              <Star className="h-4 w-4" strokeWidth={2} />
-              {secondaryLabel}
-            </Button>
-          )}
-
-          {showDismiss && dismissLabel && (
+        {showDismiss && dismissLabel && (
+          <AlertDialogFooter className="flex-col sm:flex-col px-5 pb-5 pt-1 sm:space-x-0">
             <AlertDialogCancel
               onClick={onLater}
-              className="w-full h-9 rounded-xl text-xs text-muted-foreground border-0 shadow-none hover:bg-transparent hover:text-foreground mt-0"
+              className="w-full h-9 rounded-xl text-xs text-muted-foreground border-0 shadow-none bg-transparent hover:bg-transparent hover:text-foreground mt-0"
             >
               {dismissLabel}
             </AlertDialogCancel>
-          )}
-        </AlertDialogFooter>
+          </AlertDialogFooter>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );
