@@ -37,13 +37,13 @@ function RepoLinkCard({ label, onClick }: RepoRow) {
       className={cn(
         "group flex flex-col items-center gap-2.5 py-4 px-3 rounded-2xl text-center",
         "bg-card border border-border/60",
-        "hover:border-border hover:bg-accent/50 active:scale-[0.97]",
-        "transition-all duration-150",
+        "active:scale-[0.97]",
+        "transition-transform duration-150",
       )}
     >
       <div className="relative">
         <GitHubIcon className="h-7 w-7 text-foreground" />
-        <div className="absolute -bottom-1 -right-1.5 p-[3px] rounded-full bg-amber-400 ring-2 ring-card group-hover:ring-accent/50">
+        <div className="absolute -bottom-1 -right-1.5 p-[3px] rounded-full bg-amber-400 ring-2 ring-card">
           <Star className="h-2 w-2 text-amber-950 fill-amber-950" />
         </div>
       </div>
@@ -82,6 +82,11 @@ export function StarRepoServerPopup({
     >
       <AlertDialogContent
         className="sm:max-w-[380px] max-w-[92vw] p-0 overflow-hidden gap-0"
+        onOpenAutoFocus={(e) => {
+          // Radix AlertDialog focuses the Cancel ("Maybe later") button by default;
+          // don't let that be the first thing highlighted when this opens.
+          e.preventDefault();
+        }}
         onEscapeKeyDown={(e) => {
           if (!showDismiss) e.preventDefault();
         }}
@@ -124,7 +129,7 @@ export function StarRepoServerPopup({
           <AlertDialogFooter className="flex-col sm:flex-col px-5 pb-5 pt-1 sm:space-x-0">
             <AlertDialogCancel
               onClick={onLater}
-              className="w-full h-9 rounded-xl text-xs text-muted-foreground border-0 shadow-none bg-transparent hover:bg-transparent hover:text-foreground mt-0"
+              className="w-full h-9 rounded-xl text-xs text-muted-foreground border-0 shadow-none bg-transparent hover:bg-transparent hover:text-muted-foreground mt-0"
             >
               {dismissLabel}
             </AlertDialogCancel>
