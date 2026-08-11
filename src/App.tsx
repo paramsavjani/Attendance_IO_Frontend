@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,29 +11,58 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AndroidWebViewBlock } from "@/components/AndroidWebViewBlock";
 import { UpdateDialog } from "@/components/UpdateDialog";
 import { NotificationPermissionGate } from "@/components/NotificationPermissionGate";
+// Eager: shown before/while routing decisions happen, or tiny enough that a
+// separate chunk would cost more than it saves.
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Timetable from "./pages/Timetable";
-import LabTutorial from "./pages/LabTutorial";
-import Profile from "./pages/Profile";
-import AppAnalyticsPage from "./pages/AppAnalyticsPage";
-import Search from "./pages/Search";
-import Analytics from "./pages/Analytics";
-import SubjectAnalysisDetail from "./pages/SubjectAnalysisDetail";
-import SubjectOnboarding from "./pages/SubjectOnboarding";
-import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
 import BackendUpdating from "./pages/BackendUpdating";
 import NoInternet from "./pages/NoInternet";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import DeleteAccount from "./pages/DeleteAccount";
-import ErrorOldVersion from "./pages/ErrorOldVersion";
+
+// Lazy: everything else. Keeps recharts (Analytics/AppAnalytics) and the large
+// Dashboard/Timetable/Search pages out of the initial bundle. On native the
+// chunks are read from the local filesystem, so this is effectively free there.
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Timetable = lazy(() => import("./pages/Timetable"));
+const LabTutorial = lazy(() => import("./pages/LabTutorial"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AppAnalyticsPage = lazy(() => import("./pages/AppAnalyticsPage"));
+const Search = lazy(() => import("./pages/Search"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const SubjectAnalysisDetail = lazy(() => import("./pages/SubjectAnalysisDetail"));
+const SubjectOnboarding = lazy(() => import("./pages/SubjectOnboarding"));
+const Intro = lazy(() => import("./pages/Intro"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
+const ErrorOldVersion = lazy(() => import("./pages/ErrorOldVersion"));
+
 import { ServerPopup } from "@/components/ServerPopup";
 import { Capacitor } from "@capacitor/core";
-import { useEffect, useRef, useState } from "react";
 import { API_CONFIG, checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Semester/config/contributor data barely changes within a session, so
+      // serve it from cache instead of refetching on every page mount.
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+/** Full-screen placeholder used for auth/backend checks and lazy-route loading. */
+function FullScreenLoader() {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center safe-area-top"
+      style={{ backgroundColor: "#000", color: "#fff" }}
+    >
+      <div>Loading...</div>
+    </div>
+  );
+}
 
 const NON_CRITICAL_UPDATE_SHOWN_DATE_KEY = "attendance_io_non_critical_update_shown_date";
 
@@ -269,11 +299,7 @@ function AppRoutes() {
   }
 
   if (isNativeApp && isBackendAvailableOnNative === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
-        <div>Loading...</div>
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   if (isNativeApp && isBackendAvailableOnNative === false) {
@@ -282,21 +308,13 @@ function AppRoutes() {
 
   // Show loading while checking authentication status
   if (isLoadingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
-        <div>Loading...</div>
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   // Wait for enrolled subjects to load before making routing decisions
   // Only show loading if authenticated (unauthenticated users should see login)
   if (isAuthenticated && isLoadingEnrolledSubjects) {
-    return (
-      <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
-        <div>Loading...</div>
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   return (
@@ -304,114 +322,116 @@ function AppRoutes() {
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
       {!isErrorPage && isAuthenticated && <ServerPopup />}
-      <Routes>
-        <Route
-          path="/"
-          element={
-            isAuthenticated
-              ? hasCompletedOnboarding
-                ? <Navigate to="/dashboard" replace />
-                : hasSeenIntro
-                  ? <Navigate to="/onboarding" replace />
-                  : <Navigate to="/intro" replace />
-              : <Navigate to="/login" replace />
-          }
-        />
-        <Route path="/login" element={<Login />} />
-        <Route path="/error-old-version" element={<ErrorOldVersion />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/delete-account" element={<DeleteAccount />} />
-        <Route
-          path="/intro"
-          element={
-            <ProtectedRoute>
-              {hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Intro />}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute>
-              {hasCompletedOnboarding
-                ? <Navigate to="/dashboard" replace />
-                : !hasSeenIntro
-                  ? <Navigate to="/intro" replace />
-                  : <SubjectOnboarding />}
-            </ProtectedRoute>
-          }
-        />
+      <Suspense fallback={<FullScreenLoader />}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              isAuthenticated
+                ? hasCompletedOnboarding
+                  ? <Navigate to="/dashboard" replace />
+                  : hasSeenIntro
+                    ? <Navigate to="/onboarding" replace />
+                    : <Navigate to="/intro" replace />
+                : <Navigate to="/login" replace />
+            }
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/error-old-version" element={<ErrorOldVersion />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/delete-account" element={<DeleteAccount />} />
+          <Route
+            path="/intro"
+            element={
+              <ProtectedRoute>
+                {hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Intro />}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                {hasCompletedOnboarding
+                  ? <Navigate to="/dashboard" replace />
+                  : !hasSeenIntro
+                    ? <Navigate to="/intro" replace />
+                    : <SubjectOnboarding />}
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Protected Routes with Persistent MainLayout */}
-        <Route element={<MainLayout />}>
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                {hasCompletedOnboarding ? <Dashboard /> : <Navigate to="/onboarding" replace />}
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/timetable"
-            element={
-              <ProtectedRoute>
-                <Timetable />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/lab-tutorial"
-            element={
-              <ProtectedRoute>
-                {hasCompletedOnboarding ? <LabTutorial /> : <Navigate to="/onboarding" replace />}
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/app-analytics"
-            element={
-              <ProtectedRoute>
-                <AppAnalyticsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/search"
-            element={
-              <ProtectedRoute>
-                <Search />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute>
-                <Analytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subject-analysis/:subjectCode"
-            element={
-              <ProtectedRoute>
-                <SubjectAnalysisDetail />
-              </ProtectedRoute>
-            }
-          />
-        </Route>
+          {/* Protected Routes with Persistent MainLayout */}
+          <Route element={<MainLayout />}>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  {hasCompletedOnboarding ? <Dashboard /> : <Navigate to="/onboarding" replace />}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/timetable"
+              element={
+                <ProtectedRoute>
+                  <Timetable />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lab-tutorial"
+              element={
+                <ProtectedRoute>
+                  {hasCompletedOnboarding ? <LabTutorial /> : <Navigate to="/onboarding" replace />}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app-analytics"
+              element={
+                <ProtectedRoute>
+                  <AppAnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/search"
+              element={
+                <ProtectedRoute>
+                  <Search />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subject-analysis/:subjectCode"
+              element={
+                <ProtectedRoute>
+                  <SubjectAnalysisDetail />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }
