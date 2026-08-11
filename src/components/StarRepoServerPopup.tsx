@@ -22,8 +22,11 @@ type StarRepoServerPopupProps = {
   subtitle?: string;
   primaryLabel: string;
   onPrimary: () => void;
+  /** Hide this action (e.g. already clicked/starred), showing only the other one. */
+  hidePrimary?: boolean;
   secondaryLabel?: string;
   onSecondary?: () => void;
+  hideSecondary?: boolean;
   showDismiss: boolean;
   dismissLabel: string | null;
   onLater: () => void;
@@ -63,13 +66,17 @@ export function StarRepoServerPopup({
   subtitle,
   primaryLabel,
   onPrimary,
+  hidePrimary,
   secondaryLabel,
   onSecondary,
+  hideSecondary,
   showDismiss,
   dismissLabel,
   onLater,
 }: StarRepoServerPopupProps) {
-  const hasSecondary = Boolean(secondaryLabel && onSecondary);
+  const showPrimary = !hidePrimary;
+  const showSecondary = Boolean(secondaryLabel && onSecondary) && !hideSecondary;
+  const visibleCount = (showPrimary ? 1 : 0) + (showSecondary ? 1 : 0);
 
   return (
     <AlertDialog
@@ -118,9 +125,9 @@ export function StarRepoServerPopup({
           </AlertDialogHeader>
         </div>
 
-        <div className={cn("px-5 pb-3 grid gap-2.5", hasSecondary ? "grid-cols-2" : "grid-cols-1")}>
-          <RepoLinkCard label={primaryLabel} onClick={onPrimary} />
-          {hasSecondary && (
+        <div className={cn("px-5 pb-3 grid gap-2.5", visibleCount >= 2 ? "grid-cols-2" : "grid-cols-1")}>
+          {showPrimary && <RepoLinkCard label={primaryLabel} onClick={onPrimary} />}
+          {showSecondary && (
             <RepoLinkCard label={secondaryLabel as string} onClick={onSecondary as () => void} />
           )}
         </div>

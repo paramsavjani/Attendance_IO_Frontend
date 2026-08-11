@@ -28,6 +28,11 @@ import confetti from "canvas-confetti";
  * Scheduling `type` (localStorage key = aio_popup_{id}):
  * - once / daily / weekly: unchanged
  * - every_days: re-show after `intervalDays` full days (default 7). Set intervalDays in BE JSON (e.g. 15).
+ *
+ * A popup with two open_url actions (primary + secondary, e.g. "star both repos") tracks
+ * each action's click separately (localStorage key = aio_popup_clicked_{id}_{primary|secondary}).
+ * Once BOTH have been clicked it stops showing entirely, regardless of `type`; until then it
+ * re-shows on whatever cadence `type` specifies, rendering only the action(s) not yet clicked.
  */
 
 async function openExternalUrl(url: string): Promise<void> {
@@ -44,6 +49,9 @@ async function openExternalUrl(url: string): Promise<void> {
 }
 
 const POPUP_STORAGE_PREFIX = "aio_popup_";
+const POPUP_CLICK_STORAGE_PREFIX = "aio_popup_clicked_";
+
+type ActionSlot = "primary" | "secondary";
 
 interface PopupFeature {
   icon: string;
@@ -132,7 +140,33 @@ function parseEveryDaysStored(stored: string | null): number | null {
   return null;
 }
 
+function isActionClicked(popupId: string, slot: ActionSlot): boolean {
+  try {
+    return localStorage.getItem(POPUP_CLICK_STORAGE_PREFIX + popupId + "_" + slot) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markActionClicked(popupId: string, slot: ActionSlot): void {
+  try {
+    localStorage.setItem(POPUP_CLICK_STORAGE_PREFIX + popupId + "_" + slot, "1");
+  } catch {}
+}
+
+function isDualLinkPopup(p: ServerPopupData): boolean {
+  return p.primaryAction?.action === "open_url" && p.secondaryAction?.action === "open_url";
+}
+
 function shouldShowPopup(popup: ServerPopupData): boolean {
+  if (
+    isDualLinkPopup(popup) &&
+    isActionClicked(popup.id, "primary") &&
+    isActionClicked(popup.id, "secondary")
+  ) {
+    return false;
+  }
+
   const key = POPUP_STORAGE_PREFIX + popup.id;
   try {
     const stored = localStorage.getItem(key);
@@ -293,7 +327,7 @@ export function ServerPopup() {
     setTimeout(() => setOpen(false), 200);
   };
 
-  const runAction = (action: PopupAction | null | undefined) => {
+  const runAction = (action: PopupAction | null | undefined, slot: ActionSlot) => {
     if (popup) markPopupShown(popup);
     if (!action) return;
     const behavior = action.action ?? (action.route ? ("navigate" as const) : undefined);
@@ -309,6 +343,7 @@ export function ServerPopup() {
       // Opens in an overlay (native) or new tab (web); keep the popup open so a
       // second action button (e.g. a companion repo link) stays clickable.
       if (action.url) void openExternalUrl(action.url);
+      if (popup) markActionClicked(popup.id, slot);
       return;
     }
 
@@ -319,8 +354,8 @@ export function ServerPopup() {
     }, 200);
   };
 
-  const handlePrimary = () => runAction(popup?.primaryAction);
-  const handleSecondary = () => runAction(popup?.secondaryAction);
+  const handlePrimary = () => runAction(popup?.primaryAction, "primary");
+  const handleSecondary = () => runAction(popup?.secondaryAction, "secondary");
 
   if (!popup) return null;
 
@@ -346,6 +381,9 @@ export function ServerPopup() {
   }
 
   if (isLinkPopup(popup) && popup.primaryAction) {
+    const dual = isDualLinkPopup(popup);
+    const hidePrimary = dual && isActionClicked(popup.id, "primary");
+    const hideSecondary = dual && isActionClicked(popup.id, "secondary");
     return (
       <StarRepoServerPopup
         open={open}
@@ -353,8 +391,10 @@ export function ServerPopup() {
         subtitle={popup.subtitle}
         primaryLabel={popup.primaryAction.label}
         onPrimary={handlePrimary}
+        hidePrimary={hidePrimary}
         secondaryLabel={popup.secondaryAction?.label}
         onSecondary={popup.secondaryAction ? handleSecondary : undefined}
+        hideSecondary={hideSecondary}
         showDismiss={showDismiss}
         dismissLabel={popup.dismissLabel}
         onLater={close}
