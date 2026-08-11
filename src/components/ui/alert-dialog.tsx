@@ -25,9 +25,23 @@ const AlertDialogOverlay = React.forwardRef<
 ));
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 
+type AlertDialogContentProps = React.ComponentPropsWithoutRef<
+  typeof AlertDialogPrimitive.Content
+> & {
+  /**
+   * Radix omits this from AlertDialog's Content props (alert dialogs are meant
+   * to resist dismissal), but it is still forwarded to the underlying
+   * dismissable layer at runtime. Declared here because several dialogs pass it
+   * to *block* outside-dismissal via preventDefault().
+   */
+  onPointerDownOutside?: (event: CustomEvent<{ originalEvent: PointerEvent }>) => void;
+  /** Same as above: forwarded at runtime, absent from Radix's public typing. */
+  onInteractOutside?: (event: CustomEvent<{ originalEvent: Event }>) => void;
+};
+
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
+  AlertDialogContentProps
 >(({ className, ...props }, ref) => (
   <AlertDialogPortal>
     <AlertDialogOverlay />

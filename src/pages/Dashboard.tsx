@@ -973,18 +973,8 @@ export default function Dashboard() {
             throw new Error('Failed to delete attendance');
           }
 
-          // Remove from attendance state
-          setTodayAttendance(prev => {
-            const updated = { ...prev };
-            delete updated[slotKey];
-            return updated;
-          });
-
-          setAttendanceIds(prev => {
-            const updated = { ...prev };
-            delete updated[slotKey];
-            return updated;
-          });
+          // Local attendance state is refreshed by the fetchAttendanceForDate()
+          // call at the end of this handler, so nothing to clear here.
         } catch (error: any) {
           console.error('Error deleting attendance:', error);
           toast.error('Failed to delete attendance record');
