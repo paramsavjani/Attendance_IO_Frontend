@@ -12,6 +12,8 @@ import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { useCurrentSemester, useSleepDuration } from "@/hooks/queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
 import { ContributorsSection } from "@/components/contributors/ContributorsSection";
@@ -25,26 +27,20 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-interface CurrentSemester {
-  year: number;
-  type: string;
-}
-
 export default function Profile() {
   const { student, logout, checkAuth } = useAuth();
   const { enrolledSubjects, setEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [showClassroomLocationModal, setShowClassroomLocationModal] = useState(false);
-  const [currentSemester, setCurrentSemester] = useState<CurrentSemester | null>(null);
-  const [isLoadingSemester, setIsLoadingSemester] = useState(true);
+  const { data: currentSemester, isPending: isLoadingSemester } = useCurrentSemester();
   const [editingCriteria, setEditingCriteria] = useState<Record<string, string>>({});
   const [isSavingCriteria, setIsSavingCriteria] = useState<Record<string, boolean>>({});
   const [editingClassroomLocation, setEditingClassroomLocation] = useState<Record<string, string>>({});
   const [isSavingClassroomLocation, setIsSavingClassroomLocation] = useState<Record<string, boolean>>({});
-  const [sleepDuration, setSleepDuration] = useState<number | null>(null);
-  const [isLoadingSleepDuration, setIsLoadingSleepDuration] = useState(true);
+  const { data: sleepDuration, isPending: isLoadingSleepDuration } = useSleepDuration();
   const [isEditingSleepDuration, setIsEditingSleepDuration] = useState(false);
   const [editingSleepHours, setEditingSleepHours] = useState<string>("");
   const [isSavingSleepDuration, setIsSavingSleepDuration] = useState(false);
@@ -59,62 +55,10 @@ export default function Profile() {
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
 
   useEffect(() => {
-    const fetchCurrentSemester = async () => {
-      try {
-        const response = await fetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentSemester(data);
-        } else if (response.status === 404) {
-          // No active semester is a valid state, not an error
-          setCurrentSemester(null);
-        } else {
-          console.error('Failed to fetch current semester:', response.status);
-          toast.error('Failed to load current semester');
-        }
-      } catch (error) {
-        console.error('Error fetching current semester:', error);
-        toast.error('Error loading current semester');
-      } finally {
-        setIsLoadingSemester(false);
-      }
-    };
-
-    fetchCurrentSemester();
-
     // Track profile page view
     trackAppEvent('profile_view', {
       timestamp: new Date().toISOString(),
     }).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    const fetchSleepDuration = async () => {
-      try {
-        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, {
-          method: "GET",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setSleepDuration(data.sleepDurationHours);
-        } else if (response.status === 404) {
-          // Default to 8 if not set
-          setSleepDuration(8);
-        } else {
-          console.error('Failed to fetch sleep duration:', response.status);
-        }
-      } catch (error) {
-        console.error('Error fetching sleep duration:', error);
-      } finally {
-        setIsLoadingSleepDuration(false);
-      }
-    };
-
-    fetchSleepDuration();
   }, []);
 
   const handleLogout = () => {
@@ -238,7 +182,9 @@ export default function Profile() {
         throw new Error(error.error || 'Failed to update sleep duration');
       }
 
-      setSleepDuration(hoursNum);
+      // Push the new value straight into the query cache so the UI updates
+      // without a refetch (and stays correct if Profile remounts).
+      queryClient.setQueryData(["student", "sleep-duration"], hoursNum);
       setIsEditingSleepDuration(false);
       toast.success("Sleep duration updated successfully");
     } catch (error: any) {
