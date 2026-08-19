@@ -240,6 +240,8 @@ export function ServerPopup() {
   const [popup, setPopup] = useState<ServerPopupData | null>(null);
   const [open, setOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [primaryClicked, setPrimaryClicked] = useState(false);
+  const [secondaryClicked, setSecondaryClicked] = useState(false);
   const navigate = useNavigate();
 
   const fireConfetti = useCallback(() => {
@@ -296,6 +298,8 @@ export function ServerPopup() {
         const toShow = popups.find((p) => p.enabled && shouldShowPopup(p));
         if (toShow) {
           setPopup(toShow);
+          setPrimaryClicked(isActionClicked(toShow.id, "primary"));
+          setSecondaryClicked(isActionClicked(toShow.id, "secondary"));
           timer = setTimeout(() => {
             setOpen(true);
             if (!isReviewPopup(toShow)) {
@@ -343,7 +347,17 @@ export function ServerPopup() {
       // Opens in an overlay (native) or new tab (web); keep the popup open so a
       // second action button (e.g. a companion repo link) stays clickable.
       if (action.url) void openExternalUrl(action.url);
-      if (popup) markActionClicked(popup.id, slot);
+      if (popup) {
+        markActionClicked(popup.id, slot);
+        const otherSlot: ActionSlot = slot === "primary" ? "secondary" : "primary";
+        if (isDualLinkPopup(popup) && isActionClicked(popup.id, otherSlot)) {
+          // Both repo links have now been clicked — dismiss the box immediately.
+          close();
+          return;
+        }
+        if (slot === "primary") setPrimaryClicked(true);
+        else setSecondaryClicked(true);
+      }
       return;
     }
 
@@ -382,8 +396,8 @@ export function ServerPopup() {
 
   if (isLinkPopup(popup) && popup.primaryAction) {
     const dual = isDualLinkPopup(popup);
-    const hidePrimary = dual && isActionClicked(popup.id, "primary");
-    const hideSecondary = dual && isActionClicked(popup.id, "secondary");
+    const hidePrimary = dual && primaryClicked;
+    const hideSecondary = dual && secondaryClicked;
     return (
       <StarRepoServerPopup
         open={open}
