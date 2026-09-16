@@ -7,6 +7,7 @@ import { Search as SearchIcon, ChevronLeft, ChevronDown, X, Trash2 } from "lucid
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
 import { API_CONFIG } from "@/lib/api";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ interface StudentAttendanceData {
   studentName: string;
   rollNumber: string;
   studentPictureUrl?: string;
+  source?: "STUDENT" | "INSTITUTE";
   semester?: {
     id: string;
     year: number;
@@ -77,6 +79,7 @@ export default function Search() {
   const [isSearching, setIsSearching] = useState(false);
   const [attendanceData, setAttendanceData] = useState<StudentAttendanceData | null>(null);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+  const [attendanceSource, setAttendanceSource] = useState<"STUDENT" | "INSTITUTE">("STUDENT");
   const [currentSemester, setCurrentSemester] = useState<{ year: number; type: string } | null>(null);
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -227,7 +230,7 @@ export default function Search() {
 
       setIsLoadingAttendance(true);
       try {
-        const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(studentIdParam);
+        const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(studentIdParam, attendanceSource);
         const response = await fetch(url, { credentials: "include" });
 
         if (response.ok) {
@@ -355,11 +358,17 @@ export default function Search() {
         timestamp: new Date().toISOString(),
       }).catch(console.error);
 
-      if (attendanceData && attendanceData.studentId === selectedStudent.id) return;
+      if (
+        attendanceData &&
+        attendanceData.studentId === selectedStudent.id &&
+        (attendanceData.source ?? "STUDENT") === attendanceSource
+      ) {
+        return;
+      }
 
       setIsLoadingAttendance(true);
       try {
-        const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id);
+        const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id, attendanceSource);
         const response = await fetch(url, { credentials: "include" });
 
         if (response.ok) {
@@ -394,7 +403,7 @@ export default function Search() {
     };
 
     fetchAttendance();
-  }, [selectedStudent, selectedSemester]);
+  }, [selectedStudent, selectedSemester, attendanceSource]);
 
   // ── Derived data ─────────────────────────────────────────────────────────────
 
@@ -454,17 +463,65 @@ export default function Search() {
           Back
         </button>
 
+        <div className="relative flex rounded-2xl p-1 gap-1 border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+          <div
+            className="absolute top-1 bottom-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            style={{
+              width: "calc((100% - 12px) / 2)",
+              left: attendanceSource === "STUDENT" ? "4px" : "calc(50% + 2px)",
+            }}
+          />
+          <button
+            onClick={() => setAttendanceSource("STUDENT")}
+            className={cn(
+              "flex-1 py-1.5 px-3 rounded-xl text-sm font-medium transition-colors duration-200 relative z-10",
+              attendanceSource === "STUDENT" ? "text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Student Marked
+          </button>
+          <button
+            onClick={() => setAttendanceSource("INSTITUTE")}
+            className={cn(
+              "flex-1 py-1.5 px-3 rounded-xl text-sm font-medium transition-colors duration-200 relative z-10",
+              attendanceSource === "INSTITUTE" ? "text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Institute Marked
+          </button>
+        </div>
+
         {isLoadingAttendance ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">Loading attendance data...</p>
+          <div className="space-y-3">
+            <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
+              <div className="flex items-center gap-2 md:gap-3">
+                <Skeleton className="w-10 h-10 md:w-12 md:h-12 rounded-full shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex flex-col items-center gap-1.5">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-9 w-20" />
+                </div>
+                <Skeleton className="h-2 md:h-2.5 w-full rounded-full" />
+                <div className="grid grid-cols-3 gap-2 md:gap-3 pt-1">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+              ))}
+            </div>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <div className="w-2 h-2 rounded-full bg-blue-400" />
-              <span className="text-xs font-medium text-blue-400">Official Institute Attendance</span>
-            </div>
-
             {overallAttendance && (
               <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
                 <div className="flex items-center gap-2 md:gap-3">
@@ -737,6 +794,12 @@ export default function Search() {
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     setShowHistory(false);
+                    setSelectedStudent({
+                      id: item.viewedStudentId,
+                      name: item.viewedStudentName,
+                      rollNumber: item.viewedStudentRollNumber,
+                      pictureUrl: item.viewedStudentPictureUrl ?? undefined,
+                    });
                     setSearchParams((prev) => {
                       const newParams = new URLSearchParams(prev);
                       newParams.set("studentId", item.viewedStudentId);
@@ -803,6 +866,12 @@ export default function Search() {
                 <button
                   onClick={() => {
                     setShowAllHistory(false);
+                    setSelectedStudent({
+                      id: item.viewedStudentId,
+                      name: item.viewedStudentName,
+                      rollNumber: item.viewedStudentRollNumber,
+                      pictureUrl: item.viewedStudentPictureUrl ?? undefined,
+                    });
                     setSearchParams((prev) => {
                       const newParams = new URLSearchParams(prev);
                       newParams.set("studentId", item.viewedStudentId);
@@ -860,6 +929,7 @@ export default function Search() {
             <button
               key={student.id}
               onClick={() => {
+                setSelectedStudent(student);
                 saveToHistory(student);
                 setSearchParams((prev) => {
                   const newParams = new URLSearchParams(prev);
