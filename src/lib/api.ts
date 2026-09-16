@@ -15,7 +15,8 @@ export const API_CONFIG = {
     NOTIFICATION_PREFERENCES: `${API_BASE_URL}/api/user/notification-preferences`,
     SEMESTER_CURRENT: `${API_BASE_URL}/api/semester/current`,
     SEARCH_STUDENTS: `${API_BASE_URL}/api/search/students`,
-    STUDENT_ATTENDANCE: (studentId: string) => `${API_BASE_URL}/api/search/student/${studentId}/attendance`,
+    STUDENT_ATTENDANCE: (studentId: string, source: 'STUDENT' | 'INSTITUTE' = 'STUDENT') =>
+      `${API_BASE_URL}/api/search/student/${studentId}/attendance?source=${source}`,
     SEARCH_HISTORY: `${API_BASE_URL}/api/search/history`,
     SEARCH_HISTORY_DELETE: (id: string) => `${API_BASE_URL}/api/search/history/${id}`,
     SUBJECTS_CURRENT: `${API_BASE_URL}/api/subjects/current`,
