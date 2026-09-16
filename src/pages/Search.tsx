@@ -20,6 +20,9 @@ interface Student {
   rollNumber: string;
   email?: string;
   pictureUrl?: string;
+  markedLectures?: number;
+  presentLectures?: number;
+  attendancePercentage?: number | null;
 }
 
 interface SubjectAttendance {
@@ -953,6 +956,29 @@ export default function Search() {
                 <p className="font-medium text-sm truncate">{student.name}</p>
                 <p className="text-xs text-muted-foreground">{student.rollNumber}</p>
               </div>
+              {student.markedLectures && student.attendancePercentage != null ? (
+                <div className="shrink-0 text-right">
+                  <p
+                    className={cn(
+                      "text-base font-bold leading-none tabular-nums",
+                      student.attendancePercentage >= 75
+                        ? "text-success"
+                        : student.attendancePercentage >= 60
+                        ? "text-warning"
+                        : "text-destructive"
+                    )}
+                  >
+                    {Math.round(student.attendancePercentage)}%
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1 whitespace-nowrap">
+                    {student.markedLectures} marked
+                  </p>
+                </div>
+              ) : (
+                <span className="shrink-0 text-[10px] text-muted-foreground/70 border border-border/60 rounded-full px-2 py-0.5 whitespace-nowrap">
+                  Not tracking
+                </span>
+              )}
             </button>
           ))}
         </div>
