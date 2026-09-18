@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { streamAgentChat } from "@/lib/agent";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
+import { collapseTo, lastRevealOrigin } from "@/lib/revealTransition";
 
 interface ChatMessage {
   id: string;
@@ -76,7 +77,12 @@ export default function Assistant() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const viewportHeight = useVisualViewportHeight();
 
-  const goHome = useCallback(() => navigate(HOME_PATH, { replace: true }), [navigate]);
+  // Shrink back into the launcher we came from; if the page was opened directly (no origin
+  // recorded) collapse toward where the launcher lives, bottom-right.
+  const goHome = useCallback(() => {
+    const fallback = { x: window.innerWidth - 44, y: window.innerHeight - 112 };
+    collapseTo(lastRevealOrigin() ?? fallback, () => navigate(HOME_PATH, { replace: true }));
+  }, [navigate]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     const el = listRef.current;

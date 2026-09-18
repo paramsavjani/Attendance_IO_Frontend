@@ -16,6 +16,29 @@
   padding-top: env(safe-area-inset-top, 0);
 }
 
+/* Assistant "sunrise" transition — see lib/revealTransition.ts. A gray sun with a violet halo,
+   scaled from the launcher icon by the Web Animations API; sits above everything, ignores touches. */
+.sunrise-sun {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  border-radius: 9999px;
+  transform: scale(0);
+  transform-origin: center;
+  will-change: transform, opacity;
+  background:
+    radial-gradient(circle at center,
+      hsl(0 0% 12%) 0%,
+      hsl(0 0% 9%) 45%,
+      hsl(0 0% 7%) 78%,
+      hsl(262 55% 18%) 96%,
+      hsl(262 83% 62% / 0.8) 100%);
+  box-shadow:
+    0 0 0 1px hsl(262 83% 62% / 0.55),
+    0 0 48px 8px hsl(262 83% 62% / 0.35),
+    0 0 140px 30px hsl(234 89% 64% / 0.18);
+}
+
 /* Active scale for touch */
 .active\:scale-98:active {
   transform: scale(0.98);
@@ -117,6 +140,11 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  html, body {
+    /* The app shell owns scrolling (see AppLayout); keep the document from rubber-banding. */
+    overscroll-behavior: none;
   }
 
   body {
