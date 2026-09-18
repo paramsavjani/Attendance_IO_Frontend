@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { getAgentConversation, streamAgentChat, type AgentToolCall } from "@/lib/agent";
+import { streamAgentChat, type AgentToolCall } from "@/lib/agent";
 
 interface ChatMessage {
   id: string;
@@ -15,26 +15,6 @@ interface ChatMessage {
   latencyMs?: number;
   error?: string;
   streaming?: boolean;
-}
-
-/** The server keeps the thread; the page only remembers which one, so a reload can restore it. */
-const CONVERSATION_KEY = "attendance-assistant.conversationId";
-
-function readStoredConversationId(): string | null {
-  try {
-    return sessionStorage.getItem(CONVERSATION_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function storeConversationId(id: string | null) {
-  try {
-    if (id) sessionStorage.setItem(CONVERSATION_KEY, id);
-    else sessionStorage.removeItem(CONVERSATION_KEY);
-  } catch {
-    /* storage unavailable — the thread just won't survive a reload */
-  }
 }
 
 const SUGGESTIONS = [
@@ -61,8 +41,8 @@ export default function Assistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(readStoredConversationId);
-  const [restoring, setRestoring] = useState(() => readStoredConversationId() !== null);
+  // A fresh thread on every page open; "New" resets it mid-way. Past sessions are never shown.
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -70,41 +50,6 @@ export default function Assistant() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
-
-  // Restore the thread after a reload. An expired or unknown id just yields an empty thread.
-  useEffect(() => {
-    const id = readStoredConversationId();
-    if (!id) return;
-    let cancelled = false;
-    getAgentConversation(id)
-      .then((conversation) => {
-        if (cancelled) return;
-        if (conversation.messages.length === 0) {
-          storeConversationId(null);
-          setConversationId(null);
-          return;
-        }
-        setMessages(
-          conversation.messages.map((m) => ({
-            id: newId(),
-            role: m.role,
-            content: m.content,
-            latencyMs: m.latencyMs ?? undefined,
-            toolCalls: m.toolNames?.map((name) => ({ name, arguments: {}, durationMs: 0 })),
-          })),
-        );
-      })
-      .catch(() => {
-        storeConversationId(null);
-        setConversationId(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRestoring(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -140,7 +85,6 @@ export default function Assistant() {
             switch (event.type) {
               case "META":
                 setConversationId(event.conversationId);
-                storeConversationId(event.conversationId);
                 break;
               case "TOKEN":
                 updateMessage(assistantId, (m) => ({ content: m.content + event.text }));
@@ -181,7 +125,6 @@ export default function Assistant() {
     setMessages([]);
     setInput("");
     setConversationId(null);
-    storeConversationId(null);
     inputRef.current?.focus();
   };
 
@@ -205,21 +148,16 @@ export default function Assistant() {
             <p className="text-[11px] text-muted-foreground">Ask about attendance, subjects and classes</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={reset} disabled={messages.length === 0 && !busy}>
+        <Button variant="outline" size="sm" onClick={reset} disabled={messages.length === 0 && !busy}>
           <RotateCcw className="mr-1.5 h-4 w-4" />
-          New
+          New chat
         </Button>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 pb-3">
         <div className="flex flex-col gap-3">
-          {restoring ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Restoring your conversation…
-            </div>
-          ) : messages.length === 0 ? (
+          {messages.length === 0 ? (
             <EmptyState onPick={(s) => void send(s)} />
           ) : (
             messages.map((m) => <MessageBubble key={m.id} message={m} />)
@@ -239,7 +177,7 @@ export default function Assistant() {
             placeholder="Ask something… e.g. Can I bunk CT303 tomorrow?"
             rows={1}
             className="max-h-32 min-h-[42px] flex-1 resize-none bg-card"
-            disabled={busy || restoring}
+            disabled={busy}
           />
           {busy ? (
             <Button variant="outline" size="icon" onClick={stop} title="Stop" className="h-[42px] w-[42px] shrink-0">
