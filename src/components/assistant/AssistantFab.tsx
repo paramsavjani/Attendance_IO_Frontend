@@ -21,7 +21,6 @@ export function AssistantFab() {
         "bg-gradient-to-br from-primary via-[hsl(262_83%_62%)] to-[hsl(292_84%_60%)] text-white",
         "shadow-[0_10px_30px_-8px_hsl(var(--primary)/0.75),0_0_0_1px_hsl(0_0%_100%/0.25)_inset]",
         "transition-transform duration-200 ease-out active:scale-90",
-        "safe-area-bottom",
       )}
       style={{ bottom: "calc(5.25rem + env(safe-area-inset-bottom, 0px))" }}
     >
