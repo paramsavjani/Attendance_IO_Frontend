@@ -181,8 +181,8 @@ export default function Assistant() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-[hsl(262_83%_62%)] to-[hsl(292_84%_60%)] text-white">
-            <SparkIcon className="h-[18px] w-[18px]" />
+          <div className="liquid-nav flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+            <SparkIcon className="h-[18px] w-[18px]" gradientId="header-spark" />
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-[15px] font-semibold leading-tight">Assistant</h1>
@@ -264,8 +264,8 @@ function useVisualViewportHeight(): number | null {
 function EmptyState({ onPick }: { onPick: (s: string) => void }) {
   return (
     <div className="flex flex-col items-center gap-5 pt-10 pb-4 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary via-[hsl(262_83%_62%)] to-[hsl(292_84%_60%)] text-white shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.7)]">
-        <SparkIcon className="h-7 w-7" />
+      <div className="liquid-nav flex h-14 w-14 items-center justify-center rounded-full">
+        <SparkIcon className="h-7 w-7" gradientId="empty-spark" />
       </div>
       <div>
         <h2 className="text-base font-semibold">What do you want to know?</h2>
