@@ -29,8 +29,10 @@ export function lastRevealOrigin(): RevealOrigin | null {
 }
 
 const OPEN_MS = 440;
-const FADE_MS = 120;
-const COVER_MS = 140;
+/** Point in the growth (0–1) at which the disc has covered the viewport; the route swaps here. */
+const SWAP_AT = 0.62;
+const FADE_MS = 50;
+const COVER_MS = 120;
 const CLOSE_MS = 420;
 
 function reducedMotion(): boolean {
@@ -66,10 +68,13 @@ export async function revealFrom(origin: RevealOrigin | null, navigateNow: () =>
   running = true;
   const sun = makeSun(origin);
   try {
-    await animate(sun, [{ transform: "scale(0)", opacity: 1 }, { transform: "scale(1)", opacity: 1 }], OPEN_MS, "cubic-bezier(0.22, 0.9, 0.24, 1)");
+    const grow = animate(sun, [{ transform: "scale(0)", opacity: 1 }, { transform: "scale(1)", opacity: 1 }], OPEN_MS, "cubic-bezier(0.22, 0.9, 0.24, 1)");
+    // Swap the route while the sun is still growing — by SWAP_AT the disc already hides the
+    // whole viewport (the ease-out curve front-loads the growth), so the new page mounts and
+    // paints underneath and is ready the instant the growth ends. No wait after cover.
+    await new Promise((r) => setTimeout(r, OPEN_MS * SWAP_AT));
     navigateNow();
-    // One frame for the new route to paint under the sun, then clear it straight away.
-    await new Promise((r) => requestAnimationFrame(r));
+    await grow;
     await animate(sun, [{ opacity: 1 }, { opacity: 0 }], FADE_MS, "ease-out");
   } finally {
     sun.remove();
