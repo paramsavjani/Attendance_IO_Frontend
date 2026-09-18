@@ -30,7 +30,7 @@ export function lastRevealOrigin(): RevealOrigin | null {
 
 const OPEN_MS = 440;
 /** Point in the growth (0–1) at which the disc has covered the viewport; the route swaps here. */
-const SWAP_AT = 0.62;
+const SWAP_AT = 0.4;
 const FADE_MS = 50;
 const COVER_MS = 120;
 const CLOSE_MS = 420;
