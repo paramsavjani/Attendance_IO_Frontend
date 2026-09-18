@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, Loader2, RotateCcw, Send, Square, Wrench } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
+import { ArrowLeft, Loader2, RotateCcw, Send, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { streamAgentChat, type AgentToolCall } from "@/lib/agent";
+import { streamAgentChat } from "@/lib/agent";
+import { SparkIcon } from "@/components/assistant/AssistantFab";
 
 interface ChatMessage {
   id: string;
   role: "USER" | "ASSISTANT";
   content: string;
-  toolCalls?: AgentToolCall[];
-  latencyMs?: number;
+  /** Set when the turn failed; rendered as its own bubble. */
   error?: string;
   streaming?: boolean;
 }
+
+const HOME_PATH = "/dashboard";
 
 const SUGGESTIONS = [
   "How is my attendance this semester?",
@@ -29,27 +33,50 @@ const SUGGESTIONS = [
 let nextId = 0;
 const newId = () => `${Date.now()}-${nextId++}`;
 
-function formatToolLabel(call: AgentToolCall): string {
-  const args = Object.entries(call.arguments ?? {})
-    .filter(([, v]) => v !== null && v !== undefined && v !== "")
-    .map(([k, v]) => `${k}=${String(v)}`)
-    .join(", ");
-  return args ? `${call.name}(${args})` : `${call.name}()`;
-}
-
+/**
+ * Full-screen chat: its own fixed header (no bottom nav on this page), a scrolling message list
+ * and a composer that stays above the on-screen keyboard. A fresh thread on every visit; past
+ * sessions are stored server-side but never shown here.
+ */
 export default function Assistant() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  // A fresh thread on every page open; "New" resets it mid-way. Past sessions are never shown.
   const [conversationId, setConversationId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const viewportHeight = useVisualViewportHeight();
+
+  const goHome = useCallback(() => navigate(HOME_PATH, { replace: true }), [navigate]);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const el = listRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // When the keyboard opens the viewport shrinks; keep the latest message in view.
+  useEffect(() => {
+    scrollToBottom("auto");
+  }, [viewportHeight, scrollToBottom]);
+
+  // Android hardware back: always return to home from here, never to a previous chat state.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let listenerHandle: { remove: () => Promise<void> } | undefined;
+    (async () => {
+      const { App } = await import("@capacitor/app");
+      listenerHandle = await App.addListener("backButton", () => goHome());
+    })();
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, [goHome]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -67,9 +94,12 @@ export default function Assistant() {
       const message = text.trim();
       if (!message || busy) return;
 
-      const userMessage: ChatMessage = { id: newId(), role: "USER", content: message };
       const assistantId = newId();
-      setMessages((prev) => [...prev, userMessage, { id: assistantId, role: "ASSISTANT", content: "", streaming: true }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: newId(), role: "USER", content: message },
+        { id: assistantId, role: "ASSISTANT", content: "", streaming: true },
+      ]);
       setInput("");
       setBusy(true);
 
@@ -90,7 +120,7 @@ export default function Assistant() {
                 updateMessage(assistantId, (m) => ({ content: m.content + event.text }));
                 break;
               case "DONE":
-                updateMessage(assistantId, { streaming: false, toolCalls: event.toolCalls ?? [], latencyMs: event.latencyMs });
+                updateMessage(assistantId, { streaming: false });
                 break;
               case "ERROR":
                 updateMessage(assistantId, { streaming: false, error: event.error });
@@ -106,13 +136,12 @@ export default function Assistant() {
         const aborted = controller.signal.aborted;
         updateMessage(assistantId, (m) => ({
           streaming: false,
-          error: aborted ? undefined : err instanceof Error ? err.message : "Request failed",
-          content: aborted && !m.content ? "(stopped)" : m.content,
+          error: aborted ? undefined : err instanceof Error ? err.message : "Something went wrong. Please try again.",
+          content: aborted && !m.content ? "Stopped." : m.content,
         }));
       } finally {
         abortRef.current = null;
         setBusy(false);
-        inputRef.current?.focus();
       }
     },
     [busy, conversationId, updateMessage],
@@ -136,55 +165,62 @@ export default function Assistant() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col -m-4">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Bot className="h-4 w-4" />
+    <div
+      className="fixed inset-x-0 top-0 flex flex-col bg-background"
+      // Follows the visual viewport, so the composer sits right above the keyboard when it opens.
+      style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
+    >
+      {/* Fixed header */}
+      <header className="safe-area-top flex shrink-0 items-center gap-2 border-b border-border bg-background/95 px-2 py-2 backdrop-blur">
+        <Button variant="ghost" size="icon" onClick={goHome} aria-label="Back to home" className="h-10 w-10 rounded-full">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-[hsl(262_83%_62%)] to-[hsl(292_84%_60%)] text-white">
+            <SparkIcon className="h-[18px] w-[18px]" />
           </div>
-          <div>
-            <h1 className="text-base font-semibold leading-tight">Assistant</h1>
-            <p className="text-[11px] text-muted-foreground">Ask about attendance, subjects and classes</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-[15px] font-semibold leading-tight">Assistant</h1>
+            <p className="truncate text-[11px] text-muted-foreground">Attendance, subjects &amp; classes</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={reset} disabled={messages.length === 0 && !busy}>
+        <Button variant="outline" size="sm" onClick={reset} disabled={messages.length === 0 && !busy} className="h-9 rounded-full px-3">
           <RotateCcw className="mr-1.5 h-4 w-4" />
           New chat
         </Button>
-      </div>
+      </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 pb-3">
-        <div className="flex flex-col gap-3">
+      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
           {messages.length === 0 ? (
             <EmptyState onPick={(s) => void send(s)} />
           ) : (
             messages.map((m) => <MessageBubble key={m.id} message={m} />)
           )}
-          <div ref={bottomRef} />
         </div>
       </div>
 
-      {/* Composer */}
-      <div className="border-t border-border bg-background px-3 py-2">
-        <div className="flex items-end gap-2">
+      {/* Composer — bottom of the visual viewport, i.e. directly above the keyboard */}
+      <div className="safe-area-bottom shrink-0 border-t border-border bg-background px-3 py-2">
+        <div className="mx-auto flex w-full max-w-lg items-end gap-2">
           <Textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Ask something… e.g. Can I bunk CT303 tomorrow?"
+            onFocus={() => setTimeout(() => scrollToBottom("auto"), 250)}
+            placeholder="Ask about your attendance…"
             rows={1}
-            className="max-h-32 min-h-[42px] flex-1 resize-none bg-card"
+            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl bg-card text-[15px]"
             disabled={busy}
           />
           {busy ? (
-            <Button variant="outline" size="icon" onClick={stop} title="Stop" className="h-[42px] w-[42px] shrink-0">
+            <Button variant="outline" size="icon" onClick={stop} aria-label="Stop" className="h-11 w-11 shrink-0 rounded-full">
               <Square className="h-4 w-4" />
             </Button>
           ) : (
-            <Button size="icon" onClick={() => void send(input)} disabled={!input.trim()} title="Send" className="h-[42px] w-[42px] shrink-0">
+            <Button size="icon" onClick={() => void send(input)} disabled={!input.trim()} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full">
               <Send className="h-4 w-4" />
             </Button>
           )}
@@ -194,11 +230,34 @@ export default function Assistant() {
   );
 }
 
+/**
+ * Height of the visible area, which shrinks when the on-screen keyboard opens (web and Android
+ * WebView with adjustResize). Null until the API reports, in which case the CSS fallback applies.
+ */
+function useVisualViewportHeight(): number | null {
+  const [height, setHeight] = useState<number | null>(() =>
+    typeof window !== "undefined" && window.visualViewport ? Math.round(window.visualViewport.height) : null,
+  );
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setHeight(Math.round(vv.height));
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    update();
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+  return height;
+}
+
 function EmptyState({ onPick }: { onPick: (s: string) => void }) {
   return (
-    <div className="flex flex-col items-center gap-5 py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Bot className="h-6 w-6" />
+    <div className="flex flex-col items-center gap-5 pt-10 pb-4 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary via-[hsl(262_83%_62%)] to-[hsl(292_84%_60%)] text-white shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.7)]">
+        <SparkIcon className="h-7 w-7" />
       </div>
       <div>
         <h2 className="text-base font-semibold">What do you want to know?</h2>
@@ -222,9 +281,21 @@ function EmptyState({ onPick }: { onPick: (s: string) => void }) {
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "USER";
+
+  // A failed turn is shown as a proper bubble, not a stray label under an empty one.
+  if (!isUser && message.error && !message.content) {
+    return (
+      <div className="flex justify-start">
+        <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-sm leading-relaxed text-foreground">
+          {message.error}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-      <div className={cn("flex max-w-[88%] flex-col gap-1", isUser ? "items-end" : "items-start")}>
+      <div className={cn("flex max-w-[88%] flex-col gap-1.5", isUser ? "items-end" : "items-start")}>
         <div
           className={cn(
             "rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
@@ -235,31 +306,11 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         >
           {isUser ? message.content : message.content ? <AssistantMarkdown content={message.content} /> : message.streaming ? <Thinking /> : null}
         </div>
-
-        {message.error && (
-          <p className="rounded-md bg-destructive/10 px-2.5 py-1 text-[11px] text-destructive">{message.error}</p>
-        )}
-
-        {!isUser && !message.streaming && (message.toolCalls?.length || message.latencyMs != null) ? (
-          <div className="flex flex-wrap items-center gap-1">
-            {message.toolCalls?.map((call, i) => (
-              <span
-                key={`${call.name}-${i}`}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-[10px] text-muted-foreground",
-                  call.error && "border-destructive text-destructive",
-                )}
-                title={call.error ?? (call.durationMs ? `${call.durationMs} ms` : undefined)}
-              >
-                <Wrench className="h-2.5 w-2.5" />
-                {formatToolLabel(call)}
-              </span>
-            ))}
-            {message.latencyMs != null && (
-              <span className="text-[10px] text-muted-foreground">{(message.latencyMs / 1000).toFixed(1)}s</span>
-            )}
+        {!isUser && message.error && message.content && (
+          <div className="max-w-full rounded-2xl rounded-tl-sm border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-sm leading-relaxed text-foreground">
+            {message.error}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
