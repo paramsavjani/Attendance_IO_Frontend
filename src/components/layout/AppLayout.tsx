@@ -120,7 +120,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div
-      className="min-h-screen bg-background flex flex-col"
+      // Exactly the viewport, never taller: the document itself must not scroll, otherwise mobile
+      // browsers shift position:fixed elements (nav, launcher) as their toolbar collapses/expands.
+      className="h-screen supports-[height:100dvh]:h-[100dvh] overflow-hidden bg-background flex flex-col"
       {...handlers}
     >
       {/* Pull to Refresh Indicator - Fixed at top */}
