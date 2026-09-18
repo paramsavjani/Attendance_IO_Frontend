@@ -75,9 +75,21 @@ html.sunrise-active .liquid-nav {
   background: linear-gradient(135deg, hsl(0 0% 24%), hsl(0 0% 16%) 45%, hsl(262 40% 30%));
 }
 
-/* Focused: slow rotation. Thinking: faster rotation plus a soft outer glow. */
+/* Focused (typing): the same five colours, but faint and slow — the full-strength
+   gradient is reserved for thinking so the two states read differently. */
 .gemini-border.is-focused {
-  animation: gemini-spin 6s linear infinite;
+  background:
+    conic-gradient(
+      from var(--gemini-angle),
+      rgb(66 133 244 / 0.45) 0deg,
+      rgb(161 66 244 / 0.45) 72deg,
+      rgb(234 67 53 / 0.45) 144deg,
+      rgb(251 188 5 / 0.45) 216deg,
+      rgb(52 168 83 / 0.45) 288deg,
+      rgb(66 133 244 / 0.45) 360deg
+    ),
+    hsl(0 0% 18%);
+  animation: gemini-spin 8s linear infinite;
 }
 
 .gemini-border.is-thinking {
