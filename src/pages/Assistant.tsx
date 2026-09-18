@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { ArrowLeft, Loader2, RotateCcw, Send, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -65,6 +65,7 @@ const newId = () => `${Date.now()}-${nextId++}`;
  */
 export default function Assistant() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -175,6 +176,16 @@ export default function Assistant() {
 
   const stop = () => abortRef.current?.abort();
 
+  // Opened from elsewhere with a ready-made question (e.g. the Search page): ask it once, then
+  // drop it from the URL so a refresh or back-navigation does not ask it again.
+  const initialQuestion = searchParams.get("q");
+  useEffect(() => {
+    if (!initialQuestion) return;
+    setSearchParams({}, { replace: true });
+    void send(initialQuestion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuestion]);
+
   const reset = () => {
     abortRef.current?.abort();
     setMessages([]);
@@ -245,10 +256,9 @@ export default function Assistant() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             onFocus={() => setTimeout(() => scrollToBottom("auto"), 250)}
-            placeholder="Ask about your attendance…"
+            placeholder={busy ? "Type your next question…" : "Ask about your attendance…"}
             rows={1}
             className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl bg-card text-[15px]"
-            disabled={busy}
           />
           {busy ? (
             <Button variant="outline" size="icon" onClick={stop} aria-label="Stop" className="h-11 w-11 shrink-0 rounded-full">

@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, ChevronLeft, ChevronDown, X, Trash2 } from "lucide-react";
+import { Search as SearchIcon, ChevronLeft, ChevronDown, X, Trash2, ArrowRight } from "lucide-react";
+import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -902,12 +903,23 @@ export default function Search() {
 
       {/* Empty state */}
       {query.length === 0 && !historyVisible && !showAllHistory && (
-        <div className="text-center py-16 text-muted-foreground">
-          <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">Search for any student</p>
-          {selectedSemester && (
-            <p className="text-xs mt-1">Filtering by {selectedSemester.label}</p>
-          )}
+        <div className="space-y-4">
+          <div className="text-center py-10 text-muted-foreground">
+            <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
+            <p className="text-sm">Search for any student</p>
+            {selectedSemester && (
+              <p className="text-xs mt-1">Filtering by {selectedSemester.label}</p>
+            )}
+          </div>
+          <AssistantPromo
+            title="Or just ask the assistant"
+            examples={[
+              "Compare my attendance with a friend",
+              "Which batch is doing best in CT303?",
+              "Average attendance of the 2024 batch",
+            ]}
+            onOpen={(q) => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant")}
+          />
         </div>
       )}
 
@@ -983,6 +995,59 @@ export default function Search() {
           ))}
         </div>
       )}
+
+      {/* Ask the assistant about what was typed — a name or roll number */}
+      {!isSearching && query.trim().length >= 2 && !selectedStudent && (
+        <AssistantPromo
+          title={`Ask the assistant about "${query.trim()}"`}
+          examples={[
+            `Show ${query.trim()}'s attendance this semester`,
+            `Compare my attendance with ${query.trim()}`,
+          ]}
+          onOpen={(q) => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant")}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Entry point to the assistant from the Search page: a dark card with one-tap example questions.
+ * Each example opens the assistant and asks it immediately (`?q=`).
+ */
+function AssistantPromo({
+  title,
+  examples,
+  onOpen,
+}: {
+  title: string;
+  examples: string[];
+  onOpen: (question?: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3.5">
+      <button type="button" onClick={() => onOpen()} className="flex w-full items-center gap-3 text-left">
+        <div className="liquid-nav flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+          <SparkIcon className="h-5 w-5" gradientId="search-promo-spark" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold">{title}</p>
+          <p className="text-[11px] text-muted-foreground">Friends, batches, subjects — in plain words</p>
+        </div>
+        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+      <div className="mt-3 flex flex-col gap-1.5">
+        {examples.map((q) => (
+          <button
+            key={q}
+            type="button"
+            onClick={() => onOpen(q)}
+            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-left text-[13px] text-foreground active:scale-[0.98]"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
