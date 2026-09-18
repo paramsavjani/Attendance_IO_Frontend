@@ -24,9 +24,8 @@ export function AssistantFab() {
       )}
       style={{ bottom: "calc(5.25rem + env(safe-area-inset-bottom, 0px))" }}
     >
-      {/* soft glow ring */}
+      {/* soft static glow — no animation */}
       <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-br from-primary to-[hsl(292_84%_60%)] opacity-60 blur-md" />
-      <span className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-primary/25 [animation-duration:2.4s]" />
       <SparkIcon className="relative h-7 w-7" />
     </button>
   );
