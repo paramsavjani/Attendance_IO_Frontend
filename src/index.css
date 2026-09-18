@@ -16,8 +16,9 @@
   padding-top: env(safe-area-inset-top, 0);
 }
 
-/* Assistant "sunrise" transition — see lib/revealTransition.ts. A gray sun with a violet halo,
-   scaled from the launcher icon by the Web Animations API; sits above everything, ignores touches. */
+/* Assistant "sunrise" transition — see lib/revealTransition.ts. A small dark disc with a violet
+   rim, scaled up by the Web Animations API on the compositor; no shadows/filters so it stays
+   smooth on mobile WebViews. */
 .sunrise-sun {
   position: fixed;
   z-index: 100;
@@ -26,17 +27,101 @@
   transform: scale(0);
   transform-origin: center;
   will-change: transform, opacity;
+  contain: strict;
   background:
     radial-gradient(circle at center,
       hsl(0 0% 12%) 0%,
-      hsl(0 0% 9%) 45%,
-      hsl(0 0% 7%) 78%,
-      hsl(262 55% 18%) 96%,
-      hsl(262 83% 62% / 0.8) 100%);
-  box-shadow:
-    0 0 0 1px hsl(262 83% 62% / 0.55),
-    0 0 48px 8px hsl(262 83% 62% / 0.35),
-    0 0 140px 30px hsl(234 89% 64% / 0.18);
+      hsl(0 0% 8%) 62%,
+      hsl(0 0% 6%) 86%,
+      hsl(262 55% 22%) 96%,
+      hsl(262 83% 62% / 0.9) 100%);
+}
+
+/* Blurring what's under a moving layer costs a full re-blur per frame; pause it during the transition. */
+html.sunrise-active .liquid-nav {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Assistant composer — Gemini-style rounded box with a rotating Google-colour border while active. */
+@property --gemini-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.gemini-border {
+  position: relative;
+  border-radius: 1.25rem;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--gemini-angle),
+    #4285f4 0deg,
+    #a142f4 72deg,
+    #ea4335 144deg,
+    #fbbc05 216deg,
+    #34a853 288deg,
+    #4285f4 360deg
+  );
+}
+
+.gemini-border > .gemini-inner {
+  border-radius: calc(1.25rem - 1.5px);
+  background: hsl(var(--background));
+}
+
+/* Idle: a quiet, mostly-neutral edge with just a hint of colour. */
+.gemini-border.is-idle {
+  background: linear-gradient(135deg, hsl(0 0% 24%), hsl(0 0% 16%) 45%, hsl(262 40% 30%));
+}
+
+/* Focused: slow rotation. Thinking: faster rotation plus a soft outer glow. */
+.gemini-border.is-focused {
+  animation: gemini-spin 6s linear infinite;
+}
+
+.gemini-border.is-thinking {
+  animation: gemini-spin 1.8s linear infinite;
+}
+
+.gemini-border.is-thinking::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 1.6rem;
+  background: inherit;
+  filter: blur(14px);
+  opacity: 0.35;
+  z-index: -1;
+}
+
+@keyframes gemini-spin {
+  to {
+    --gemini-angle: 360deg;
+  }
+}
+
+/* Typing indicator */
+.typing-dot {
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
 }
 
 /* Active scale for touch */
