@@ -171,7 +171,12 @@ export default function Assistant() {
       style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
     >
       {/* Fixed header */}
-      <header className="safe-area-top flex shrink-0 items-center gap-2 border-b border-border bg-background/95 px-2 py-2 backdrop-blur">
+      <header
+        className="flex shrink-0 items-center gap-2 border-b border-border bg-background/95 px-3 pb-2.5 backdrop-blur"
+        // Inset + real spacing: the app's .safe-area-top class *replaces* padding with the inset,
+        // which is 0 on Android, so a header using it ends up flush against the status bar.
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
+      >
         <Button variant="ghost" size="icon" onClick={goHome} aria-label="Back to home" className="h-10 w-10 rounded-full">
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -191,7 +196,7 @@ export default function Assistant() {
       </header>
 
       {/* Messages */}
-      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
           {messages.length === 0 ? (
             <EmptyState onPick={(s) => void send(s)} />
@@ -202,7 +207,10 @@ export default function Assistant() {
       </div>
 
       {/* Composer — bottom of the visual viewport, i.e. directly above the keyboard */}
-      <div className="safe-area-bottom shrink-0 border-t border-border bg-background px-3 py-2">
+      <div
+        className="shrink-0 border-t border-border bg-background px-3 pt-2.5"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
+      >
         <div className="mx-auto flex w-full max-w-lg items-end gap-2">
           <Textarea
             ref={inputRef}
