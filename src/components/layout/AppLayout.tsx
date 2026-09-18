@@ -6,7 +6,8 @@ import {
   Search,
   BarChart3,
   User,
-  Loader2
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
@@ -21,6 +22,7 @@ const navItems = [
   { icon: Search, label: "Search", path: "/search" },
   { icon: CalendarDays, label: "Timetable", path: "/timetable" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: Sparkles, label: "Ask", path: "/assistant" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
