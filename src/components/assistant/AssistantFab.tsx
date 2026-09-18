@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { originOf, revealFrom } from "@/lib/revealTransition";
 
 /**
  * Floating launcher for the assistant: a round dark-glass button (same material as the bottom
@@ -17,7 +18,7 @@ export function AssistantFab() {
   return (
     <button
       type="button"
-      onClick={() => navigate("/assistant")}
+      onClick={(e) => revealFrom(originOf(e.currentTarget), () => navigate("/assistant"))}
       aria-label="Ask the assistant"
       className={cn(
         "liquid-nav fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full",
