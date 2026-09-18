@@ -32,6 +32,8 @@ interface AgentEventBase {
 export type AgentStreamEvent =
   | (AgentEventBase & { type: "META" })
   | (AgentEventBase & { type: "TOKEN"; text: string })
+  /** The model started a tool; `text` is its name. Informational only. */
+  | (AgentEventBase & { type: "STATUS"; text: string })
   | (AgentEventBase & {
       type: "DONE";
       toolCalls: AgentToolCall[];
