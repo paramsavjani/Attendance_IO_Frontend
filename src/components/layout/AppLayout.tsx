@@ -9,6 +9,7 @@ import {
   Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AssistantFab } from "@/components/assistant/AssistantFab";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Capacitor } from "@capacitor/core";
 
@@ -190,6 +191,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Assistant launcher — independent of the nav, sits above it on the right */}
+      <AssistantFab />
 
       {/* Floating pill bottom navigation */}
       <nav
