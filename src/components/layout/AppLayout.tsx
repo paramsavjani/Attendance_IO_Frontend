@@ -6,10 +6,10 @@ import {
   Search,
   BarChart3,
   User,
-  Loader2,
-  Sparkles,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AssistantFab } from "@/components/assistant/AssistantFab";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Capacitor } from "@capacitor/core";
 
@@ -22,7 +22,6 @@ const navItems = [
   { icon: Search, label: "Search", path: "/search" },
   { icon: CalendarDays, label: "Timetable", path: "/timetable" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
-  { icon: Sparkles, label: "Ask", path: "/assistant" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
@@ -192,6 +191,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Assistant launcher — independent of the nav, sits above it on the right */}
+      <AssistantFab />
 
       {/* Floating pill bottom navigation */}
       <nav
