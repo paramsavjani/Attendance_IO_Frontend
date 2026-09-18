@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, ChevronLeft, ChevronDown, X, Trash2, ArrowRight } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
+import { originOf, revealFrom, type RevealOrigin } from "@/lib/revealTransition";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -918,7 +919,7 @@ export default function Search() {
               "Which batch is doing best in CT303?",
               "Average attendance of the 2024 batch",
             ]}
-            onOpen={(q) => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant")}
+            onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
           />
         </div>
       )}
@@ -1004,7 +1005,7 @@ export default function Search() {
             `Show ${query.trim()}'s attendance this semester`,
             `Compare my attendance with ${query.trim()}`,
           ]}
-          onOpen={(q) => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant")}
+          onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
         />
       )}
     </div>
@@ -1022,12 +1023,14 @@ function AssistantPromo({
 }: {
   title: string;
   examples: string[];
-  onOpen: (question?: string) => void;
+  onOpen: (question: string | undefined, origin: RevealOrigin | null) => void;
 }) {
+  const sparkRef = useRef<HTMLDivElement | null>(null);
+  const open = (q?: string) => onOpen(q, originOf(sparkRef.current));
   return (
     <div className="rounded-2xl border border-border bg-card p-3.5">
-      <button type="button" onClick={() => onOpen()} className="flex w-full items-center gap-3 text-left">
-        <div className="liquid-nav flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+      <button type="button" onClick={() => open()} className="flex w-full items-center gap-3 text-left">
+        <div ref={sparkRef} className="liquid-nav flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
           <SparkIcon className="h-5 w-5" gradientId="search-promo-spark" />
         </div>
         <div className="min-w-0 flex-1">
@@ -1041,7 +1044,7 @@ function AssistantPromo({
           <button
             key={q}
             type="button"
-            onClick={() => onOpen(q)}
+            onClick={() => open(q)}
             className="w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-left text-[13px] text-foreground active:scale-[0.98]"
           >
             {q}
