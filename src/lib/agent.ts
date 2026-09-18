@@ -1,12 +1,13 @@
-import { API_CONFIG, authenticatedFetch } from "./api";
+import { API_CONFIG } from "./api";
 import { getToken } from "./token";
 
 /**
- * Client for the attendance assistant (`/api/agent/*`).
+ * Client for the attendance assistant (`/api/agent/chat/stream`).
  *
- * The server keeps each thread's recent history; the page only holds the conversation id it
- * gets back in the first META event. Streaming is Server-Sent Events over a POST with a Bearer
- * token, which `EventSource` cannot do, so the stream is read with `fetch` and parsed by hand.
+ * The server keeps each thread's recent turns so follow-up questions work; the page only holds
+ * the conversation id it gets back in the first META event, for as long as the page is open.
+ * Streaming is Server-Sent Events over a POST with a Bearer token, which `EventSource` cannot
+ * do, so the stream is read with `fetch` and parsed by hand.
  */
 
 export type AgentMessageRole = "USER" | "ASSISTANT";
@@ -39,20 +40,6 @@ export type AgentStreamEvent =
       usage?: AgentTokenUsage | null;
     })
   | (AgentEventBase & { type: "ERROR"; error: string });
-
-export interface AgentStoredMessage {
-  role: AgentMessageRole;
-  content: string;
-  at: string;
-  turnId?: string | null;
-  toolNames?: string[] | null;
-  latencyMs?: number | null;
-}
-
-export interface AgentConversation {
-  conversationId: string;
-  messages: AgentStoredMessage[];
-}
 
 export interface StreamAgentChatOptions {
   message: string;
@@ -127,14 +114,4 @@ export async function streamAgentChat({ message, conversationId, onEvent, signal
 
   const trailing = parseSseBlock(buffer);
   if (trailing) onEvent(trailing);
-}
-
-/** The stored thread, for restoring a conversation the page only remembers the id of. */
-export async function getAgentConversation(conversationId: string): Promise<AgentConversation> {
-  const response = await authenticatedFetch(`${AGENT_BASE}/conversations/${encodeURIComponent(conversationId)}`, {
-    method: "GET",
-    credentials: "include",
-  });
-  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-  return (await response.json()) as AgentConversation;
 }
