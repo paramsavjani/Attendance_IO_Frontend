@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
-import { ArrowLeft, Loader2, RotateCcw, Send, Square } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Check, Copy, RotateCcw, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { streamAgentChat } from "@/lib/agent";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
@@ -15,12 +14,38 @@ interface ChatMessage {
   id: string;
   role: "USER" | "ASSISTANT";
   content: string;
-  /** Set when the turn failed; rendered as its own bubble. */
+  /** Set when the turn failed; rendered as its own bubble with a retry. */
   error?: string;
+  /** The user message this assistant turn answered — for "try again". */
+  question?: string;
   streaming?: boolean;
+  /** What the assistant is doing right now, while nothing has streamed yet. */
+  status?: string;
 }
 
 const HOME_PATH = "/dashboard";
+
+/** Human wording for tool names arriving in STATUS events. */
+const STATUS_TEXT: Record<string, string> = {
+  search_students: "Searching students…",
+  get_student_attendance: "Fetching attendance…",
+  get_my_attendance: "Checking your attendance…",
+  get_my_timetable: "Reading your timetable…",
+  get_subject_records: "Going through lecture records…",
+  list_subjects: "Looking up subjects…",
+  list_semesters: "Looking up semesters…",
+  get_subject_class_stats: "Crunching class statistics…",
+  get_group_average: "Averaging the batch…",
+  get_overall_analytics: "Pulling institute analytics…",
+  compare_students: "Comparing attendance…",
+  simulate_attendance: "Running the what-if…",
+  get_unmarked_lectures: "Finding unmarked lectures…",
+  get_attendance_on_date: "Checking that day…",
+  get_attendance_trend: "Building the weekly trend…",
+  get_lab_tutorial_attendance: "Checking labs & tutorials…",
+  get_subject_schedule: "Looking up the schedule…",
+  get_academic_calendar: "Checking the calendar…",
+};
 
 /**
  * Things only the assistant can answer — the home page already shows your own numbers and the
@@ -43,8 +68,11 @@ const SUGGESTION_POOL = [
   "When did I last miss a CT303 lecture?",
   "How many CS374 classes happened in September?",
   "What was Param Savjani's official attendance last semester?",
-  "Average attendance of the whole institute this semester",
-  "Who in the 2025 batch has the best attendance in CP1002?",
+  "Can I skip the next two CT303 classes and stay above 75%?",
+  "What did I forget to mark this week?",
+  "Am I improving? Show my last 6 weeks",
+  "Who in CP1001 is below 60%?",
+  "How many weeks of classes are left?",
 ];
 
 function pickSuggestions(count: number): string[] {
@@ -70,15 +98,16 @@ export default function Assistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>(() => pickSuggestions(4));
+  const [showJump, setShowJump] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const pinnedToBottom = useRef(true);
   const viewportHeight = useVisualViewportHeight();
 
-  // Shrink back into the launcher we came from; if the page was opened directly (no origin
-  // recorded) collapse toward where the launcher lives, bottom-right.
   const goHome = useCallback(() => {
     const fallback = { x: window.innerWidth - 44, y: window.innerHeight - 112 };
     collapseTo(lastRevealOrigin() ?? fallback, () => navigate(HOME_PATH, { replace: true }));
@@ -89,14 +118,23 @@ export default function Assistant() {
     if (el) el.scrollTo({ top: el.scrollHeight, behavior });
   }, []);
 
+  // Follow the stream only while the user is at the bottom; if they scrolled up, offer a jump.
   useEffect(() => {
-    scrollToBottom();
+    if (pinnedToBottom.current) scrollToBottom("auto");
+    else setShowJump(true);
   }, [messages, scrollToBottom]);
 
-  // When the keyboard opens the viewport shrinks; keep the latest message in view.
   useEffect(() => {
     scrollToBottom("auto");
   }, [viewportHeight, scrollToBottom]);
+
+  const onListScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    pinnedToBottom.current = atBottom;
+    if (atBottom) setShowJump(false);
+  };
 
   // Android hardware back: always return to home from here, never to a previous chat state.
   useEffect(() => {
@@ -113,6 +151,14 @@ export default function Assistant() {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  // Grow the input with its content (up to a few lines), shrink back when cleared.
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
+  }, [input]);
+
   const updateMessage = useCallback(
     (id: string, patch: Partial<ChatMessage> | ((m: ChatMessage) => Partial<ChatMessage>)) => {
       setMessages((prev) =>
@@ -128,13 +174,17 @@ export default function Assistant() {
       if (!message || busy) return;
 
       const assistantId = newId();
+      pinnedToBottom.current = true;
+      setShowJump(false);
       setMessages((prev) => [
         ...prev,
         { id: newId(), role: "USER", content: message },
-        { id: assistantId, role: "ASSISTANT", content: "", streaming: true },
+        { id: assistantId, role: "ASSISTANT", content: "", streaming: true, question: message },
       ]);
       setInput("");
       setBusy(true);
+      // Keep the keyboard up: the field stays focused across the send.
+      inputRef.current?.focus({ preventScroll: true });
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -149,26 +199,29 @@ export default function Assistant() {
               case "META":
                 setConversationId(event.conversationId);
                 break;
+              case "STATUS":
+                updateMessage(assistantId, (m) => (m.content ? {} : { status: STATUS_TEXT[event.text] ?? "Working on it…" }));
+                break;
               case "TOKEN":
-                updateMessage(assistantId, (m) => ({ content: m.content + event.text }));
+                updateMessage(assistantId, (m) => ({ content: m.content + event.text, status: undefined }));
                 break;
               case "DONE":
-                updateMessage(assistantId, { streaming: false });
+                updateMessage(assistantId, { streaming: false, status: undefined });
                 break;
               case "ERROR":
-                updateMessage(assistantId, { streaming: false, error: event.error });
+                updateMessage(assistantId, { streaming: false, status: undefined, error: event.error });
                 break;
               default:
                 break;
             }
           },
         });
-        // Server closed without DONE/ERROR (e.g. proxy cut the stream): finish the bubble as-is.
-        updateMessage(assistantId, (m) => (m.streaming ? { streaming: false } : {}));
+        updateMessage(assistantId, (m) => (m.streaming ? { streaming: false, status: undefined } : {}));
       } catch (err) {
         const aborted = controller.signal.aborted;
         updateMessage(assistantId, (m) => ({
           streaming: false,
+          status: undefined,
           error: aborted ? undefined : err instanceof Error ? err.message : "Something went wrong. Please try again.",
           content: aborted && !m.content ? "Stopped." : m.content,
         }));
@@ -178,6 +231,15 @@ export default function Assistant() {
       }
     },
     [busy, conversationId, updateMessage],
+  );
+
+  const retry = useCallback(
+    (message: ChatMessage) => {
+      if (!message.question || busy) return;
+      setMessages((prev) => prev.filter((m) => m.id !== message.id && !(m.role === "USER" && m.content === message.question && prev.indexOf(m) === prev.indexOf(message) - 1)));
+      void send(message.question);
+    },
+    [busy, send],
   );
 
   const stop = () => abortRef.current?.abort();
@@ -207,6 +269,8 @@ export default function Assistant() {
       void send(input);
     }
   };
+
+  const composerState = busy ? "is-thinking" : focused ? "is-focused" : "is-idle";
 
   return (
     <div
@@ -240,41 +304,80 @@ export default function Assistant() {
       </header>
 
       {/* Messages */}
-      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
-          {messages.length === 0 ? (
-            <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} />
-          ) : (
-            messages.map((m) => <MessageBubble key={m.id} message={m} />)
-          )}
+      <div className="relative min-h-0 flex-1">
+        <div ref={listRef} onScroll={onListScroll} className="h-full overflow-y-auto overscroll-contain px-4 py-4">
+          <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
+            {messages.length === 0 ? (
+              <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} />
+            ) : (
+              messages.map((m) => <MessageBubble key={m.id} message={m} onRetry={retry} />)
+            )}
+          </div>
         </div>
+        {showJump && (
+          <button
+            type="button"
+            onClick={() => {
+              pinnedToBottom.current = true;
+              setShowJump(false);
+              scrollToBottom();
+            }}
+            className="liquid-nav absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-foreground"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+            Latest
+          </button>
+        )}
       </div>
 
       {/* Composer — bottom of the visual viewport, i.e. directly above the keyboard */}
-      <div
-        className="shrink-0 border-t border-border bg-background px-3 pt-2.5"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
-      >
-        <div className="mx-auto flex w-full max-w-lg items-end gap-2">
-          <Textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            onFocus={() => setTimeout(() => scrollToBottom("auto"), 250)}
-            placeholder={busy ? "Type your next question…" : "Ask about your attendance…"}
-            rows={1}
-            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl bg-card text-[15px]"
-          />
-          {busy ? (
-            <Button variant="outline" size="icon" onClick={stop} aria-label="Stop" className="h-11 w-11 shrink-0 rounded-full">
-              <Square className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button size="icon" onClick={() => void send(input)} disabled={!input.trim()} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full">
-              <Send className="h-4 w-4" />
-            </Button>
-          )}
+      <div className="shrink-0 px-3 pt-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}>
+        <div className={cn("gemini-border mx-auto w-full max-w-lg", composerState)}>
+          <div className="gemini-inner flex flex-col px-3.5 pt-3 pb-2">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              onFocus={() => {
+                setFocused(true);
+                setTimeout(() => scrollToBottom("auto"), 250);
+              }}
+              onBlur={() => setFocused(false)}
+              placeholder={busy ? "Type your next question…" : "Ask about attendance, friends, batches…"}
+              rows={1}
+              enterKeyHint="send"
+              className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
+            />
+            <div className="mt-1.5 flex items-center justify-between gap-2">
+              <span className="hidden text-[11px] text-muted-foreground sm:inline">
+              </span>
+              <span className="sm:hidden" />
+              {busy ? (
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={stop}
+                  aria-label="Stop"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background active:scale-90"
+                >
+                  <Square className="h-3.5 w-3.5 fill-current" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  // preventDefault on mousedown keeps focus in the textarea, so the keyboard stays up.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void send(input)}
+                  disabled={!input.trim()}
+                  aria-label="Send"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity active:scale-90 disabled:opacity-40"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -330,15 +433,32 @@ function EmptyState({ suggestions, onPick }: { suggestions: string[]; onPick: (s
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry: (m: ChatMessage) => void }) {
   const isUser = message.role === "USER";
+  const [copied, setCopied] = useState(false);
 
-  // A failed turn is shown as a proper bubble, not a stray label under an empty one.
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  // A failed turn is shown as a proper bubble with a retry, not a stray label under an empty one.
   if (!isUser && message.error && !message.content) {
     return (
       <div className="flex justify-start">
-        <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-sm leading-relaxed text-foreground">
-          {message.error}
+        <div className="flex max-w-[88%] flex-col gap-2 rounded-2xl rounded-tl-sm border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
+          <span>{message.error}</span>
+          {message.question && (
+            <button type="button" onClick={() => onRetry(message)} className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs">
+              <RotateCcw className="h-3 w-3" />
+              Try again
+            </button>
+          )}
         </div>
       </div>
     );
@@ -346,7 +466,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-      <div className={cn("flex max-w-[88%] flex-col gap-1.5", isUser ? "items-end" : "items-start")}>
+      <div className={cn("group flex max-w-[88%] flex-col gap-1", isUser ? "items-end" : "items-start")}>
         <div
           className={cn(
             "rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
@@ -355,12 +475,35 @@ function MessageBubble({ message }: { message: ChatMessage }) {
               : "rounded-tl-sm border border-border bg-card text-foreground",
           )}
         >
-          {isUser ? message.content : message.content ? <AssistantMarkdown content={message.content} /> : message.streaming ? <Thinking /> : null}
+          {isUser ? (
+            message.content
+          ) : message.content ? (
+            <AssistantMarkdown content={message.content} />
+          ) : message.streaming ? (
+            <Thinking status={message.status} />
+          ) : null}
         </div>
         {!isUser && message.error && message.content && (
-          <div className="max-w-full rounded-2xl rounded-tl-sm border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-sm leading-relaxed text-foreground">
-            {message.error}
+          <div className="flex max-w-full flex-col gap-2 rounded-2xl rounded-tl-sm border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-sm leading-relaxed text-foreground">
+            <span>{message.error}</span>
+            {message.question && (
+              <button type="button" onClick={() => onRetry(message)} className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs">
+                <RotateCcw className="h-3 w-3" />
+                Try again
+              </button>
+            )}
           </div>
+        )}
+        {!isUser && !message.streaming && message.content && (
+          <button
+            type="button"
+            onClick={copy}
+            className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] text-muted-foreground opacity-70 active:opacity-100"
+            aria-label="Copy answer"
+          >
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? "Copied" : "Copy"}
+          </button>
         )}
       </div>
     </div>
@@ -405,11 +548,15 @@ function AssistantMarkdown({ content }: { content: string }) {
   );
 }
 
-function Thinking() {
+function Thinking({ status }: { status?: string }) {
   return (
     <span className="inline-flex items-center gap-2 text-muted-foreground">
-      <Loader2 className="h-4 w-4 animate-spin" />
-      Looking that up…
+      <span className="inline-flex items-end gap-0.5">
+        <span className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-current" />
+        <span className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-current" />
+        <span className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-current" />
+      </span>
+      {status ?? "Thinking…"}
     </span>
   );
 }
