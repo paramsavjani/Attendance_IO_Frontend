@@ -21,14 +21,39 @@ interface ChatMessage {
 
 const HOME_PATH = "/dashboard";
 
-const SUGGESTIONS = [
-  "How is my attendance this semester?",
-  "How many classes can I bunk in each subject?",
-  "When did I last attend DSA?",
-  "Average attendance of the 2024 batch",
-  "Who has the best attendance in CT303?",
-  "What classes do I have tomorrow?",
+/**
+ * Things only the assistant can answer — the home page already shows your own numbers and the
+ * timetable, so those are deliberately absent. Four are picked at random per visit.
+ */
+const SUGGESTION_POOL = [
+  "Show Param Savjani's attendance this semester",
+  "Compare my attendance with Param Savjani",
+  "Who has better attendance in CT303, me or Param Savjani?",
+  "Compare Param Savjani and 202301045 subject by subject",
+  "Average attendance of the 2023 batch in CT303",
+  "Which batch is doing best in CS374?",
+  "Batch-wise average attendance in DS603",
+  "Average attendance of my batch across all my subjects",
+  "How does the 2024 batch compare with 2025 in Digital Communication?",
+  "Top 5 students by attendance in CP1001",
+  "Bottom 5 students in Signals and Systems",
+  "How many students of my batch are below 60% this semester?",
+  "Which of my subjects has the lowest class average?",
+  "When did I last miss a CT303 lecture?",
+  "How many CS374 classes happened in September?",
+  "What was Param Savjani's official attendance last semester?",
+  "Average attendance of the whole institute this semester",
+  "Who in the 2025 batch has the best attendance in CP1002?",
 ];
+
+function pickSuggestions(count: number): string[] {
+  const pool = [...SUGGESTION_POOL];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
 
 let nextId = 0;
 const newId = () => `${Date.now()}-${nextId++}`;
@@ -44,6 +69,7 @@ export default function Assistant() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>(() => pickSuggestions(4));
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -154,6 +180,7 @@ export default function Assistant() {
     setMessages([]);
     setInput("");
     setConversationId(null);
+    setSuggestions(pickSuggestions(4));
     inputRef.current?.focus();
   };
 
@@ -199,7 +226,7 @@ export default function Assistant() {
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
           {messages.length === 0 ? (
-            <EmptyState onPick={(s) => void send(s)} />
+            <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} />
           ) : (
             messages.map((m) => <MessageBubble key={m.id} message={m} />)
           )}
@@ -261,7 +288,7 @@ function useVisualViewportHeight(): number | null {
   return height;
 }
 
-function EmptyState({ onPick }: { onPick: (s: string) => void }) {
+function EmptyState({ suggestions, onPick }: { suggestions: string[]; onPick: (s: string) => void }) {
   return (
     <div className="flex flex-col items-center gap-5 pt-10 pb-4 text-center">
       <div className="liquid-nav flex h-14 w-14 items-center justify-center rounded-full">
@@ -269,15 +296,15 @@ function EmptyState({ onPick }: { onPick: (s: string) => void }) {
       </div>
       <div>
         <h2 className="text-base font-semibold">What do you want to know?</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Try one of these, or type your own question.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Ask about friends, batches and subjects — or type your own.</p>
       </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        {SUGGESTIONS.map((s) => (
+      <div className="flex w-full max-w-sm flex-col gap-2">
+        {suggestions.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => onPick(s)}
-            className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-foreground active:scale-[0.98]"
+            className="w-full rounded-2xl border border-border bg-card px-3.5 py-2.5 text-left text-[13px] text-foreground active:scale-[0.98]"
           >
             {s}
           </button>
