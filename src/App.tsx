@@ -27,6 +27,7 @@ import NoInternet from "./pages/NoInternet";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
 import ErrorOldVersion from "./pages/ErrorOldVersion";
+import Assistant from "./pages/Assistant";
 import { ServerPopup } from "@/components/ServerPopup";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef, useState } from "react";
@@ -338,6 +339,16 @@ function AppRoutes() {
                 : !hasSeenIntro
                   ? <Navigate to="/intro" replace />
                   : <SubjectOnboarding />}
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Assistant is full-screen: no bottom nav, its own fixed header */}
+        <Route
+          path="/assistant"
+          element={
+            <ProtectedRoute>
+              <Assistant />
             </ProtectedRoute>
           }
         />
