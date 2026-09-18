@@ -1,21 +1,24 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { originOf, revealFrom } from "@/lib/revealTransition";
 
 /**
  * Floating launcher for the assistant: a round dark-glass button (same material as the bottom
  * nav) pinned above it on the right, independent of the nav pill. The spark itself carries the
- * colour. Hidden on the assistant page, which has its own header.
+ * colour. Shown on the home and search pages only.
  */
 export function AssistantFab() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  if (location.pathname.startsWith("/assistant")) return null;
+  // Only where people actually look someone up: home and search. Not on profile, timetable, etc.
+  const visibleOn = ["/dashboard", "/search"];
+  if (!visibleOn.some((p) => location.pathname === p || location.pathname.startsWith(p + "/"))) return null;
 
   return (
     <button
       type="button"
-      onClick={() => navigate("/assistant")}
+      onClick={(e) => revealFrom(originOf(e.currentTarget), () => navigate("/assistant"))}
       aria-label="Ask the assistant"
       className={cn(
         "liquid-nav fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full",
