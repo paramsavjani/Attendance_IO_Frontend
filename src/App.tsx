@@ -343,6 +343,16 @@ function AppRoutes() {
           }
         />
 
+        {/* Assistant is full-screen: no bottom nav, its own fixed header */}
+        <Route
+          path="/assistant"
+          element={
+            <ProtectedRoute>
+              <Assistant />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Protected Routes with Persistent MainLayout */}
         <Route element={<MainLayout />}>
           <Route
@@ -398,14 +408,6 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <Analytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assistant"
-            element={
-              <ProtectedRoute>
-                <Assistant />
               </ProtectedRoute>
             }
           />
