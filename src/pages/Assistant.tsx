@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { streamAgentChat } from "@/lib/agent";
+import { useAuth } from "@/contexts/AuthContext";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { collapseTo, lastRevealOrigin } from "@/lib/revealTransition";
 
@@ -121,6 +122,8 @@ const newId = () => `${Date.now()}-${nextId++}`;
  */
 export default function Assistant() {
   const navigate = useNavigate();
+  const { student: me } = useAuth();
+  const isDemo = Boolean(me?.isDemo);
   const [searchParams, setSearchParams] = useSearchParams();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -144,6 +147,11 @@ export default function Assistant() {
     const el = listRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior });
   }, []);
+
+  // Demo logins have no assistant: anyone who lands here by URL goes back to the dashboard.
+  useEffect(() => {
+    if (isDemo) navigate("/dashboard", { replace: true });
+  }, [isDemo, navigate]);
 
   // Follow the stream only while the user is at the bottom; if they scrolled up, offer a jump.
   useEffect(() => {
