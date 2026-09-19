@@ -49,8 +49,8 @@ const STATUS_TEXT: Record<string, string> = {
 
 /**
  * Things only the assistant can answer — the home page already shows your own numbers and the
- * timetable, so those are deliberately absent. Four are picked at random per visit, always
- * including one alumni question so people discover that the directory is searchable here.
+ * timetable, so those are deliberately absent. Four are picked at random per visit, three of
+ * them alumni questions — the directory is the thing people are least likely to know is here.
  */
 const ATTENDANCE_POOL = [
   "Show Param Savjani's attendance this semester",
@@ -103,9 +103,10 @@ function shuffle<T>(list: T[]): T[] {
   return pool;
 }
 
-/** [count] prompts: one alumni question plus attendance ones, in random order. */
+/** [count] prompts, most of them alumni questions (the more useful topic), in random order. */
 function pickSuggestions(count: number): string[] {
-  const alumni = shuffle(ALUMNI_POOL).slice(0, 1);
+  const alumniCount = Math.ceil(count * 0.75); // 3 of 4
+  const alumni = shuffle(ALUMNI_POOL).slice(0, alumniCount);
   const attendance = shuffle(ATTENDANCE_POOL).slice(0, Math.max(0, count - alumni.length));
   return shuffle([...alumni, ...attendance]);
 }
