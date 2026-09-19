@@ -396,34 +396,6 @@ html.sunrise-active .liquid-nav {
   animation: pageEnter 0.22s ease-out forwards;
 }
 
-/* The app is dark-only: tell the browser so native widgets (scrollbars, form controls) render
-   dark instead of the light default that showed as a white bar on desktop. Then thin, quiet
-   scrollbars everywhere — transparent track, rounded thumb that only stands out on hover. */
-html {
-  color-scheme: dark;
-}
-* {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
-}
-*::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-*::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.35);
-  border-radius: 999px;
-}
-*::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.6);
-}
-*::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
 /* Custom dark scrollbar (global) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
