@@ -1,16 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, BarChart3, ShieldCheck, Bell, Megaphone, ArrowRight,
   Zap, Gift, Search, Star, Rocket, PartyPopper, Info, CheckCircle, Github,
+  MessageCircle, Users, TrendingUp, CalendarDays, GraduationCap,
   type LucideIcon,
 } from "lucide-react";
+import { SparkIcon } from "@/components/assistant/AssistantFab";
+import { originOf, revealFrom } from "@/lib/revealTransition";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
@@ -86,6 +91,12 @@ interface ServerPopupData {
   dismissLabel: string | null;
   showDismiss?: boolean;
   confetti?: boolean;
+  /** "gemini": Google-colour rotating ring around the hero icon and a gradient primary button. */
+  accent?: "gemini" | string;
+  /** Small pill above the title, e.g. "New". */
+  badge?: string;
+  /** Headline numbers shown as tiles under the subtitle, e.g. 2,940 alumni. */
+  stats?: { value: string; label: string }[];
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -104,7 +115,19 @@ const ICON_MAP: Record<string, LucideIcon> = {
   check: CheckCircle,
   arrow: ArrowRight,
   github: Github,
+  chat: MessageCircle,
+  users: Users,
+  trend: TrendingUp,
+  calendar: CalendarDays,
+  graduation: GraduationCap,
 };
+
+/** `assistant` is the app's own gradient spark, not a Lucide glyph, so it is rendered separately. */
+function PopupIcon({ name, className, gradientId }: { name?: string; className?: string; gradientId: string }) {
+  if (name === "assistant") return <SparkIcon className={className} gradientId={gradientId} />;
+  const Icon = getIcon(name);
+  return <Icon className={className} />;
+}
 
 function getIcon(name?: string): LucideIcon {
   if (!name) return Sparkles;
@@ -242,6 +265,7 @@ export function ServerPopup() {
   const [isVisible, setIsVisible] = useState(false);
   const [primaryClicked, setPrimaryClicked] = useState(false);
   const [secondaryClicked, setSecondaryClicked] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const fireConfetti = useCallback(() => {
@@ -361,10 +385,15 @@ export function ServerPopup() {
       return;
     }
 
+    // The assistant page opens with its "sunrise" from the hero icon, like the launcher does.
+    const route = action.route;
+    const origin = route === "/assistant" ? originOf(heroRef.current) : null;
     setIsVisible(false);
     setTimeout(() => {
       setOpen(false);
-      if (action.route) navigate(action.route);
+      if (!route) return;
+      if (origin) void revealFrom(origin, () => navigate(route));
+      else navigate(route);
     }, 200);
   };
 
@@ -416,19 +445,23 @@ export function ServerPopup() {
     );
   }
 
-  const HeaderIcon = getIcon(popup.icon);
-  const ActionIcon = popup.primaryAction?.icon
-    ? getIcon(popup.primaryAction.icon)
-    : ArrowRight;
+  const ActionIcon = popup.primaryAction?.icon ? getIcon(popup.primaryAction.icon) : ArrowRight;
+  const gemini = popup.accent === "gemini";
+  const stats = popup.stats?.filter((s) => s.value && s.label) ?? [];
+  // Everything below the hero fades up in sequence; stagger index keeps the timing in one place.
+  let stagger = 0;
+  const rise = (): React.CSSProperties => ({ transitionDelay: `${140 + stagger++ * 70}ms` });
+  const riseClass = cn("transition-all duration-300 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0");
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && (showDismiss ? close() : undefined)}>
       <DialogContent
         className={cn(
           "max-w-[92vw] sm:max-w-md",
-          "rounded-3xl p-0 overflow-hidden border-0",
+          "rounded-[28px] p-0 overflow-hidden border border-white/10 bg-card shadow-[0_24px_80px_-24px_rgba(0,0,0,0.8)]",
+          "max-h-[92svh] overflow-y-auto", // four features + stats can outgrow a small phone
           "[&>button]:hidden",
-          "transition-all duration-300",
+          "transition-all duration-300 ease-out",
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         )}
         onInteractOutside={(e) => e.preventDefault()}
@@ -436,60 +469,103 @@ export function ServerPopup() {
           if (!showDismiss) e.preventDefault();
         }}
       >
-        {/* Gradient Header */}
-        <div className="relative px-6 pt-8 pb-5 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
+        {/* Hero: colour wash + centred icon tile + title */}
+        <div className="relative overflow-hidden px-6 pt-7 pb-4 text-center">
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute -top-24 left-1/2 h-56 w-80 -translate-x-1/2 rounded-full blur-3xl",
+              gemini
+                ? "bg-[radial-gradient(closest-side,rgb(66_133_244/0.38),rgb(161_66_244/0.22)_50%,rgb(234_67_53/0.08)_75%,transparent)]"
+                : "bg-primary/25"
+            )}
+          />
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
 
-          <div className="relative flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-primary/15 backdrop-blur-sm border border-primary/20">
-              <HeaderIcon className="h-6 w-6 text-primary" />
+          {popup.badge && (
+            <div className={cn("relative mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90", riseClass)} style={rise()}>
+              <span className="h-1.5 w-1.5 rounded-full bg-[#34a853] shadow-[0_0_8px_#34a853]" />
+              {popup.badge}
             </div>
-            <div>
-              <h2 className="text-lg font-bold tracking-tight">{popup.title}</h2>
-              {popup.subtitle && (
-                <p className="text-xs text-muted-foreground mt-0.5">{popup.subtitle}</p>
+          )}
+
+          <div className="relative mx-auto mb-4 h-[84px] w-[84px]">
+            {gemini && (
+              <div className="gemini-border gemini-ring is-thinking absolute inset-0">
+                <div className="gemini-inner h-full w-full" />
+              </div>
+            )}
+            <div
+              ref={heroRef}
+              className={cn(
+                "absolute inset-[3px] flex items-center justify-center rounded-full",
+                gemini ? "bg-card" : "bg-primary/15 ring-1 ring-primary/25"
               )}
+            >
+              <PopupIcon
+                name={popup.icon}
+                gradientId={`popup-spark-${popup.id}`}
+                className={cn("h-10 w-10", !gemini && "text-primary")}
+              />
             </div>
           </div>
+
+          <DialogTitle className={cn("relative text-[21px] font-bold leading-tight tracking-tight", riseClass)} style={rise()}>
+            {popup.title}
+          </DialogTitle>
+          {popup.subtitle ? (
+            <DialogDescription className={cn("relative mx-auto mt-1.5 max-w-[32ch] text-[13px] leading-relaxed text-muted-foreground", riseClass)} style={rise()}>
+              {popup.subtitle}
+            </DialogDescription>
+          ) : (
+            <DialogDescription className="sr-only">{popup.title}</DialogDescription>
+          )}
+
+          {stats.length > 0 && (
+            <div className={cn("relative mx-auto mt-4 grid max-w-xs gap-2", stats.length === 1 ? "grid-cols-1" : "grid-cols-2", riseClass)} style={rise()}>
+              {stats.map((st) => (
+                <div key={st.label} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
+                  <div className={cn("text-[22px] font-bold leading-none tracking-tight tabular-nums", gemini && "bg-gradient-to-r from-[#8ab4f8] via-[#c58af9] to-[#f28b82] bg-clip-text text-transparent")}>
+                    {st.value}
+                  </div>
+                  <div className="mt-1 text-[11px] font-medium text-muted-foreground">{st.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Features */}
-        <div className="px-5 py-4 space-y-2.5">
-          {popup.features.map((feature, idx) => {
-            const Icon = getIcon(feature.icon);
-            return (
+        {popup.features.length > 0 && (
+          <div className="space-y-2 px-5 pb-1 pt-1">
+            {popup.features.map((feature, idx) => (
               <div
                 key={idx}
-                className={cn(
-                  "flex items-start gap-3 p-3.5 rounded-2xl",
-                  "bg-card border border-border/60",
-                  "transition-all duration-300",
-                  isVisible
-                    ? "translate-y-0 opacity-100"
-                    : "translate-y-2 opacity-0"
-                )}
-                style={{ transitionDelay: `${150 + idx * 100}ms` }}
+                className={cn("flex items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3", riseClass)}
+                style={rise()}
               >
-                <div className="p-2 rounded-xl bg-primary/10 flex-shrink-0 mt-0.5">
-                  <Icon className="h-4 w-4 text-primary" />
+                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/20">
+                  <PopupIcon name={feature.icon} gradientId={`popup-feature-${popup.id}-${idx}`} className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold">{feature.title}</h3>
-                  <p className="text-[12px] text-muted-foreground mt-0.5 leading-relaxed">
-                    {feature.description}
-                  </p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-[13.5px] font-semibold leading-snug">{feature.title}</h3>
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{feature.description}</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Actions */}
-        <div className="px-5 pb-6 pt-1 flex flex-col gap-2">
+        <div className={cn("flex flex-col gap-1.5 px-5 pb-5 pt-4", riseClass)} style={rise()}>
           {popup.primaryAction && (
             <Button
-              className="w-full h-11 rounded-xl gap-2 font-semibold text-sm"
+              className={cn(
+                "h-12 w-full gap-2 rounded-2xl text-[15px] font-semibold",
+                "transition-transform duration-150 active:scale-[0.98]",
+                gemini &&
+                  "border-0 bg-[linear-gradient(135deg,hsl(234_89%_62%),hsl(262_83%_60%)_60%,hsl(292_84%_58%))] text-white shadow-[0_10px_30px_-10px_hsl(262_83%_60%/0.9)] hover:opacity-95"
+              )}
               onClick={handlePrimary}
             >
               {popup.primaryAction.label}
@@ -499,7 +575,7 @@ export function ServerPopup() {
           {showDismiss && (
             <Button
               variant="ghost"
-              className="w-full h-9 rounded-xl text-xs text-muted-foreground hover:text-foreground"
+              className="h-9 w-full rounded-xl text-xs text-muted-foreground hover:text-foreground"
               onClick={close}
             >
               {popup.dismissLabel}
