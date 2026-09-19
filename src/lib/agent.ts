@@ -75,7 +75,8 @@ export async function streamAgentChat({ message, conversationId, onEvent, signal
     credentials: "include", // session-cookie logins (web) work alongside the JWT (mobile)
     headers: {
       "Content-Type": "application/json",
-      Accept: "text/event-stream",
+      // JSON is listed too so a pre-stream refusal (e.g. the daily limit, HTTP 429) can carry a message.
+      Accept: "text/event-stream, application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ message, conversationId: conversationId ?? undefined }),
@@ -84,7 +85,10 @@ export async function streamAgentChat({ message, conversationId, onEvent, signal
 
   if (response.status === 401) throw new Error("Please sign in again.");
   if (!response.ok || !response.body) {
-    let detail = `${response.status} ${response.statusText}`;
+    let detail =
+      response.status === 429
+        ? "You've used all your messages for today. Come back after 12 midnight for a fresh set."
+        : `${response.status} ${response.statusText}`;
     try {
       const body = await response.json();
       detail = body?.message || body?.error || detail;
