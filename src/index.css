@@ -398,13 +398,18 @@ html.sunrise-active .liquid-nav {
 
 /* The app is dark-only: tell the browser so native widgets (scrollbars, form controls) render
    dark instead of the light default that showed as a white bar on desktop. Then thin, quiet
-   scrollbars everywhere — transparent track, rounded thumb that only stands out on hover. */
+   scrollbars everywhere: no track, a dark-grey thumb that only brightens on hover.
+   Chromium ignores ::-webkit-scrollbar once scrollbar-width/scrollbar-color are set, so the
+   standard properties are the ones that matter; the -webkit- rules cover older WebViews. */
 html {
   color-scheme: dark;
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  scrollbar-color: hsl(0 0% 28%) transparent;
+}
+*:hover {
+  scrollbar-color: hsl(0 0% 42%) transparent;
 }
 *::-webkit-scrollbar {
   width: 6px;
@@ -414,11 +419,11 @@ html {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.35);
+  background: hsl(0 0% 28%);
   border-radius: 999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.6);
+  background: hsl(0 0% 42%);
 }
 *::-webkit-scrollbar-corner {
   background: transparent;
