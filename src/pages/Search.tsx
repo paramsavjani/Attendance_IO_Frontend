@@ -917,7 +917,8 @@ export default function Search() {
             examples={[
               "Compare my attendance with a friend",
               "Which batch is doing best in CT303?",
-              "Average attendance of the 2024 batch",
+              "Alumni at Google I can reach on LinkedIn",
+              "Which alumni are working in Gujarat?",
             ]}
             onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
           />
@@ -1004,6 +1005,7 @@ export default function Search() {
           examples={[
             `Show ${query.trim()}'s attendance this semester`,
             `Compare my attendance with ${query.trim()}`,
+            `Alumni named ${query.trim()} — where do they work?`,
           ]}
           onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
         />
