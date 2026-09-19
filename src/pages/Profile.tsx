@@ -385,10 +385,10 @@ export default function Profile() {
         <button
           type="button"
           onClick={handleLogout}
-          className="absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 text-[12px] font-semibold text-red-400 transition-colors active:bg-red-500/20 touch-manipulation"
+          className="absolute right-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-500/45 bg-red-500/20 px-3 text-[13px] font-semibold text-red-200 shadow-[0_4px_14px_-6px_rgba(239,68,68,0.6)] transition-colors active:bg-red-500/30 touch-manipulation"
           aria-label="Log out"
         >
-          <LogOut className="h-3.5 w-3.5" />
+          <LogOut className="h-4 w-4" />
           Log out
         </button>
         <div className="relative flex items-center gap-4 pr-20">
@@ -508,16 +508,18 @@ export default function Profile() {
       <button
         type="button"
         onClick={() => setShowAbout(true)}
-        className="relative flex min-h-[56px] w-full items-center gap-3 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/15 via-violet-500/10 to-fuchsia-500/10 px-3.5 py-2 text-left transition-colors active:from-primary/25 touch-manipulation"
+        className="flex min-h-[56px] w-full items-center gap-3 rounded-2xl border border-white/[0.08] bg-card px-3.5 py-2 text-left transition-colors active:bg-white/[0.06] touch-manipulation"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-fuchsia-500 text-white shadow-[0_6px_18px_-8px_hsl(var(--primary))]">
-          <Heart className="h-[18px] w-[18px]" fill="currentColor" />
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/12 text-rose-400">
+          <Heart className="h-[18px] w-[18px]" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-semibold text-foreground">Made with ♥ by Param Savjani</span>
-          <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">Contributors & credits · v{packageJson.version}</span>
+          <span className="block truncate text-[15px] font-medium text-foreground">
+            Made with <span className="text-rose-400">♥</span> by Param Savjani
+          </span>
+          <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">About the app & contributors</span>
         </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />
       </button>
 
       {/* About: the maker, links, and the people who helped */}
