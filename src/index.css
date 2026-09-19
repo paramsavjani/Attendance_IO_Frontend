@@ -396,6 +396,38 @@ html.sunrise-active .liquid-nav {
   animation: pageEnter 0.22s ease-out forwards;
 }
 
+/* Desktop browsers only (mouse + wide screen): dark, thin scrollbars at the window edge. Phones
+   and the Android app keep their native overlay scrollbars untouched. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  html {
+    color-scheme: dark;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(0 0% 28%) transparent;
+  }
+  *:hover {
+    scrollbar-color: hsl(0 0% 42%) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: hsl(0 0% 28%);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(0 0% 42%);
+  }
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
 /* Custom dark scrollbar (global) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
