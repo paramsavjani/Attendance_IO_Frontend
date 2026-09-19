@@ -49,9 +49,10 @@ const STATUS_TEXT: Record<string, string> = {
 
 /**
  * Things only the assistant can answer — the home page already shows your own numbers and the
- * timetable, so those are deliberately absent. Four are picked at random per visit.
+ * timetable, so those are deliberately absent. Four are picked at random per visit, always
+ * including one alumni question so people discover that the directory is searchable here.
  */
-const SUGGESTION_POOL = [
+const ATTENDANCE_POOL = [
   "Show Param Savjani's attendance this semester",
   "Compare my attendance with Param Savjani",
   "Who has better attendance in CT303, me or Param Savjani?",
@@ -75,13 +76,38 @@ const SUGGESTION_POOL = [
   "How many weeks of classes are left?",
 ];
 
-function pickSuggestions(count: number): string[] {
-  const pool = [...SUGGESTION_POOL];
+const ALUMNI_POOL = [
+  "Alumni working at Google with LinkedIn profiles",
+  "Seniors at Microsoft I can reach on LinkedIn",
+  "Which alumni are working in Gujarat?",
+  "Alumni in Ahmedabad or Gandhinagar with LinkedIn",
+  "2019 batch alumni working in Bangalore",
+  "Which companies hire the most DAU alumni?",
+  "Top 10 highest-paying companies where alumni work",
+  "What is the average package at Amazon for alumni?",
+  "Data scientists among our alumni",
+  "Product managers from DAU and where they work",
+  "M.Sc. alumni working abroad in the Bay Area",
+  "Alumni at Sprinklr — names, roles and LinkedIn",
+  "Who from the 2020 batch works at Google or Microsoft?",
+  "Alumni working in startups in Bangalore",
+  "Seniors from my programme working at Atlassian",
+];
+
+function shuffle<T>(list: T[]): T[] {
+  const pool = [...list];
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  return pool.slice(0, count);
+  return pool;
+}
+
+/** [count] prompts: one alumni question plus attendance ones, in random order. */
+function pickSuggestions(count: number): string[] {
+  const alumni = shuffle(ALUMNI_POOL).slice(0, 1);
+  const attendance = shuffle(ATTENDANCE_POOL).slice(0, Math.max(0, count - alumni.length));
+  return shuffle([...alumni, ...attendance]);
 }
 
 let nextId = 0;
@@ -294,7 +320,7 @@ export default function Assistant() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-[15px] font-semibold leading-tight">Assistant</h1>
-            <p className="truncate text-[11px] text-muted-foreground">Attendance, subjects &amp; classes</p>
+            <p className="truncate text-[11px] text-muted-foreground">Attendance, batches &amp; alumni</p>
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={reset} disabled={messages.length === 0 && !busy} className="h-9 rounded-full px-3">
@@ -415,7 +441,7 @@ function EmptyState({ suggestions, onPick }: { suggestions: string[]; onPick: (s
       </div>
       <div>
         <h2 className="text-base font-semibold">What do you want to know?</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Ask about friends, batches and subjects — or type your own.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Ask about friends, batches, subjects or alumni contacts — or type your own.</p>
       </div>
       <div className="flex w-full max-w-sm flex-col gap-2">
         {suggestions.map((s) => (
