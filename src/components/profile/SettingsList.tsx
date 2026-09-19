@@ -86,7 +86,7 @@ export function SettingsRow({ icon, accent = "neutral", title, subtitle, value, 
         {icon}
       </span>
       <span className="min-w-0 flex-1 text-left">
-        <span className={cn("block truncate text-[15px] font-medium leading-tight", destructive ? "text-red-400" : "text-foreground")}>{title}</span>
+        <span className={cn("block truncate text-[15px] leading-tight", destructive ? "font-semibold text-red-400" : "font-medium text-foreground")}>{title}</span>
         {subtitle && <span className="mt-0.5 block truncate text-[12px] leading-snug text-muted-foreground">{subtitle}</span>}
       </span>
       {value !== undefined && value !== null && (
@@ -102,7 +102,7 @@ export function SettingsRow({ icon, accent = "neutral", title, subtitle, value, 
   );
   const className = cn(
     "flex min-h-[50px] w-full items-center gap-3 px-3.5 py-1.5 transition-colors touch-manipulation",
-    "active:bg-white/[0.06]",
+    destructive ? "bg-red-500/[0.06] active:bg-red-500/[0.12]" : "active:bg-white/[0.06]",
     disabled && "pointer-events-none opacity-45"
   );
   if (href) {

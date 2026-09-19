@@ -499,7 +499,7 @@ export default function Profile() {
       <SettingsGroup>
         <SettingsRow
           icon={<Heart />}
-          accent="red"
+          accent="violet"
           title="Made with ♥ by Param Savjani"
           subtitle={`Contributors & credits · v${packageJson.version}`}
           onClick={() => setShowAbout(true)}
