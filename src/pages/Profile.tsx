@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
 import packageJson from "../../package.json";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -382,7 +382,16 @@ export default function Profile() {
       <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-card px-4 py-3.5">
         <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-12 h-36 w-36 rounded-full bg-violet-500/15 blur-3xl" />
-        <div className="relative flex items-center gap-4">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 text-[12px] font-semibold text-red-400 transition-colors active:bg-red-500/20 touch-manipulation"
+          aria-label="Log out"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Log out
+        </button>
+        <div className="relative flex items-center gap-4 pr-20">
           <div className="relative shrink-0">
             <div className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-primary via-violet-500 to-fuchsia-500 opacity-80" />
             <div className="relative h-16 w-16 overflow-hidden rounded-full border-[3px] border-card">
@@ -496,16 +505,20 @@ export default function Profile() {
         </div>
       </section>
 
-      <SettingsGroup>
-        <SettingsRow
-          icon={<Heart />}
-          accent="violet"
-          title="Made with ♥ by Param Savjani"
-          subtitle={`Contributors & credits · v${packageJson.version}`}
-          onClick={() => setShowAbout(true)}
-        />
-        <SettingsRow icon={<LogOut />} title="Log out" destructive onClick={handleLogout} />
-      </SettingsGroup>
+      <button
+        type="button"
+        onClick={() => setShowAbout(true)}
+        className="relative flex min-h-[56px] w-full items-center gap-3 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/15 via-violet-500/10 to-fuchsia-500/10 px-3.5 py-2 text-left transition-colors active:from-primary/25 touch-manipulation"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-fuchsia-500 text-white shadow-[0_6px_18px_-8px_hsl(var(--primary))]">
+          <Heart className="h-[18px] w-[18px]" fill="currentColor" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-semibold text-foreground">Made with ♥ by Param Savjani</span>
+          <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">Contributors & credits · v{packageJson.version}</span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+      </button>
 
       {/* About: the maker, links, and the people who helped */}
       <Dialog open={showAbout} onOpenChange={setShowAbout}>
