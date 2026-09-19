@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { Lightbulb, Users, Loader2, ChevronDown, ChevronUp, Crown } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Lightbulb, Users, Loader2 } from "lucide-react";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Contributor {
@@ -23,7 +22,6 @@ export function ContributorsSection({ className }: ContributorsSectionProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showAllTesters, setShowAllTesters] = useState(false);
   const [showAllIdeas, setShowAllIdeas] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<'ideas' | 'testers' | null>(null);
 
   useEffect(() => {
     const fetchContributors = async () => {
@@ -66,130 +64,86 @@ export function ContributorsSection({ className }: ContributorsSectionProps) {
     return null;
   }
 
-  const displayedIdeas = showAllIdeas
-    ? ideaContributors
-    : ideaContributors.slice(0, INITIAL_DISPLAY_COUNT);
-  const displayedTesters = showAllTesters
-    ? testers
-    : testers.slice(0, INITIAL_DISPLAY_COUNT);
-  const hasMoreIdeas = ideaContributors.length > INITIAL_DISPLAY_COUNT;
-  const hasMoreTesters = testers.length > INITIAL_DISPLAY_COUNT;
+  /** One group: coloured header with a count, then name chips, then "+N more" when long. */
+  const Group = ({
+    icon,
+    title,
+    people,
+    tone,
+    expanded,
+    onToggle,
+  }: {
+    icon: React.ReactNode;
+    title: string;
+    people: Contributor[];
+    tone: { tile: string; chip: string; more: string };
+    expanded: boolean;
+    onToggle: () => void;
+  }) => {
+    const shown = expanded ? people : people.slice(0, INITIAL_DISPLAY_COUNT);
+    const hidden = people.length - shown.length;
+    return (
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
+        <div className="mb-2.5 flex items-center gap-2.5">
+          <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg [&>svg]:h-4 [&>svg]:w-4", tone.tile)}>{icon}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-semibold leading-tight text-foreground">{title}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {people.length} {people.length === 1 ? "person" : "people"}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {shown.map((c) => (
+            <span key={c.id} className={cn("rounded-full border px-2.5 py-1 text-[12px] font-medium leading-none", tone.chip)}>
+              {c.name}
+            </span>
+          ))}
+          {(hidden > 0 || expanded) && (
+            <button
+              type="button"
+              onClick={onToggle}
+              className={cn("rounded-full border border-dashed px-2.5 py-1 text-[12px] font-medium leading-none", tone.more)}
+            >
+              {expanded ? "Show less" : `+${hidden} more`}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className={cn("space-y-3 pt-2", className)}>
-      <div className="flex items-center justify-center gap-2 mb-1 opacity-60">
-        <div className="h-px w-12 bg-gradient-to-r from-transparent to-white/30" />
-        <span className="text-[10px] font-medium uppercase tracking-widest text-white/50">Hall of Fame</span>
-        <div className="h-px w-12 bg-gradient-to-l from-transparent to-white/30" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-2">
-        {ideaContributors.length > 0 && (
-          <div className="relative overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] backdrop-blur-md transition-all">
-            <button
-              onClick={() => setExpandedSection(expandedSection === 'ideas' ? null : 'ideas')}
-              className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="rounded-md bg-emerald-500/20 p-1.5 text-emerald-400">
-                  <Lightbulb className="w-3.5 h-3.5" />
-                </div>
-                <div className="text-left">
-                  <p className="text-[10px] font-semibold text-white">Feature Ideas</p>
-                  <p className="text-[9px] text-white/50">{ideaContributors.length} contributors</p>
-                </div>
-              </div>
-              {expandedSection === 'ideas' ? (
-                <ChevronUp className="w-4 h-4 text-white/40" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-white/40" />
-              )}
-            </button>
-
-            {expandedSection === 'ideas' && (
-              <div className="px-3 pb-3 pt-0">
-                <div className="h-px w-full bg-white/5 mb-3" />
-                <div className="flex flex-wrap gap-1.5">
-                  {displayedIdeas.map((contributor) => (
-                    <span
-                      key={contributor.id}
-                      className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded text-[10px] font-medium shadow-sm"
-                    >
-                      {contributor.name}
-                    </span>
-                  ))}
-                </div>
-                {hasMoreIdeas && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowAllIdeas(!showAllIdeas);
-                    }}
-                    className="mt-2 h-6 text-[10px] px-2 text-emerald-500/80 hover:text-emerald-400 hover:bg-transparent"
-                  >
-                    {showAllIdeas ? 'Show Less' : `+${ideaContributors.length - INITIAL_DISPLAY_COUNT} more`}
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {testers.length > 0 && (
-          <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/[0.07] backdrop-blur-md transition-all">
-            <button
-              onClick={() => setExpandedSection(expandedSection === 'testers' ? null : 'testers')}
-              className="w-full flex items-center justify-between p-2.5 active:scale-[0.99] transition-transform touch-manipulation"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="rounded-md bg-blue-500/20 p-1.5 text-blue-400">
-                  <Users className="w-3.5 h-3.5" />
-                </div>
-                <div className="text-left">
-                  <p className="text-[10px] font-semibold text-white">Beta Testers</p>
-                  <p className="text-[9px] text-white/50">{testers.length} heroes</p>
-                </div>
-              </div>
-              {expandedSection === 'testers' ? (
-                <ChevronUp className="w-4 h-4 text-white/40" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-white/40" />
-              )}
-            </button>
-
-            {expandedSection === 'testers' && (
-              <div className="px-3 pb-3 pt-0">
-                <div className="h-px w-full bg-white/5 mb-3" />
-                <div className="flex flex-wrap gap-1.5">
-                  {displayedTesters.map((tester) => (
-                    <span
-                      key={tester.id}
-                      className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded text-[10px] font-medium shadow-sm"
-                    >
-                      {tester.name}
-                    </span>
-                  ))}
-                </div>
-                {hasMoreTesters && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowAllTesters(!showAllTesters);
-                    }}
-                    className="mt-2 h-6 text-[10px] px-2 text-blue-500/80 hover:text-blue-400 hover:bg-transparent"
-                  >
-                    {showAllTesters ? 'Show Less' : `+${testers.length - INITIAL_DISPLAY_COUNT} more`}
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+    <div className={cn("space-y-2", className)}>
+      <p className="px-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Thanks to</p>
+      {ideaContributors.length > 0 && (
+        <Group
+          icon={<Lightbulb />}
+          title="Feature ideas"
+          people={ideaContributors}
+          tone={{
+            tile: "bg-emerald-500/15 text-emerald-400",
+            chip: "border-emerald-500/25 bg-emerald-500/10 text-emerald-200",
+            more: "border-emerald-500/40 text-emerald-300",
+          }}
+          expanded={showAllIdeas}
+          onToggle={() => setShowAllIdeas((v) => !v)}
+        />
+      )}
+      {testers.length > 0 && (
+        <Group
+          icon={<Users />}
+          title="Beta testers"
+          people={testers}
+          tone={{
+            tile: "bg-blue-500/15 text-blue-400",
+            chip: "border-blue-500/25 bg-blue-500/10 text-blue-200",
+            more: "border-blue-500/40 text-blue-300",
+          }}
+          expanded={showAllTesters}
+          onToggle={() => setShowAllTesters((v) => !v)}
+        />
+      )}
     </div>
   );
 }
