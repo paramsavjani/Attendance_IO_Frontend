@@ -1,21 +1,16 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, BarChart3, ShieldCheck, Bell, Megaphone, ArrowRight,
   Zap, Gift, Search, Star, Rocket, PartyPopper, Info, CheckCircle, Github,
-  MessageCircle, Users, TrendingUp, CalendarDays, GraduationCap,
   type LucideIcon,
 } from "lucide-react";
-import { SparkIcon } from "@/components/assistant/AssistantFab";
-import { originOf, revealFrom } from "@/lib/revealTransition";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
@@ -91,8 +86,6 @@ interface ServerPopupData {
   dismissLabel: string | null;
   showDismiss?: boolean;
   confetti?: boolean;
-  /** "gemini": Google-colour rotating ring around the hero icon and a gradient primary button. */
-  accent?: "gemini" | string;
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -111,19 +104,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   check: CheckCircle,
   arrow: ArrowRight,
   github: Github,
-  chat: MessageCircle,
-  users: Users,
-  trend: TrendingUp,
-  calendar: CalendarDays,
-  graduation: GraduationCap,
 };
-
-/** `assistant` is the app's own gradient spark, not a Lucide glyph, so it is rendered separately. */
-function PopupIcon({ name, className, gradientId }: { name?: string; className?: string; gradientId: string }) {
-  if (name === "assistant") return <SparkIcon className={className} gradientId={gradientId} />;
-  const Icon = getIcon(name);
-  return <Icon className={className} />;
-}
 
 function getIcon(name?: string): LucideIcon {
   if (!name) return Sparkles;
@@ -261,7 +242,6 @@ export function ServerPopup() {
   const [isVisible, setIsVisible] = useState(false);
   const [primaryClicked, setPrimaryClicked] = useState(false);
   const [secondaryClicked, setSecondaryClicked] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const fireConfetti = useCallback(() => {
@@ -381,15 +361,10 @@ export function ServerPopup() {
       return;
     }
 
-    // The assistant page opens with its "sunrise" from the hero icon, like the launcher does.
-    const route = action.route;
-    const origin = route === "/assistant" ? originOf(heroRef.current) : null;
     setIsVisible(false);
     setTimeout(() => {
       setOpen(false);
-      if (!route) return;
-      if (origin) void revealFrom(origin, () => navigate(route));
-      else navigate(route);
+      if (action.route) navigate(action.route);
     }, 200);
   };
 
@@ -441,17 +416,19 @@ export function ServerPopup() {
     );
   }
 
-  const ActionIcon = popup.primaryAction?.icon ? getIcon(popup.primaryAction.icon) : ArrowRight;
-  const gemini = popup.accent === "gemini";
+  const HeaderIcon = getIcon(popup.icon);
+  const ActionIcon = popup.primaryAction?.icon
+    ? getIcon(popup.primaryAction.icon)
+    : ArrowRight;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && (showDismiss ? close() : undefined)}>
       <DialogContent
         className={cn(
           "max-w-[92vw] sm:max-w-md",
-          "rounded-3xl p-0 overflow-hidden border border-border/60 bg-card",
+          "rounded-3xl p-0 overflow-hidden border-0",
           "[&>button]:hidden",
-          "transition-all duration-300 ease-out",
+          "transition-all duration-300",
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         )}
         onInteractOutside={(e) => e.preventDefault()}
@@ -459,86 +436,60 @@ export function ServerPopup() {
           if (!showDismiss) e.preventDefault();
         }}
       >
-        {/* Hero: soft colour wash behind a centred icon tile */}
-        <div className="relative overflow-hidden px-6 pt-8 pb-5 text-center">
-          <div
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute -top-16 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full blur-3xl",
-              gemini
-                ? "bg-[radial-gradient(closest-side,rgb(66_133_244/0.35),rgb(161_66_244/0.18)_55%,transparent)]"
-                : "bg-primary/20"
-            )}
-          />
+        {/* Gradient Header */}
+        <div className="relative px-6 pt-8 pb-5 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
 
-          <div className="relative mx-auto mb-4 h-[76px] w-[76px]">
-            {gemini && (
-              <div className="gemini-border gemini-ring is-thinking absolute inset-0">
-                <div className="gemini-inner h-full w-full" />
-              </div>
-            )}
-            <div
-              ref={heroRef}
-              className={cn(
-                "absolute inset-[3px] flex items-center justify-center rounded-full",
-                gemini ? "bg-card" : "bg-primary/15 ring-1 ring-primary/25"
+          <div className="relative flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-primary/15 backdrop-blur-sm border border-primary/20">
+              <HeaderIcon className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">{popup.title}</h2>
+              {popup.subtitle && (
+                <p className="text-xs text-muted-foreground mt-0.5">{popup.subtitle}</p>
               )}
-            >
-              <PopupIcon
-                name={popup.icon}
-                gradientId={`popup-spark-${popup.id}`}
-                className={cn("h-9 w-9", !gemini && "text-primary")}
-              />
             </div>
           </div>
-
-          <DialogTitle className="relative text-[19px] font-bold leading-tight tracking-tight">
-            {popup.title}
-          </DialogTitle>
-          {popup.subtitle ? (
-            <DialogDescription className="relative mx-auto mt-1.5 max-w-[30ch] text-[13px] leading-relaxed text-muted-foreground">
-              {popup.subtitle}
-            </DialogDescription>
-          ) : (
-            <DialogDescription className="sr-only">{popup.title}</DialogDescription>
-          )}
         </div>
 
         {/* Features */}
-        {popup.features.length > 0 && (
-          <div className="space-y-2 px-5 pb-1">
-            {popup.features.map((feature, idx) => (
+        <div className="px-5 py-4 space-y-2.5">
+          {popup.features.map((feature, idx) => {
+            const Icon = getIcon(feature.icon);
+            return (
               <div
                 key={idx}
                 className={cn(
-                  "flex items-start gap-3 rounded-2xl border border-border/60 bg-background/60 p-3",
-                  "transition-all duration-300 ease-out",
-                  isVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                  "flex items-start gap-3 p-3.5 rounded-2xl",
+                  "bg-card border border-border/60",
+                  "transition-all duration-300",
+                  isVisible
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-2 opacity-0"
                 )}
-                style={{ transitionDelay: `${120 + idx * 80}ms` }}
+                style={{ transitionDelay: `${150 + idx * 100}ms` }}
               >
-                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                  <PopupIcon name={feature.icon} gradientId={`popup-feature-${popup.id}-${idx}`} className="h-4 w-4 text-primary" />
+                <div className="p-2 rounded-xl bg-primary/10 flex-shrink-0 mt-0.5">
+                  <Icon className="h-4 w-4 text-primary" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold leading-snug">{feature.title}</h3>
-                  <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{feature.description}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold">{feature.title}</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-1.5 px-5 pb-5 pt-4">
+        <div className="px-5 pb-6 pt-1 flex flex-col gap-2">
           {popup.primaryAction && (
             <Button
-              className={cn(
-                "h-11 w-full gap-2 rounded-xl text-sm font-semibold",
-                "transition-transform duration-150 active:scale-[0.98]",
-                gemini &&
-                  "border-0 bg-[linear-gradient(135deg,hsl(234_89%_62%),hsl(262_83%_60%)_60%,hsl(292_84%_58%))] text-white shadow-[0_8px_24px_-10px_hsl(262_83%_60%/0.8)] hover:opacity-95"
-              )}
+              className="w-full h-11 rounded-xl gap-2 font-semibold text-sm"
               onClick={handlePrimary}
             >
               {popup.primaryAction.label}
@@ -548,7 +499,7 @@ export function ServerPopup() {
           {showDismiss && (
             <Button
               variant="ghost"
-              className="h-9 w-full rounded-xl text-xs text-muted-foreground hover:text-foreground"
+              className="w-full h-9 rounded-xl text-xs text-muted-foreground hover:text-foreground"
               onClick={close}
             >
               {popup.dismissLabel}
