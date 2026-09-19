@@ -107,15 +107,6 @@ html.sunrise-active .liquid-nav {
   z-index: -1;
 }
 
-/* Round variant, used as a halo around an icon (announcement popup). */
-.gemini-border.gemini-ring,
-.gemini-border.gemini-ring::before {
-  border-radius: 9999px;
-}
-.gemini-border.gemini-ring > .gemini-inner {
-  border-radius: 9999px;
-}
-
 @keyframes gemini-spin {
   to {
     --gemini-angle: 360deg;
