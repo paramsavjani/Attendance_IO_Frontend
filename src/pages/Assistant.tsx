@@ -305,7 +305,7 @@ export default function Assistant() {
 
       {/* Messages */}
       <div className="relative min-h-0 flex-1">
-        <div ref={listRef} onScroll={onListScroll} className="h-full overflow-y-auto overscroll-contain px-4 py-4">
+        <div ref={listRef} onScroll={onListScroll} className="h-full overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4">
           <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
             {messages.length === 0 ? (
               <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} />
@@ -466,10 +466,11 @@ function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry: (m
 
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-      <div className={cn("group flex max-w-[88%] flex-col gap-1", isUser ? "items-end" : "items-start")}>
+      {/* min-w-0 lets a wide table scroll inside the bubble instead of stretching it past the screen */}
+      <div className={cn("group flex min-w-0 flex-col gap-1", isUser ? "max-w-[88%] items-end" : "max-w-full items-start")}>
         <div
           className={cn(
-            "rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
+            "min-w-0 max-w-full rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
             isUser
               ? "whitespace-pre-wrap rounded-tr-sm bg-primary text-primary-foreground"
               : "rounded-tl-sm border border-border bg-card text-foreground",
@@ -532,7 +533,7 @@ function AssistantMarkdown({ content }: { content: string }) {
             </a>
           ),
           table: ({ children }) => (
-            <div className="my-1.5 overflow-x-auto rounded-lg border border-border">
+            <div className="my-1.5 max-w-full overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse text-[12px]">{children}</table>
             </div>
           ),
