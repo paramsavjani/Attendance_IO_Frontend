@@ -189,11 +189,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           transform: `translateY(${pullDistance}px)`,
         }}
       >
-        {/* The scroll container is full-width so the scrollbar sits at the window edge on desktop;
-            the content column (max-w-lg) is centred inside it. */}
         <div
           key={location.key}
-          className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 animate-page-enter"
+          className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 animate-page-enter"
           // Content scrolls behind the glass nav; the bottom padding is just the nav's height plus
           // the same 12px gap it keeps below itself, so the last row can clear it and nothing more.
           style={{ paddingBottom: `calc(${NAV_HEIGHT_PX}px + 2 * 0.75rem + env(safe-area-inset-bottom, 0px))` }}
@@ -201,7 +199,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Pages use `flex-1` to reach the bottom when short. This wrapper grows with tall pages
               (min-h-full, not h-full) so their content never overflows a fixed box, which used to
               drop the bottom padding and leave the last row touching the nav. */}
-          <div className="mx-auto flex min-h-full w-full max-w-lg flex-col">{children}</div>
+          <div className="flex min-h-full flex-col">{children}</div>
         </div>
       </main>
 
