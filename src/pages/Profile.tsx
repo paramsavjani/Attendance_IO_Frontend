@@ -377,9 +377,9 @@ export default function Profile() {
     : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-0">
+    <div className="flex min-h-0 flex-1 flex-col gap-3.5 pb-0">
       {/* Identity */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-card px-4 py-3.5">
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-card px-4 py-4">
         <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-12 h-36 w-36 rounded-full bg-violet-500/15 blur-3xl" />
         <button
@@ -508,16 +508,16 @@ export default function Profile() {
       <button
         type="button"
         onClick={() => setShowAbout(true)}
-        className="flex min-h-[56px] w-full items-center gap-3 rounded-2xl border border-white/[0.08] bg-card px-3.5 py-2 text-left transition-colors active:bg-white/[0.06] touch-manipulation"
+        className="flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-card px-4 py-2.5 text-left transition-colors active:bg-white/[0.06] touch-manipulation"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/12 text-rose-400">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/12 text-rose-400">
           <Heart className="h-[18px] w-[18px]" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-medium text-foreground">
+          <span className="block truncate text-[14px] font-medium text-foreground">
             Made with <span className="text-rose-400">♥</span> by Param Savjani
           </span>
-          <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">About the app & contributors</span>
+          <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground">About the app & contributors</span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />
       </button>

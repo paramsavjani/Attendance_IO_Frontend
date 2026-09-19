@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * Grouped settings rows, the pattern every phone user already knows from the system Settings app:
  * a small caps label, then a card of full-width rows with an icon tile, a title, an optional
  * subtitle, and the *current value* on the right — so people can see their setup without
- * opening anything. Rows are ≥ 50px tall for thumbs; the whole page is sized to fit a phone
+ * opening anything. Rows are ≥ 60px tall for thumbs; the whole page is sized to fit a phone
  * screen without scrolling.
  */
 
@@ -56,12 +56,12 @@ interface SettingsRowProps {
 /** Compact square actions for secondary things (analytics, rate, feedback…), four to a row. */
 export function SettingsTile({ icon, accent = "neutral", label, onClick, href }: { icon: ReactNode; accent?: SettingsAccent; label: string; onClick?: () => void; href?: string }) {
   const className = cn(
-    "flex min-h-[64px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-card px-1 py-2",
+    "flex min-h-[76px] flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-card px-1 py-2.5",
     "transition-colors active:bg-white/[0.06] touch-manipulation"
   );
   const inner = (
     <>
-      <span className={cn("flex h-8 w-8 items-center justify-center rounded-xl [&>svg]:h-4 [&>svg]:w-4", TILE[accent])}>{icon}</span>
+      <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl [&>svg]:h-[17px] [&>svg]:w-[17px]", TILE[accent])}>{icon}</span>
       <span className="text-[11px] font-medium leading-none text-foreground/90">{label}</span>
     </>
   );
@@ -82,15 +82,15 @@ export function SettingsTile({ icon, accent = "neutral", label, onClick, href }:
 export function SettingsRow({ icon, accent = "neutral", title, subtitle, value, onClick, href, disabled, destructive }: SettingsRowProps) {
   const inner = (
     <>
-      <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl [&>svg]:h-[18px] [&>svg]:w-[18px]", TILE[destructive ? "red" : accent])}>
+      <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl [&>svg]:h-[18px] [&>svg]:w-[18px]", TILE[destructive ? "red" : accent])}>
         {icon}
       </span>
       <span className="min-w-0 flex-1 text-left">
-        <span className={cn("block truncate text-[15px] leading-tight", destructive ? "font-semibold text-red-400" : "font-medium text-foreground")}>{title}</span>
-        {subtitle && <span className="mt-0.5 block truncate text-[12px] leading-snug text-muted-foreground">{subtitle}</span>}
+        <span className={cn("block truncate text-[14px] leading-tight", destructive ? "font-semibold text-red-400" : "font-medium text-foreground")}>{title}</span>
+        {subtitle && <span className="mt-0.5 block truncate text-[11.5px] leading-snug text-muted-foreground">{subtitle}</span>}
       </span>
       {value !== undefined && value !== null && (
-        <span className="max-w-[40%] shrink-0 truncate text-right text-[13px] tabular-nums text-muted-foreground">{value}</span>
+        <span className="max-w-[40%] shrink-0 truncate text-right text-[12.5px] tabular-nums text-muted-foreground">{value}</span>
       )}
       {!destructive &&
         (href ? (
@@ -101,7 +101,7 @@ export function SettingsRow({ icon, accent = "neutral", title, subtitle, value, 
     </>
   );
   const className = cn(
-    "flex min-h-[50px] w-full items-center gap-3 px-3.5 py-1.5 transition-colors touch-manipulation",
+    "flex min-h-[60px] w-full items-center gap-3.5 px-4 py-2.5 transition-colors touch-manipulation",
     destructive ? "bg-red-500/[0.06] active:bg-red-500/[0.12]" : "active:bg-white/[0.06]",
     disabled && "pointer-events-none opacity-45"
   );
