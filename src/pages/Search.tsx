@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, ChevronLeft, ChevronDown, X, Trash2, ArrowRight } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
+import { useAuth } from "@/contexts/AuthContext";
 import { originOf, revealFrom, type RevealOrigin } from "@/lib/revealTransition";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
@@ -74,6 +75,8 @@ interface SearchHistoryItem {
 
 export default function Search() {
   const navigate = useNavigate();
+  const { student: me } = useAuth();
+  const assistantAllowed = !me?.isDemo;
   const [searchParams, setSearchParams] = useSearchParams();
   const studentIdParam = searchParams.get("studentId");
 
@@ -912,7 +915,7 @@ export default function Search() {
               <p className="text-xs mt-1">Filtering by {selectedSemester.label}</p>
             )}
           </div>
-          <AssistantPromo
+          {assistantAllowed && <AssistantPromo
             title="Or just ask the assistant"
             examples={[
               "Compare my attendance with a friend",
@@ -921,7 +924,7 @@ export default function Search() {
               "Which alumni are working in Gujarat?",
             ]}
             onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
-          />
+          />}
         </div>
       )}
 
@@ -999,7 +1002,7 @@ export default function Search() {
       )}
 
       {/* Ask the assistant about what was typed — a name or roll number */}
-      {!isSearching && query.trim().length >= 2 && !selectedStudent && (
+      {assistantAllowed && !isSearching && query.trim().length >= 2 && !selectedStudent && (
         <AssistantPromo
           title={`Ask the assistant about "${query.trim()}"`}
           examples={[
