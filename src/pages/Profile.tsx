@@ -377,7 +377,7 @@ export default function Profile() {
     : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3.5 pb-0">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-0">
       {/* Identity */}
       <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-card px-4 py-4">
         <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-primary/25 blur-3xl" />
