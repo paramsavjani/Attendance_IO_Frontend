@@ -17,6 +17,9 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
+/** Rendered height of the nav pill (p-2 + py-2.5 buttons + 18px icon). Keep in sync with the markup below. */
+const NAV_HEIGHT_PX = 56;
+
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
   { icon: Search, label: "Search", path: "/search" },
@@ -179,7 +182,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main
         data-scroll-container
         className={cn(
-          "flex-1 pb-24 flex flex-col overflow-hidden safe-area-top",
+          "flex-1 flex flex-col overflow-hidden safe-area-top",
           "transition-transform duration-300 ease-out"
         )}
         style={{
@@ -188,9 +191,15 @@ export function AppLayout({ children }: AppLayoutProps) {
       >
         <div
           key={location.key}
-          className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto overflow-x-hidden p-4 animate-page-enter"
+          className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 animate-page-enter"
+          // Content scrolls behind the glass nav; the bottom padding is just the nav's height plus
+          // the same 12px gap it keeps below itself, so the last row can clear it and nothing more.
+          style={{ paddingBottom: `calc(${NAV_HEIGHT_PX}px + 2 * 0.75rem + env(safe-area-inset-bottom, 0px))` }}
         >
-          {children}
+          {/* Pages use `flex-1` to reach the bottom when short. This wrapper grows with tall pages
+              (min-h-full, not h-full) so their content never overflows a fixed box, which used to
+              drop the bottom padding and leave the last row touching the nav. */}
+          <div className="flex min-h-full flex-col">{children}</div>
         </div>
       </main>
 
