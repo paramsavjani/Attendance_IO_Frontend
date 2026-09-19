@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
 import packageJson from "../../package.json";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { SettingsGroup, SettingsRow } from "@/components/profile/SettingsList";
+import { SettingsGroup, SettingsRow, SettingsTile } from "@/components/profile/SettingsList";
 
 interface CurrentSemester {
   year: number;
@@ -57,6 +57,7 @@ export default function Profile() {
   const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -376,9 +377,9 @@ export default function Profile() {
     : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-5 pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-0">
       {/* Identity */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-card px-4 pb-4 pt-5">
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-card px-4 py-3.5">
         <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-12 h-36 w-36 rounded-full bg-violet-500/15 blur-3xl" />
         <div className="relative flex items-center gap-4">
@@ -396,7 +397,7 @@ export default function Profile() {
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[20px] font-bold leading-tight tracking-tight text-foreground">
+            <h1 className="line-clamp-2 text-[18px] font-bold leading-tight tracking-tight text-foreground">
               {student?.isDemo ? "Demo User" : student?.name}
             </h1>
             <p className="mt-0.5 truncate text-[13px] tabular-nums text-muted-foreground">{student?.rollNumber}</p>
@@ -463,7 +464,7 @@ export default function Profile() {
           icon={<Bell />}
           accent="amber"
           title="Notifications"
-          subtitle="Reminders to mark attendance"
+          subtitle="Daily reminders"
           value={notificationsValue}
           onClick={() => {
             setDailyReminderHours(student?.dailyReminderHours ?? []);
@@ -473,38 +474,61 @@ export default function Profile() {
         />
       </SettingsGroup>
 
-      <SettingsGroup label="App">
-        <SettingsRow icon={<BarChart3 />} accent="pink" title="App analytics" subtitle="How the app is being used" onClick={() => navigate("/app-analytics")} />
-        <SettingsRow
-          icon={<Star />}
-          accent="yellow"
-          title="Rate Attendance IO"
-          subtitle="A review on the Play Store helps a lot"
-          onClick={async () => {
-            try {
-              await requestAppReview({ openPlayStoreOnly: true });
-            } catch (e) {
-              console.error("Rate us failed:", e);
-              toast.error("Could not open review. Please try again.");
-            }
-          }}
-        />
-        <SettingsRow icon={<MessageSquare />} accent="cyan" title="Send feedback" subtitle="Bugs, ideas, anything" onClick={() => setShowFeedbackModal(true)} />
-        <SettingsRow icon={<Github />} accent="neutral" title="Star on GitHub" subtitle="The app is open source" href="https://github.com/paramsavjani/Attendance_IO_Frontend" />
-      </SettingsGroup>
-
-      <ContributorsSection className="space-y-2" />
+      <section className="space-y-1.5">
+        <h2 className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">App</h2>
+        <div className="flex gap-2">
+          <SettingsTile icon={<BarChart3 />} accent="pink" label="Analytics" onClick={() => navigate("/app-analytics")} />
+          <SettingsTile
+            icon={<Star />}
+            accent="yellow"
+            label="Rate us"
+            onClick={async () => {
+              try {
+                await requestAppReview({ openPlayStoreOnly: true });
+              } catch (e) {
+                console.error("Rate us failed:", e);
+                toast.error("Could not open review. Please try again.");
+              }
+            }}
+          />
+          <SettingsTile icon={<MessageSquare />} accent="cyan" label="Feedback" onClick={() => setShowFeedbackModal(true)} />
+          <SettingsTile icon={<Github />} accent="neutral" label="GitHub" href="https://github.com/paramsavjani/Attendance_IO_Frontend" />
+        </div>
+      </section>
 
       <SettingsGroup>
+        <SettingsRow
+          icon={<Heart />}
+          accent="red"
+          title="Made with ♥ by Param Savjani"
+          subtitle={`Contributors & credits · v${packageJson.version}`}
+          onClick={() => setShowAbout(true)}
+        />
         <SettingsRow icon={<LogOut />} title="Log out" destructive onClick={handleLogout} />
       </SettingsGroup>
 
-      <div className="flex flex-col items-center gap-1 pb-1 pt-1 text-center">
-        <a href="https://paramsavjani.in" target="_blank" rel="noopener noreferrer" className="text-[12px] text-muted-foreground">
-          Made with <span className="text-red-400">♥</span> by <span className="font-semibold text-foreground/80">Param Savjani</span>
-        </a>
-        <span className="text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</span>
-      </div>
+      {/* About: the maker, links, and the people who helped */}
+      <Dialog open={showAbout} onOpenChange={setShowAbout}>
+        <DialogContent className="max-w-[92vw] sm:max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-5">
+          <DialogHeader>
+            <DialogTitle className="text-base">About Attendance IO</DialogTitle>
+          </DialogHeader>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            Built and maintained by <span className="font-semibold text-foreground">Param Savjani</span>, a DA-IICT student, for DA-IICT students.
+            Open source — a star on GitHub keeps it going.
+          </p>
+          <div className="flex gap-2">
+            <a href="https://paramsavjani.in" target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[13px] font-medium">
+              Website
+            </a>
+            <a href="https://github.com/paramsavjani/Attendance_IO_Frontend" target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[13px] font-medium">
+              <Github className="h-3.5 w-3.5" /> Star on GitHub
+            </a>
+          </div>
+          <ContributorsSection className="pt-1" />
+          <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</p>
+        </DialogContent>
+      </Dialog>
 
       {/* Sleep Duration Modal */}
       <Dialog open={isEditingSleepDuration} onOpenChange={setIsEditingSleepDuration}>

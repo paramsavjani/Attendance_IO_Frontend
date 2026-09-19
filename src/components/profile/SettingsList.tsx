@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
  * Grouped settings rows, the pattern every phone user already knows from the system Settings app:
  * a small caps label, then a card of full-width rows with an icon tile, a title, an optional
  * subtitle, and the *current value* on the right — so people can see their setup without
- * opening anything. Rows are ≥ 56px tall for thumbs.
+ * opening anything. Rows are ≥ 50px tall for thumbs; the whole page is sized to fit a phone
+ * screen without scrolling.
  */
 
 export function SettingsGroup({ label, children, className }: { label?: string; children: ReactNode; className?: string }) {
@@ -52,6 +53,32 @@ interface SettingsRowProps {
   destructive?: boolean;
 }
 
+/** Compact square actions for secondary things (analytics, rate, feedback…), four to a row. */
+export function SettingsTile({ icon, accent = "neutral", label, onClick, href }: { icon: ReactNode; accent?: SettingsAccent; label: string; onClick?: () => void; href?: string }) {
+  const className = cn(
+    "flex min-h-[64px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-card px-1 py-2",
+    "transition-colors active:bg-white/[0.06] touch-manipulation"
+  );
+  const inner = (
+    <>
+      <span className={cn("flex h-8 w-8 items-center justify-center rounded-xl [&>svg]:h-4 [&>svg]:w-4", TILE[accent])}>{icon}</span>
+      <span className="text-[11px] font-medium leading-none text-foreground/90">{label}</span>
+    </>
+  );
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {inner}
+    </button>
+  );
+}
+
 export function SettingsRow({ icon, accent = "neutral", title, subtitle, value, onClick, href, disabled, destructive }: SettingsRowProps) {
   const inner = (
     <>
@@ -74,7 +101,7 @@ export function SettingsRow({ icon, accent = "neutral", title, subtitle, value, 
     </>
   );
   const className = cn(
-    "flex min-h-[56px] w-full items-center gap-3 px-3.5 py-2.5 transition-colors touch-manipulation",
+    "flex min-h-[50px] w-full items-center gap-3 px-3.5 py-1.5 transition-colors touch-manipulation",
     "active:bg-white/[0.06]",
     disabled && "pointer-events-none opacity-45"
   );
