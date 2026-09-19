@@ -57,6 +57,7 @@ export default function Profile() {
   const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -519,7 +520,23 @@ export default function Profile() {
           </div>
         </div>
 
-        <ContributorsSection className="mt-1.5 space-y-2 px-0 pb-3 pt-0" />
+        {/* Credit — opens About with links and the contributors (replaces the old Hall of Fame block) */}
+        <button
+          type="button"
+          onClick={() => setShowAbout(true)}
+          className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/12 text-rose-400">
+            <Heart className="h-[18px] w-[18px]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[14px] font-semibold text-white">
+              Made with <span className="text-rose-400">♥</span> by Param Savjani
+            </span>
+            <span className="mt-0.5 block truncate text-[11.5px] text-white/45">About the app & contributors</span>
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-white/25" />
+        </button>
       </div>
 
       {/* Sleep Duration Modal */}
@@ -588,42 +605,28 @@ export default function Profile() {
         </DialogContent>
       </Dialog>
 
-      <div className="flex shrink-0 flex-col items-center gap-2 pt-2 pb-1">
-        {/* GitHub link + version */}
-        <div className="flex items-center gap-2">
-          <a
-            href="https://github.com/paramsavjani/Attendance_IO_Frontend"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.05] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.12] hover:border-white/20 hover:scale-105 active:scale-95"
-          >
-            <Github className="h-3.5 w-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
-            <span className="text-[10px] font-semibold tracking-wide text-white/50 group-hover:text-white/80 transition-colors">
-              Star on GitHub
-            </span>
-            <span className="ml-0.5 inline-flex items-center rounded-sm bg-yellow-500/20 px-1 py-0.5 text-[9px] font-bold text-yellow-400/90">
-              ★
-            </span>
-          </a>
-          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-medium text-white/30 tracking-wider">
-            v{packageJson.version}
-          </span>
-        </div>
-
-        <a
-          href="https://paramsavjani.in"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:scale-105 active:scale-95"
-        >
-          <span className="text-[10px] font-medium tracking-wide text-white/40 group-hover:text-white/60 transition-colors">
-            MADE WITH <span className="text-red-500/80 animate-pulse">❤️</span> BY
-          </span>
-          <span className="text-[10px] font-bold tracking-widest text-blue-400/90 group-hover:text-white/90 transition-colors">
-            PARAM SAVJANI
-          </span>
-        </a>
-      </div>
+      {/* About: the maker, links, and the people who helped */}
+      <Dialog open={showAbout} onOpenChange={setShowAbout}>
+        <DialogContent className="max-w-[92vw] sm:max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-5">
+          <DialogHeader>
+            <DialogTitle className="text-base">About Attendance IO</DialogTitle>
+          </DialogHeader>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            Built and maintained by <span className="font-semibold text-foreground">Param Savjani</span>, a DA-IICT student, for DA-IICT students.
+            Open source — a star on GitHub keeps it going.
+          </p>
+          <div className="flex gap-2">
+            <a href="https://paramsavjani.in" target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[13px] font-medium">
+              Website
+            </a>
+            <a href="https://github.com/paramsavjani/Attendance_IO_Frontend" target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[13px] font-medium">
+              <Github className="h-3.5 w-3.5" /> Star on GitHub
+            </a>
+          </div>
+          <ContributorsSection className="pt-1" />
+          <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</p>
+        </DialogContent>
+      </Dialog>
 
       {/* Subject Editor Dialog */}
       <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
