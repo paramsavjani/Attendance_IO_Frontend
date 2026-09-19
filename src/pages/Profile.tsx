@@ -607,7 +607,10 @@ export default function Profile() {
 
       {/* About: the maker, links, and the people who helped */}
       <Dialog open={showAbout} onOpenChange={setShowAbout}>
-        <DialogContent className="max-w-[92vw] sm:max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-5">
+        <DialogContent
+          className="max-w-[92vw] sm:max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-5 [&>button]:hidden"
+          onOpenAutoFocus={(e) => e.preventDefault()} // don't land focus on the close button
+        >
           <DialogHeader>
             <DialogTitle className="text-base">About Attendance IO</DialogTitle>
           </DialogHeader>
