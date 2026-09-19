@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { originOf, revealFrom } from "@/lib/revealTransition";
 
@@ -10,6 +11,10 @@ import { originOf, revealFrom } from "@/lib/revealTransition";
 export function AssistantFab() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { student } = useAuth();
+
+  // The assistant is for DAU accounts only; demo logins never see the launcher.
+  if (student?.isDemo) return null;
 
   // Only where people actually look someone up: home and search. Not on profile, timetable, etc.
   const visibleOn = ["/dashboard", "/search"];
