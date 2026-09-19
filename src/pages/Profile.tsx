@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
 import packageJson from "../../package.json";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { SettingsGroup, SettingsRow } from "@/components/profile/SettingsList";
 
 interface CurrentSemester {
   year: number;
@@ -353,25 +353,38 @@ export default function Profile() {
     { id: 'suggestion' as const, label: 'Suggestion', icon: Lightbulb, color: 'text-yellow-500' },
   ];
 
-  /** Simple bordered actions — one flat list: Subjects + 8 grid buttons */
-  const profileGridBtn =
-    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-white/[0.12] bg-white/[0.03] px-3 py-2.5 text-left transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]";
-  const profileSubjectsBtn =
-    "group flex w-full items-center gap-3.5 rounded-xl border border-white/[0.12] bg-white/[0.03] px-4 py-3.5 text-left transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99] touch-manipulation dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]";
-  const profileLogoutBtn =
-    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-red-500/35 bg-red-500/[0.06] px-3 py-2.5 text-left transition-all hover:border-red-500/50 hover:bg-red-500/12 active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-red-500/40 dark:bg-red-500/10 dark:hover:bg-red-500/15";
+  // --- values shown on the rows, so the page reads as a summary of your setup ---
+  const subjectCount = enrolledSubjects.length;
+  const criteriaValues = enrolledSubjects.map((s) => s.minimumCriteria ?? 70);
+  const criteriaValue =
+    subjectCount === 0
+      ? "—"
+      : new Set(criteriaValues).size === 1
+        ? `${criteriaValues[0]}%`
+        : `${Math.min(...criteriaValues)}–${Math.max(...criteriaValues)}%`;
+  const locationsSet = enrolledSubjects.filter((s) => s.classroomLocation).length;
+  const reminderHours = student?.dailyReminderHours ?? [];
+  const formatHour = (h: number) => (h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`);
+  const notificationsValue =
+    reminderHours.length > 0
+      ? reminderHours.map(formatHour).join(" · ")
+      : student?.afterLectureReminderEnabled !== false
+        ? "After lectures"
+        : "Off";
+  const semesterLabel = currentSemester
+    ? `${currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()} ${currentSemester.year}`
+    : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 pb-6">
-      {/* Hero */}
-      <div className="relative shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.09] via-white/[0.04] to-transparent px-4 py-4 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-10 h-36 w-36 rounded-full bg-blue-500/20 blur-3xl" />
-
-        <div className="relative z-10 flex items-center gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-5 pb-4">
+      {/* Identity */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-card px-4 pb-4 pt-5">
+        <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-primary/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-12 h-36 w-36 rounded-full bg-violet-500/15 blur-3xl" />
+        <div className="relative flex items-center gap-4">
           <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-violet-500 opacity-50 blur-md" />
-            <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white/25 shadow-lg ring-2 ring-white/10">
+            <div className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-primary via-violet-500 to-fuchsia-500 opacity-80" />
+            <div className="relative h-16 w-16 overflow-hidden rounded-full border-[3px] border-card">
               <img
                 src={student?.pictureUrl || "/user-icons/user2.png"}
                 alt={student?.name || "Profile"}
@@ -382,144 +395,115 @@ export default function Profile() {
               />
             </div>
           </div>
-
           <div className="min-w-0 flex-1">
-            <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-white/45">Profile</p>
-            <h1 className="truncate text-lg font-bold tracking-tight text-white">
+            <h1 className="truncate text-[20px] font-bold leading-tight tracking-tight text-foreground">
               {student?.isDemo ? "Demo User" : student?.name}
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-lg bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/85 ring-1 ring-inset ring-white/10">
-                {student?.rollNumber}
-              </span>
+            <p className="mt-0.5 truncate text-[13px] tabular-nums text-muted-foreground">{student?.rollNumber}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {isLoadingSemester ? (
-                <span className="inline-flex items-center rounded-lg bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/45 animate-pulse">
-                  Semester…
-                </span>
-              ) : currentSemester ? (
-                <span className="inline-flex items-center rounded-lg bg-primary/25 px-2 py-0.5 text-[10px] font-semibold text-primary-foreground ring-1 ring-inset ring-primary/35">
-                  {currentSemester.year}{" "}
-                  {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
+                <span className="h-5 w-24 animate-pulse rounded-full bg-white/[0.06]" />
+              ) : semesterLabel ? (
+                <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-semibold text-primary ring-1 ring-inset ring-primary/25">
+                  {semesterLabel}
                 </span>
               ) : null}
+              {student?.isDemo && (
+                <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-amber-400 ring-1 ring-inset ring-amber-500/25">
+                  Demo
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Settings — Subjects first, then 8 bordered buttons (no section headings / nested boxes) */}
-      <div className="relative shrink-0 overflow-hidden rounded-xl">
-        <div className="flex flex-col gap-3 px-0 pb-1">
-          <button type="button" onClick={() => setShowSubjectEditor(true)} className={profileSubjectsBtn}>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400 transition-transform group-active:scale-95 dark:bg-blue-500/10">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Subjects</p>
-              <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">{enrolledSubjects.length} enrolled · edit your list</p>
-            </div>
-            <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
-          </button>
+      <SettingsGroup label="Academics">
+        <SettingsRow
+          icon={<BookOpen />}
+          accent="blue"
+          title="Subjects"
+          subtitle="Your enrolled list"
+          value={`${subjectCount} enrolled`}
+          onClick={() => setShowSubjectEditor(true)}
+        />
+        <SettingsRow
+          icon={<Target />}
+          accent="violet"
+          title="Attendance criteria"
+          subtitle="Minimum % per subject"
+          value={criteriaValue}
+          disabled={subjectCount === 0}
+          onClick={() => setShowCriteriaModal(true)}
+        />
+        <SettingsRow
+          icon={<MapPin />}
+          accent="emerald"
+          title="Classroom locations"
+          subtitle="Room for each class"
+          value={subjectCount === 0 ? "—" : `${locationsSet} of ${subjectCount} set`}
+          disabled={subjectCount === 0}
+          onClick={() => setShowClassroomLocationModal(true)}
+        />
+      </SettingsGroup>
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={enrolledSubjects.length === 0}
-              onClick={() => enrolledSubjects.length > 0 && setShowCriteriaModal(true)}
-              className={cn(
-                profileGridBtn,
-                enrolledSubjects.length === 0 &&
-                  "cursor-not-allowed opacity-45 hover:border-white/[0.12] hover:bg-white/[0.03] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04]"
-              )}
-            >
-              <div className="rounded-lg bg-violet-500/15 p-1.5 text-violet-400 dark:bg-violet-500/12">
-                <Target className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Criteria</span>
-            </button>
-            <button
-              type="button"
-              disabled={enrolledSubjects.length === 0}
-              onClick={() => enrolledSubjects.length > 0 && setShowClassroomLocationModal(true)}
-              className={cn(
-                profileGridBtn,
-                enrolledSubjects.length === 0 &&
-                  "cursor-not-allowed opacity-45 hover:border-white/[0.12] hover:bg-white/[0.03] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04]"
-              )}
-            >
-              <div className="rounded-lg bg-emerald-500/15 p-1.5 text-emerald-400 dark:bg-emerald-500/12">
-                <MapPin className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Locations</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingSleepHours(sleepDuration?.toString() || "8");
-                setIsEditingSleepDuration(true);
-              }}
-              className={profileGridBtn}
-            >
-              <div className="rounded-lg bg-indigo-500/15 p-1.5 text-indigo-400 dark:bg-indigo-500/12">
-                <Moon className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">
-                {isLoadingSleepDuration ? "Sleep" : `${sleepDuration ?? 8}h sleep`}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDailyReminderHours(student?.dailyReminderHours ?? []);
-                setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
-                setShowNotificationPreferences(true);
-              }}
-              className={profileGridBtn}
-            >
-              <div className="rounded-lg bg-amber-500/15 p-1.5 text-amber-400 dark:bg-amber-500/12">
-                <Bell className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Notifications</span>
-            </button>
-            <button type="button" onClick={() => navigate("/app-analytics")} className={profileGridBtn}>
-              <div className="rounded-lg bg-pink-500/15 p-1.5 text-pink-400 dark:bg-pink-500/12">
-                <BarChart3 className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Analytics</span>
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await requestAppReview({ openPlayStoreOnly: true });
-                } catch (e) {
-                  console.error("Rate us failed:", e);
-                  toast.error("Could not open review. Please try again.");
-                }
-              }}
-              className={profileGridBtn}
-            >
-              <div className="rounded-lg bg-yellow-500/15 p-1.5 text-yellow-400 dark:bg-yellow-500/12">
-                <Star className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Rate us</span>
-            </button>
-            <button type="button" onClick={() => setShowFeedbackModal(true)} className={profileGridBtn}>
-              <div className="rounded-lg bg-cyan-500/15 p-1.5 text-cyan-400 dark:bg-cyan-500/12">
-                <MessageSquare className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Feedback</span>
-            </button>
-            <button type="button" onClick={handleLogout} className={profileLogoutBtn}>
-              <div className="rounded-lg bg-red-500/25 p-1.5 text-red-400">
-                <LogOut className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-bold text-red-400">Log out</span>
-            </button>
-          </div>
-        </div>
+      <SettingsGroup label="Preferences">
+        <SettingsRow
+          icon={<Moon />}
+          accent="indigo"
+          title="Sleep duration"
+          subtitle="Keeps night reminders quiet"
+          value={isLoadingSleepDuration ? "…" : `${sleepDuration ?? 8}h`}
+          onClick={() => {
+            setEditingSleepHours(sleepDuration?.toString() || "8");
+            setIsEditingSleepDuration(true);
+          }}
+        />
+        <SettingsRow
+          icon={<Bell />}
+          accent="amber"
+          title="Notifications"
+          subtitle="Reminders to mark attendance"
+          value={notificationsValue}
+          onClick={() => {
+            setDailyReminderHours(student?.dailyReminderHours ?? []);
+            setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
+            setShowNotificationPreferences(true);
+          }}
+        />
+      </SettingsGroup>
 
-        <ContributorsSection className="mt-1.5 space-y-2 px-0 pb-3 pt-0" />
+      <SettingsGroup label="App">
+        <SettingsRow icon={<BarChart3 />} accent="pink" title="App analytics" subtitle="How the app is being used" onClick={() => navigate("/app-analytics")} />
+        <SettingsRow
+          icon={<Star />}
+          accent="yellow"
+          title="Rate Attendance IO"
+          subtitle="A review on the Play Store helps a lot"
+          onClick={async () => {
+            try {
+              await requestAppReview({ openPlayStoreOnly: true });
+            } catch (e) {
+              console.error("Rate us failed:", e);
+              toast.error("Could not open review. Please try again.");
+            }
+          }}
+        />
+        <SettingsRow icon={<MessageSquare />} accent="cyan" title="Send feedback" subtitle="Bugs, ideas, anything" onClick={() => setShowFeedbackModal(true)} />
+        <SettingsRow icon={<Github />} accent="neutral" title="Star on GitHub" subtitle="The app is open source" href="https://github.com/paramsavjani/Attendance_IO_Frontend" />
+      </SettingsGroup>
+
+      <ContributorsSection className="space-y-2" />
+
+      <SettingsGroup>
+        <SettingsRow icon={<LogOut />} title="Log out" destructive onClick={handleLogout} />
+      </SettingsGroup>
+
+      <div className="flex flex-col items-center gap-1 pb-1 pt-1 text-center">
+        <a href="https://paramsavjani.in" target="_blank" rel="noopener noreferrer" className="text-[12px] text-muted-foreground">
+          Made with <span className="text-red-400">♥</span> by <span className="font-semibold text-foreground/80">Param Savjani</span>
+        </a>
+        <span className="text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</span>
       </div>
 
       {/* Sleep Duration Modal */}
@@ -587,43 +571,6 @@ export default function Profile() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <div className="flex shrink-0 flex-col items-center gap-2 pt-2 pb-1">
-        {/* GitHub link + version */}
-        <div className="flex items-center gap-2">
-          <a
-            href="https://github.com/paramsavjani/Attendance_IO_Frontend"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.05] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.12] hover:border-white/20 hover:scale-105 active:scale-95"
-          >
-            <Github className="h-3.5 w-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
-            <span className="text-[10px] font-semibold tracking-wide text-white/50 group-hover:text-white/80 transition-colors">
-              Star on GitHub
-            </span>
-            <span className="ml-0.5 inline-flex items-center rounded-sm bg-yellow-500/20 px-1 py-0.5 text-[9px] font-bold text-yellow-400/90">
-              ★
-            </span>
-          </a>
-          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-medium text-white/30 tracking-wider">
-            v{packageJson.version}
-          </span>
-        </div>
-
-        <a
-          href="https://paramsavjani.in"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:scale-105 active:scale-95"
-        >
-          <span className="text-[10px] font-medium tracking-wide text-white/40 group-hover:text-white/60 transition-colors">
-            MADE WITH <span className="text-red-500/80 animate-pulse">❤️</span> BY
-          </span>
-          <span className="text-[10px] font-bold tracking-widest text-blue-400/90 group-hover:text-white/90 transition-colors">
-            PARAM SAVJANI
-          </span>
-        </a>
-      </div>
 
       {/* Subject Editor Dialog */}
       <Dialog open={showSubjectEditor} onOpenChange={setShowSubjectEditor}>
