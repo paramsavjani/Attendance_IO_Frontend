@@ -1099,9 +1099,9 @@ export default function Dashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0 flex-1 flex flex-col overflow-hidden">
-          <TabsList className="relative grid w-full grid-cols-3 p-1 gap-1 h-11 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+          <TabsList className="relative grid w-full grid-cols-3 p-1 gap-1 h-11 rounded-full border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
             <div
-              className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+              className="absolute top-1 bottom-1 left-0.5 rounded-full bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
               style={{
                 width: "calc((100% - 4px) / 3)",
                 transform: `translateX(${activeTab === "schedule" ? "0%" : activeTab === "lab-tutorial" ? "100%" : "200%"})`
@@ -1109,19 +1109,19 @@ export default function Dashboard() {
             />
             <TabsTrigger
               value="schedule"
-              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
+              className="relative z-10 rounded-full text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
             >
               Schedule
             </TabsTrigger>
             <TabsTrigger
               value="lab-tutorial"
-              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
+              className="relative z-10 rounded-full text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
             >
               Lab & Tut
             </TabsTrigger>
             <TabsTrigger
               value="subjects"
-              className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
+              className="relative z-10 rounded-full text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
             >
               Subjects
             </TabsTrigger>
@@ -1656,12 +1656,12 @@ export default function Dashboard() {
                 <div className="sticky top-0 z-10 pt-0 pb-2 mb-2 bg-background/90 dark:bg-background/85 backdrop-blur-md border-b border-border/40">
                   <div className="flex items-center gap-2">
                     <div
-                      className="relative flex-1 grid grid-cols-2 p-1 gap-1 h-10 min-h-10 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]"
+                      className="relative flex-1 grid grid-cols-2 p-1 gap-1 h-10 min-h-10 rounded-full border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]"
                       role="group"
                       aria-label="Choose attendance source"
                     >
                       <div
-                        className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-none"
+                        className="absolute top-1 bottom-1 left-0.5 rounded-full bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-none"
                         style={{
                           width: "calc((100% - 4px) / 2)",
                           transform: `translateX(${subjectsAttendanceView === "total" ? "0%" : "100%"})`,
@@ -1671,7 +1671,7 @@ export default function Dashboard() {
                         type="button"
                         onClick={() => setSubjectsAttendanceView("total")}
                         className={cn(
-                          "relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 px-1",
+                          "relative z-10 rounded-full text-xs font-bold transition-colors duration-200 px-1",
                           subjectsAttendanceView === "total"
                             ? "text-foreground"
                             : "text-muted-foreground/70 hover:text-foreground"
@@ -1683,7 +1683,7 @@ export default function Dashboard() {
                         type="button"
                         onClick={() => setSubjectsAttendanceView("official")}
                         className={cn(
-                          "relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1 px-1",
+                          "relative z-10 rounded-full text-xs font-bold transition-colors duration-200 flex items-center justify-center gap-1 px-1",
                           subjectsAttendanceView === "official"
                             ? "text-foreground"
                             : "text-muted-foreground/70 hover:text-foreground"
@@ -1697,7 +1697,7 @@ export default function Dashboard() {
                       <PopoverTrigger asChild>
                         <button
                           type="button"
-                          className="h-10 w-10 shrink-0 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]"
+                          className="h-10 w-10 shrink-0 rounded-full border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]"
                           aria-label="How subject attendance is calculated"
                         >
                           <Info className="w-4 h-4" />
