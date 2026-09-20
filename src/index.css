@@ -174,8 +174,8 @@ html.sunrise-active .gemini-border::before {
     hsl(0 0% 8% / 0.9) 55%,
     hsl(234 30% 9% / 0.9) 100%
   );
-  backdrop-filter: blur(24px) saturate(170%);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
   border: 1px solid hsl(0 0% 100% / 0.1);
   box-shadow:
     0 12px 36px -8px hsl(0 0% 0% / 0.65),
