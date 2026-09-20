@@ -899,11 +899,12 @@ export default function Dashboard() {
     isExtraClass?: boolean,
     extraClassIndex?: number
   ) => {
+    // Future classes can be planned absent or cancelled; present has to wait for the class to happen.
     if (isFutureDate) {
-      if (status === 'cancelled') {
-        await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
+      if (status === 'present') {
+        toast.error("You can't mark present before the class happens");
       } else {
-        toast.error("You can only mark lectures as 'cancelled' for future dates");
+        await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
       }
       return;
     }
@@ -1443,7 +1444,7 @@ export default function Dashboard() {
                                     isExtraClass,
                                     isExtraClass ? slot.extraClassIndex : undefined
                                   )}
-                                  disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
+                                  disabled={isSaving || isFutureDate}
                                   className={cn(
                                     "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
                                     status === 'present'
@@ -1469,7 +1470,7 @@ export default function Dashboard() {
                                     isExtraClass,
                                     isExtraClass ? slot.extraClassIndex : undefined
                                   )}
-                                  disabled={isSaving || (isFutureDate && !isSelectedTomorrow)}
+                                  disabled={isSaving}
                                   className={cn(
                                     "flex-1 h-7 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-0.5",
                                     status === 'absent'
