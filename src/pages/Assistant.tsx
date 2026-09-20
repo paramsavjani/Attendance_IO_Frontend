@@ -501,7 +501,7 @@ function EmptyState({ suggestions, onPick, onGuide }: { suggestions: string[]; o
             <p className="bg-gradient-to-r from-[#8ab4f8] via-[#c58af9] to-[#f28b82] bg-clip-text text-[13px] font-semibold leading-tight text-transparent">
               See everything it can answer
             </p>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">12 topics · attendance, alumni, clubs, faculty, placements, hostel…</p>
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Attendance, alumni, clubs, faculty, placements, hostel…</p>
           </div>
           <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </div>
