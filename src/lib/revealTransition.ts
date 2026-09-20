@@ -32,11 +32,11 @@ export function lastRevealOrigin(): RevealOrigin | null {
   return lastOrigin;
 }
 
-const BASE_PX = 200;
+const BASE_PX = 320;
 const OPEN_MS = 420;
 /** Point in the growth (0–1) at which the disc has covered the viewport; the route swaps here. */
 const SWAP_AT = 0.62;
-const FADE_MS = 50;
+const FADE_MS = 240;
 const COVER_MS = 110;
 const CLOSE_MS = 400;
 
@@ -93,7 +93,8 @@ export async function revealFrom(origin: RevealOrigin | null, navigateNow: () =>
     await new Promise((r) => setTimeout(r, OPEN_MS * SWAP_AT));
     navigateNow();
     await grow;
-    await animate(sun, [{ opacity: 1 }, { opacity: 0 }], FADE_MS, "ease-out");
+    // The disc is a shade lighter than the page, so let it dissolve rather than snap away.
+    await animate(sun, [{ opacity: 1 }, { opacity: 0 }], FADE_MS, "ease-in-out");
   } finally {
     end(sun);
   }
