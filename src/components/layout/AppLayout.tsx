@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,8 +17,16 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-/** Rendered height of the nav pill (p-2 + py-2.5 buttons + 18px icon). Keep in sync with the markup below. */
+/** Rendered height of the nav pill (p-1.5 + py-2.5 buttons + 22px icon box). Keep in sync with the markup below. */
 const NAV_HEIGHT_PX = 56;
+
+function tapHaptic() {
+  try {
+    navigator.vibrate?.(6);
+  } catch {
+    // ignore
+  }
+}
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
@@ -32,6 +40,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Sliding glow under the active tab: { x: centre px, w: width px } in nav coordinates.
+  const [glow, setGlow] = useState<{ x: number; w: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragProgress, setDragProgress] = useState(0);
   const startX = useRef(0);
@@ -75,6 +86,31 @@ export function AppLayout({ children }: AppLayoutProps) {
     const currentIndex = navItems.findIndex((item) => isActiveRoute(item.path));
     setDragProgress(Math.max(0, currentIndex));
   }, [location.pathname, isDragging]);
+
+  // Position the glow from the real button boxes. The active button widens over 300ms as its
+  // label unfolds, so keep sampling during that window; between two buttons (drag) interpolate.
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    let raf = 0;
+    const started = performance.now();
+    const measure = () => {
+      const navBox = nav.getBoundingClientRect();
+      const boxes = buttonRefs.current.map((b) => b?.getBoundingClientRect());
+      const lo = Math.max(0, Math.min(navItems.length - 1, Math.floor(dragProgress)));
+      const hi = Math.min(navItems.length - 1, lo + 1);
+      const t = dragProgress - lo;
+      const a = boxes[lo];
+      const b = boxes[hi] ?? a;
+      if (!a || !b) return;
+      const ax = a.left + a.width / 2 - navBox.left;
+      const bx = b.left + b.width / 2 - navBox.left;
+      setGlow({ x: ax + (bx - ax) * t, w: a.width + (b.width - a.width) * t });
+      if (!isDragging && performance.now() - started < 360) raf = requestAnimationFrame(measure);
+    };
+    measure();
+    return () => cancelAnimationFrame(raf);
+  }, [dragProgress, isDragging]);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null;
@@ -215,8 +251,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div
           ref={navRef}
           className={cn(
-            "liquid-nav flex items-center gap-1.5 rounded-full p-2",
-            "border-border/70 bg-card/85",
+            "liquid-nav relative flex items-center gap-1 rounded-full p-1.5",
             "max-w-[calc(100vw-16px)] justify-center"
           )}
           onTouchStart={handleTouchStart}
@@ -224,6 +259,20 @@ export function AppLayout({ children }: AppLayoutProps) {
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
         >
+          {/* Sliding glow that tracks the active tab (and the finger while dragging) */}
+          <div
+            aria-hidden
+            className={cn(
+              "liquid-nav-glow pointer-events-none absolute top-1/2 left-0 h-[44px] rounded-full",
+              !isDragging && "transition-[transform,width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              glow ? "opacity-100" : "opacity-0"
+            )}
+            style={{
+              width: glow?.w ?? 0,
+              transform: `translate(${(glow?.x ?? 0) - (glow?.w ?? 0) / 2}px, -50%)`,
+            }}
+          />
+
           {navItems.map((item, index) => {
             const isActive = isDragging
               ? Math.round(dragProgress) === index
@@ -232,29 +281,36 @@ export function AppLayout({ children }: AppLayoutProps) {
             return (
               <button
                 key={item.path}
+                ref={(el) => { buttonRefs.current[index] = el; }}
                 data-nav-index={index}
-                onClick={() => handleNavigation(item.path)}
+                onClick={() => { tapHaptic(); handleNavigation(item.path); }}
                 className={cn(
-                  "group relative flex items-center gap-1.5 rounded-full px-3.5 py-2.5",
-                  "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                  "active:scale-95",
+                  "group relative z-10 flex h-[44px] items-center gap-1 rounded-full px-3",
+                  "transition-[background-color,color,padding,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "active:scale-[0.93]",
                   isActive
-                    ? "bg-primary/20 text-foreground shadow-[0_2px_14px_-50px_hsl(var(--primary)/0.55),0_0_0_1px_hsl(var(--primary)/0.35)_inset]"
-                    : "text-muted-foreground hover:text-foreground/90"
+                    ? "bg-primary/[0.22] pr-3.5 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.4),inset_0_1px_0_hsl(0_0%_100%/0.08)]"
+                    : "text-muted-foreground/85 hover:text-foreground/90 hover:bg-white/[0.04]"
                 )}
+                aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
               >
-                <item.icon
-                  className={cn(
-                    "h-[18px] w-[18px] shrink-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    isActive && "scale-105 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.45)]"
-                  )}
-                />
+                <span className="relative flex h-[22px] w-[22px] shrink-0 items-center justify-center">
+                  <item.icon
+                    strokeWidth={isActive ? 2.4 : 2}
+                    className={cn(
+                      "h-[19px] w-[19px] transition-[transform,color,filter] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                      isActive
+                        ? "scale-105 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.55)]"
+                        : "group-active:scale-90"
+                    )}
+                  />
+                </span>
                 <span
                   className={cn(
                     "overflow-hidden whitespace-nowrap text-[12px] font-semibold tracking-[-0.01em]",
-                    "max-w-0 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    isActive && "max-w-20 pl-0.5 opacity-100"
+                    "max-w-0 -translate-x-1 opacity-0 transition-[max-width,opacity,transform,padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    isActive && "max-w-20 translate-x-0 pl-0.5 opacity-100"
                   )}
                 >
                   {item.label}
