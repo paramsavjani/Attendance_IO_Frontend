@@ -28,6 +28,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
 import ErrorOldVersion from "./pages/ErrorOldVersion";
 import Assistant from "./pages/Assistant";
+import AssistantGuide from "./pages/AssistantGuide";
 import { ServerPopup } from "@/components/ServerPopup";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef, useState } from "react";
@@ -349,6 +350,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Assistant />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/assistant/guide"
+          element={
+            <ProtectedRoute>
+              <AssistantGuide />
             </ProtectedRoute>
           }
         />
