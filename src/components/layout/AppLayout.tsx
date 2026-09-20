@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,16 +17,8 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-/** Rendered height of the nav pill (p-1.5 + py-2.5 buttons + 22px icon box). Keep in sync with the markup below. */
+/** Rendered height of the nav pill (p-2 + py-2.5 buttons + 18px icon). Keep in sync with the markup below. */
 const NAV_HEIGHT_PX = 56;
-
-function tapHaptic() {
-  try {
-    navigator.vibrate?.(6);
-  } catch {
-    // ignore
-  }
-}
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
@@ -40,10 +32,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
-  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  // Sliding glass pill behind the active tab. Positioned by writing styles straight to the DOM
-  // (no React state) so the per-frame tracking below never re-renders the layout.
-  const pillRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragProgress, setDragProgress] = useState(0);
   const startX = useRef(0);
@@ -87,35 +75,6 @@ export function AppLayout({ children }: AppLayoutProps) {
     const currentIndex = navItems.findIndex((item) => isActiveRoute(item.path));
     setDragProgress(Math.max(0, currentIndex));
   }, [location.pathname, isDragging]);
-
-  // Position the pill from the real button boxes every frame while the buttons animate (the
-  // active one widens over 300ms as its label unfolds), so the pill hugs the layout exactly
-  // instead of chasing it with its own transition; between two buttons (drag) interpolate.
-  // Uses offsetLeft/offsetWidth (relative to the nav, no rect maths) and writes to the element
-  // directly - one layout read and one style write per frame, nothing goes through React.
-  useLayoutEffect(() => {
-    const nav = navRef.current;
-    const pill = pillRef.current;
-    if (!nav || !pill) return;
-    let raf = 0;
-    const started = performance.now();
-    const measure = () => {
-      const lo = Math.max(0, Math.min(navItems.length - 1, Math.floor(dragProgress)));
-      const hi = Math.min(navItems.length - 1, lo + 1);
-      const t = dragProgress - lo;
-      const a = buttonRefs.current[lo];
-      const b = buttonRefs.current[hi] ?? a;
-      if (!a || !b) return;
-      const x = a.offsetLeft + (b.offsetLeft - a.offsetLeft) * t;
-      const w = a.offsetWidth + (b.offsetWidth - a.offsetWidth) * t;
-      pill.style.width = `${w}px`;
-      pill.style.transform = `translate3d(${x}px, 0, 0)`;
-      pill.style.opacity = "1";
-      if (!isDragging && performance.now() - started < 360) raf = requestAnimationFrame(measure);
-    };
-    measure();
-    return () => cancelAnimationFrame(raf);
-  }, [dragProgress, isDragging]);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null;
@@ -256,7 +215,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div
           ref={navRef}
           className={cn(
-            "liquid-nav liquid-nav-bar relative flex items-center gap-0.5 rounded-full p-1.5",
+            "liquid-nav flex items-center gap-1.5 rounded-full p-2",
+            "border-border/70 bg-card/85",
             "max-w-[calc(100vw-16px)] justify-center"
           )}
           onTouchStart={handleTouchStart}
@@ -264,13 +224,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
         >
-          {/* Sliding glass pill that tracks the active tab (and the finger while dragging) */}
-          <div
-            ref={pillRef}
-            aria-hidden
-            className="liquid-nav-pill pointer-events-none absolute top-1.5 left-0 h-[44px] rounded-full opacity-0 will-change-transform"
-          />
-
           {navItems.map((item, index) => {
             const isActive = isDragging
               ? Math.round(dragProgress) === index
@@ -279,34 +232,29 @@ export function AppLayout({ children }: AppLayoutProps) {
             return (
               <button
                 key={item.path}
-                ref={(el) => { buttonRefs.current[index] = el; }}
                 data-nav-index={index}
-                onClick={() => { tapHaptic(); handleNavigation(item.path); }}
+                onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "group relative z-10 flex h-[44px] items-center gap-1 rounded-full px-3.5",
-                  "transition-[color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                  "active:scale-[0.94]",
+                  "group relative flex items-center gap-1.5 rounded-full px-3.5 py-2.5",
+                  "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "active:scale-95",
                   isActive
-                    ? "text-foreground"
+                    ? "bg-primary/20 text-foreground shadow-[0_2px_14px_-50px_hsl(var(--primary)/0.55),0_0_0_1px_hsl(var(--primary)/0.35)_inset]"
                     : "text-muted-foreground hover:text-foreground/90"
                 )}
-                aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
               >
-                <span className="relative flex h-[22px] w-[22px] shrink-0 items-center justify-center">
-                  <item.icon
-                    strokeWidth={isActive ? 2.25 : 1.9}
-                    className={cn(
-                      "h-[19px] w-[19px] transition-[transform,color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                      isActive ? "text-primary" : "group-active:scale-90"
-                    )}
-                  />
-                </span>
+                <item.icon
+                  className={cn(
+                    "h-[18px] w-[18px] shrink-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    isActive && "scale-105 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.45)]"
+                  )}
+                />
                 <span
                   className={cn(
                     "overflow-hidden whitespace-nowrap text-[12px] font-semibold tracking-[-0.01em]",
-                    "max-w-0 -translate-x-1 opacity-0 transition-[max-width,opacity,transform,padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    isActive && "max-w-20 translate-x-0 pl-0.5 pr-0.5 opacity-100"
+                    "max-w-0 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    isActive && "max-w-20 pl-0.5 opacity-100"
                   )}
                 >
                   {item.label}
