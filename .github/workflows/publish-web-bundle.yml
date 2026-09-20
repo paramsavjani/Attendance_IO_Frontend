@@ -1,0 +1,93 @@
+name: Publish web bundle (OTA)
+
+# Every push to main also ships the web build over the air: phones running an APK that carries
+# @capgo/capacitor-updater pick it up on their next foreground and swap to it when backgrounded.
+# The backend (WebBundleService) reads ~/app-bundles/latest.json on the VPS and serves the zips.
+# Native changes (new Capacitor plugin, permissions, Capacitor upgrade) still need a Play Store
+# release: bump MIN_NATIVE_VERSION_CODE to that APK's version code so older installs keep their
+# built-in bundle until they update from the store.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  MIN_NATIVE_VERSION_CODE: 0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish-web-bundle
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm install --force
+
+      - name: Build frontend
+        env:
+          VITE_API_BASE_URL: https://api.attendanceio.paramsavjani.in
+        run: npm run build
+
+      - name: Package bundle
+        id: pkg
+        run: |
+          set -e
+          SHA7=$(echo "${{ github.sha }}" | cut -c1-7)
+          VERSION="$(date -u +%Y%m%d.%H%M)-$SHA7"
+          FILE="web-$VERSION.zip"
+          (cd dist && zip -qr "../$FILE" .)
+          SHA256=$(sha256sum "$FILE" | cut -d' ' -f1)
+          cat > latest.json <<JSON
+          {
+            "version": "$VERSION",
+            "file": "$FILE",
+            "sha256": "$SHA256",
+            "minNativeVersionCode": $MIN_NATIVE_VERSION_CODE,
+            "commit": "${{ github.sha }}",
+            "publishedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          JSON
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          ls -lh "$FILE"; cat latest.json
+
+      - name: Upload to VPS
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          FILE: ${{ steps.pkg.outputs.file }}
+        run: |
+          set -e
+          if [ -z "$VPS_SSH_KEY" ] || [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ]; then
+            echo "VPS_SSH_KEY / VPS_HOST / VPS_USER secrets are not set"; exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # Zip first, then the manifest via a rename so a phone never reads a half-written file
+          # or a manifest that points at a zip that is not there yet. Keep the last 5 zips.
+          scp -q "$FILE" "$VPS_USER@$VPS_HOST:app-bundles/"
+          scp -q latest.json "$VPS_USER@$VPS_HOST:app-bundles/latest.json.tmp"
+          ssh "$VPS_USER@$VPS_HOST" bash -s <<'REMOTE'
+            set -e
+            cd ~/app-bundles
+            mv -f latest.json.tmp latest.json
+            ls -t web-*.zip | tail -n +6 | xargs -r rm -f --
+            echo "published: $(cat latest.json | tr -d '\n' | tr -s ' ')"
+          REMOTE
