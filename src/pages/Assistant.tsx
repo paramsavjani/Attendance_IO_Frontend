@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
-import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, Check, Copy, RotateCcw, Square } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check, Copy, RotateCcw, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -490,9 +490,20 @@ function EmptyState({ suggestions, onPick, onGuide }: { suggestions: string[]; o
           </button>
         ))}
       </div>
-      <button type="button" onClick={onGuide} className="inline-flex items-center gap-1.5 text-xs font-medium text-primary">
-        <BookOpen className="h-3.5 w-3.5" />
-        See everything it can answer
+      {/* Guide card: same footprint as a suggestion, but visibly "about" rather than a question */}
+      <button
+        type="button"
+        onClick={onGuide}
+        className="group mt-1 flex w-full max-w-sm items-center gap-3 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-3.5 py-3 text-left active:scale-[0.98]"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+          <BookOpen className="h-[18px] w-[18px]" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold leading-tight text-foreground">See everything it can answer</p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">12 topics · attendance, alumni, clubs, faculty, placements, hostel…</p>
+        </div>
+        <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-active:translate-x-0.5" />
       </button>
     </div>
   );
