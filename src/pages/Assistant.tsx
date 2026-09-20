@@ -628,7 +628,7 @@ function AssistantMarkdown({ content }: { content: string }) {
 
 function Thinking({ status }: { status?: string }) {
   return (
-    <span className="inline-flex items-center gap-2 text-muted-foreground">
+    <span className="inline-flex items-center gap-2 text-muted-foreground/70">
       <span className="inline-flex items-end gap-0.5">
         <span className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-current" />
         <span className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-current" />
