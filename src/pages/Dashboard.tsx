@@ -639,7 +639,21 @@ export default function Dashboard() {
     if (firstWithSubject === -1) return []; // no classes at all -> show the "No classes" empty state
     let lastWithSubject = combined.length - 1;
     while (lastWithSubject >= 0 && !combined[lastWithSubject].subject) lastWithSubject--;
-    return combined.slice(firstWithSubject, lastWithSubject + 1);
+    const trimmed = combined.slice(firstWithSubject, lastWithSubject + 1);
+    // Collapse runs of consecutive free slots into a single compact "Free" row that spans
+    // the whole gap, so a two-hour break takes one thin line instead of two full-height rows.
+    const merged: any[] = [];
+    for (const slot of trimmed) {
+      const prev = merged[merged.length - 1];
+      if (!slot.subject && prev && !prev.subject) {
+        const end = slot.endTime || (slot.time ? slot.time.split(" - ")[1] : "");
+        const start = prev.startTime || (prev.time ? prev.time.split(" - ")[0] : "");
+        merged[merged.length - 1] = { ...prev, startTime: start, endTime: end, time: `${start} - ${end}`, freeCount: (prev.freeCount ?? 1) + 1 };
+        continue;
+      }
+      merged.push(slot);
+    }
+    return merged;
   }, [schedule, extraClassSlots]);
 
   // Index of the first afternoon slot (start hour >= 13:00). Used to render a
@@ -1250,22 +1264,34 @@ export default function Dashboard() {
                       ) : null;
 
                       if (!slot.subject) {
-                        // Empty slot - same height as lecture slots
+                        // Free gap (consecutive free slots are merged in fullSchedule). Measure the break
+                        // from the previous class's real end to the next class's real start (custom slots
+                        // included), rounded to the nearest half hour, and size the row to match.
+                        const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
+                        const slotStart = (sl: any) => sl.startTime || (sl.time ? sl.time.split(" - ")[0] : "");
+                        const slotEnd = (sl: any) => sl.endTime || (sl.time ? sl.time.split(" - ")[1] : "");
+                        const prev = fullSchedule[index - 1];
+                        const next = fullSchedule[index + 1];
+                        const fromMin = prev?.subject && slotEnd(prev) ? toMin(slotEnd(prev)) : toMin(timeStart);
+                        const toMinEnd = next?.subject && slotStart(next) ? toMin(slotStart(next)) : toMin(timeEnd);
+                        const gapMin = Math.max(0, toMinEnd - fromMin);
+                        const gapHours = Math.round(gapMin / 30) / 2; // nearest 0.5 h
+                        const gapLabel = gapHours >= 1
+                          ? `${gapHours} ${gapHours === 1 ? "hr" : "hrs"}`
+                          : `${Math.max(5, Math.round(gapMin / 5) * 5)} min`;
+                        // 30 min -> ~40px, 1 h -> ~54px, 2 h -> ~82px, capped so a whole free afternoon can't swallow the screen.
+                        const gapHeight = Math.round(Math.min(96, 26 + gapMin * 0.47));
                         return (
                           <Fragment key={index}>
                             {afternoonDivider}
-                            <div className="relative flex items-stretch gap-2 min-h-[64px]">
-                              <div className="flex flex-col items-center w-2.5 flex-shrink-0 relative ml-[1px]">
-                                <div className="flex-1" />
-                                <div className="w-2 h-2 rounded-full bg-muted-foreground/70 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                                <div className="flex-1" />
+                            <div className="relative flex items-center gap-2" style={{ minHeight: gapHeight }}>
+                              <div className="flex items-center justify-center w-2.5 flex-shrink-0 ml-[1px]">
+                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 ring-2 ring-background" />
                               </div>
-                              <div className="w-9 flex-shrink-0 flex flex-col justify-center">
-                                <p className="text-xs font-semibold leading-none text-muted-foreground/70">{formatTime(timeStart)}</p>
-                                <p className="text-[9px] text-muted-foreground/70">{formatTime(timeEnd)}</p>
-                              </div>
-                              <div className="flex-1 py-1 flex items-center">
-                                <p className="text-[10px] text-muted-foreground/70">Free</p>
+                              <div className="w-9 flex-shrink-0" />
+                              <div className="flex-1 min-w-0 flex items-baseline gap-1.5">
+                                <span className="text-sm font-semibold text-muted-foreground/80 tabular-nums">{gapLabel}</span>
+                                <span className="text-[11px] text-muted-foreground/60">free</span>
                               </div>
                             </div>
                           </Fragment>
