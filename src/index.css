@@ -16,15 +16,16 @@
   padding-top: env(safe-area-inset-top, 0);
 }
 
-/* Assistant "sunrise" transition — see lib/revealTransition.ts. A small dark disc with a violet
-   rim, scaled up by the Web Animations API on the compositor; no shadows/filters so it stays
-   smooth on mobile WebViews. */
+/* Assistant "sunrise" transition — see lib/revealTransition.ts. A dark disc with a violet rim,
+   laid out at full size and scaled by the Web Animations API on the compositor; no
+   shadows/filters so it stays smooth on mobile WebViews. */
 .sunrise-sun {
   position: fixed;
   z-index: 100;
   pointer-events: none;
   border-radius: 9999px;
-  transform: scale(0);
+  transform: scale(0.01);
+  backface-visibility: hidden;
   transform-origin: center;
   will-change: transform, opacity;
   contain: strict;
@@ -41,6 +42,12 @@
 html.sunrise-active .liquid-nav {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+/* The conic-gradient rings animate a custom property, which is a main-thread repaint every frame;
+   hold them still while the sun moves so the compositor animation has the phone to itself. */
+html.sunrise-active .gemini-border,
+html.sunrise-active .gemini-border::before {
+  animation-play-state: paused;
 }
 
 /* Assistant composer — Gemini-style rounded box with a rotating Google-colour border while active. */
