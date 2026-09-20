@@ -25,6 +25,7 @@
     "@capacitor/cli": "^7.4.4",
     "@capacitor/core": "^7.4.4",
     "@capacitor/push-notifications": "^5.1.2",
+    "@capgo/capacitor-updater": "^7.51.20",
     "@fontsource/outfit": "^5.2.8",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
