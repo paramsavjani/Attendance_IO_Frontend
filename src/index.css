@@ -185,8 +185,8 @@ html.sunrise-active .gemini-border::before {
     0 -1px 0 hsl(0 0% 0% / 0.3) inset;
 }
 
-/* Thin specular highlight along the top edge - fades out towards the ends of the pill. */
-.liquid-nav::before {
+/* Thin specular highlight along the top edge of the bottom nav bar only - fades out towards the ends. */
+.liquid-nav-bar::before {
   content: "";
   position: absolute;
   inset: 0 12% auto 12%;
@@ -196,10 +196,13 @@ html.sunrise-active .gemini-border::before {
   pointer-events: none;
 }
 
-/* Soft primary-coloured light pooled under the active tab; slides between tabs. */
-.liquid-nav-glow {
-  background: radial-gradient(60% 120% at 50% 100%, hsl(var(--primary) / 0.45), transparent 70%);
-  filter: blur(6px);
+/* Glass thumb behind the active tab - same recipe as the page toggles' sliding thumb. */
+.liquid-nav-pill {
+  background: hsl(0 0% 100% / 0.1);
+  border: 1px solid hsl(0 0% 100% / 0.14);
+  box-shadow:
+    0 4px 20px -2px hsl(0 0% 0% / 0.3),
+    0 1px 0 hsl(0 0% 100% / 0.1) inset;
 }
 
 /* Compact nav for very small phones (≤ 360px) */
