@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
-import { ArrowDown, ArrowLeft, ArrowUp, Check, Copy, RotateCcw, Square } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check, Copy, RotateCcw, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,29 @@ const ALUMNI_POOL = [
   "Seniors from my programme working at Atlassian",
 ];
 
+const CAMPUS_POOL = [
+  "Who is the convener of the Cultural Committee and their phone number?",
+  "Which clubs are there for coding and robotics?",
+  "Contact of the Hostel Management Committee",
+  "What events are happening on campus this week?",
+  "Is there a garba night coming up?",
+  "Who teaches machine learning here? Give email",
+  "When do end-sem exams start this semester?",
+  "Last date for add/drop this semester",
+  "Is 2 October a holiday? List holidays this month",
+  "Average and highest package for UG in 2024-25",
+  "Which companies recruited from DAU last year?",
+  "Subjects in semester 3 of B.Tech ICT",
+  "Scholarships available for B.Tech students",
+  "Whom do I report ragging to?",
+  "Women's hostel warden's phone number",
+  "Hostel laundry timings and charges",
+  "Can my parents stay in the hostel guest room?",
+  "Doctor timings at the medical centre",
+  "How do I get a TV card in the hostel?",
+  "What does the Programming Club do?",
+];
+
 function shuffle<T>(list: T[]): T[] {
   const pool = [...list];
   for (let i = pool.length - 1; i > 0; i--) {
@@ -104,12 +127,12 @@ function shuffle<T>(list: T[]): T[] {
   return pool;
 }
 
-/** [count] prompts, most of them alumni questions (the more useful topic), in random order. */
+/** [count] prompts: half campus questions (newest, least discovered), then alumni, then attendance, in random order. */
 function pickSuggestions(count: number): string[] {
-  const alumniCount = Math.ceil(count * 0.75); // 3 of 4
-  const alumni = shuffle(ALUMNI_POOL).slice(0, alumniCount);
-  const attendance = shuffle(ATTENDANCE_POOL).slice(0, Math.max(0, count - alumni.length));
-  return shuffle([...alumni, ...attendance]);
+  const campus = shuffle(CAMPUS_POOL).slice(0, Math.ceil(count / 2)); // 2 of 4
+  const alumni = shuffle(ALUMNI_POOL).slice(0, Math.max(1, Math.floor((count - campus.length) / 2))); // 1 of 4
+  const attendance = shuffle(ATTENDANCE_POOL).slice(0, Math.max(0, count - campus.length - alumni.length));
+  return shuffle([...campus, ...alumni, ...attendance]);
 }
 
 let nextId = 0;
@@ -329,9 +352,12 @@ export default function Assistant() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-[15px] font-semibold leading-tight">Assistant</h1>
-            <p className="truncate text-[11px] text-muted-foreground">Attendance, batches &amp; alumni</p>
+            <p className="truncate text-[11px] text-muted-foreground">Attendance, alumni &amp; campus</p>
           </div>
         </div>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/assistant/guide")} aria-label="What the assistant knows" className="h-9 w-9 rounded-full">
+          <BookOpen className="h-[18px] w-[18px]" />
+        </Button>
         <Button variant="outline" size="sm" onClick={reset} disabled={messages.length === 0 && !busy} className="h-9 rounded-full px-3">
           <RotateCcw className="mr-1.5 h-4 w-4" />
           New chat
@@ -343,7 +369,7 @@ export default function Assistant() {
         <div ref={listRef} onScroll={onListScroll} className="h-full overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4">
           <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
             {messages.length === 0 ? (
-              <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} />
+              <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} onGuide={() => navigate("/assistant/guide")} />
             ) : (
               messages.map((m) => <MessageBubble key={m.id} message={m} onRetry={retry} />)
             )}
@@ -442,7 +468,7 @@ function useVisualViewportHeight(): number | null {
   return height;
 }
 
-function EmptyState({ suggestions, onPick }: { suggestions: string[]; onPick: (s: string) => void }) {
+function EmptyState({ suggestions, onPick, onGuide }: { suggestions: string[]; onPick: (s: string) => void; onGuide: () => void }) {
   return (
     <div className="flex flex-col items-center gap-5 pt-10 pb-4 text-center">
       <div className="liquid-nav flex h-14 w-14 items-center justify-center rounded-full">
@@ -450,7 +476,7 @@ function EmptyState({ suggestions, onPick }: { suggestions: string[]; onPick: (s
       </div>
       <div>
         <h2 className="text-base font-semibold">What do you want to know?</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Ask about friends, batches, subjects or alumni contacts — or type your own.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Attendance, alumni, clubs, faculty, placements — or ask anything.</p>
       </div>
       <div className="flex w-full max-w-sm flex-col gap-2">
         {suggestions.map((s) => (
@@ -464,6 +490,22 @@ function EmptyState({ suggestions, onPick }: { suggestions: string[]; onPick: (s
           </button>
         ))}
       </div>
+      {/* Guide card: the assistant's five-colour ring (same as the composer while thinking, but slow) so it
+          reads as "about the assistant", not another question. */}
+      <button type="button" onClick={onGuide} className="gemini-border is-focused mt-1 w-full max-w-sm text-left active:scale-[0.98]">
+        <div className="gemini-inner flex items-center gap-3 px-3.5 py-3">
+          <div className="liquid-nav flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+            <BookOpen className="h-[18px] w-[18px]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="bg-gradient-to-r from-[#8ab4f8] via-[#c58af9] to-[#f28b82] bg-clip-text text-[13px] font-semibold leading-tight text-transparent">
+              See everything it can answer
+            </p>
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Attendance, alumni, clubs, faculty, placements, hostel…</p>
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </div>
+      </button>
     </div>
   );
 }
