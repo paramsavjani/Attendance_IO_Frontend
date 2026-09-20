@@ -476,7 +476,7 @@ function EmptyState({ suggestions, onPick, onGuide }: { suggestions: string[]; o
       </div>
       <div>
         <h2 className="text-base font-semibold">What do you want to know?</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Attendance, alumni, clubs &amp; committees, faculty, calendar, placements, hostel — or type your own.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Attendance, alumni, clubs, faculty, placements — or ask anything.</p>
       </div>
       <div className="flex w-full max-w-sm flex-col gap-2">
         {suggestions.map((s) => (
