@@ -490,20 +490,21 @@ function EmptyState({ suggestions, onPick, onGuide }: { suggestions: string[]; o
           </button>
         ))}
       </div>
-      {/* Guide card: same footprint as a suggestion, but visibly "about" rather than a question */}
-      <button
-        type="button"
-        onClick={onGuide}
-        className="group mt-1 flex w-full max-w-sm items-center gap-3 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-3.5 py-3 text-left active:scale-[0.98]"
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-          <BookOpen className="h-[18px] w-[18px]" />
+      {/* Guide card: the assistant's five-colour ring (same as the composer while thinking, but slow) so it
+          reads as "about the assistant", not another question. */}
+      <button type="button" onClick={onGuide} className="gemini-border is-focused mt-1 w-full max-w-sm text-left active:scale-[0.98]">
+        <div className="gemini-inner flex items-center gap-3 px-3.5 py-3">
+          <div className="liquid-nav flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+            <BookOpen className="h-[18px] w-[18px]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="bg-gradient-to-r from-[#8ab4f8] via-[#c58af9] to-[#f28b82] bg-clip-text text-[13px] font-semibold leading-tight text-transparent">
+              See everything it can answer
+            </p>
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">12 topics · attendance, alumni, clubs, faculty, placements, hostel…</p>
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold leading-tight text-foreground">See everything it can answer</p>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">12 topics · attendance, alumni, clubs, faculty, placements, hostel…</p>
-        </div>
-        <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-active:translate-x-0.5" />
       </button>
     </div>
   );
