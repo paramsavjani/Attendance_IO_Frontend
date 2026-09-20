@@ -66,7 +66,7 @@ export default function DailyAttendance() {
   const schedule = getScheduleForDate();
 
   const handleMark = (index: number, subjectId: string, status: 'present' | 'absent' | 'cancelled') => {
-    if (isFuture && status !== 'cancelled') return;
+    if (isFuture && status === 'present') return; // can plan absent/cancelled ahead, not present
     markAttendance(subjectId, dateKey, status);
   };
 
@@ -130,9 +130,9 @@ export default function DailyAttendance() {
 
         {/* Future Date Notice */}
         {!isBeforeStartDate && isFuture && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-muted text-muted-foreground text-sm">
             <AlertTriangle className="w-4 h-4" />
-            <span>You can't mark attendance for future dates</span>
+            <span>Upcoming: you can mark absent or cancelled now, present once the class happens</span>
           </div>
         )}
 
@@ -168,11 +168,8 @@ export default function DailyAttendance() {
                   onMarkPresent={() => handleMark(index, slot.subjectId!, "present")}
                   onMarkAbsent={() => handleMark(index, slot.subjectId!, "absent")}
                   onMarkCancelled={() => handleMark(index, slot.subjectId!, "cancelled")}
-                  // Disable interaction if locked or future (except cancellation for future?)
-                  // User said: "attendance percentage showing in future dates only" -> implies they want to see it everywhere.
-                  // Actions logic:
-                  disabled={isLocked || (isFuture && currentStatus !== 'cancelled')}
-                  disablePresentAbsent={isFuture} // Only allow cancel in future
+                  disabled={isLocked}
+                  disablePresent={isFuture} // absent/cancelled can be planned ahead, present can't
                 />
               );
             })}

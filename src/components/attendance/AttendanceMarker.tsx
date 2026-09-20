@@ -15,7 +15,7 @@ interface AttendanceMarkerProps {
   onMarkAbsent: () => void;
   onMarkCancelled: () => void;
   disabled?: boolean;
-  disablePresentAbsent?: boolean; // Disable present/absent buttons (e.g., for future dates)
+  disablePresent?: boolean; // The class hasn't happened yet: absent/cancelled can be planned, present can't
   needsAttention?: boolean;
   attendancePercent?: number;
   isLoading?: boolean;
@@ -35,7 +35,7 @@ export function AttendanceMarker({
   onMarkAbsent,
   onMarkCancelled,
   disabled = false,
-  disablePresentAbsent = false,
+  disablePresent = false,
   needsAttention = false,
   attendancePercent,
   isLoading = false,
@@ -142,18 +142,17 @@ export function AttendanceMarker({
               <ActionButton
                 active={status === "present"}
                 onClick={onMarkPresent}
-                disabled={isInteractionDisabled || disablePresentAbsent}
+                disabled={isInteractionDisabled || disablePresent}
                 variant="present"
                 isSaving={savingAction === "present"}
-                disabledReason={disablePresentAbsent ? "Only 'cancelled' allowed for future dates" : undefined}
+                disabledReason={disablePresent ? "Can't mark present before the class happens" : undefined}
               />
               <ActionButton
                 active={status === "absent"}
                 onClick={onMarkAbsent}
-                disabled={isInteractionDisabled || disablePresentAbsent}
+                disabled={isInteractionDisabled}
                 variant="absent"
                 isSaving={savingAction === "absent"}
-                disabledReason={disablePresentAbsent ? "Only 'cancelled' allowed for future dates" : undefined}
               />
               <ActionButton
                 active={status === "cancelled"}
