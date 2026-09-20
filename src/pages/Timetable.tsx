@@ -1149,9 +1149,9 @@ export default function Timetable() {
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "lecture" | "lab-tutorial")} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="relative grid w-full grid-cols-2 p-1 gap-1 h-11 mb-3 flex-shrink-0 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+            <TabsList className="relative grid w-full grid-cols-2 p-1 gap-1 h-11 mb-3 flex-shrink-0 rounded-full border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
               <div
-                className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                className="absolute top-1 bottom-1 left-0.5 rounded-full bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
                 style={{
                   width: "calc((100% - 4px) / 2)",
                   transform: `translateX(${activeTab === "lecture" ? "0%" : "100%"})`
@@ -1159,13 +1159,13 @@ export default function Timetable() {
               />
               <TabsTrigger
                 value="lecture"
-                className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
+                className="relative z-10 rounded-full text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
               >
                 Lecture
               </TabsTrigger>
               <TabsTrigger
                 value="lab-tutorial"
-                className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
+                className="relative z-10 rounded-full text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
               >
                 Lab & Tut
               </TabsTrigger>
