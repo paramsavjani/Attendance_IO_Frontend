@@ -1279,8 +1279,8 @@ export default function Dashboard() {
                         const gapLabel = gapHours >= 1
                           ? `${gapHours} ${gapHours === 1 ? "hr" : "hrs"}`
                           : `${Math.max(5, Math.round(gapMin / 5) * 5)} min`;
-                        // 30 min -> ~40px, 1 h -> ~54px, 2 h -> ~82px, capped so a whole free afternoon can't swallow the screen.
-                        const gapHeight = Math.round(Math.min(96, 26 + gapMin * 0.47));
+                        // 30 min -> ~38px, 1 h -> ~50px, 2 h -> ~74px, capped so a whole free afternoon can't swallow the screen.
+                        const gapHeight = Math.round(Math.min(96, 26 + gapMin * 0.4));
                         return (
                           <Fragment key={index}>
                             {afternoonDivider}
