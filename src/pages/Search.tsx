@@ -919,9 +919,9 @@ export default function Search() {
             title="Or just ask the assistant"
             examples={[
               "Compare my attendance with a friend",
-              "Which batch is doing best in CT303?",
               "Alumni at Google I can reach on LinkedIn",
-              "Which alumni are working in Gujarat?",
+              "Convener of the Cultural Committee and their number",
+              "When do end-sem exams start?",
             ]}
             onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
           />}
@@ -1040,7 +1040,7 @@ function AssistantPromo({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{title}</p>
-          <p className="text-[11px] text-muted-foreground">Friends, batches, subjects — in plain words</p>
+          <p className="text-[11px] text-muted-foreground">Attendance, alumni, clubs, faculty, placements — in plain words</p>
         </div>
         <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
