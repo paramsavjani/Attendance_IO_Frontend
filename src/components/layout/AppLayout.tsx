@@ -41,8 +41,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  // Sliding glass pill behind the active tab: { x: left px, w: width px } in nav coordinates.
-  const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
+  // Sliding glass pill behind the active tab. Positioned by writing styles straight to the DOM
+  // (no React state) so the per-frame tracking below never re-renders the layout.
+  const pillRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragProgress, setDragProgress] = useState(0);
   const startX = useRef(0);
@@ -90,23 +91,26 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Position the pill from the real button boxes every frame while the buttons animate (the
   // active one widens over 300ms as its label unfolds), so the pill hugs the layout exactly
   // instead of chasing it with its own transition; between two buttons (drag) interpolate.
+  // Uses offsetLeft/offsetWidth (relative to the nav, no rect maths) and writes to the element
+  // directly - one layout read and one style write per frame, nothing goes through React.
   useLayoutEffect(() => {
     const nav = navRef.current;
-    if (!nav) return;
+    const pill = pillRef.current;
+    if (!nav || !pill) return;
     let raf = 0;
     const started = performance.now();
     const measure = () => {
-      const navBox = nav.getBoundingClientRect();
-      const boxes = buttonRefs.current.map((b) => b?.getBoundingClientRect());
       const lo = Math.max(0, Math.min(navItems.length - 1, Math.floor(dragProgress)));
       const hi = Math.min(navItems.length - 1, lo + 1);
       const t = dragProgress - lo;
-      const a = boxes[lo];
-      const b = boxes[hi] ?? a;
+      const a = buttonRefs.current[lo];
+      const b = buttonRefs.current[hi] ?? a;
       if (!a || !b) return;
-      const ax = a.left - navBox.left;
-      const bx = b.left - navBox.left;
-      setPill({ x: ax + (bx - ax) * t, w: a.width + (b.width - a.width) * t });
+      const x = a.offsetLeft + (b.offsetLeft - a.offsetLeft) * t;
+      const w = a.offsetWidth + (b.offsetWidth - a.offsetWidth) * t;
+      pill.style.width = `${w}px`;
+      pill.style.transform = `translate3d(${x}px, 0, 0)`;
+      pill.style.opacity = "1";
       if (!isDragging && performance.now() - started < 360) raf = requestAnimationFrame(measure);
     };
     measure();
@@ -262,15 +266,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         >
           {/* Sliding glass pill that tracks the active tab (and the finger while dragging) */}
           <div
+            ref={pillRef}
             aria-hidden
-            className={cn(
-              "liquid-nav-pill pointer-events-none absolute top-1.5 left-0 h-[44px] rounded-full",
-              pill ? "opacity-100" : "opacity-0"
-            )}
-            style={{
-              width: pill?.w ?? 0,
-              transform: `translateX(${pill?.x ?? 0}px)`,
-            }}
+            className="liquid-nav-pill pointer-events-none absolute top-1.5 left-0 h-[44px] rounded-full opacity-0 will-change-transform"
           />
 
           {navItems.map((item, index) => {
@@ -286,10 +284,10 @@ export function AppLayout({ children }: AppLayoutProps) {
                 onClick={() => { tapHaptic(); handleNavigation(item.path); }}
                 className={cn(
                   "group relative z-10 flex h-[44px] items-center gap-1 rounded-full px-3.5",
-                  "transition-[color,padding,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "transition-[color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   "active:scale-[0.94]",
                   isActive
-                    ? "pr-4 text-foreground"
+                    ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground/90"
                 )}
                 aria-label={item.label}
@@ -308,7 +306,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   className={cn(
                     "overflow-hidden whitespace-nowrap text-[12px] font-semibold tracking-[-0.01em]",
                     "max-w-0 -translate-x-1 opacity-0 transition-[max-width,opacity,transform,padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    isActive && "max-w-20 translate-x-0 pl-0.5 opacity-100"
+                    isActive && "max-w-20 translate-x-0 pl-0.5 pr-0.5 opacity-100"
                   )}
                 >
                   {item.label}
