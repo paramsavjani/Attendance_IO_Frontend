@@ -120,7 +120,13 @@ export async function collapseTo(origin: RevealOrigin | null, navigateNow: () =>
     sun.style.transform = "scale(1)";
     await animate(sun, [{ opacity: 0 }, { opacity: 1 }], COVER_MS, "ease-in");
     navigateNow();
+    // Two frames: one for React to commit the home page, one for it to paint under the disc.
     await nextFrame();
+    await nextFrame();
+    // Give the glass nav its blur back now, while the disc still hides it: the shrink then reveals
+    // the nav in its final look, instead of it snapping from flat to glass once the sun is gone.
+    // Its backdrop (the mounted page) is static from here, so the blur is cheap to keep.
+    document.documentElement.classList.remove("sunrise-active");
     await animate(sun, [{ transform: "scale(1)" }, { transform: `scale(${MIN_SCALE})` }], CLOSE_MS, "cubic-bezier(0.55, 0.05, 0.35, 1)");
   } finally {
     end(sun);
