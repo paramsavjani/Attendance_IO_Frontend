@@ -1080,7 +1080,7 @@ export default function Timetable() {
 
     <div className="h-full flex flex-col overflow-hidden pb-2">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <button
             onClick={handleBack}
@@ -1149,24 +1149,31 @@ export default function Timetable() {
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "lecture" | "lab-tutorial")} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-0.5 rounded-xl h-9 mb-5 flex-shrink-0">
+            <TabsList className="relative grid w-full grid-cols-2 p-1 gap-1 h-11 mb-3 flex-shrink-0 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+              <div
+                className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                style={{
+                  width: "calc((100% - 4px) / 2)",
+                  transform: `translateX(${activeTab === "lecture" ? "0%" : "100%"})`
+                }}
+              />
               <TabsTrigger
                 value="lecture"
-                className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+                className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
               >
                 Lecture
               </TabsTrigger>
               <TabsTrigger
                 value="lab-tutorial"
-                className="rounded-lg text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium"
+                className="relative z-10 rounded-3xl text-xs font-bold transition-colors duration-200 bg-transparent data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground/70 outline-none hover:text-foreground px-1"
               >
-                Lab & Tutorial
+                Lab & Tut
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="lecture" className="flex-1 flex flex-col overflow-hidden mt-0">
               {/* Stats Row */}
-              <div className="flex items-center gap-3 mb-5 flex-shrink-0">
+              <div className="flex items-center gap-3 mb-3 flex-shrink-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-2xl font-bold">{timetable.filter(s => s.day === activeDay && s.subjectId !== null).length}</span>
                   <span className="text-xs text-muted-foreground">today</span>
@@ -1179,7 +1186,7 @@ export default function Timetable() {
               </div>
 
               {/* Day Pills */}
-              <div className="grid grid-cols-5 gap-1.5 mb-6 flex-shrink-0">
+              <div className="grid grid-cols-5 gap-1.5 mb-4 flex-shrink-0">
                 {days.map((day, dayIndex) => {
                   const slotCount = timetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
                   const isActive = activeDay === dayIndex;
@@ -1188,7 +1195,7 @@ export default function Timetable() {
                       key={day}
                       onClick={() => setActiveDay(dayIndex)}
                       className={cn(
-                        "py-2.5 rounded-full text-sm font-medium transition-all text-center",
+                        "py-2 rounded-full text-sm font-medium transition-all text-center",
                         isActive
                           ? "bg-foreground text-background"
                           : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -1227,7 +1234,7 @@ export default function Timetable() {
 
             <TabsContent value="lab-tutorial" className="flex-1 flex flex-col overflow-hidden mt-0">
               {/* Stats Row */}
-              <div className="flex items-center gap-3 mb-5 flex-shrink-0">
+              <div className="flex items-center gap-3 mb-3 flex-shrink-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-2xl font-bold">{getDaySlotCount(activeDay)}</span>
                   <span className="text-xs text-muted-foreground">today</span>
@@ -1240,7 +1247,7 @@ export default function Timetable() {
               </div>
 
               {/* Day Pills */}
-              <div className="grid grid-cols-5 gap-1.5 mb-6 flex-shrink-0">
+              <div className="grid grid-cols-5 gap-1.5 mb-4 flex-shrink-0">
                 {days.map((day, dayIndex) => {
                   const labCount = labTimetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
                   const tutorialCount = tutorialTimetable.filter(s => s.day === dayIndex && s.subjectId !== null).length;
@@ -1251,7 +1258,7 @@ export default function Timetable() {
                       key={day}
                       onClick={() => setActiveDay(dayIndex)}
                       className={cn(
-                        "py-2.5 rounded-full text-sm font-medium transition-all text-center",
+                        "py-2 rounded-full text-sm font-medium transition-all text-center",
                         isActive
                           ? "bg-foreground text-background"
                           : "bg-secondary text-muted-foreground hover:text-foreground"
