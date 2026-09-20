@@ -598,17 +598,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     isExtraClass?: boolean,
     extraClassIndex?: number
   ) => {
-    // Frontend guard: only allow "cancelled" for future dates, block "present" and "absent"
+    // Frontend guard: a class that hasn't happened yet can be planned absent or cancelled, never present
     try {
       const lectureDay = startOfDay(parseISO(date));
       const today = startOfDay(new Date());
-      if (isAfter(lectureDay, today)) {
-        // Allow cancelled for future dates
-        if (status !== 'cancelled') {
-          toast.error("You can only mark lectures as 'cancelled' for future dates");
-          return;
-        }
-        // If status is cancelled, continue to mark it
+      if (isAfter(lectureDay, today) && status === 'present') {
+        toast.error("You can't mark present before the class happens");
+        return;
       }
     } catch {
       // If parsing fails, allow request; backend should validate
