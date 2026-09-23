@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -164,7 +163,7 @@ export default function Login() {
             <p className="text-[10px] sm:text-xs text-muted-foreground text-center leading-relaxed px-2">
               By signing in, you agree to our{" "}
               <Link
-                to={Capacitor.isNativePlatform() ? "#/privacy-policy" : "/privacy-policy"}
+                to="/privacy-policy"
                 className="text-primary hover:text-primary/80 underline transition-colors"
               >
                 Privacy Policy

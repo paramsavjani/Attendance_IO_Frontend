@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 
 export default function DeleteAccount() {
   return (
@@ -8,7 +7,7 @@ export default function DeleteAccount() {
         {/* Header */}
         <div className="mb-8 sm:mb-12">
           <Link
-            to={Capacitor.isNativePlatform() ? "#/login" : "/login"}
+            to="/login"
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
           >
             <svg
@@ -256,13 +255,13 @@ export default function DeleteAccount() {
           {/* Footer */}
           <div className="mt-12 pt-8 border-t border-border/50 flex flex-col sm:flex-row gap-4 justify-between items-center">
             <Link
-              to={Capacitor.isNativePlatform() ? "#/privacy-policy" : "/privacy-policy"}
+              to="/privacy-policy"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               View Privacy Policy
             </Link>
             <Link
-              to={Capacitor.isNativePlatform() ? "#/login" : "/login"}
+              to="/login"
               className="inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors"
             >
               <svg
