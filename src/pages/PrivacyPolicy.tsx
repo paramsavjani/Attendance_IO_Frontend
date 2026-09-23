@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 
 export default function PrivacyPolicy() {
   return (
@@ -8,7 +7,7 @@ export default function PrivacyPolicy() {
         {/* Header */}
         <div className="mb-8 sm:mb-12">
           <Link
-            to={Capacitor.isNativePlatform() ? "#/login" : "/login"}
+            to="/login"
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
           >
             <svg
@@ -246,7 +245,7 @@ export default function PrivacyPolicy() {
               <p className="text-muted-foreground leading-relaxed mb-4">
                 To request account deletion, please visit our{" "}
                 <Link
-                  to={Capacitor.isNativePlatform() ? "#/delete-account" : "/delete-account"}
+                  to="/delete-account"
                   className="text-primary hover:text-primary/80 underline transition-colors"
                 >
                   Account Deletion page
@@ -314,7 +313,7 @@ export default function PrivacyPolicy() {
           {/* Footer */}
           <div className="mt-12 pt-8 border-t border-border/50">
             <Link
-              to={Capacitor.isNativePlatform() ? "#/login" : "/login"}
+              to="/login"
               className="inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors"
             >
               <svg
