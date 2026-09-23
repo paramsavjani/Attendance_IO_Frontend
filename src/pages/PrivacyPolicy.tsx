@@ -37,7 +37,7 @@ export default function PrivacyPolicy() {
             </h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+            Last updated: 23 September 2026
           </p>
         </div>
 
@@ -80,7 +80,18 @@ export default function PrivacyPolicy() {
                 <li>Subject information and timetables</li>
                 <li>Self-attendance entries and timestamps</li>
                 <li>Analytics and statistics related to your attendance</li>
+                <li>Official attendance figures published by the institute, where available</li>
               </ul>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 mb-4">
+                <p className="text-foreground leading-relaxed">
+                  <strong>Important — other students can see your attendance.</strong> Attendance IO is a shared
+                  app for your institute, not a private diary. Any signed-in student can search for you by name or
+                  roll number and see your subjects, your attendance percentages and the same statistics you see
+                  about yourself, including through the AI assistant. Class, batch and institute averages, and
+                  "top" and "bottom" lists, are built from every student's records and are visible to all users.
+                  Please do not record anything here that you are not comfortable with your classmates seeing.
+                </p>
+              </div>
 
               <h3 className="text-lg font-medium mb-3 text-foreground">
                 2.3 Device Information
@@ -92,7 +103,26 @@ export default function PrivacyPolicy() {
                 <li>Device type and operating system</li>
                 <li>App version and usage statistics</li>
                 <li>Push notification tokens (for notifications)</li>
+                <li>A device identifier and the installed app version, used to deliver app updates</li>
               </ul>
+
+              <h3 className="text-lg font-medium mb-3 text-foreground">
+                2.4 AI Assistant Conversations
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                When you use the in-app AI assistant, we collect and process:
+              </p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-4 ml-4">
+                <li>The questions you type and the answers the assistant gives</li>
+                <li>Which data the assistant looked up to answer you</li>
+                <li>Timing, token usage and errors, so we can monitor quality and cost</li>
+              </ul>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Recent messages in a conversation are kept for a short period so the assistant can follow up
+                within the same chat, and are then discarded automatically. A record of each conversation turn is
+                retained on our own servers for quality monitoring, debugging and abuse prevention. There is a
+                daily limit on how many questions each account may ask.
+              </p>
             </section>
 
             <section className="mb-8">
@@ -110,6 +140,9 @@ export default function PrivacyPolicy() {
                 <li>Send you notifications related to your attendance (if enabled)</li>
                 <li>Improve our application and user experience</li>
                 <li>Respond to your inquiries and provide customer support</li>
+                <li>Answer your questions through the AI assistant</li>
+                <li>Deliver app updates to your device</li>
+                <li>Monitor reliability, cost and misuse of the service</li>
               </ul>
             </section>
 
@@ -136,7 +169,15 @@ export default function PrivacyPolicy() {
                 We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:
               </p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-4 ml-4">
-                <li><strong>Service Providers:</strong> We may share information with third-party service providers who assist us in operating our application and providing services to you</li>
+                <li><strong>Other students using the app:</strong> Your name, roll number, subjects, attendance
+                  records and attendance statistics are visible to other signed-in students of your institute,
+                  through search, comparisons, class and batch statistics, and the AI assistant. This is a core
+                  feature of the app, not an accident.</li>
+                <li><strong>AI provider:</strong> To answer your questions, the assistant sends your message,
+                  recent messages from the same chat, and the data it looked up (which may include your own or
+                  another student's attendance figures) to our AI provider for processing. We do not send your
+                  email address, and the provider processes this only to generate the reply.</li>
+                <li><strong>Service Providers:</strong> We may share information with third-party service providers who assist us in operating our application and providing services to you, such as authentication, push notifications and hosting</li>
                 <li><strong>Legal Requirements:</strong> We may disclose your information if required by law or in response to valid legal requests</li>
                 <li><strong>Protection of Rights:</strong> We may share information to protect our rights, property, or safety, or that of our users</li>
               </ul>
@@ -144,7 +185,38 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                6. Google Authentication
+                6. The AI Assistant
+              </h2>
+              <div className="bg-warning/10 border border-warning/40 rounded-lg p-4 mb-4">
+                <p className="text-foreground leading-relaxed mb-4">
+                  <strong>The assistant can be wrong. Always double-check before you rely on it.</strong> It is an
+                  AI system and can misread a question, miss a class, or state a number confidently that is
+                  incorrect or out of date. Never use it as your only basis for a decision that matters — for
+                  example whether you can skip a class, whether you meet an attendance requirement, an exam or
+                  registration date, or anything you would tell the institute. Verify against your own attendance
+                  page, the official institute notice or the concerned office before acting.
+                </p>
+              </div>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Other things worth knowing about the assistant:
+              </p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-4 ml-4">
+                <li>It answers only from data inside this app; it is not a general-purpose chatbot and does not
+                  browse the internet</li>
+                <li>It can read and report other students' attendance, because that data is shared inside the app
+                  as described above</li>
+                <li>It can read and answer only; it can never mark, change or delete your attendance</li>
+                <li>Figures it quotes may be based on what students marked themselves rather than official
+                  institute records, and may be out of date</li>
+                <li>Where it reports placement statistics, campus contacts, calendars or alumni information, these
+                  come from information collected within the app and may contain errors or become outdated</li>
+                <li>We are not liable for any loss caused by relying on an answer from the assistant</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
+                7. Google Authentication
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 Our application uses Google OAuth for authentication. By signing in with Google, you authorize us to access certain information from your Google account. We only access the minimum information necessary to provide our services. Your use of Google's services is also governed by Google's Privacy Policy.
@@ -156,7 +228,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                7. Your Rights and Choices
+                8. Your Rights and Choices
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 You have the right to:
@@ -185,16 +257,21 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                8. Data Retention
+                9. Data Retention
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 We retain your personal information and attendance data for as long as your account is active or as needed to provide you with our services. If you delete your account, we will delete or anonymize your personal information, except where we are required to retain it for legal purposes.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Recent AI assistant messages used to continue a conversation are discarded automatically after a
+                short period. Records kept for quality monitoring and abuse prevention are retained for a limited
+                time and are not used to build a profile of you.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                9. Children's Privacy
+                10. Children's Privacy
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 Our application is intended for use by students and is restricted to users with institutional email addresses. We do not knowingly collect personal information from children under the age of 13. If you believe we have collected information from a child under 13, please contact us immediately.
@@ -203,7 +280,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                10. Changes to This Privacy Policy
+                11. Changes to This Privacy Policy
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
@@ -212,7 +289,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                11. Contact Us
+                12. Contact Us
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:
@@ -226,7 +303,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                12. Consent
+                13. Consent
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 By using Attendance IO, you consent to the collection and use of your information as described in this Privacy Policy. If you do not agree with this policy, please do not use our application.
