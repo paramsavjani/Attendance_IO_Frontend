@@ -35,9 +35,6 @@ export default function PrivacyPolicy() {
               Privacy Policy
             </h1>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Last updated: 23 September 2026
-          </p>
         </div>
 
         {/* Content */}
@@ -282,7 +279,7 @@ export default function PrivacyPolicy() {
                 11. Changes to This Privacy Policy
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
+                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
               </p>
             </section>
 
