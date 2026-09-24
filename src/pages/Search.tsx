@@ -12,7 +12,7 @@ import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { hexToHslLightened, cn } from "@/lib/utils";
 import { Capacitor } from "@capacitor/core";
@@ -103,7 +103,7 @@ export default function Search() {
       const endpoint = showAll
         ? `${API_CONFIG.ENDPOINTS.SEARCH_HISTORY}?all=true`
         : `${API_CONFIG.ENDPOINTS.SEARCH_HISTORY}?limit=5`;
-      const res = await fetch(endpoint, { credentials: "include" });
+      const res = await authenticatedFetch(endpoint, { credentials: "include" });
       if (res.ok) setSearchHistory(await res.json());
     } catch {
       // silent
@@ -127,7 +127,7 @@ export default function Search() {
       ];
     });
     try {
-      await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, {
+      await authenticatedFetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -141,7 +141,7 @@ export default function Search() {
   const deleteHistoryItem = async (id: string) => {
     setSearchHistory((prev) => prev.filter((h) => h.id !== id));
     try {
-      await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY_DELETE(id), {
+      await authenticatedFetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY_DELETE(id), {
         method: "DELETE",
         credentials: "include",
       });
@@ -154,7 +154,7 @@ export default function Search() {
   const clearAllHistory = async () => {
     setSearchHistory([]);
     try {
-      await fetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, {
+      await authenticatedFetch(API_CONFIG.ENDPOINTS.SEARCH_HISTORY, {
         method: "DELETE",
         credentials: "include",
       });
@@ -239,7 +239,7 @@ export default function Search() {
       setIsLoadingAttendance(true);
       try {
         const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(studentIdParam, attendanceSource);
-        const response = await fetch(url, { credentials: "include" });
+        const response = await authenticatedFetch(url, { credentials: "include" });
 
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
@@ -296,7 +296,7 @@ export default function Search() {
   useEffect(() => {
     const fetchCurrentSemester = async () => {
       try {
-        const response = await fetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.SEMESTER_CURRENT, {
           credentials: "include",
         });
         if (response.ok) setCurrentSemester(await response.json());
@@ -324,7 +324,7 @@ export default function Search() {
 
       setIsSearching(true);
       try {
-        const response = await fetch(
+        const response = await authenticatedFetch(
           `${API_CONFIG.ENDPOINTS.SEARCH_STUDENTS}?query=${encodeURIComponent(query)}`,
           { credentials: "include" }
         );
@@ -377,7 +377,7 @@ export default function Search() {
       setIsLoadingAttendance(true);
       try {
         const url = API_CONFIG.ENDPOINTS.STUDENT_ATTENDANCE(selectedStudent.id, attendanceSource);
-        const response = await fetch(url, { credentials: "include" });
+        const response = await authenticatedFetch(url, { credentials: "include" });
 
         if (response.ok) {
           const data: StudentAttendanceData = await response.json();
