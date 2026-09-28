@@ -8,9 +8,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Zap, Bell } from "lucide-react";
+import { Zap, Bell, X } from "lucide-react";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.attendanceio.app";
+const DISMISS_KEY = "app-download-popup-dismissed";
+
+function isPopupDismissed(): boolean {
+  try {
+    return localStorage.getItem(DISMISS_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function rememberDismissal(): void {
+  try {
+    localStorage.setItem(DISMISS_KEY, "true");
+  } catch {
+    /* storage unavailable - popup will show again next visit */
+  }
+}
 
 function isAndroidWebView(): boolean {
   const userAgent = navigator.userAgent || "";
@@ -52,7 +69,7 @@ export function AndroidWebViewBlock() {
   const [isAnimated, setIsAnimated] = useState(false);
 
   useEffect(() => {
-    if (isAndroidWebView()) {
+    if (isAndroidWebView() && !isPopupDismissed()) {
       setShowDialog(true);
       setTimeout(() => setIsAnimated(true), 50);
     }
@@ -62,10 +79,16 @@ export function AndroidWebViewBlock() {
     await openPlayStore();
   };
 
+  const handleDismiss = () => {
+    rememberDismissal();
+    setIsAnimated(false);
+    setShowDialog(false);
+  };
+
   if (!showDialog) return null;
 
   return (
-    <AlertDialog open={showDialog} onOpenChange={() => {}}>
+    <AlertDialog open={showDialog} onOpenChange={(open) => { if (!open) handleDismiss(); }}>
       <AlertDialogContent 
         className={`
           w-[calc(100%-2rem)] max-w-[360px] p-0 rounded-3xl border-0 
@@ -73,8 +96,18 @@ export function AndroidWebViewBlock() {
           transition-all duration-300 ease-out
           ${isAnimated ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
         `}
-        onEscapeKeyDown={(e) => e.preventDefault()}
       >
+        {/* Close */}
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label="Close"
+          className="absolute right-4 top-4 z-10 w-8 h-8 rounded-full bg-muted/70 text-muted-foreground
+            flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         {/* App Info Section */}
         <div className="p-6 pb-4">
           <div className="flex items-start gap-4">
@@ -159,7 +192,7 @@ export function AndroidWebViewBlock() {
           `}
         >
           <p className="text-sm font-medium text-foreground text-center">
-            You must use the app to access Attendance IO. Please download it from Google Play Store.
+            Get the app for the best Attendance IO experience, or keep going here on the website.
           </p>
         </div>
 
@@ -178,6 +211,18 @@ export function AndroidWebViewBlock() {
             <GooglePlayIcon />
             <span>Get it on Google Play</span>
           </AlertDialogAction>
+
+          <button
+            type="button"
+            onClick={handleDismiss}
+            className={`
+              w-full h-12 mt-3 rounded-2xl text-sm font-medium text-muted-foreground
+              transition-all duration-300 delay-300 hover:text-foreground hover:bg-muted/60
+              ${isAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
+            `}
+          >
+            Continue on website
+          </button>
         </div>
       </AlertDialogContent>
     </AlertDialog>
