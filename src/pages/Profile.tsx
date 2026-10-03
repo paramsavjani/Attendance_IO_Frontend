@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, Heart, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
 import packageJson from "../../package.json";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -526,9 +526,6 @@ export default function Profile() {
           onClick={() => setShowAbout(true)}
           className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/12 text-rose-400">
-            <Heart className="h-[18px] w-[18px]" />
-          </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[14px] font-semibold text-white">
               Made with <span className="text-rose-400">♥</span> by Param & Nidhi
