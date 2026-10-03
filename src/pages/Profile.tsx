@@ -524,8 +524,9 @@ export default function Profile() {
         <button
           type="button"
           onClick={() => setShowAbout(true)}
-          className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
+          className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-center transition-colors active:bg-white/[0.08] touch-manipulation"
         >
+          <span className="h-5 w-5 shrink-0" aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[14px] font-semibold text-white">
               Made with <span className="text-rose-400">♥</span> by Param & Nidhi
