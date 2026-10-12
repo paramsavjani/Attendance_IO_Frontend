@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
+import { fetchMyFeedback } from "@/lib/feedback";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
@@ -49,6 +50,8 @@ export default function Profile() {
   const [editingSleepHours, setEditingSleepHours] = useState<string>("");
   const [isSavingSleepDuration, setIsSavingSleepDuration] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(0);
+  const [feedbackUnread, setFeedbackUnread] = useState(0);
   const [feedbackType, setFeedbackType] = useState<'bug' | 'feedback' | 'suggestion'>('feedback');
   const [feedbackTitle, setFeedbackTitle] = useState("");
   const [feedbackDescription, setFeedbackDescription] = useState("");
@@ -308,6 +311,23 @@ export default function Profile() {
     }
   };
 
+  const loadMyFeedback = async () => {
+    const mine = await fetchMyFeedback();
+    setFeedbackSent(mine.items.length);
+    setFeedbackUnread(mine.unreadCount);
+  };
+
+  useEffect(() => {
+    void loadMyFeedback();
+  }, []);
+
+  const feedbackSummary =
+    feedbackUnread > 0
+      ? `${feedbackSent} sent · ${feedbackUnread} new ${feedbackUnread === 1 ? "reply" : "replies"}`
+      : feedbackSent > 0
+        ? `${feedbackSent} sent · tap to see replies`
+        : "Report a bug or send a suggestion";
+
   const handleSubmitFeedback = async () => {
     if (!feedbackTitle.trim() || !feedbackDescription.trim()) {
       toast.error("Please fill in all fields");
@@ -336,6 +356,7 @@ export default function Profile() {
 
       const result = await response.json();
       toast.success(result.message || "Thank you for your feedback!");
+      void loadMyFeedback();
       setShowFeedbackModal(false);
       setFeedbackTitle("");
       setFeedbackDescription("");
@@ -519,6 +540,29 @@ export default function Profile() {
             </button>
           </div>
         </div>
+
+        {/* Your feedback — the only place a student can see what they sent and what came back */}
+        <button
+          type="button"
+          onClick={() => navigate("/my-feedback")}
+          className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/12 text-sky-400">
+            <MessageSquare className="h-[18px] w-[18px]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[14px] font-semibold text-white">Your feedback</span>
+            <span className="mt-0.5 block truncate text-[11.5px] text-white/45">
+              {feedbackSummary}
+            </span>
+          </span>
+          {feedbackUnread > 0 && (
+            <span className="flex h-[20px] min-w-[20px] shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[11px] font-bold text-white">
+              {feedbackUnread}
+            </span>
+          )}
+          <ChevronRight className="h-5 w-5 shrink-0 text-white/25" />
+        </button>
 
         {/* Credit — opens About with links and the contributors (replaces the old Hall of Fame block) */}
         <button

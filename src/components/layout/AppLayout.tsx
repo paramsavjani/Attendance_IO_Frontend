@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { AssistantFab } from "@/components/assistant/AssistantFab";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Capacitor } from "@capacitor/core";
+import { fetchMyFeedback } from "@/lib/feedback";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -33,9 +34,21 @@ export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  /** Unread feedback replies, shown as a dot on the Profile tab so it is visible from any screen. */
+  const [feedbackUnread, setFeedbackUnread] = useState(0);
   const [dragProgress, setDragProgress] = useState(0);
   const startX = useRef(0);
   const startProgress = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    void fetchMyFeedback().then((mine) => {
+      if (active) setFeedbackUnread(mine.unreadCount);
+    });
+    return () => {
+      active = false;
+    };
+  }, [location.pathname]);
 
   const handleRefresh = async () => {
     // Small delay for visual feedback
@@ -244,6 +257,12 @@ export function AppLayout({ children }: AppLayoutProps) {
                 )}
                 aria-current={isActive ? "page" : undefined}
               >
+                {item.path === "/profile" && feedbackUnread > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute right-2.5 top-1.5 h-[7px] w-[7px] rounded-full bg-rose-500 ring-2 ring-background"
+                  />
+                )}
                 <item.icon
                   className={cn(
                     "h-[18px] w-[18px] shrink-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",

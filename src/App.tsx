@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import AppAnalyticsPage from "./pages/AppAnalyticsPage";
 import Search from "./pages/Search";
 import Analytics from "./pages/Analytics";
+import MyFeedback from "./pages/MyFeedback";
 import SubjectAnalysisDetail from "./pages/SubjectAnalysisDetail";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
 import Intro from "./pages/Intro";
@@ -30,6 +31,7 @@ import ErrorOldVersion from "./pages/ErrorOldVersion";
 import Assistant from "./pages/Assistant";
 import AssistantGuide from "./pages/AssistantGuide";
 import { ServerPopup } from "@/components/ServerPopup";
+import { FeedbackReplyDialog } from "@/components/FeedbackReplyDialog";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef, useState } from "react";
 import { API_CONFIG, checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
@@ -306,6 +308,7 @@ function AppRoutes() {
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
       {!isErrorPage && isAuthenticated && <ServerPopup />}
+      {!isErrorPage && isAuthenticated && <FeedbackReplyDialog />}
       <Routes>
         <Route
           path="/"
@@ -418,6 +421,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <Analytics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-feedback"
+            element={
+              <ProtectedRoute>
+                <MyFeedback />
               </ProtectedRoute>
             }
           />
