@@ -4,14 +4,14 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, Bug, Lightbulb, Send, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
 import packageJson from "../../package.json";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
 import { toast } from "sonner";
-import { fetchMyFeedback } from "@/lib/feedback";
+import { fetchMyFeedback, latestReply } from "@/lib/feedback";
+import { FeedbackComposer } from "@/components/feedback/FeedbackComposer";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
@@ -52,10 +52,7 @@ export default function Profile() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(0);
   const [feedbackUnread, setFeedbackUnread] = useState(0);
-  const [feedbackType, setFeedbackType] = useState<'bug' | 'feedback' | 'suggestion'>('feedback');
-  const [feedbackTitle, setFeedbackTitle] = useState("");
-  const [feedbackDescription, setFeedbackDescription] = useState("");
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackPreview, setFeedbackPreview] = useState<string | null>(null);
   const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
   const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
@@ -315,6 +312,8 @@ export default function Profile() {
     const mine = await fetchMyFeedback();
     setFeedbackSent(mine.items.length);
     setFeedbackUnread(mine.unreadCount);
+    const reply = mine.latestUnread ? latestReply(mine.latestUnread) : undefined;
+    setFeedbackPreview(reply ? reply.body.split("\n")[0] : null);
   };
 
   useEffect(() => {
@@ -322,58 +321,13 @@ export default function Profile() {
   }, []);
 
   const feedbackSummary =
-    feedbackUnread > 0
+    feedbackUnread > 0 && feedbackPreview
+      ? `Param: ${feedbackPreview}`
+      : feedbackUnread > 0
       ? `${feedbackSent} sent · ${feedbackUnread} new ${feedbackUnread === 1 ? "reply" : "replies"}`
       : feedbackSent > 0
         ? `${feedbackSent} sent · tap to see replies`
         : "Report a bug or send a suggestion";
-
-  const handleSubmitFeedback = async () => {
-    if (!feedbackTitle.trim() || !feedbackDescription.trim()) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
-    setIsSubmittingFeedback(true);
-
-    try {
-      const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.SUBMIT_FEEDBACK, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: feedbackType,
-          title: feedbackTitle.trim(),
-          description: feedbackDescription.trim(),
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Failed to submit feedback' }));
-        throw new Error(error.message || 'Failed to submit feedback');
-      }
-
-      const result = await response.json();
-      toast.success(result.message || "Thank you for your feedback!");
-      void loadMyFeedback();
-      setShowFeedbackModal(false);
-      setFeedbackTitle("");
-      setFeedbackDescription("");
-      setFeedbackType('feedback');
-    } catch (error: any) {
-      console.error('Error submitting feedback:', error);
-      toast.error(error.message || 'Failed to submit feedback');
-    } finally {
-      setIsSubmittingFeedback(false);
-    }
-  };
-
-  const feedbackTypes = [
-    { id: 'bug' as const, label: 'Bug', icon: Bug, color: 'text-red-500' },
-    { id: 'feedback' as const, label: 'Feedback', icon: MessageSquare, color: 'text-blue-500' },
-    { id: 'suggestion' as const, label: 'Suggestion', icon: Lightbulb, color: 'text-yellow-500' },
-  ];
 
   /** Simple bordered actions — one flat list: Subjects + 8 grid buttons */
   const profileGridBtn =
@@ -547,7 +501,7 @@ export default function Profile() {
           onClick={() => navigate("/my-feedback")}
           className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/12 text-sky-400">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400">
             <MessageSquare className="h-[18px] w-[18px]" />
           </span>
           <span className="min-w-0 flex-1">
@@ -1041,92 +995,11 @@ export default function Profile() {
       </Dialog>
 
       {/* Feedback Modal */}
-      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
-        <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-0 flex flex-col">
-          <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 border-b border-border">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-primary" />
-                Send Feedback
-              </DialogTitle>
-            </DialogHeader>
-          </div>
-
-          <div className="p-4 space-y-4">
-            {/* Feedback Type Selector */}
-            <div className="flex gap-2">
-              {feedbackTypes.map((type) => (
-                <button
-                  key={type.id}
-                  onClick={() => setFeedbackType(type.id)}
-                  className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${feedbackType === type.id
-                    ? 'border-primary bg-primary/10 shadow-sm'
-                    : 'border-border hover:bg-muted/50'
-                    }`}
-                >
-                  <type.icon className={`w-5 h-5 ${feedbackType === type.id ? type.color : 'text-muted-foreground'}`} />
-                  <span className={`text-xs font-medium ${feedbackType === type.id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    {type.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Title Input */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                placeholder="Brief summary..."
-                value={feedbackTitle}
-                onChange={(e) => setFeedbackTitle(e.target.value)}
-                maxLength={100}
-                disabled={isSubmittingFeedback}
-              />
-              <p className="text-xs text-muted-foreground text-right">{feedbackTitle.length}/100</p>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Description</label>
-              <Textarea
-                placeholder="Describe in detail..."
-                value={feedbackDescription}
-                onChange={(e) => setFeedbackDescription(e.target.value)}
-                maxLength={500}
-                rows={4}
-                disabled={isSubmittingFeedback}
-                className="resize-none"
-              />
-              <p className="text-xs text-muted-foreground text-right">{feedbackDescription.length}/500</p>
-            </div>
-          </div>
-
-          <div className="p-4 pt-0 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowFeedbackModal(false)}
-              disabled={isSubmittingFeedback}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitFeedback}
-              disabled={isSubmittingFeedback || !feedbackTitle.trim() || !feedbackDescription.trim()}
-              className="flex-1 gap-2"
-            >
-              {isSubmittingFeedback ? (
-                <>Sending...</>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Submit
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FeedbackComposer
+        open={showFeedbackModal}
+        onOpenChange={setShowFeedbackModal}
+        onSent={() => void loadMyFeedback()}
+      />
 
     </div>
 
