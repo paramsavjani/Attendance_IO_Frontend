@@ -40,6 +40,8 @@ export const API_CONFIG = {
     CLASSES_START_DATE: `${API_BASE_URL}/api/config/classes-start-date`,
     CLASSES_END_DATE: `${API_BASE_URL}/api/config/classes-end-date`,
     SUBMIT_FEEDBACK: `${API_BASE_URL}/api/feedback`,
+    MY_FEEDBACK: `${API_BASE_URL}/api/feedback/mine`,
+    FEEDBACK_SEEN: (feedbackId: number) => `${API_BASE_URL}/api/feedback/${feedbackId}/seen`,
     ANALYTICS: `${API_BASE_URL}/api/analytics`,
     ANALYTICS_APP: `${API_BASE_URL}/api/analytics/app`,
     ANALYTICS_SEMESTER: (semesterId: string) => `${API_BASE_URL}/api/analytics/semester/${semesterId}`,
