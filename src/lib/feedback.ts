@@ -1,7 +1,5 @@
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 
-export type FeedbackStatus = "PENDING" | "COMPLETED";
-
 export interface FeedbackReply {
   id: number;
   body: string;
@@ -14,7 +12,6 @@ export interface MyFeedbackItem {
   type: "BUG" | "FEEDBACK" | "SUGGESTION";
   title: string;
   description: string;
-  status: FeedbackStatus;
   createdAt: string;
   replies: FeedbackReply[];
   hasUnreadReply: boolean;
