@@ -76,7 +76,7 @@ export function FeedbackComposer({
     <Dialog open={open} onOpenChange={(v) => !sending && onOpenChange(v)}>
       <DialogContent className="max-h-[92svh] max-w-[92vw] overflow-y-auto rounded-[28px] border border-white/10 bg-card p-0 sm:max-w-md [&>button]:hidden">
         <div className="px-5 pt-6">
-          <DialogTitle className="text-[19px] font-bold tracking-tight">Send feedback</DialogTitle>
+          <DialogTitle className="text-[19px] font-semibold tracking-tight">Send feedback</DialogTitle>
           <DialogDescription className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
             It goes straight to the person who builds this app, and the reply shows up in Your feedback.
           </DialogDescription>

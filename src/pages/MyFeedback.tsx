@@ -1,72 +1,144 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { ChevronLeft, SquarePen } from "lucide-react";
 import { FeedbackComposer } from "@/components/feedback/FeedbackComposer";
-import { FeedbackThreadList } from "@/components/feedback/FeedbackThreadList";
-import { fetchMyFeedback, markFeedbackSeen, type MyFeedbackItem } from "@/lib/feedback";
+import { FeedbackInbox } from "@/components/feedback/FeedbackInbox";
+import { FeedbackThread } from "@/components/feedback/FeedbackThread";
+import { kindOf } from "@/components/feedback/feedbackKinds";
+import {
+  FEEDBACK_READ_EVENT,
+  fetchMyFeedback,
+  formatFeedbackDate,
+  markFeedbackSeen,
+  type MyFeedbackItem,
+} from "@/lib/feedback";
 
+/**
+ * /my-feedback is the inbox; /my-feedback/:id is one conversation. A thread is marked read when
+ * it is opened, not when the inbox is, so the unread dot means what it does in any messages app.
+ */
 export default function MyFeedback() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const focusId = Number(params.get("focus")) || null;
+  const location = useLocation();
+  const { id } = useParams();
+  const threadId = id ? Number(id) : null;
 
   const [items, setItems] = useState<MyFeedbackItem[]>([]);
-  const [newIds, setNewIds] = useState<ReadonlySet<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [composing, setComposing] = useState(false);
+  const [newReplyIn, setNewReplyIn] = useState<number | null>(null);
+  const marked = useRef<Set<number>>(new Set());
 
-  const load = useCallback(async (markRead: boolean) => {
+  const load = useCallback(async () => {
     const mine = await fetchMyFeedback();
     setItems(mine.items);
     setLoading(false);
-    if (!markRead) return;
-    // Remember which threads were new *before* clearing them, so they stay highlighted while
-    // the student is looking at them, then tell the server they have been read.
-    const unread = mine.items.filter((i) => i.hasUnreadReply);
-    setNewIds(new Set(unread.map((i) => i.id)));
-    await Promise.all(unread.map((i) => markFeedbackSeen(i.id)));
   }, []);
 
   useEffect(() => {
-    void load(true);
+    void load();
   }, [load]);
 
+  const thread = threadId ? items.find((i) => i.id === threadId) ?? null : null;
+
+  // Opening a thread reads it. Capture "was new" first so the reply can still ease in.
+  useEffect(() => {
+    if (!thread || marked.current.has(thread.id)) return;
+    marked.current.add(thread.id);
+    if (thread.hasUnreadReply) {
+      setNewReplyIn(thread.id);
+      void markFeedbackSeen(thread.id).then(() => {
+        setItems((prev) => prev.map((i) => (i.id === thread.id ? { ...i, hasUnreadReply: false } : i)));
+        window.dispatchEvent(new Event(FEEDBACK_READ_EVENT));
+      });
+    }
+  }, [thread]);
+
+  const fromInbox = (location.state as { fromInbox?: boolean } | null)?.fromInbox === true;
+  const back = () => {
+    if (threadId) {
+      if (fromInbox) navigate(-1);
+      else navigate("/my-feedback", { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const afterSend = () => {
+    void load();
+    if (threadId) navigate("/my-feedback", { replace: true });
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/[0.06] bg-background/95 px-4 py-3 backdrop-blur">
+    <div className="flex flex-col gap-4 pb-4">
+      <div className="flex items-start gap-3">
         <button
           type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05] active:bg-white/[0.1]"
+          onClick={back}
+          aria-label={threadId ? "Back to your feedback" : "Back"}
+          className="shrink-0 rounded-xl border border-border bg-card p-2 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         >
-          <ArrowLeft className="h-[18px] w-[18px]" />
+          <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-[16px] font-semibold leading-tight">Your feedback</h1>
-          <p className="text-[11.5px] text-white/45">Replies from the person who builds this app</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setComposing(true)}
-          className="flex h-9 items-center gap-1.5 rounded-xl bg-primary/15 px-3 text-[12.5px] font-semibold text-primary ring-1 ring-primary/30 active:bg-primary/25"
-        >
-          <Plus className="h-4 w-4" />
-          New
-        </button>
+
+        {threadId ? (
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h1 className="line-clamp-2 text-[17px] font-semibold leading-snug">
+              {thread?.title ?? (loading ? "" : "Feedback")}
+            </h1>
+            {thread && (
+              <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                {kindOf(thread.type).noun}, sent {formatFeedbackDate(thread.createdAt)}
+              </p>
+            )}
+          </div>
+        ) : (
+          <>
+            <h1 className="min-w-0 flex-1 pt-1 text-xl font-bold leading-tight">Your feedback</h1>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setComposing(true)}
+                aria-label="Send feedback"
+                className="shrink-0 rounded-xl border border-border bg-card p-2 text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              >
+                <SquarePen className="h-5 w-5" />
+              </button>
+            )}
+          </>
+        )}
       </div>
 
-      <div className="px-4 pt-3.5">
-        <FeedbackThreadList
-          items={items}
-          newIds={newIds}
-          focusId={focusId}
-          loading={loading}
-          onCompose={() => setComposing(true)}
-        />
-      </div>
+      {threadId ? (
+        loading ? null : thread ? (
+          <FeedbackThread item={thread} isNew={newReplyIn === thread.id} onCompose={() => setComposing(true)} />
+        ) : (
+          <div className="rounded-2xl border border-white/[0.06] bg-card px-5 py-8 text-center">
+            <p className="text-[14px] font-medium">This feedback isn't available</p>
+            <button
+              type="button"
+              onClick={() => navigate("/my-feedback", { replace: true })}
+              className="mt-4 min-h-[42px] rounded-xl border border-white/10 px-4 text-[13.5px] font-medium active:bg-white/[0.05]"
+            >
+              See all your feedback
+            </button>
+          </div>
+        )
+      ) : (
+        <>
+          <p className="-mt-1 text-[13px] leading-relaxed text-muted-foreground">
+            Param reads every message and replies here.
+          </p>
+          <FeedbackInbox
+            items={items}
+            loading={loading}
+            onOpen={(openId) => navigate(`/my-feedback/${openId}`, { state: { fromInbox: true } })}
+            onCompose={() => setComposing(true)}
+          />
+        </>
+      )}
 
-      <FeedbackComposer open={composing} onOpenChange={setComposing} onSent={() => void load(false)} />
+      <FeedbackComposer open={composing} onOpenChange={setComposing} onSent={afterSend} />
     </div>
   );
 }

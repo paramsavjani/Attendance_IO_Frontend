@@ -433,6 +433,14 @@ function AppRoutes() {
             }
           />
           <Route
+            path="/my-feedback/:id"
+            element={
+              <ProtectedRoute>
+                <MyFeedback />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/subject-analysis/:subjectCode"
             element={
               <ProtectedRoute>

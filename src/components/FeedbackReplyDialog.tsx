@@ -74,8 +74,8 @@ export function FeedbackReplyDialog() {
 
   function read() {
     setOpen(false);
-    // The feedback screen marks it seen itself, after it has captured it as "new".
-    navigate(`/my-feedback?focus=${item!.id}`);
+    // The thread marks it read itself, after capturing it as new so the reply can ease in.
+    navigate(`/my-feedback/${item!.id}`);
   }
 
   return <FeedbackReplyCard item={item} others={others} open={open} onRead={read} onLater={later} />;
