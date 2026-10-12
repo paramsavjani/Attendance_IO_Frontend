@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, SquarePen } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { FeedbackComposer } from "@/components/feedback/FeedbackComposer";
 import { FeedbackInbox } from "@/components/feedback/FeedbackInbox";
 import { FeedbackThread } from "@/components/feedback/FeedbackThread";
 import { kindOf } from "@/components/feedback/feedbackKinds";
+import { cn } from "@/lib/utils";
 import {
   FEEDBACK_READ_EVENT,
   fetchMyFeedback,
@@ -69,9 +70,18 @@ export default function MyFeedback() {
     if (threadId) navigate("/my-feedback", { replace: true });
   };
 
+  const unread = items.filter((i) => i.hasUnreadReply).length;
+  const status = loading
+    ? "\u00a0"
+    : unread > 0
+      ? `${unread} new ${unread === 1 ? "reply" : "replies"}`
+      : items.length > 0
+        ? `${items.length} sent`
+        : "Bugs, ideas, and the replies to them";
+
   return (
-    <div className="flex flex-col gap-4 pb-4">
-      <div className="flex items-start gap-3">
+    <div className="flex flex-1 flex-col gap-4 pb-4">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={back}
@@ -82,30 +92,24 @@ export default function MyFeedback() {
         </button>
 
         {threadId ? (
-          <div className="min-w-0 flex-1 pt-0.5">
-            <h1 className="line-clamp-2 text-[17px] font-semibold leading-snug">
-              {thread?.title ?? (loading ? "" : "Feedback")}
-            </h1>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             {thread && (
-              <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-                {kindOf(thread.type).noun}, sent {formatFeedbackDate(thread.createdAt)}
-              </p>
+              <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", kindOf(thread.type).tile)}>
+                <ThreadIcon type={thread.type} />
+              </span>
             )}
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-bold leading-tight">{thread ? kindOf(thread.type).noun : "Feedback"}</h1>
+              {thread && (
+                <p className="text-xs text-muted-foreground">Sent {formatFeedbackDate(thread.createdAt)}</p>
+              )}
+            </div>
           </div>
         ) : (
-          <>
-            <h1 className="min-w-0 flex-1 pt-1 text-xl font-bold leading-tight">Your feedback</h1>
-            {items.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setComposing(true)}
-                aria-label="Send feedback"
-                className="shrink-0 rounded-xl border border-border bg-card p-2 text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-              >
-                <SquarePen className="h-5 w-5" />
-              </button>
-            )}
-          </>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold leading-tight">Your feedback</h1>
+            <p className={cn("text-xs", unread > 0 ? "font-medium text-primary" : "text-muted-foreground")}>{status}</p>
+          </div>
         )}
       </div>
 
@@ -113,7 +117,7 @@ export default function MyFeedback() {
         loading ? null : thread ? (
           <FeedbackThread item={thread} isNew={newReplyIn === thread.id} onCompose={() => setComposing(true)} />
         ) : (
-          <div className="rounded-2xl border border-white/[0.06] bg-card px-5 py-8 text-center">
+          <div className="rounded-2xl border border-border bg-card px-5 py-8 text-center">
             <p className="text-[14px] font-medium">This feedback isn't available</p>
             <button
               type="button"
@@ -125,20 +129,20 @@ export default function MyFeedback() {
           </div>
         )
       ) : (
-        <>
-          <p className="-mt-1 text-[13px] leading-relaxed text-muted-foreground">
-            Param reads every message and replies here.
-          </p>
-          <FeedbackInbox
-            items={items}
-            loading={loading}
-            onOpen={(openId) => navigate(`/my-feedback/${openId}`, { state: { fromInbox: true } })}
-            onCompose={() => setComposing(true)}
-          />
-        </>
+        <FeedbackInbox
+          items={items}
+          loading={loading}
+          onOpen={(openId) => navigate(`/my-feedback/${openId}`, { state: { fromInbox: true } })}
+          onCompose={() => setComposing(true)}
+        />
       )}
 
       <FeedbackComposer open={composing} onOpenChange={setComposing} onSent={afterSend} />
     </div>
   );
+}
+
+function ThreadIcon({ type }: { type: string }) {
+  const Icon = kindOf(type).icon;
+  return <Icon className="h-4 w-4" />;
 }

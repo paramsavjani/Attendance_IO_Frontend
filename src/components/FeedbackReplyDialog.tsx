@@ -114,11 +114,11 @@ export function FeedbackReplyCard({
 
         <div className="flex flex-col gap-1.5 px-3.5 pt-1">
           <div className="rounded-lg bg-[#151515] px-3 py-2.5 text-left">
-            <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#898781]">You asked</p>
+            <p className="text-[11px] font-medium text-[#898781]">You asked</p>
             <p className="mt-1 text-[12.5px] font-medium leading-snug">{item.title}</p>
           </div>
           <div className="rounded-lg bg-[#032042] px-3 py-2.5 text-left">
-            <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#6da7ec]">Param · owner</p>
+            <p className="text-[11px] font-medium text-[#6da7ec]">Param replied</p>
             <p className="mt-1 line-clamp-5 whitespace-pre-wrap text-[12.5px] leading-[1.5] text-[#f0efec]">{reply.body}</p>
           </div>
         </div>

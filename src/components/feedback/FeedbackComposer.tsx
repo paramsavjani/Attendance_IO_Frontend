@@ -115,7 +115,7 @@ export function FeedbackComposer({
               placeholder={placeholder.title}
               className="h-11 rounded-xl border-white/10 bg-white/[0.03] placeholder:text-white/25"
             />
-            <p className="mt-1 text-right text-[10.5px] text-white/30">{title.length}/100</p>
+            {title.length > 80 && <p className="mt-1 text-right text-[10.5px] tabular-nums text-white/40">{title.length}/100</p>}
           </div>
           <div>
             <Textarea
@@ -127,7 +127,7 @@ export function FeedbackComposer({
               placeholder={placeholder.body}
               className="resize-none rounded-xl border-white/10 bg-white/[0.03] placeholder:text-white/25"
             />
-            <p className="mt-1 text-right text-[10.5px] text-white/30">{body.length}/500</p>
+            {body.length > 400 && <p className="mt-1 text-right text-[10.5px] tabular-nums text-white/40">{body.length}/500</p>}
           </div>
         </div>
 
