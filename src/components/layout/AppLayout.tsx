@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { AssistantFab } from "@/components/assistant/AssistantFab";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Capacitor } from "@capacitor/core";
-import { fetchMyFeedback } from "@/lib/feedback";
+import { FEEDBACK_READ_EVENT, fetchMyFeedback } from "@/lib/feedback";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -42,11 +42,15 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   useEffect(() => {
     let active = true;
-    void fetchMyFeedback().then((mine) => {
-      if (active) setFeedbackUnread(mine.unreadCount);
-    });
+    const recount = () =>
+      void fetchMyFeedback().then((mine) => {
+        if (active) setFeedbackUnread(mine.unreadCount);
+      });
+    recount();
+    window.addEventListener(FEEDBACK_READ_EVENT, recount);
     return () => {
       active = false;
+      window.removeEventListener(FEEDBACK_READ_EVENT, recount);
     };
   }, [location.pathname]);
 
@@ -76,6 +80,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isActiveRoute = (path: string) => {
     if (location.pathname === path) return true;
 
+    if (path === "/profile" && location.pathname.startsWith("/my-feedback")) {
+      return true;
+    }
     if (path === "/analytics" && location.pathname.startsWith("/subject-analysis")) {
       return true;
     }

@@ -23,6 +23,9 @@ export interface MyFeedback {
   latestUnread: MyFeedbackItem | null;
 }
 
+/** Fired after a thread is marked read, so badges elsewhere can recount without a navigation. */
+export const FEEDBACK_READ_EVENT = "aio:feedback-read";
+
 const EMPTY: MyFeedback = { items: [], unreadCount: 0, latestUnread: null };
 
 /**
@@ -107,4 +110,29 @@ export function answeredIn(item: MyFeedbackItem): string | null {
 
 export function latestReply(item: MyFeedbackItem): FeedbackReply | undefined {
   return item.replies[item.replies.length - 1];
+}
+
+/** How long after [from] something happened, phrased for a chat timestamp: "2 days later". */
+export function laterThan(from: string, to: string): string | null {
+  const a = parseServerTime(from);
+  const b = parseServerTime(to);
+  if (!a || !b) return null;
+  const hours = (b.getTime() - a.getTime()) / 3_600_000;
+  if (hours < 1) return "within the hour";
+  if (hours < 24) {
+    const h = Math.round(hours);
+    return `${h} ${h === 1 ? "hour" : "hours"} later`;
+  }
+  const days = Math.round(hours / 24);
+  return days === 1 ? "a day later" : `${days} days later`;
+}
+
+/** Unread replies first, then newest first — the order an inbox is read in. */
+export function inboxOrder(items: MyFeedbackItem[]): MyFeedbackItem[] {
+  return [...items].sort((a, b) => {
+    if (a.hasUnreadReply !== b.hasUnreadReply) return a.hasUnreadReply ? -1 : 1;
+    const ta = parseServerTime(a.createdAt)?.getTime() ?? 0;
+    const tb = parseServerTime(b.createdAt)?.getTime() ?? 0;
+    return tb - ta;
+  });
 }
