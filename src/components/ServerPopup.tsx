@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import {
   Sparkles, BarChart3, ShieldCheck, Bell, Megaphone, ArrowRight,
   Zap, Gift, Search, Star, Rocket, PartyPopper, Info, CheckCircle, Github,
@@ -445,76 +444,70 @@ export function ServerPopup() {
     );
   }
 
-  const ActionIcon = popup.primaryAction?.icon ? getIcon(popup.primaryAction.icon) : ArrowRight;
-  const gemini = popup.accent === "gemini";
+  const PrimaryIcon = popup.primaryAction?.icon ? getIcon(popup.primaryAction.icon) : ArrowRight;
+  const SecondaryIcon = popup.secondaryAction?.icon ? getIcon(popup.secondaryAction.icon) : null;
   const stats = popup.stats?.filter((s) => s.value && s.label) ?? [];
   // Everything below the hero fades up in sequence; stagger index keeps the timing in one place.
   let stagger = 0;
-  const rise = (): React.CSSProperties => ({ transitionDelay: `${140 + stagger++ * 70}ms` });
-  const riseClass = cn("transition-all duration-300 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0");
+  const rise = (): React.CSSProperties => ({ transitionDelay: `${120 + stagger++ * 60}ms` });
+  const riseClass = cn("transition-all duration-300 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-1.5 opacity-0");
 
+  /*
+   * Flat card, matched to the approved preview (institute_attendance_popup_preview.html): one
+   * surface, tinted icon disc, tiles and feature rows on the slightly darker inner surface, a
+   * light primary button, an outlined secondary and a plain-text dismiss. Colours are that
+   * preview's dark palette; the app is dark-only, so there is no light variant to keep in step.
+   */
   return (
     <Dialog open={open} onOpenChange={(v) => !v && (showDismiss ? close() : undefined)}>
       <DialogContent
         className={cn(
-          "max-w-[92vw] sm:max-w-md",
-          "rounded-[28px] p-0 overflow-hidden border border-white/10 bg-card shadow-[0_24px_80px_-24px_rgba(0,0,0,0.8)]",
+          "w-[92vw] max-w-[360px] gap-0 p-0",
+          "rounded-[20px] border-[0.5px] border-white/10 bg-[#1a1a19] text-[#f0efec] shadow-none",
           "max-h-[92svh] overflow-y-auto", // four features + stats can outgrow a small phone
           "[&>button]:hidden",
           "transition-all duration-300 ease-out",
-          isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          isVisible ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"
         )}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           if (!showDismiss) e.preventDefault();
         }}
       >
-        {/* Hero: colour wash + centred icon tile + title */}
-        <div className="relative overflow-hidden px-6 pt-7 pb-4 text-center">
-          <div
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute -top-24 left-1/2 h-56 w-80 -translate-x-1/2 rounded-full blur-3xl",
-              gemini
-                ? "bg-[radial-gradient(closest-side,rgb(66_133_244/0.38),rgb(161_66_244/0.22)_50%,rgb(234_67_53/0.08)_75%,transparent)]"
-                : "bg-primary/25"
-            )}
-          />
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-
+        {/* Hero */}
+        <div className="px-5 pb-3 pt-5 text-center">
           {popup.badge && (
-            <div className={cn("relative mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90", riseClass)} style={rise()}>
-              <span className="h-1.5 w-1.5 rounded-full bg-[#34a853] shadow-[0_0_8px_#34a853]" />
+            <div
+              className={cn(
+                "mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#151515] px-2.5 py-1 text-[11px] font-medium text-[#c3c2b7]",
+                riseClass
+              )}
+              style={rise()}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#6da7ec]" />
               {popup.badge}
             </div>
           )}
 
-          <div className="relative mx-auto mb-4 h-[84px] w-[84px]">
-            {gemini && (
-              <div className="gemini-border gemini-ring is-thinking absolute inset-0">
-                <div className="gemini-inner h-full w-full" />
-              </div>
-            )}
-            <div
-              ref={heroRef}
-              className={cn(
-                "absolute inset-[3px] flex items-center justify-center rounded-full",
-                gemini ? "bg-card" : "bg-primary/15 ring-1 ring-primary/25"
-              )}
-            >
-              <PopupIcon
-                name={popup.icon}
-                gradientId={`popup-spark-${popup.id}`}
-                className={cn("h-10 w-10", !gemini && "text-primary")}
-              />
-            </div>
+          <div
+            ref={heroRef}
+            className="mx-auto mb-3 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#032042]"
+          >
+            <PopupIcon
+              name={popup.icon}
+              gradientId={`popup-spark-${popup.id}`}
+              className="h-7 w-7 text-[#6da7ec]"
+            />
           </div>
 
-          <DialogTitle className={cn("relative text-[21px] font-bold leading-tight tracking-tight", riseClass)} style={rise()}>
+          <DialogTitle className={cn("text-[18px] font-medium leading-tight text-[#f0efec]", riseClass)} style={rise()}>
             {popup.title}
           </DialogTitle>
           {popup.subtitle ? (
-            <DialogDescription className={cn("relative mx-auto mt-1.5 max-w-[32ch] text-[13px] leading-relaxed text-muted-foreground", riseClass)} style={rise()}>
+            <DialogDescription
+              className={cn("mx-auto mt-1.5 max-w-[29ch] text-[12.5px] leading-[1.5] text-[#c3c2b7]", riseClass)}
+              style={rise()}
+            >
               {popup.subtitle}
             </DialogDescription>
           ) : (
@@ -522,13 +515,14 @@ export function ServerPopup() {
           )}
 
           {stats.length > 0 && (
-            <div className={cn("relative mx-auto mt-4 grid max-w-xs gap-2", stats.length === 1 ? "grid-cols-1" : "grid-cols-2", riseClass)} style={rise()}>
+            <div
+              className={cn("mt-3.5 grid gap-2", stats.length === 1 ? "grid-cols-1" : "grid-cols-2", riseClass)}
+              style={rise()}
+            >
               {stats.map((st) => (
-                <div key={st.label} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
-                  <div className={cn("text-[22px] font-bold leading-none tracking-tight tabular-nums", gemini && "bg-gradient-to-r from-[#8ab4f8] via-[#c58af9] to-[#f28b82] bg-clip-text text-transparent")}>
-                    {st.value}
-                  </div>
-                  <div className="mt-1 text-[11px] font-medium text-muted-foreground">{st.label}</div>
+                <div key={st.label} className="rounded-lg bg-[#151515] px-2.5 py-2.5">
+                  <div className="text-[20px] font-medium leading-none tabular-nums text-[#6da7ec]">{st.value}</div>
+                  <div className="mt-1 text-[11px] text-[#c3c2b7]">{st.label}</div>
                 </div>
               ))}
             </div>
@@ -537,19 +531,21 @@ export function ServerPopup() {
 
         {/* Features */}
         {popup.features.length > 0 && (
-          <div className="space-y-2 px-5 pb-1 pt-1">
+          <div className="flex flex-col gap-1.5 px-3.5 pb-1 pt-1">
             {popup.features.map((feature, idx) => (
               <div
                 key={idx}
-                className={cn("flex items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3", riseClass)}
+                className={cn("flex items-start gap-2.5 rounded-lg bg-[#151515] px-3 py-2.5", riseClass)}
                 style={rise()}
               >
-                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/20">
-                  <PopupIcon name={feature.icon} gradientId={`popup-feature-${popup.id}-${idx}`} className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-[13.5px] font-semibold leading-snug">{feature.title}</h3>
-                  <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{feature.description}</p>
+                <PopupIcon
+                  name={feature.icon}
+                  gradientId={`popup-feature-${popup.id}-${idx}`}
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#6da7ec]"
+                />
+                <div className="min-w-0 flex-1 text-left">
+                  <h3 className="text-[12.5px] font-medium leading-snug text-[#f0efec]">{feature.title}</h3>
+                  <p className="mt-px text-[11.5px] leading-[1.45] text-[#c3c2b7]">{feature.description}</p>
                 </div>
               </div>
             ))}
@@ -557,29 +553,35 @@ export function ServerPopup() {
         )}
 
         {/* Actions */}
-        <div className={cn("flex flex-col gap-1.5 px-5 pb-5 pt-4", riseClass)} style={rise()}>
+        <div className={cn("flex flex-col gap-1.5 p-3.5", riseClass)} style={rise()}>
           {popup.primaryAction && (
-            <Button
-              className={cn(
-                "h-12 w-full gap-2 rounded-2xl text-[15px] font-semibold",
-                "transition-transform duration-150 active:scale-[0.98]",
-                gemini &&
-                  "border-0 bg-[linear-gradient(135deg,hsl(234_89%_62%),hsl(262_83%_60%)_60%,hsl(292_84%_58%))] text-white shadow-[0_10px_30px_-10px_hsl(262_83%_60%/0.9)] hover:opacity-95"
-              )}
+            <button
+              type="button"
               onClick={handlePrimary}
+              className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg bg-[#f0efec] text-[13px] font-medium text-[#0b0b0b] transition-transform duration-150 active:scale-[0.98]"
             >
+              <PrimaryIcon className="h-[15px] w-[15px]" />
               {popup.primaryAction.label}
-              <ActionIcon className="h-4 w-4" />
-            </Button>
+            </button>
+          )}
+          {popup.secondaryAction && (
+            <button
+              type="button"
+              onClick={handleSecondary}
+              className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-white/20 text-[13px] text-[#f0efec] transition-colors active:bg-white/[0.05]"
+            >
+              {SecondaryIcon && <SecondaryIcon className="h-[15px] w-[15px]" />}
+              {popup.secondaryAction.label}
+            </button>
           )}
           {showDismiss && (
-            <Button
-              variant="ghost"
-              className="h-9 w-full rounded-xl text-xs text-muted-foreground hover:text-foreground"
+            <button
+              type="button"
               onClick={close}
+              className="min-h-[36px] w-full text-center text-[12px] text-[#898781] transition-colors active:text-[#c3c2b7]"
             >
-              {popup.dismissLabel}
-            </Button>
+              {popup.dismissLabel || "Later"}
+            </button>
           )}
         </div>
       </DialogContent>
