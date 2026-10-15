@@ -53,6 +53,44 @@ export interface StreamAgentChatOptions {
 
 const AGENT_BASE = `${API_CONFIG.BASE_URL}/api/agent`;
 
+/** The paid-plan question the server attaches to the daily-limit reply. */
+export interface AgentSubscriptionOffer {
+  priceRupees: number;
+  benefits: string[];
+  question: string;
+}
+
+/**
+ * The daily limit (HTTP 429). Its message is a normal reply to show in the chat, not a failure —
+ * and when [offer] is set it asks whether the student would buy the AI plan.
+ */
+export class AgentLimitError extends Error {
+  constructor(
+    message: string,
+    readonly offer?: AgentSubscriptionOffer,
+  ) {
+    super(message);
+    this.name = "AgentLimitError";
+  }
+}
+
+/** Records the Yes/No answer to the paid-plan question; resolves to the thank-you line to show. */
+export async function answerSubscriptionOffer(interested: boolean): Promise<string> {
+  const token = getToken();
+  const response = await fetch(`${AGENT_BASE}/subscription-interest`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ interested }),
+  });
+  if (!response.ok) throw new Error("Couldn't save your answer. Please try again.");
+  const body = await response.json();
+  return body?.message ?? "Thanks, noted!";
+}
+
 function parseSseBlock(block: string): AgentStreamEvent | null {
   const data = block
     .split("\n")
@@ -89,12 +127,15 @@ export async function streamAgentChat({ message, conversationId, onEvent, signal
       response.status === 429
         ? "You've used all your messages for today. Come back after 12 midnight for a fresh set."
         : `${response.status} ${response.statusText}`;
+    let offer: AgentSubscriptionOffer | undefined;
     try {
       const body = await response.json();
       detail = body?.message || body?.error || detail;
+      offer = body?.subscriptionOffer ?? undefined;
     } catch {
       /* non-JSON error body */
     }
+    if (response.status === 429) throw new AgentLimitError(detail, offer);
     throw new Error(detail);
   }
 
