@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { streamAgentChat } from "@/lib/agent";
+import { AgentLimitError, answerSubscriptionOffer, streamAgentChat } from "@/lib/agent";
 import { useAuth } from "@/contexts/AuthContext";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { collapseTo, lastRevealOrigin } from "@/lib/revealTransition";
@@ -22,6 +22,8 @@ interface ChatMessage {
   streaming?: boolean;
   /** What the assistant is doing right now, while nothing has streamed yet. */
   status?: string;
+  /** The daily-limit reply asked the paid-plan question: Yes/No buttons while "open". */
+  offer?: "open" | "sending" | "answered";
 }
 
 const HOME_PATH = "/dashboard";
@@ -276,6 +278,11 @@ export default function Assistant() {
         });
         updateMessage(assistantId, (m) => (m.streaming ? { streaming: false, status: undefined } : {}));
       } catch (err) {
+        // The daily limit reads as an ordinary reply (with the plan question when the server asks it).
+        if (err instanceof AgentLimitError) {
+          updateMessage(assistantId, { streaming: false, status: undefined, content: err.message, offer: err.offer ? "open" : undefined });
+          return;
+        }
         const aborted = controller.signal.aborted;
         updateMessage(assistantId, (m) => ({
           streaming: false,
@@ -298,6 +305,26 @@ export default function Assistant() {
       void send(message.question);
     },
     [busy, send],
+  );
+
+  /** Yes/No under the paid-plan question: the choice shows as the student's message, then the thank-you. */
+  const answerOffer = useCallback(
+    async (message: ChatMessage, interested: boolean) => {
+      if (message.offer !== "open") return;
+      updateMessage(message.id, { offer: "sending" });
+      try {
+        const thanks = await answerSubscriptionOffer(interested);
+        updateMessage(message.id, { offer: "answered" });
+        setMessages((prev) => [
+          ...prev,
+          { id: newId(), role: "USER", content: interested ? "Yes, I'd buy it" : "No" },
+          { id: newId(), role: "ASSISTANT", content: thanks },
+        ]);
+      } catch {
+        updateMessage(message.id, { offer: "open" });
+      }
+    },
+    [updateMessage],
   );
 
   const stop = () => abortRef.current?.abort();
@@ -371,7 +398,7 @@ export default function Assistant() {
             {messages.length === 0 ? (
               <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} onGuide={() => navigate("/assistant/guide")} />
             ) : (
-              messages.map((m) => <MessageBubble key={m.id} message={m} onRetry={retry} />)
+              messages.map((m) => <MessageBubble key={m.id} message={m} onRetry={retry} onAnswerOffer={answerOffer} />)
             )}
           </div>
         </div>
@@ -510,7 +537,15 @@ function EmptyState({ suggestions, onPick, onGuide }: { suggestions: string[]; o
   );
 }
 
-function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry: (m: ChatMessage) => void }) {
+function MessageBubble({
+  message,
+  onRetry,
+  onAnswerOffer,
+}: {
+  message: ChatMessage;
+  onRetry: (m: ChatMessage) => void;
+  onAnswerOffer: (m: ChatMessage, interested: boolean) => void;
+}) {
   const isUser = message.role === "USER";
   const [copied, setCopied] = useState(false);
 
@@ -572,7 +607,17 @@ function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry: (m
             )}
           </div>
         )}
-        {!isUser && !message.streaming && message.content && (
+        {!isUser && (message.offer === "open" || message.offer === "sending") && (
+          <div className="flex gap-2">
+            <Button size="sm" className="h-8 rounded-full px-3.5 text-xs" disabled={message.offer === "sending"} onClick={() => onAnswerOffer(message, true)}>
+              Yes, I'd buy it
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 rounded-full px-3.5 text-xs" disabled={message.offer === "sending"} onClick={() => onAnswerOffer(message, false)}>
+              No
+            </Button>
+          </div>
+        )}
+        {!isUser && !message.streaming && message.content && !message.offer && (
           <button
             type="button"
             onClick={copy}
