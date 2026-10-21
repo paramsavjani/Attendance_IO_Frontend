@@ -25,7 +25,6 @@ export interface GroupableSubject {
 interface Course {
   code: string;
   name: string;
-  prefix: string;
   level: number;
   students: number;
   average: number;
@@ -40,15 +39,14 @@ interface Group {
 }
 
 /**
- * Codes look like `IT304`, `IT304-A`, `CP1001` or `PC1-ICT`: letters are the
- * department prefix and the first digit is the course level (1xx, 2xx, …).
+ * Codes look like `IT304`, `IT304-A`, `CP1001` or `PC1-ICT`: the first digit after
+ * the letters is the course level (1xx, 2xx, …).
  */
-function parseCode(code: string): { prefix: string; level: number; base: string } | null {
-  const match = /^([A-Za-z]+)(\d)/.exec(code.trim());
+function parseCode(code: string): { level: number; base: string } | null {
+  const match = /^[A-Za-z]+(\d)/.exec(code.trim());
   if (!match) return null;
   return {
-    prefix: match[1].toUpperCase(),
-    level: Number(match[2]),
+    level: Number(match[1]),
     base: code.trim().toUpperCase().replace(/-[A-Z]$/, ""),
   };
 }
@@ -72,7 +70,6 @@ function buildCourses(subjects: GroupableSubject[]): Course[] {
   return [...byBase.entries()].map(([base, { parsed, sections }]) => ({
     code: base,
     name: sections[0].subjectName,
-    prefix: parsed!.prefix,
     level: parsed!.level,
     students: sections.reduce((sum, s) => sum + s.totalStudents, 0),
     average: weightedAverage(
@@ -226,68 +223,16 @@ const EXCLUDED_LEVELS = new Set([6]);
 
 export function LevelAnalysis({ subjects }: { subjects: GroupableSubject[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [selectedPrefixes, setSelectedPrefixes] = useState<Set<string>>(new Set());
-
-  const courses = useMemo(
-    () => buildCourses(subjects).filter((c) => !EXCLUDED_LEVELS.has(c.level)),
+  const levels = useMemo(
+    () =>
+      groupBy(
+        buildCourses(subjects).filter((c) => !EXCLUDED_LEVELS.has(c.level)),
+        (c) => String(c.level)
+      ).sort((a, b) => Number(a.key) - Number(b.key)),
     [subjects]
   );
-  const prefixes = useMemo(
-    () => [...new Set(courses.map((c) => c.prefix))].sort(),
-    [courses]
-  );
-  const levels = useMemo(() => {
-    const visible =
-      selectedPrefixes.size === 0 ? courses : courses.filter((c) => selectedPrefixes.has(c.prefix));
-    return groupBy(visible, (c) => String(c.level)).sort((a, b) => Number(a.key) - Number(b.key));
-  }, [courses, selectedPrefixes]);
 
-  const togglePrefix = (prefix: string) => {
-    setExpanded(null);
-    setSelectedPrefixes((prev) => {
-      const next = new Set(prev);
-      if (next.has(prefix)) next.delete(prefix);
-      else next.add(prefix);
-      return next;
-    });
-  };
-
-  if (courses.length === 0) return null;
-
-  const prefixFilter = (
-    <div className="flex flex-wrap gap-1.5">
-      <button
-        onClick={() => {
-          setExpanded(null);
-          setSelectedPrefixes(new Set());
-        }}
-        className={cn(
-          "px-2.5 py-1 rounded-lg text-[11px] border transition-colors",
-          selectedPrefixes.size === 0
-            ? "bg-primary text-primary-foreground border-primary"
-            : "bg-card border-border text-muted-foreground"
-        )}
-      >
-        All
-      </button>
-      {prefixes.map((prefix) => (
-        <button
-          key={prefix}
-          onClick={() => togglePrefix(prefix)}
-          className={cn(
-            "px-2.5 py-1 rounded-lg text-[11px] border transition-colors",
-            selectedPrefixes.has(prefix)
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-card border-border text-muted-foreground"
-          )}
-        >
-          {prefix}
-        </button>
-      ))}
-    </div>
-  );
-
-  if (levels.length === 0) return <div className="space-y-2.5">{prefixFilter}</div>;
+  if (levels.length === 0) return null;
 
   const chartData = levels.map((l) => ({
     label: levelLabel(l.key),
@@ -307,8 +252,6 @@ export function LevelAnalysis({ subjects }: { subjects: GroupableSubject[] }) {
 
   return (
     <div className="space-y-2.5">
-      {prefixFilter}
-
       <div className="rounded-2xl bg-card border border-border p-4">
         <h3 className="font-semibold text-sm">Average by Course Level</h3>
         <p className="text-xs text-muted-foreground mb-3">

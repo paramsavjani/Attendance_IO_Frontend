@@ -12,6 +12,7 @@ import {
 import { ArrowDownRight, ArrowUpRight, Loader2, Minus, Users } from "lucide-react";
 import { API_CONFIG } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { glassChipClass } from "./glassStyles";
 
 interface GroupStats {
   students: number;
@@ -150,23 +151,15 @@ export function BatchAnalysis() {
     students: stats.students,
   }));
 
-  const chipClass = (active: boolean) =>
-    cn(
-      "px-2.5 py-1 rounded-lg text-[11px] border transition-colors",
-      active
-        ? "bg-primary text-primary-foreground border-primary"
-        : "bg-card border-border text-muted-foreground"
-    );
-
   return (
     <div className="space-y-2.5">
       {/* Branch filter */}
       <div className="flex flex-wrap gap-1.5">
-        <button onClick={() => setBranch(null)} className={chipClass(branch === null)}>
+        <button onClick={() => setBranch(null)} className={glassChipClass(branch === null)}>
           All branches
         </button>
         {branchOptions.map(([code, label]) => (
-          <button key={code} onClick={() => setBranch(code)} className={chipClass(branch === code)}>
+          <button key={code} onClick={() => setBranch(code)} className={glassChipClass(branch === code)}>
             {branchName(code, label)}
           </button>
         ))}
