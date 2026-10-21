@@ -272,7 +272,6 @@ export default function SubjectAnalysisDetail() {
       {data.stats && (
         <SubjectDistributionInsights
           stats={data.stats}
-          totalStudents={data.totalStudents}
           selectedRange={rangeFilter}
           onSelectRange={setRangeFilter}
         />
