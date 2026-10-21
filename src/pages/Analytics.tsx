@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { trackAppEvent } from "@/contexts/AuthContext";
+import { LevelAnalysis, PrefixAnalysis } from "@/components/subject-analysis/SubjectGroupAnalysis";
 
 interface AnalyticsData {
   totalStudents: number;
@@ -48,6 +49,13 @@ interface SubjectAnalysisData {
 }
 
 type AnalyticsTab = "my" | "subjects";
+type SubjectView = "all" | "level" | "prefix";
+
+const SUBJECT_VIEWS: { value: SubjectView; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "level", label: "By Level" },
+  { value: "prefix", label: "By Prefix" },
+];
 
 function getPercentageColor(pct: number): string {
   if (pct >= 75) return "text-green-400";
@@ -66,6 +74,7 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
   const [data, setData] = useState<SubjectAnalysisData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<SubjectView>("all");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,6 +123,29 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
 
   return (
     <div className="space-y-2.5">
+      {/* View switcher */}
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-card border border-border">
+        {SUBJECT_VIEWS.map((v) => (
+          <button
+            key={v.value}
+            onClick={() => setView(v.value)}
+            className={cn(
+              "py-1.5 rounded-lg text-xs font-medium transition-colors",
+              view === v.value
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === "level" && <LevelAnalysis subjects={data.subjects} />}
+      {view === "prefix" && <PrefixAnalysis subjects={data.subjects} />}
+
+      {view === "all" && (
+      <>
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -186,6 +218,8 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
             </button>
           ))}
         </div>
+      )}
+      </>
       )}
     </div>
   );
