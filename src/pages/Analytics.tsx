@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
-import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2, Search, ChevronRight } from "lucide-react";
+import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2, Search, ChevronRight, List, Layers, GraduationCap } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { SemesterSelector, Semester } from "@/components/filters/SemesterSelector";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,10 @@ import { toast } from "sonner";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { LevelAnalysis } from "@/components/subject-analysis/SubjectGroupAnalysis";
 import { BatchAnalysis } from "@/components/subject-analysis/BatchAnalysis";
+import {
+  GlassSegmentedControl,
+  type GlassSegment,
+} from "@/components/subject-analysis/GlassSegmentedControl";
 
 interface AnalyticsData {
   totalStudents: number;
@@ -52,10 +56,10 @@ interface SubjectAnalysisData {
 type AnalyticsTab = "my" | "subjects";
 type SubjectView = "all" | "level" | "batch";
 
-const SUBJECT_VIEWS: { value: SubjectView; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "level", label: "By Level" },
-  { value: "batch", label: "By Batch" },
+const SUBJECT_VIEWS: GlassSegment<SubjectView>[] = [
+  { value: "all", label: "All", icon: List },
+  { value: "level", label: "By Level", icon: Layers },
+  { value: "batch", label: "By Batch", icon: GraduationCap },
 ];
 
 function getPercentageColor(pct: number): string {
@@ -125,22 +129,7 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
   return (
     <div className="space-y-2.5">
       {/* View switcher */}
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-card border border-border">
-        {SUBJECT_VIEWS.map((v) => (
-          <button
-            key={v.value}
-            onClick={() => setView(v.value)}
-            className={cn(
-              "py-1.5 rounded-lg text-xs font-medium transition-colors",
-              view === v.value
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
+      <GlassSegmentedControl<SubjectView> segments={SUBJECT_VIEWS} value={view} onChange={setView} />
 
       {view === "level" && <LevelAnalysis subjects={data.subjects} />}
       {view === "batch" && <BatchAnalysis />}
