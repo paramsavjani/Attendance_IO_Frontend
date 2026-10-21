@@ -178,7 +178,6 @@ function GroupRow({
   subtitle,
   group,
   delta,
-  extra,
   expanded,
   onToggle,
 }: {
@@ -186,7 +185,6 @@ function GroupRow({
   subtitle: string;
   group: Group;
   delta?: number | null;
-  extra?: React.ReactNode;
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -217,24 +215,79 @@ function GroupRow({
             style={{ width: `${Math.min(100, group.average)}%`, backgroundColor: fillFor(group.average) }}
           />
         </div>
-        {extra}
       </button>
       {expanded && <CourseList courses={group.courses} />}
     </div>
   );
 }
 
+/** 6xx codes don't fit the 1xx → 5xx progression, so they're left out of the level view. */
+const EXCLUDED_LEVELS = new Set([6]);
+
 export function LevelAnalysis({ subjects }: { subjects: GroupableSubject[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const levels = useMemo(
-    () =>
-      groupBy(buildCourses(subjects), (c) => String(c.level)).sort(
-        (a, b) => Number(a.key) - Number(b.key)
-      ),
+  const [selectedPrefixes, setSelectedPrefixes] = useState<Set<string>>(new Set());
+
+  const courses = useMemo(
+    () => buildCourses(subjects).filter((c) => !EXCLUDED_LEVELS.has(c.level)),
     [subjects]
   );
+  const prefixes = useMemo(
+    () => [...new Set(courses.map((c) => c.prefix))].sort(),
+    [courses]
+  );
+  const levels = useMemo(() => {
+    const visible =
+      selectedPrefixes.size === 0 ? courses : courses.filter((c) => selectedPrefixes.has(c.prefix));
+    return groupBy(visible, (c) => String(c.level)).sort((a, b) => Number(a.key) - Number(b.key));
+  }, [courses, selectedPrefixes]);
 
-  if (levels.length === 0) return null;
+  const togglePrefix = (prefix: string) => {
+    setExpanded(null);
+    setSelectedPrefixes((prev) => {
+      const next = new Set(prev);
+      if (next.has(prefix)) next.delete(prefix);
+      else next.add(prefix);
+      return next;
+    });
+  };
+
+  if (courses.length === 0) return null;
+
+  const prefixFilter = (
+    <div className="flex flex-wrap gap-1.5">
+      <button
+        onClick={() => {
+          setExpanded(null);
+          setSelectedPrefixes(new Set());
+        }}
+        className={cn(
+          "px-2.5 py-1 rounded-lg text-[11px] border transition-colors",
+          selectedPrefixes.size === 0
+            ? "bg-primary text-primary-foreground border-primary"
+            : "bg-card border-border text-muted-foreground"
+        )}
+      >
+        All
+      </button>
+      {prefixes.map((prefix) => (
+        <button
+          key={prefix}
+          onClick={() => togglePrefix(prefix)}
+          className={cn(
+            "px-2.5 py-1 rounded-lg text-[11px] border transition-colors",
+            selectedPrefixes.has(prefix)
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card border-border text-muted-foreground"
+          )}
+        >
+          {prefix}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (levels.length === 0) return <div className="space-y-2.5">{prefixFilter}</div>;
 
   const chartData = levels.map((l) => ({
     label: levelLabel(l.key),
@@ -254,6 +307,8 @@ export function LevelAnalysis({ subjects }: { subjects: GroupableSubject[] }) {
 
   return (
     <div className="space-y-2.5">
+      {prefixFilter}
+
       <div className="rounded-2xl bg-card border border-border p-4">
         <h3 className="font-semibold text-sm">Average by Course Level</h3>
         <p className="text-xs text-muted-foreground mb-3">
@@ -306,95 +361,8 @@ export function LevelAnalysis({ subjects }: { subjects: GroupableSubject[] }) {
         />
       ))}
       <p className="text-[10px] text-muted-foreground text-center">
-        Arrow shows change from the previous level
+        Arrow shows change from the previous level · 6xx courses not included
       </p>
-    </div>
-  );
-}
-
-type PrefixSort = "average" | "students" | "name";
-
-export function PrefixAnalysis({ subjects }: { subjects: GroupableSubject[] }) {
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [sort, setSort] = useState<PrefixSort>("average");
-
-  const prefixes = useMemo(() => {
-    const courses = buildCourses(subjects);
-    return groupBy(courses, (c) => c.prefix).map((g) => ({
-      ...g,
-      levels: groupBy(g.courses, (c) => String(c.level)).sort(
-        (a, b) => Number(a.key) - Number(b.key)
-      ),
-    }));
-  }, [subjects]);
-
-  const sorted = useMemo(() => {
-    return [...prefixes].sort((a, b) => {
-      if (sort === "students") return b.students - a.students;
-      if (sort === "name") return a.key.localeCompare(b.key);
-      return b.average - a.average;
-    });
-  }, [prefixes, sort]);
-
-  if (prefixes.length === 0) return null;
-
-  const sortOptions: { value: PrefixSort; label: string }[] = [
-    { value: "average", label: "Avg %" },
-    { value: "students", label: "Students" },
-    { value: "name", label: "A–Z" },
-  ];
-
-  return (
-    <div className="space-y-2.5">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          {prefixes.length} prefixes · weighted by students
-        </p>
-        <div className="flex gap-1">
-          {sortOptions.map((o) => (
-            <button
-              key={o.value}
-              onClick={() => setSort(o.value)}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-[11px] border transition-colors",
-                sort === o.value
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card border-border text-muted-foreground"
-              )}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {sorted.map((prefix) => (
-        <GroupRow
-          key={prefix.key}
-          title={`${prefix.key}*`}
-          subtitle={`${courseCount(prefix.courses.length)} · ${prefix.students.toLocaleString()} enrolments`}
-          group={prefix}
-          expanded={expanded === prefix.key}
-          onToggle={() => setExpanded(expanded === prefix.key ? null : prefix.key)}
-          extra={
-            prefix.levels.length > 1 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {prefix.levels.map((l) => (
-                  <span
-                    key={l.key}
-                    className="px-2 py-0.5 rounded-md bg-background border border-border text-[10px]"
-                  >
-                    <span className="text-muted-foreground">{levelLabel(l.key)} </span>
-                    <span className={cn("font-semibold", textColor(l.average))}>
-                      {l.average.toFixed(0)}%
-                    </span>
-                  </span>
-                ))}
-              </div>
-            )
-          }
-        />
-      ))}
     </div>
   );
 }
