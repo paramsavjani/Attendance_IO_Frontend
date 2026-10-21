@@ -31,6 +31,7 @@ import ErrorOldVersion from "./pages/ErrorOldVersion";
 import Assistant from "./pages/Assistant";
 import AssistantGuide from "./pages/AssistantGuide";
 import { ServerPopup } from "@/components/ServerPopup";
+import { OtaUpdatePopup } from "@/components/OtaUpdatePopup";
 import { FeedbackReplyDialog } from "@/components/FeedbackReplyDialog";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef, useState } from "react";
@@ -307,6 +308,7 @@ function AppRoutes() {
     <>
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
+      {!isErrorPage && <OtaUpdatePopup />}
       {!isErrorPage && isAuthenticated && <ServerPopup />}
       {!isErrorPage && isAuthenticated && <FeedbackReplyDialog />}
       <Routes>
