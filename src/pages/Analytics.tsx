@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { trackAppEvent } from "@/contexts/AuthContext";
-import { LevelAnalysis, PrefixAnalysis } from "@/components/subject-analysis/SubjectGroupAnalysis";
+import { LevelAnalysis } from "@/components/subject-analysis/SubjectGroupAnalysis";
 
 interface AnalyticsData {
   totalStudents: number;
@@ -49,12 +49,11 @@ interface SubjectAnalysisData {
 }
 
 type AnalyticsTab = "my" | "subjects";
-type SubjectView = "all" | "level" | "prefix";
+type SubjectView = "all" | "level";
 
 const SUBJECT_VIEWS: { value: SubjectView; label: string }[] = [
   { value: "all", label: "All" },
   { value: "level", label: "By Level" },
-  { value: "prefix", label: "By Prefix" },
 ];
 
 function getPercentageColor(pct: number): string {
@@ -124,7 +123,7 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
   return (
     <div className="space-y-2.5">
       {/* View switcher */}
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-card border border-border">
+      <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-card border border-border">
         {SUBJECT_VIEWS.map((v) => (
           <button
             key={v.value}
@@ -142,7 +141,6 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
       </div>
 
       {view === "level" && <LevelAnalysis subjects={data.subjects} />}
-      {view === "prefix" && <PrefixAnalysis subjects={data.subjects} />}
 
       {view === "all" && (
       <>
