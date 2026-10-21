@@ -10,6 +10,7 @@ import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { LevelAnalysis } from "@/components/subject-analysis/SubjectGroupAnalysis";
+import { BatchAnalysis } from "@/components/subject-analysis/BatchAnalysis";
 
 interface AnalyticsData {
   totalStudents: number;
@@ -49,11 +50,12 @@ interface SubjectAnalysisData {
 }
 
 type AnalyticsTab = "my" | "subjects";
-type SubjectView = "all" | "level";
+type SubjectView = "all" | "level" | "batch";
 
 const SUBJECT_VIEWS: { value: SubjectView; label: string }[] = [
   { value: "all", label: "All" },
   { value: "level", label: "By Level" },
+  { value: "batch", label: "By Batch" },
 ];
 
 function getPercentageColor(pct: number): string {
@@ -123,7 +125,7 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
   return (
     <div className="space-y-2.5">
       {/* View switcher */}
-      <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-card border border-border">
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-card border border-border">
         {SUBJECT_VIEWS.map((v) => (
           <button
             key={v.value}
@@ -141,6 +143,7 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
       </div>
 
       {view === "level" && <LevelAnalysis subjects={data.subjects} />}
+      {view === "batch" && <BatchAnalysis />}
 
       {view === "all" && (
       <>
