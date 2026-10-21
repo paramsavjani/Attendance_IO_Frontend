@@ -20,6 +20,7 @@ import { API_CONFIG } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { RateAppServerPopup } from "@/components/RateAppServerPopup";
 import { StarRepoServerPopup } from "@/components/StarRepoServerPopup";
+import { PopupYearChart } from "@/components/PopupYearChart";
 import confetti from "canvas-confetti";
 
 /**
@@ -81,6 +82,7 @@ interface ServerPopupData {
   /** With type every_days: minimum days between impressions (default 7). */
   intervalDays?: number;
   date: string | null;
+  /** Hero icon name; "none" hides the hero icon disc. */
   icon?: string;
   title: string;
   subtitle?: string;
@@ -96,6 +98,8 @@ interface ServerPopupData {
   badge?: string;
   /** Headline numbers shown as tiles under the subtitle, e.g. 2,940 alumni. */
   stats?: { value: string; label: string }[];
+  /** Live chart under the stats; "batch_years" = official average per B.Tech year of study. */
+  chart?: { source: "batch_years" | string; title: string };
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -489,16 +493,18 @@ export function ServerPopup() {
             </div>
           )}
 
-          <div
-            ref={heroRef}
-            className="mx-auto mb-3 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#032042]"
-          >
-            <PopupIcon
-              name={popup.icon}
-              gradientId={`popup-spark-${popup.id}`}
-              className="h-7 w-7 text-[#6da7ec]"
-            />
-          </div>
+          {popup.icon !== "none" && (
+            <div
+              ref={heroRef}
+              className="mx-auto mb-3 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#032042]"
+            >
+              <PopupIcon
+                name={popup.icon}
+                gradientId={`popup-spark-${popup.id}`}
+                className="h-7 w-7 text-[#6da7ec]"
+              />
+            </div>
+          )}
 
           <DialogTitle className={cn("text-[18px] font-medium leading-tight text-[#f0efec]", riseClass)} style={rise()}>
             {popup.title}
@@ -526,6 +532,15 @@ export function ServerPopup() {
                 </div>
               ))}
             </div>
+          )}
+
+          {popup.chart?.source === "batch_years" && (
+            <PopupYearChart
+              title={popup.chart.title}
+              visible={isVisible}
+              className={cn("mt-2", riseClass)}
+              style={rise()}
+            />
           )}
         </div>
 
