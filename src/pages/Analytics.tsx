@@ -44,8 +44,8 @@ type AnalyticsTab = "my" | "subjects";
 type GeneralView = "overview" | "batch" | "level";
 
 const GENERAL_VIEWS: GlassSegment<GeneralView>[] = [
-  { value: "overview", label: "Overview", icon: LayoutGrid },
   { value: "batch", label: "By Batch", icon: GraduationCap },
+  { value: "overview", label: "Overview", icon: LayoutGrid },
   { value: "level", label: "By Level", icon: Layers },
 ];
 
@@ -339,9 +339,9 @@ function GeneralOverview() {
   );
 }
 
-/** General tab: overview, batch-wise and course-level analysis of the current semester. */
+/** General tab: batch-wise (default), overview and course-level analysis of the current semester. */
 function GeneralSection({ subjects }: { subjects: SubjectEntry[] | null }) {
-  const [view, setView] = useState<GeneralView>("overview");
+  const [view, setView] = useState<GeneralView>("batch");
 
   return (
     <div className="space-y-2.5">
