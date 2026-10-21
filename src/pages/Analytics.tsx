@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
-import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2, Search, ChevronRight, List, Layers, GraduationCap } from "lucide-react";
+import { Users, TrendingUp, AlertTriangle, CheckCircle, Loader2, Search, ChevronRight, List, Layers, GraduationCap, CalendarClock } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { SemesterSelector, Semester } from "@/components/filters/SemesterSelector";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { LevelAnalysis } from "@/components/subject-analysis/SubjectGroupAnalysis";
 import { BatchAnalysis } from "@/components/subject-analysis/BatchAnalysis";
+import { PatternsAnalysis } from "@/components/subject-analysis/PatternsAnalysis";
 import {
   GlassSegmentedControl,
   type GlassSegment,
@@ -54,12 +55,13 @@ interface SubjectAnalysisData {
 }
 
 type AnalyticsTab = "my" | "subjects";
-type SubjectView = "all" | "level" | "batch";
+type SubjectView = "all" | "level" | "batch" | "patterns";
 
 const SUBJECT_VIEWS: GlassSegment<SubjectView>[] = [
   { value: "all", label: "All", icon: List },
-  { value: "level", label: "By Level", icon: Layers },
-  { value: "batch", label: "By Batch", icon: GraduationCap },
+  { value: "level", label: "Level", icon: Layers },
+  { value: "batch", label: "Batch", icon: GraduationCap },
+  { value: "patterns", label: "Patterns", icon: CalendarClock },
 ];
 
 function getPercentageColor(pct: number): string {
@@ -133,6 +135,7 @@ function SubjectAnalysisSection({ onCutoffDate }: { onCutoffDate?: (d: string | 
 
       {view === "level" && <LevelAnalysis subjects={data.subjects} />}
       {view === "batch" && <BatchAnalysis />}
+      {view === "patterns" && <PatternsAnalysis />}
 
       {view === "all" && (
       <>
