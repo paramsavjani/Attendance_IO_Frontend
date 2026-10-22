@@ -8,8 +8,7 @@ import { originOf, revealFrom } from "@/lib/revealTransition";
  * nav) pinned above it on the right, independent of the nav pill. The spark itself carries the
  * colour. Shown on the home and search pages only.
  */
-/** `bottomPx` lets an experimental nav that is taller than the default pill move the launcher up. */
-export function AssistantFab({ bottomPx = 84 }: { bottomPx?: number } = {}) {
+export function AssistantFab() {
   const navigate = useNavigate();
   const location = useLocation();
   const { student } = useAuth();
@@ -30,7 +29,7 @@ export function AssistantFab({ bottomPx = 84 }: { bottomPx?: number } = {}) {
         "liquid-nav fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full",
         "transition-transform duration-200 ease-out active:scale-90",
       )}
-      style={{ bottom: `calc(${bottomPx}px + env(safe-area-inset-bottom, 0px))` }}
+      style={{ bottom: "calc(5.25rem + env(safe-area-inset-bottom, 0px))" }}
     >
       <SparkIcon className="h-7 w-7" gradientId="fab-spark" />
     </button>
