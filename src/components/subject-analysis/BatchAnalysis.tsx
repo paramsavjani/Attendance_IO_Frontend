@@ -72,6 +72,11 @@ const tooltipStyle = {
   fontSize: "11px",
 };
 
+// Recharts colours each tooltip row with its bar's fill, which is unset here (bars use <Cell>),
+// so the text would fall back to near-black on the dark card.
+const tooltipItemStyle = { color: "hsl(var(--foreground))" };
+const tooltipLabelStyle = { color: "hsl(var(--muted-foreground))", marginBottom: 2 };
+
 const axisTick = { fontSize: 10, fill: "hsl(var(--muted-foreground))" };
 
 function Delta({ value }: { value: number | null }) {
@@ -177,6 +182,8 @@ export function BatchAnalysis() {
             <YAxis tick={axisTick} axisLine={false} tickLine={false} domain={[0, 100]} />
             <Tooltip
               contentStyle={tooltipStyle}
+              itemStyle={tooltipItemStyle}
+              labelStyle={tooltipLabelStyle}
               cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
               labelFormatter={(_label, payload) =>
                 payload?.[0] ? `${payload[0].payload.batch} batch` : ""
