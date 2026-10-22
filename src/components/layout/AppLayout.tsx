@@ -13,7 +13,6 @@ import { AssistantFab } from "@/components/assistant/AssistantFab";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Capacitor } from "@capacitor/core";
 import { FEEDBACK_READ_EVENT, fetchMyFeedback } from "@/lib/feedback";
-import { NAV_VARIANT_META, NavVariant, useNavVariant } from "@/components/layout/navVariants";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -40,25 +39,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [dragProgress, setDragProgress] = useState(0);
   const startX = useRef(0);
   const startProgress = useRef(0);
-  // Experimental navs for testing (`?nav=<id>`); "current" renders the nav below unchanged.
-  const navVariant = useNavVariant();
-  const navMeta = NAV_VARIANT_META[navVariant];
-  const [navMinimized, setNavMinimized] = useState(false);
-  const lastScrollTop = useRef(0);
-
-  useEffect(() => {
-    setNavMinimized(false);
-    lastScrollTop.current = 0;
-  }, [location.pathname]);
-
-  // Variants that shrink while reading: minimise on scroll down, expand on scroll up.
-  const handleContentScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!navMeta.usesScroll) return;
-    const y = e.currentTarget.scrollTop;
-    if (y > lastScrollTop.current + 6 && y > 40) setNavMinimized(true);
-    else if (y < lastScrollTop.current - 6) setNavMinimized(false);
-    lastScrollTop.current = y;
-  };
 
   useEffect(() => {
     let active = true;
@@ -234,15 +214,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div
           key={location.key}
           className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 animate-page-enter md:max-w-none"
-          onScroll={handleContentScroll}
           // Content scrolls behind the glass nav; the bottom padding is just the nav's height plus
           // the same 12px gap it keeps below itself, so the last row can clear it and nothing more.
-          style={{
-            paddingBottom:
-              navVariant === "current"
-                ? `calc(${NAV_HEIGHT_PX}px + 2 * 0.75rem + env(safe-area-inset-bottom, 0px))`
-                : `calc(${navMeta.clearance}px + env(safe-area-inset-bottom, 0px))`,
-          }}
+          style={{ paddingBottom: `calc(${NAV_HEIGHT_PX}px + 2 * 0.75rem + env(safe-area-inset-bottom, 0px))` }}
         >
           {/* Pages use `flex-1` to reach the bottom when short. This wrapper grows with tall pages
               (min-h-full, not h-full) so their content never overflows a fixed box, which used to
@@ -252,22 +226,9 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
 
       {/* Assistant launcher — independent of the nav, sits above it on the right */}
-      <AssistantFab bottomPx={navMeta.fabBottom} />
-
-      {navVariant !== "current" && (
-        <NavVariant
-          variant={navVariant}
-          items={navItems}
-          activeIndex={navItems.findIndex((item) => isActiveRoute(item.path))}
-          onSelect={(index) => handleNavigation(navItems[index].path)}
-          unreadIndex={feedbackUnread > 0 ? navItems.findIndex((item) => item.path === "/profile") : undefined}
-          minimized={navMinimized}
-          onExpand={() => setNavMinimized(false)}
-        />
-      )}
+      <AssistantFab />
 
       {/* Floating pill bottom navigation */}
-      {navVariant === "current" && (
       <nav
         className="fixed bottom-3 left-1/2 z-40 -translate-x-1/2 safe-area-bottom"
       >
@@ -329,7 +290,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           })}
         </div>
       </nav>
-      )}
     </div>
   );
 }
