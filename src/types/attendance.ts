@@ -32,7 +32,7 @@ export interface TimetableSlot {
   subjectId: string | null;
   startTime?: string | null; // Custom start time (HH:mm format) - null if using standard slot
   endTime?: string | null; // Custom end time (HH:mm format) - null if using standard slot
-  location?: string | null; // Location for lab/tutorial classes
+  location?: string | null; // Room for this slot; for lectures only set when it differs from the course room
 }
 
 export interface DailySchedule {
