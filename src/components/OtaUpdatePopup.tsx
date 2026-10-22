@@ -88,28 +88,28 @@ export function OtaUpdateBanner({ open, restarting, onRestart, onDismiss }: OtaU
         role="status"
         aria-live="polite"
         className={cn(
-          "flex h-11 w-full max-w-[420px] items-center gap-2 rounded-xl border-[0.5px] border-white/10 bg-[#1a1a19]/95 pl-2 pr-1.5 text-[#f0efec] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] backdrop-blur-xl",
+          "flex h-14 w-full max-w-[420px] items-center gap-2.5 rounded-2xl border-[0.5px] border-white/10 bg-[#1a1a19]/95 pl-2.5 pr-2 text-[#f0efec] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] backdrop-blur-xl",
           "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           shown ? "pointer-events-auto translate-y-0 opacity-100" : "-translate-y-[140%] opacity-0"
         )}
       >
-        <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#032042]">
-          <ArrowDownToLine className="h-3.5 w-3.5 text-[#6da7ec]" />
+        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#032042]">
+          <ArrowDownToLine className="h-[18px] w-[18px] text-[#6da7ec]" />
         </span>
-        <p className="min-w-0 flex-1 truncate text-[12.5px]">
-          <span className="font-medium">Update ready</span>
-          <span className="text-[#c3c2b7]"> · restart to apply</span>
-        </p>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-[13.5px] font-medium">Update ready</p>
+          <p className="truncate text-[11.5px] text-[#c3c2b7]">New version downloaded</p>
+        </div>
         <button
           type="button"
           onClick={onRestart}
           disabled={restarting}
-          className="flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-[#f0efec] px-2.5 text-[12px] font-medium text-[#0b0b0b] transition-transform duration-150 active:scale-[0.97] disabled:opacity-80"
+          className="flex h-9 flex-shrink-0 items-center gap-1.5 rounded-lg bg-[#f0efec] px-3 text-[12.5px] font-medium text-[#0b0b0b] transition-transform duration-150 active:scale-[0.97] disabled:opacity-80"
         >
           {restarting ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <RotateCw className="h-3.5 w-3.5" />
+            <RotateCw className="h-4 w-4" />
           )}
           {restarting ? "Restarting" : "Restart"}
         </button>
@@ -118,7 +118,7 @@ export function OtaUpdateBanner({ open, restarting, onRestart, onDismiss }: OtaU
           onClick={onDismiss}
           disabled={restarting}
           aria-label="Dismiss"
-          className="flex h-8 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[#898781] transition-colors active:bg-white/[0.06] active:text-[#c3c2b7]"
+          className="flex h-9 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[#898781] transition-colors active:bg-white/[0.06] active:text-[#c3c2b7]"
         >
           <X className="h-4 w-4" />
         </button>
