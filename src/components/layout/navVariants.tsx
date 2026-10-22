@@ -11,6 +11,7 @@ import { ChevronUp, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { SplitNavPlus } from "@/components/layout/splitNavs";
 
 export interface NavItem {
   icon: LucideIcon;
@@ -31,7 +32,8 @@ export interface NavVariantProps {
 
 export type NavVariantId =
   | "current" | "lens" | "glass" | "liquid"
-  | "droplet" | "split" | "gooey" | "edge" | "island" | "fan" | "dial" | "keys";
+  | "droplet" | "split" | "gooey" | "edge" | "island" | "fan" | "dial" | "keys"
+  | "split-liquid" | "split-morph" | "split-clear" | "split-tint";
 
 interface VariantMeta {
   /** Space the page must leave at the bottom so its last row clears the nav (px, before safe area). */
@@ -49,6 +51,10 @@ export const NAV_VARIANT_META: Record<NavVariantId, VariantMeta> = {
   liquid: { clearance: 80, fabBottom: 84, usesScroll: true },
   droplet: { clearance: 90, fabBottom: 92 },
   split: { clearance: 88, fabBottom: 92 },
+  "split-liquid": { clearance: 90, fabBottom: 94 },
+  "split-morph": { clearance: 90, fabBottom: 94 },
+  "split-clear": { clearance: 90, fabBottom: 94 },
+  "split-tint": { clearance: 90, fabBottom: 94 },
   gooey: { clearance: 104, fabBottom: 112 },
   edge: { clearance: 92, fabBottom: 96 },
   island: { clearance: 84, fabBottom: 88 },
@@ -767,5 +773,13 @@ export function NavVariant({ variant, ...props }: NavVariantProps & { variant: E
       return <DialNav {...props} />;
     case "keys":
       return <KeysNav {...props} />;
+    case "split-liquid":
+      return <SplitNavPlus {...props} splitStyle="liquid" />;
+    case "split-morph":
+      return <SplitNavPlus {...props} splitStyle="morph" />;
+    case "split-clear":
+      return <SplitNavPlus {...props} splitStyle="clear" />;
+    case "split-tint":
+      return <SplitNavPlus {...props} splitStyle="tint" />;
   }
 }
