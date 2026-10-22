@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, Loader2, Plus, BookOpen, X, Save, Clock, Laptop, GraduationCap } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, BookOpen, X, Save, Clock, Laptop, GraduationCap, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
@@ -32,6 +32,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Swipe navigation hook for days
+/** Where a course's lectures usually are: the student's own room for it, else the institute default. */
+function courseRoom(subject?: { classroomLocation?: string | null; lecturePlace?: string | null } | null): string {
+  return (subject?.classroomLocation || subject?.lecturePlace || "").trim().toUpperCase();
+}
+
 function useSwipeDayNavigation(activeDay: number, setActiveDay: (day: number) => void, totalDays: number) {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -77,6 +82,23 @@ interface TimelineContentProps {
   handleSlotClick: (day: number, timeSlot: number | null, startTime?: string, endTime?: string) => void;
   handleClearSlot: (day: number, timeSlot: number | null, e: React.MouseEvent, startTime?: string, endTime?: string) => void;
   onAddCustomTime: () => void;
+}
+
+/** "CODE · 📍ROOM" under a lecture; a room set for just this day is highlighted. */
+function LectureMeta({ code, override, usual }: { code: string; override?: string | null; usual: string }) {
+  const room = override || usual;
+  return (
+    <p className="flex items-center gap-1 min-w-0 text-xs text-muted-foreground">
+      <span className="flex-shrink-0">{code}</span>
+      {room && (
+        <>
+          <span className="flex-shrink-0">·</span>
+          <MapPin className={cn("w-3 h-3 flex-shrink-0", override && "text-primary")} />
+          <span className={cn("truncate", override && "text-primary font-medium")}>{room}</span>
+        </>
+      )}
+    </p>
+  );
 }
 
 function TimelineContent({
@@ -150,7 +172,7 @@ function TimelineContent({
                   <div className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 h-full">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{subject.name}</p>
-                      <p className="text-xs text-muted-foreground">{subject.code}</p>
+                      <LectureMeta code={subject.code} override={slotInfo.slot?.location} usual={courseRoom(subject)} />
                     </div>
                     <button
                       onClick={(e) => handleClearSlot(
@@ -651,18 +673,29 @@ export default function Timetable() {
         setSlotLocation("");
       }
     } else {
-      // Reset for lecture slots
-      setSelectedSubjectId(null);
-      setSlotLocation("");
+      // Lecture: an assigned slot opens straight at its subject + location, an empty one at the subject list
+      const existing = timeSlot !== null
+        ? timetable.find((s) => s.day === day && s.timeSlot === timeSlot && !s.startTime)
+        : startTime && endTime
+          ? timetable.find((s) => s.day === day && s.startTime === startTime && s.endTime === endTime)
+          : undefined;
+      const subject = existing?.subjectId ? enrolledSubjects.find((s) => s.id === existing.subjectId) : undefined;
+      setSelectedSubjectId(subject ? subject.id : null);
+      setSlotLocation(subject ? (existing?.location || courseRoom(subject)) : "");
     }
 
     setDialogOpen(true);
   };
 
   const handleSubjectSelect = (subjectId: string | null) => {
-    // For lecture slots, save immediately (no location needed)
+    // Lectures: next step shows the location, pre-filled with the course's usual room
     if (selectedSlot && selectedSlot.type !== "lab" && selectedSlot.type !== "tutorial") {
-      handleConfirmAssignment(subjectId);
+      if (subjectId === null) {
+        handleConfirmAssignment(null);
+        return;
+      }
+      setSelectedSubjectId(subjectId);
+      setSlotLocation(courseRoom(enrolledSubjects.find((s) => s.id === subjectId)));
       return;
     }
 
@@ -674,10 +707,10 @@ export default function Timetable() {
     }
   };
 
-  const handleConfirmAssignment = (subjectId: string | null) => {
+  const handleConfirmAssignment = (subjectId: string | null, clear = false) => {
     if (!selectedSlot) return;
 
-    const finalSubjectId = subjectId !== null ? subjectId : selectedSubjectId;
+    const finalSubjectId = clear ? null : subjectId !== null ? subjectId : selectedSubjectId;
     if (finalSubjectId === null && subjectId === null) {
       // Clearing subject
       subjectId = null;
@@ -725,14 +758,19 @@ export default function Timetable() {
       return;
     }
 
-    // Handle lecture slots (immediate save, no location needed)
+    // Handle lecture slots. Only a room that differs from the course's usual one is stored, so a
+    // later change to the course's room still applies to every other lecture.
+    const chosenSubject = finalSubjectId ? enrolledSubjects.find((s) => s.id === finalSubjectId) : undefined;
+    const typedRoom = slotLocation.trim().toUpperCase();
+    const lectureLocation =
+      finalSubjectId && typedRoom && typedRoom !== courseRoom(chosenSubject) ? typedRoom : undefined;
     let updatedTimetable: TimetableSlot[];
 
     if (selectedSlot.timeSlot !== null) {
       // Standard slot
       updatedTimetable = timetable.map((slot) =>
         slot.day === selectedSlot.day && slot.timeSlot === selectedSlot.timeSlot && !slot.startTime
-          ? { ...slot, subjectId: finalSubjectId }
+          ? { ...slot, subjectId: finalSubjectId, location: lectureLocation }
           : slot
       );
 
@@ -744,6 +782,7 @@ export default function Timetable() {
           day: selectedSlot.day,
           timeSlot: selectedSlot.timeSlot,
           subjectId: finalSubjectId,
+          location: lectureLocation,
         });
       }
     } else if (selectedSlot.startTime && selectedSlot.endTime) {
@@ -752,7 +791,7 @@ export default function Timetable() {
         slot.day === selectedSlot.day &&
           slot.startTime === selectedSlot.startTime &&
           slot.endTime === selectedSlot.endTime
-          ? { ...slot, subjectId: finalSubjectId }
+          ? { ...slot, subjectId: finalSubjectId, location: lectureLocation }
           : slot
       );
 
@@ -768,6 +807,7 @@ export default function Timetable() {
           subjectId: finalSubjectId,
           startTime: selectedSlot.startTime,
           endTime: selectedSlot.endTime,
+          location: lectureLocation,
         });
       }
     } else {
@@ -778,6 +818,7 @@ export default function Timetable() {
     setDialogOpen(false);
     setSelectedSlot(null);
     setSelectedSubjectId(null);
+    setSlotLocation("");
   };
 
   const handleClearSlot = (day: number, timeSlot: number | null, e: React.MouseEvent, startTime?: string, endTime?: string, type?: "lab" | "tutorial") => {
@@ -1308,120 +1349,164 @@ export default function Timetable() {
         }
       }}>
         <DialogContent className="max-w-sm mx-auto rounded-xl">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-base font-semibold">
-              {selectedSubjectId && (selectedSlot?.type === "lab" || selectedSlot?.type === "tutorial")
-                ? "Enter Location"
-                : "Select Subject"}
-            </DialogTitle>
-            {selectedSlot && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {days[selectedSlot.day]} · {
-                  selectedSlot.type === "lab" ? "Lab" :
-                    selectedSlot.type === "tutorial" ? "Tutorial" :
-                      selectedSlot.startTime && selectedSlot.endTime
-                        ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
-                        : ""
-                }
-              </p>
-            )}
-          </DialogHeader>
+          {(() => {
+            const isLabOrTut = selectedSlot?.type === "lab" || selectedSlot?.type === "tutorial";
+            const chosen = selectedSubjectId ? enrolledSubjects.find((s) => s.id === selectedSubjectId) : undefined;
+            const usualRoom = courseRoom(chosen);
+            const typedRoom = slotLocation.trim().toUpperCase();
+            const isOverride = !isLabOrTut && !!typedRoom && typedRoom !== usualRoom;
+            const dayName = selectedSlot ? days[selectedSlot.day] : "";
+            // An already-assigned lecture can be removed from this dialog
+            const lectureAssigned = !isLabOrTut && selectedSlot
+              ? !!getSlotSubject(selectedSlot.day, selectedSlot.timeSlot, selectedSlot.startTime, selectedSlot.endTime)
+              : false;
 
-          {selectedSubjectId && (selectedSlot?.type === "lab" || selectedSlot?.type === "tutorial") ? (
-            // Step 2: Show location input after subject is selected
-            <div className="space-y-4 mt-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Selected Subject</label>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-                  <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                    {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.charAt(0) || "?"}
-                  </div>
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <p className="text-sm font-medium truncate w-full">
-                      {enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.length > 25 ? enrolledSubjects.find(s => s.id === selectedSubjectId)?.name.slice(0, 25) + '...' : enrolledSubjects.find(s => s.id === selectedSubjectId)?.name || "Unknown"}
+            return (
+              <>
+                <DialogHeader className="pb-2">
+                  <DialogTitle className="text-base font-semibold">
+                    {selectedSubjectId ? (isLabOrTut ? "Enter Location" : "Lecture Location") : "Select Subject"}
+                  </DialogTitle>
+                  {selectedSlot && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {dayName} · {
+                        selectedSlot.type === "lab" ? "Lab" :
+                          selectedSlot.type === "tutorial" ? "Tutorial" :
+                            selectedSlot.startTime && selectedSlot.endTime
+                              ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
+                              : ""
+                      }
                     </p>
-                    <p className="text-xs text-muted-foreground truncate w-full">
-                      {enrolledSubjects.find(s => s.id === selectedSubjectId)?.code || ""}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedSubjectId(null)}
-                    className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex-shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Location</label>
-                <Input
-                  type="text"
-                  value={slotLocation}
-                  onChange={(e) => setSlotLocation(e.target.value.toUpperCase())}
-                  placeholder="e.g., LAB-101, TUT-201"
-                  className="w-full uppercase"
-                  maxLength={255}
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedSubjectId(null)}
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={() => handleConfirmAssignment(null)}
-                  className="flex-1"
-                >
-                  Confirm
-                </Button>
-              </div>
-            </div>
-          ) : (
-            // Step 1: Show subject list
-            <div className="space-y-1 max-h-[50vh] overflow-y-auto mt-2">
-              {enrolledSubjects.length === 0 ? (
-                <div className="text-center py-8">
-                  <BookOpen className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No subjects enrolled</p>
-                </div>
-              ) : (
-                <>
-                  {enrolledSubjects.map((subject) => (
-                    <button
-                      key={subject.id}
-                      onClick={() => handleSubjectSelect(subject.id)}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
-                    >
-                      <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                        {subject.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{subject.name}</p>
-                        <p className="text-xs text-muted-foreground">{subject.code}</p>
-                      </div>
-                    </button>
-                  ))}
-                  {selectedSlot && selectedSlot.type !== "lab" && selectedSlot.type !== "tutorial" && (
-                    <button
-                      onClick={() => handleConfirmAssignment(null)}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-destructive/10 transition-colors text-left border-t border-border mt-2 pt-2"
-                    >
-                      <X className="w-4 h-4 text-destructive flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-destructive">Clear Subject</p>
-                      </div>
-                    </button>
                   )}
-                </>
-              )}
-            </div>
-          )}
+                </DialogHeader>
+
+                {selectedSubjectId ? (
+                  // Step 2: subject chosen, set where this class is
+                  <div className="space-y-4 mt-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Selected Subject</label>
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
+                        <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
+                          {chosen?.name.charAt(0) || "?"}
+                        </div>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className="text-sm font-medium truncate w-full">{chosen?.name || "Unknown"}</p>
+                          <p className="text-xs text-muted-foreground truncate w-full">{chosen?.code || ""}</p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedSubjectId(null)}
+                          aria-label="Change subject"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex-shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                        Location
+                      </label>
+                      <Input
+                        type="text"
+                        value={slotLocation}
+                        onChange={(e) => setSlotLocation(e.target.value.toUpperCase())}
+                        placeholder={isLabOrTut ? "e.g., LAB-101, TUT-201" : usualRoom || "e.g., LT-1, CEP-110"}
+                        className="w-full uppercase"
+                        maxLength={255}
+                        autoFocus={isLabOrTut}
+                      />
+                      {!isLabOrTut && (
+                        <div className="flex items-start justify-between gap-3 text-xs text-muted-foreground">
+                          <p className="leading-relaxed">
+                            {usualRoom ? (
+                              <>Usually in <span className="font-medium text-foreground">{usualRoom}</span>. Change it only if the {dayName} lecture is somewhere else.</>
+                            ) : (
+                              <>No usual room for {chosen?.code}. Add where the {dayName} lecture happens.</>
+                            )}
+                          </p>
+                          {isOverride && usualRoom && (
+                            <button
+                              onClick={() => setSlotLocation(usualRoom)}
+                              className="flex-shrink-0 font-medium text-primary"
+                            >
+                              Use usual
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedSubjectId(null)}
+                        className="flex-1"
+                      >
+                        {isLabOrTut ? "Back" : "Change subject"}
+                      </Button>
+                      <Button
+                        onClick={() => handleConfirmAssignment(null)}
+                        className="flex-1"
+                      >
+                        {isLabOrTut ? "Confirm" : "Save"}
+                      </Button>
+                    </div>
+
+                    {lectureAssigned && (
+                      <button
+                        onClick={() => handleConfirmAssignment(null, true)}
+                        className="w-full flex items-center justify-center gap-1.5 pt-1 text-sm text-destructive"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Remove from this slot
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  // Step 1: Show subject list
+                  <div className="space-y-1 max-h-[50vh] overflow-y-auto mt-2">
+                    {enrolledSubjects.length === 0 ? (
+                      <div className="text-center py-8">
+                        <BookOpen className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No subjects enrolled</p>
+                      </div>
+                    ) : (
+                      <>
+                        {enrolledSubjects.map((subject) => (
+                          <button
+                            key={subject.id}
+                            onClick={() => handleSubjectSelect(subject.id)}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                          >
+                            <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
+                              {subject.name.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{subject.name}</p>
+                              <p className="text-xs text-muted-foreground">{subject.code}</p>
+                            </div>
+                          </button>
+                        ))}
+                        {lectureAssigned && (
+                          <button
+                            onClick={() => handleConfirmAssignment(null, true)}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-destructive/10 transition-colors text-left border-t border-border mt-2 pt-2"
+                          >
+                            <X className="w-4 h-4 text-destructive flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-destructive">Clear Subject</p>
+                            </div>
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
