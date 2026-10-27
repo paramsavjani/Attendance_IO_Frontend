@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 import { AgentLimitError, answerSubscriptionOffer, streamAgentChat, type AgentPersonCard } from "@/lib/agent";
 import { PhotoViewer, DEFAULT_AVATAR } from "@/components/PhotoViewer";
 import { photoThumb } from "@/lib/photoUrl";
-import { useAuth } from "@/contexts/AuthContext";
+import { trackAppEvent, useAuth } from "@/contexts/AuthContext";
+import { isOverlayOpen } from "@/lib/backOverlay";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { collapseTo, lastRevealOrigin } from "@/lib/revealTransition";
 
@@ -206,7 +207,9 @@ export default function Assistant() {
     let listenerHandle: { remove: () => Promise<void> } | undefined;
     (async () => {
       const { App } = await import("@capacitor/app");
-      listenerHandle = await App.addListener("backButton", () => goHome());
+      listenerHandle = await App.addListener("backButton", () => {
+        if (!isOverlayOpen()) goHome();
+      });
     })();
     return () => {
       listenerHandle?.remove();
@@ -648,7 +651,14 @@ function PeopleCards({ people }: { people: AgentPersonCard[] }) {
           <button
             key={person.id}
             type="button"
-            onClick={() => setViewing(person)}
+            onClick={() => {
+              setViewing(person);
+              trackAppEvent("profile_photo_view", {
+                studentId: person.id,
+                studentName: person.name,
+                source: "assistant",
+              }).catch(console.error);
+            }}
             className="flex shrink-0 items-center gap-2.5 rounded-2xl border border-border bg-card py-1.5 pl-1.5 pr-3.5 text-left transition active:scale-[0.98] touch-manipulation"
             aria-label={`View ${person.name}'s photo`}
           >

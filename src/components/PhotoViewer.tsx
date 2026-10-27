@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Loader2, X } from "lucide-react";
 import { photoFull, photoThumb } from "@/lib/photoUrl";
+import { useCloseOnBack } from "@/lib/backOverlay";
 
 export const DEFAULT_AVATAR = "/user-icons/user2.png";
 
@@ -25,6 +26,8 @@ interface PhotoViewerProps {
  * pinch or double-tap zooms, and a zoomed photo can be dragged around.
  */
 export function PhotoViewer({ open, onOpenChange, src, name, subtitle, actions }: PhotoViewerProps) {
+  useCloseOnBack(open, () => onOpenChange(false));
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>

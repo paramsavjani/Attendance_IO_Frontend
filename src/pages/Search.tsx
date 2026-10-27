@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { hexToHslLightened, cn } from "@/lib/utils";
 import { Capacitor } from "@capacitor/core";
 import { PhotoViewer } from "@/components/PhotoViewer";
+import { isOverlayOpen } from "@/lib/backOverlay";
 import { photoThumb } from "@/lib/photoUrl";
 
 interface Student {
@@ -178,6 +179,8 @@ export default function Search() {
       const { App } = await import("@capacitor/app");
 
       listenerHandle = await App.addListener("backButton", ({ canGoBack }) => {
+        // An open photo closes itself (see PhotoViewer); the profile stays.
+        if (isOverlayOpen()) return;
         if (studentIdParam) {
           setSearchParams((prev) => {
             const newParams = new URLSearchParams(prev);
@@ -538,7 +541,14 @@ export default function Search() {
                 <div className="flex items-center gap-2 md:gap-3">
                   <button
                     type="button"
-                    onClick={() => setViewingPhoto(true)}
+                    onClick={() => {
+                      setViewingPhoto(true);
+                      trackAppEvent("profile_photo_view", {
+                        studentId: selectedStudent.id,
+                        studentName: selectedStudent.name,
+                        source: "search",
+                      }).catch(console.error);
+                    }}
                     aria-label={`View ${selectedStudent.name}'s photo`}
                     className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-primary/10 ring-2 ring-white/10 transition active:scale-95 md:h-14 md:w-14 touch-manipulation"
                   >
