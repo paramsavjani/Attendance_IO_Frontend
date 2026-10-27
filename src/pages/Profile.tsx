@@ -1,18 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, Github, Camera, Loader2 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { uploadProfilePicture, removeProfilePicture } from "@/lib/profilePicture";
-import { PhotoViewer, DEFAULT_AVATAR } from "@/components/PhotoViewer";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { ProfileHero } from "@/components/profile/ProfileHero";
 import packageJson from "../../package.json";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -41,38 +34,6 @@ interface CurrentSemester {
 
 export default function Profile() {
   const { student, logout, checkAuth } = useAuth();
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
-  const [showPhoto, setShowPhoto] = useState(false);
-
-  const handlePhotoChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // so picking the same file again still fires
-    if (!file) return;
-    setIsSavingPhoto(true);
-    try {
-      await uploadProfilePicture(file);
-      await checkAuth();
-      toast.success("Profile photo updated");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't upload the photo");
-    } finally {
-      setIsSavingPhoto(false);
-    }
-  };
-
-  const handleRemovePhoto = async () => {
-    setIsSavingPhoto(true);
-    try {
-      await removeProfilePicture();
-      await checkAuth();
-      toast.success("Back to your Google photo");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't remove the photo");
-    } finally {
-      setIsSavingPhoto(false);
-    }
-  };
   const { enrolledSubjects, setEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
@@ -379,94 +340,20 @@ export default function Profile() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 pb-6">
-      {/* Hero: a plain dark card so the photo keeps its own colours (no glow or tint over it). */}
-      <div className="relative shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/80 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.6)]">
-        <div className="h-16 bg-gradient-to-r from-primary/35 via-violet-500/25 to-blue-500/25" />
-
-        <div className="-mt-12 flex flex-col items-center px-4 pb-4 text-center">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowPhoto(true)}
-              aria-label="View profile photo"
-              className="relative block h-24 w-24 overflow-hidden rounded-full bg-neutral-800 ring-4 ring-neutral-900 shadow-xl transition active:scale-[0.97] touch-manipulation"
-            >
-              <img
-                src={student?.pictureUrl || DEFAULT_AVATAR}
-                alt={student?.name || "Profile"}
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = DEFAULT_AVATAR;
-                }}
-              />
-              {isSavingPhoto && (
-                <span className="absolute inset-0 flex items-center justify-center bg-black/55">
-                  <Loader2 className="h-6 w-6 animate-spin text-white" />
-                </span>
-              )}
-            </button>
-            {!student?.isDemo && (
-              <>
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePhotoChosen}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      disabled={isSavingPhoto}
-                      aria-label="Change profile photo"
-                      className="absolute bottom-0 right-0 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-md ring-[3px] ring-neutral-900 transition active:scale-95 disabled:opacity-60 touch-manipulation"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="min-w-[180px]">
-                    <DropdownMenuItem onSelect={() => setShowPhoto(true)}>View photo</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => photoInputRef.current?.click()}>
-                      {student?.hasUploadedPicture ? "Change photo" : "Upload photo"}
-                    </DropdownMenuItem>
-                    {student?.hasUploadedPicture && (
-                      <DropdownMenuItem onSelect={handleRemovePhoto} className="text-red-400 focus:text-red-400">
-                        Use Google photo
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-          </div>
-
-          <h1 className="mt-3 max-w-full truncate text-xl font-bold tracking-tight text-white">
-            {student?.isDemo ? "Demo User" : student?.name}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-flex items-center rounded-lg bg-white/10 px-2.5 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/10">
-              {student?.rollNumber}
-            </span>
-            {isLoadingSemester ? (
-              <span className="inline-flex items-center rounded-lg bg-white/[0.06] px-2.5 py-1 text-xs text-white/45 animate-pulse">
-                Semester…
-              </span>
-            ) : currentSemester ? (
-              <span className="inline-flex items-center rounded-lg bg-primary/20 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-primary/35">
-                {currentSemester.year}{" "}
-                {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </div>
-      <PhotoViewer
-        open={showPhoto}
-        onOpenChange={setShowPhoto}
-        src={student?.pictureUrl}
+      <ProfileHero
         name={student?.isDemo ? "Demo User" : student?.name}
-        subtitle={student?.rollNumber}
+        rollNumber={student?.rollNumber}
+        pictureUrl={student?.pictureUrl}
+        hasUploadedPicture={student?.hasUploadedPicture}
+        canEdit={!student?.isDemo}
+        semesterLabel={
+          isLoadingSemester
+            ? undefined
+            : currentSemester
+              ? `${currentSemester.year} ${currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}`
+              : null
+        }
+        onPhotoChanged={checkAuth}
       />
 
       {/* Settings — Subjects first, then 8 bordered buttons (no section headings / nested boxes) */}
