@@ -1,10 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, Github, Camera, Loader2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { uploadProfilePicture, removeProfilePicture } from "@/lib/profilePicture";
 import packageJson from "../../package.json";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -33,6 +40,37 @@ interface CurrentSemester {
 
 export default function Profile() {
   const { student, logout, checkAuth } = useAuth();
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+
+  const handlePhotoChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // so picking the same file again still fires
+    if (!file) return;
+    setIsSavingPhoto(true);
+    try {
+      await uploadProfilePicture(file);
+      await checkAuth();
+      toast.success("Profile photo updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't upload the photo");
+    } finally {
+      setIsSavingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    setIsSavingPhoto(true);
+    try {
+      await removeProfilePicture();
+      await checkAuth();
+      toast.success("Back to your Google photo");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't remove the photo");
+    } finally {
+      setIsSavingPhoto(false);
+    }
+  };
   const { enrolledSubjects, setEnrolledSubjects, refreshTimetable } = useAttendance();
   const navigate = useNavigate();
   const [showSubjectEditor, setShowSubjectEditor] = useState(false);
@@ -356,7 +394,45 @@ export default function Profile() {
                   e.currentTarget.src = "/user-icons/user2.png";
                 }}
               />
+              {isSavingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/55">
+                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                </div>
+              )}
             </div>
+            {!student?.isDemo && (
+              <>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChosen}
+                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={isSavingPhoto}
+                      aria-label="Change profile photo"
+                      className="absolute -bottom-1 -right-1 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/30 bg-primary text-white shadow-md transition active:scale-95 disabled:opacity-60 touch-manipulation"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[180px]">
+                    <DropdownMenuItem onSelect={() => photoInputRef.current?.click()}>
+                      {student?.hasUploadedPicture ? "Change photo" : "Upload photo"}
+                    </DropdownMenuItem>
+                    {student?.hasUploadedPicture && (
+                      <DropdownMenuItem onSelect={handleRemovePhoto} className="text-red-400 focus:text-red-400">
+                        Use Google photo
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
