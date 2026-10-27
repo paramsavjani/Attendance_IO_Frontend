@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AgentLimitError, answerSubscriptionOffer, streamAgentChat, type AgentPersonCard } from "@/lib/agent";
 import { PhotoViewer, DEFAULT_AVATAR } from "@/components/PhotoViewer";
+import { photoThumb } from "@/lib/photoUrl";
 import { useAuth } from "@/contexts/AuthContext";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { collapseTo, lastRevealOrigin } from "@/lib/revealTransition";
@@ -652,7 +653,7 @@ function PeopleCards({ people }: { people: AgentPersonCard[] }) {
             aria-label={`View ${person.name}'s photo`}
           >
             <img
-              src={person.pictureUrl || DEFAULT_AVATAR}
+              src={photoThumb(person.pictureUrl) || DEFAULT_AVATAR}
               alt=""
               className="h-10 w-10 shrink-0 rounded-full bg-muted object-cover"
               onError={(e) => {

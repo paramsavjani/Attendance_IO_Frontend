@@ -16,6 +16,8 @@ import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { hexToHslLightened, cn } from "@/lib/utils";
 import { Capacitor } from "@capacitor/core";
+import { PhotoViewer } from "@/components/PhotoViewer";
+import { photoThumb } from "@/lib/photoUrl";
 
 interface Student {
   id: string;
@@ -82,6 +84,7 @@ export default function Search() {
 
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -533,16 +536,28 @@ export default function Search() {
             {overallAttendance && (
               <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
                 <div className="flex items-center gap-2 md:gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setViewingPhoto(true)}
+                    aria-label={`View ${selectedStudent.name}'s photo`}
+                    className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-primary/10 ring-2 ring-white/10 transition active:scale-95 md:h-14 md:w-14 touch-manipulation"
+                  >
                     <img
-                      src={selectedStudent.pictureUrl || "/user-icons/user2.png"}
+                      src={photoThumb(selectedStudent.pictureUrl) || "/user-icons/user2.png"}
                       alt={selectedStudent.name}
-                      className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
+                      className="h-full w-full object-cover"
                       onError={(e) => {
                         e.currentTarget.src = "/user-icons/user2.png";
                       }}
                     />
-                  </div>
+                  </button>
+                  <PhotoViewer
+                    open={viewingPhoto}
+                    onOpenChange={setViewingPhoto}
+                    src={selectedStudent.pictureUrl}
+                    name={selectedStudent.name}
+                    subtitle={selectedStudent.rollNumber}
+                  />
                   <div className="flex-1 min-w-0">
                     <h1 className="text-base md:text-lg font-bold truncate">{selectedStudent.name}</h1>
                     <p className="text-xs text-muted-foreground">{selectedStudent.rollNumber}</p>
@@ -791,7 +806,7 @@ export default function Search() {
               >
                 <div className="w-9 h-9 rounded-full bg-primary/10 shrink-0 overflow-hidden">
                   <img
-                    src={item.viewedStudentPictureUrl || "/user-icons/user2.png"}
+                    src={photoThumb(item.viewedStudentPictureUrl) || "/user-icons/user2.png"}
                     alt={item.viewedStudentName}
                     className="w-9 h-9 rounded-full object-cover"
                     onError={(e) => { e.currentTarget.src = "/user-icons/user2.png"; }}
@@ -862,7 +877,7 @@ export default function Search() {
               >
                 <div className="w-9 h-9 rounded-full bg-primary/10 shrink-0 overflow-hidden">
                   <img
-                    src={item.viewedStudentPictureUrl || "/user-icons/user2.png"}
+                    src={photoThumb(item.viewedStudentPictureUrl) || "/user-icons/user2.png"}
                     alt={item.viewedStudentName}
                     className="w-9 h-9 rounded-full object-cover"
                     onError={(e) => {
@@ -961,7 +976,7 @@ export default function Search() {
             >
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                 <img
-                  src={student.pictureUrl || "/user-icons/user2.png"}
+                  src={photoThumb(student.pictureUrl) || "/user-icons/user2.png"}
                   alt={student.name}
                   className="w-10 h-10 rounded-full object-cover"
                   onError={(e) => {

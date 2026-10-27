@@ -5,7 +5,7 @@ async function errorMessage(response: Response, fallback: string): Promise<strin
   return body?.error || body?.message || fallback;
 }
 
-/** Uploads an already cropped photo (see PhotoCropper) and returns its new URL. */
+/** Uploads an already cropped HD photo (see PhotoCropper); the server makes the thumbnail. Returns its URL. */
 export async function uploadProfilePicture(photo: Blob): Promise<string> {
   const form = new FormData();
   form.append("file", photo, "profile.jpg");
