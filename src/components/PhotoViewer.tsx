@@ -51,7 +51,7 @@ export function PhotoViewer({ open, onOpenChange, src, name, subtitle, actions }
               src={src || DEFAULT_AVATAR}
               alt={name || "Profile photo"}
               onClick={(e) => e.stopPropagation()}
-              className="aspect-square max-h-full w-full max-w-[min(100vw,560px)] select-none object-cover sm:rounded-2xl"
+              className="aspect-square w-[min(100vw,560px,calc(100dvh-176px))] select-none object-cover sm:rounded-2xl"
               draggable={false}
               onError={(e) => {
                 e.currentTarget.src = DEFAULT_AVATAR;
