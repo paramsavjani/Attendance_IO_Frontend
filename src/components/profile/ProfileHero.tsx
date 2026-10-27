@@ -149,7 +149,7 @@ export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, 
       />
 
       <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
-        <DrawerContent className="border-white/10 bg-neutral-950 pb-[max(env(safe-area-inset-bottom),16px)]">
+        <DrawerContent className="mx-auto w-full max-w-lg border-white/10 bg-neutral-950 pb-[max(env(safe-area-inset-bottom),16px)] sm:bottom-4 sm:rounded-[20px] sm:border">
           <div className="flex flex-col items-center px-5 pt-4 pb-2">
             <img src={photo} alt="" className="h-16 w-16 rounded-full object-cover ring-2 ring-white/10" />
             <DrawerTitle className="mt-2 text-base font-semibold text-white">Profile photo</DrawerTitle>
