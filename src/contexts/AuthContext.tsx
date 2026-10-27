@@ -11,6 +11,8 @@ interface Student {
   semester?: number;
   email: string;
   pictureUrl?: string;
+  /** True when the photo is one the student uploaded, not their Google one. */
+  hasUploadedPicture?: boolean;
   sid?: string;
   phone?: string;
   isDemo?: boolean;
@@ -100,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: userData.email,
           rollNumber: userData.sid,
           pictureUrl: userData.pictureUrl,
+          hasUploadedPicture: userData.hasUploadedPicture === true,
           sid: userData.sid,
           phone: userData.phone,
           isDemo: userData.isDemo || false,
