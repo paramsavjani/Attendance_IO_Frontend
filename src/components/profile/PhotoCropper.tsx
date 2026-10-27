@@ -4,9 +4,9 @@ import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 const MAX_ZOOM = 4;
-/** Side of the saved photo; the profile shows it at 112px, the full-screen viewer at screen width. */
-const OUTPUT_SIDE = 640;
-const JPEG_QUALITY = 0.88;
+/** Longest side of the saved HD photo; the server makes the small thumbnail from it. */
+const OUTPUT_SIDE = 1600;
+const JPEG_QUALITY = 0.9;
 
 interface PhotoCropperProps {
   /** The picked file; null keeps the cropper closed. */
