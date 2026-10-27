@@ -9,7 +9,7 @@ import {
   Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AssistantFab } from "@/components/assistant/AssistantFab";
+import { AssistantFab, FAB_TOP, useAssistantFabVisible } from "@/components/assistant/AssistantFab";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Capacitor } from "@capacitor/core";
 import { FEEDBACK_READ_EVENT, fetchMyFeedback } from "@/lib/feedback";
@@ -32,6 +32,7 @@ const navItems = [
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const fabVisible = useAssistantFabVisible();
   const navRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   /** Unread feedback replies, shown as a dot on the Profile tab so it is visible from any screen. */
@@ -216,7 +217,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 animate-page-enter md:max-w-none"
           // Content scrolls behind the glass nav; the bottom padding is just the nav's height plus
           // the same 12px gap it keeps below itself, so the last row can clear it and nothing more.
-          style={{ paddingBottom: `calc(${NAV_HEIGHT_PX}px + 2 * 0.75rem + env(safe-area-inset-bottom, 0px))` }}
+          // Where the assistant launcher floats above the nav, the last row can scroll clear of it too.
+          style={{
+            paddingBottom: fabVisible
+              ? `calc(${FAB_TOP} + 0.75rem)`
+              : `calc(${NAV_HEIGHT_PX}px + 2 * 0.75rem + env(safe-area-inset-bottom, 0px))`,
+          }}
         >
           {/* Pages use `flex-1` to reach the bottom when short. This wrapper grows with tall pages
               (min-h-full, not h-full) so their content never overflows a fixed box, which used to
