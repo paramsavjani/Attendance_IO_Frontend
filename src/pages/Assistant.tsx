@@ -6,7 +6,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AgentLimitError, answerSubscriptionOffer, streamAgentChat } from "@/lib/agent";
+import { AgentLimitError, answerSubscriptionOffer, streamAgentChat, type AgentPersonCard } from "@/lib/agent";
+import { PhotoViewer, DEFAULT_AVATAR } from "@/components/PhotoViewer";
 import { useAuth } from "@/contexts/AuthContext";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { collapseTo, lastRevealOrigin } from "@/lib/revealTransition";
@@ -24,6 +25,8 @@ interface ChatMessage {
   status?: string;
   /** The daily-limit reply asked the paid-plan question: Yes/No buttons while "open". */
   offer?: "open" | "sending" | "answered";
+  /** Students this answer is about, shown with their photos above it. */
+  people?: AgentPersonCard[];
 }
 
 const HOME_PATH = "/dashboard";
@@ -266,7 +269,7 @@ export default function Assistant() {
                 updateMessage(assistantId, (m) => ({ content: m.content + event.text, status: undefined }));
                 break;
               case "DONE":
-                updateMessage(assistantId, { streaming: false, status: undefined });
+                updateMessage(assistantId, { streaming: false, status: undefined, people: event.people ?? undefined });
                 break;
               case "ERROR":
                 updateMessage(assistantId, { streaming: false, status: undefined, error: event.error });
@@ -580,6 +583,7 @@ function MessageBubble({
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       {/* min-w-0 lets a wide table scroll inside the bubble instead of stretching it past the screen */}
       <div className={cn("group flex min-w-0 flex-col gap-1", isUser ? "max-w-[88%] items-end" : "max-w-full items-start")}>
+        {!isUser && message.people && message.people.length > 0 && <PeopleCards people={message.people} />}
         <div
           className={cn(
             "min-w-0 max-w-full rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
@@ -630,6 +634,46 @@ function MessageBubble({
         )}
       </div>
     </div>
+  );
+}
+
+/** The students an answer is about: photo, name and roll number; tap a photo to see it large. */
+function PeopleCards({ people }: { people: AgentPersonCard[] }) {
+  const [viewing, setViewing] = useState<AgentPersonCard | null>(null);
+  return (
+    <>
+      <div className="flex max-w-full gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none]">
+        {people.map((person) => (
+          <button
+            key={person.id}
+            type="button"
+            onClick={() => setViewing(person)}
+            className="flex shrink-0 items-center gap-2.5 rounded-2xl border border-border bg-card py-1.5 pl-1.5 pr-3.5 text-left transition active:scale-[0.98] touch-manipulation"
+            aria-label={`View ${person.name}'s photo`}
+          >
+            <img
+              src={person.pictureUrl || DEFAULT_AVATAR}
+              alt=""
+              className="h-10 w-10 shrink-0 rounded-full bg-muted object-cover"
+              onError={(e) => {
+                e.currentTarget.src = DEFAULT_AVATAR;
+              }}
+            />
+            <span className="min-w-0">
+              <span className="block max-w-[11rem] truncate text-sm font-medium leading-tight text-foreground">{person.name}</span>
+              <span className="block text-[11px] leading-tight text-muted-foreground">{person.rollNumber}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+      <PhotoViewer
+        open={viewing !== null}
+        onOpenChange={(open) => !open && setViewing(null)}
+        src={viewing?.pictureUrl}
+        name={viewing?.name}
+        subtitle={viewing?.rollNumber}
+      />
+    </>
   );
 }
 
