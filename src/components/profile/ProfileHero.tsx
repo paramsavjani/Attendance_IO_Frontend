@@ -21,8 +21,8 @@ interface ProfileHeroProps {
 }
 
 /**
- * The top of the profile: the photo sharp on the left over a blurred copy of itself that fills the
- * card (so the colours always match), name and tags beside it, and a pencil that opens one sheet
+ * The top of the profile: the photo sharp on the left on a fixed dark card (dot grid and the app's
+ * purple glow, the same for every photo), name and tags beside it, and a pencil that opens one sheet
  * for viewing, replacing or resetting the photo. Kept compact so the settings stay above the fold.
  */
 export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, canEdit, semesterLabel, onPhotoChanged }: ProfileHeroProps) {
@@ -70,10 +70,15 @@ export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, 
 
   return (
     <div className="relative shrink-0 overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.8)]">
-      {/* Background: the photo itself, blurred across the whole card and evenly darkened, so the
-          card takes the photo's colours with no band or seam where a cover would end. */}
-      <img src={photo} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-[1.6] object-cover blur-2xl saturate-[1.4]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/40 to-black/55" />
+      {/* Background: fixed and on-brand, the same for every photo. A faint dot grid fading in from
+          the right and the app's purple glow in the far corner, both kept clear of the photo. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.55] [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1.2px)] [background-size:14px_14px] [mask-image:linear-gradient(to_left,black_15%,transparent_75%)]"
+      />
+      <div aria-hidden className="absolute -right-10 -top-16 h-44 w-44 rounded-full bg-primary/30 blur-3xl" />
+      <div aria-hidden className="absolute -bottom-20 right-16 h-32 w-32 rounded-full bg-violet-500/20 blur-3xl" />
+      <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
 
       <div className="relative flex items-center gap-4 p-4">
         <div className="relative shrink-0">
