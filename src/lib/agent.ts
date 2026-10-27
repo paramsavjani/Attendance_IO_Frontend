@@ -19,6 +19,14 @@ export interface AgentToolCall {
   error?: string | null;
 }
 
+/** A student the answer is about, sent on DONE so the chat can show their photo. */
+export interface AgentPersonCard {
+  id: string;
+  name: string;
+  rollNumber: string;
+  pictureUrl?: string | null;
+}
+
 export interface AgentTokenUsage {
   inputTokens: number;
   outputTokens: number;
@@ -40,6 +48,7 @@ export type AgentStreamEvent =
       latencyMs: number;
       firstTokenMs?: number | null;
       usage?: AgentTokenUsage | null;
+      people?: AgentPersonCard[] | null;
     })
   | (AgentEventBase & { type: "ERROR"; error: string });
 

@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { uploadProfilePicture, removeProfilePicture } from "@/lib/profilePicture";
+import { PhotoViewer, DEFAULT_AVATAR } from "@/components/PhotoViewer";
 import packageJson from "../../package.json";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -42,6 +43,7 @@ export default function Profile() {
   const { student, logout, checkAuth } = useAuth();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(false);
 
   const handlePhotoChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -377,29 +379,32 @@ export default function Profile() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 pb-6">
-      {/* Hero */}
-      <div className="relative shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.09] via-white/[0.04] to-transparent px-4 py-4 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-10 h-36 w-36 rounded-full bg-blue-500/20 blur-3xl" />
+      {/* Hero: a plain dark card so the photo keeps its own colours (no glow or tint over it). */}
+      <div className="relative shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/80 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.6)]">
+        <div className="h-16 bg-gradient-to-r from-primary/35 via-violet-500/25 to-blue-500/25" />
 
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-violet-500 opacity-50 blur-md" />
-            <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white/25 shadow-lg ring-2 ring-white/10">
+        <div className="-mt-12 flex flex-col items-center px-4 pb-4 text-center">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowPhoto(true)}
+              aria-label="View profile photo"
+              className="relative block h-24 w-24 overflow-hidden rounded-full bg-neutral-800 ring-4 ring-neutral-900 shadow-xl transition active:scale-[0.97] touch-manipulation"
+            >
               <img
-                src={student?.pictureUrl || "/user-icons/user2.png"}
+                src={student?.pictureUrl || DEFAULT_AVATAR}
                 alt={student?.name || "Profile"}
                 className="h-full w-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = "/user-icons/user2.png";
+                  e.currentTarget.src = DEFAULT_AVATAR;
                 }}
               />
               {isSavingPhoto && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-                  <Loader2 className="h-5 w-5 animate-spin text-white" />
-                </div>
+                <span className="absolute inset-0 flex items-center justify-center bg-black/55">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </span>
               )}
-            </div>
+            </button>
             {!student?.isDemo && (
               <>
                 <input
@@ -415,12 +420,13 @@ export default function Profile() {
                       type="button"
                       disabled={isSavingPhoto}
                       aria-label="Change profile photo"
-                      className="absolute -bottom-1 -right-1 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/30 bg-primary text-white shadow-md transition active:scale-95 disabled:opacity-60 touch-manipulation"
+                      className="absolute bottom-0 right-0 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-md ring-[3px] ring-neutral-900 transition active:scale-95 disabled:opacity-60 touch-manipulation"
                     >
-                      <Camera className="h-3.5 w-3.5" />
+                      <Camera className="h-4 w-4" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[180px]">
+                  <DropdownMenuContent align="center" className="min-w-[180px]">
+                    <DropdownMenuItem onSelect={() => setShowPhoto(true)}>View photo</DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => photoInputRef.current?.click()}>
                       {student?.hasUploadedPicture ? "Change photo" : "Upload photo"}
                     </DropdownMenuItem>
@@ -435,29 +441,33 @@ export default function Profile() {
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-white/45">Profile</p>
-            <h1 className="truncate text-lg font-bold tracking-tight text-white">
-              {student?.isDemo ? "Demo User" : student?.name}
-            </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-lg bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/85 ring-1 ring-inset ring-white/10">
-                {student?.rollNumber}
+          <h1 className="mt-3 max-w-full truncate text-xl font-bold tracking-tight text-white">
+            {student?.isDemo ? "Demo User" : student?.name}
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+            <span className="inline-flex items-center rounded-lg bg-white/10 px-2.5 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/10">
+              {student?.rollNumber}
+            </span>
+            {isLoadingSemester ? (
+              <span className="inline-flex items-center rounded-lg bg-white/[0.06] px-2.5 py-1 text-xs text-white/45 animate-pulse">
+                Semester…
               </span>
-              {isLoadingSemester ? (
-                <span className="inline-flex items-center rounded-lg bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/45 animate-pulse">
-                  Semester…
-                </span>
-              ) : currentSemester ? (
-                <span className="inline-flex items-center rounded-lg bg-primary/25 px-2 py-0.5 text-[10px] font-semibold text-primary-foreground ring-1 ring-inset ring-primary/35">
-                  {currentSemester.year}{" "}
-                  {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
-                </span>
-              ) : null}
-            </div>
+            ) : currentSemester ? (
+              <span className="inline-flex items-center rounded-lg bg-primary/20 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-primary/35">
+                {currentSemester.year}{" "}
+                {currentSemester.type.charAt(0) + currentSemester.type.slice(1).toLowerCase()}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
+      <PhotoViewer
+        open={showPhoto}
+        onOpenChange={setShowPhoto}
+        src={student?.pictureUrl}
+        name={student?.isDemo ? "Demo User" : student?.name}
+        subtitle={student?.rollNumber}
+      />
 
       {/* Settings — Subjects first, then 8 bordered buttons (no section headings / nested boxes) */}
       <div className="relative shrink-0 overflow-hidden rounded-xl">
