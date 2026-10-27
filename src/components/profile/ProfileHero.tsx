@@ -21,9 +21,9 @@ interface ProfileHeroProps {
 }
 
 /**
- * The top of the profile, laid out like Instagram/Facebook profiles: a cover made from the
- * student's own photo (blurred, so it always matches), the photo itself large and sharp on top of
- * it, and a pencil that opens one sheet for viewing, replacing or resetting the photo.
+ * The top of the profile: the photo sharp on the left over a blurred copy of itself that fills the
+ * card (so the colours always match), name and tags beside it, and a pencil that opens one sheet
+ * for viewing, replacing or resetting the photo. Kept compact so the settings stay above the fold.
  */
 export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, canEdit, semesterLabel, onPhotoChanged }: ProfileHeroProps) {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -70,21 +70,20 @@ export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, 
 
   return (
     <div className="relative shrink-0 overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.8)]">
-      {/* Cover: the photo itself, blurred and darkened, fading into the card. */}
-      <div className="relative h-32 overflow-hidden">
-        <img src={photo} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-150 object-cover opacity-70 blur-2xl" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-neutral-950" />
-      </div>
+      {/* Background: the photo itself, blurred across the whole card and evenly darkened, so the
+          card takes the photo's colours with no band or seam where a cover would end. */}
+      <img src={photo} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-[1.6] object-cover blur-2xl saturate-[1.4]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/40 to-black/55" />
 
-      <div className="relative -mt-16 flex flex-col items-center px-5 pb-5 text-center">
-        <div className="relative">
+      <div className="relative flex items-center gap-4 p-4">
+        <div className="relative shrink-0">
           <button
             type="button"
             onClick={() => setViewerOpen(true)}
             aria-label="View profile photo"
-            className="block rounded-full bg-gradient-to-tr from-primary via-violet-500 to-sky-400 p-[3px] shadow-2xl transition active:scale-[0.97] touch-manipulation"
+            className="block rounded-full bg-gradient-to-tr from-primary via-violet-500 to-sky-400 p-[2.5px] shadow-xl transition active:scale-[0.97] touch-manipulation"
           >
-            <span className="relative block h-28 w-28 overflow-hidden rounded-full border-[3px] border-neutral-950 bg-neutral-800">
+            <span className="relative block h-[84px] w-[84px] overflow-hidden rounded-full border-[3px] border-black/70 bg-neutral-800">
               <img
                 src={photo}
                 alt={name || "Profile"}
@@ -95,7 +94,7 @@ export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, 
               />
               {saving && (
                 <span className="absolute inset-0 flex items-center justify-center bg-black/55">
-                  <Loader2 className="h-7 w-7 animate-spin text-white" />
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
                 </span>
               )}
             </span>
@@ -106,27 +105,29 @@ export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, 
               onClick={() => setSheetOpen(true)}
               disabled={saving}
               aria-label="Edit profile photo"
-              className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-900 shadow-lg ring-[3px] ring-neutral-950 transition active:scale-90 disabled:opacity-60 touch-manipulation"
+              className="absolute -bottom-0.5 -right-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-900 shadow-lg ring-[3px] ring-black/60 transition active:scale-90 disabled:opacity-60 touch-manipulation"
             >
-              <Pencil className="h-4 w-4" strokeWidth={2.5} />
+              <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
             </button>
           )}
         </div>
 
-        <h1 className="mt-3 max-w-full truncate text-[22px] font-bold tracking-tight text-white">{name}</h1>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-          {rollNumber && (
-            <span className="rounded-full bg-white/[0.08] px-3 py-1 text-xs font-medium text-white/80 ring-1 ring-inset ring-white/10">
-              {rollNumber}
-            </span>
-          )}
-          {semesterLabel === undefined ? (
-            <span className="h-6 w-24 animate-pulse rounded-full bg-white/[0.06]" />
-          ) : semesterLabel ? (
-            <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-primary/40">
-              {semesterLabel}
-            </span>
-          ) : null}
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-bold tracking-tight text-white drop-shadow-sm">{name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {rollNumber && (
+              <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium text-white/90 ring-1 ring-inset ring-white/15 backdrop-blur-sm">
+                {rollNumber}
+              </span>
+            )}
+            {semesterLabel === undefined ? (
+              <span className="h-5 w-20 animate-pulse rounded-full bg-white/10" />
+            ) : semesterLabel ? (
+              <span className="rounded-full bg-primary/35 px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-inset ring-primary/50 backdrop-blur-sm">
+                {semesterLabel}
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
 
