@@ -10,15 +10,7 @@ import { originOf, revealFrom } from "@/lib/revealTransition";
  */
 export function AssistantFab() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { student } = useAuth();
-
-  // The assistant is for DAU accounts only; demo logins never see the launcher.
-  if (student?.isDemo) return null;
-
-  // Only where people actually look someone up: home and search. Not on profile, timetable, etc.
-  const visibleOn = ["/dashboard", "/search"];
-  if (!visibleOn.some((p) => location.pathname === p || location.pathname.startsWith(p + "/"))) return null;
+  if (!useAssistantFabVisible()) return null;
 
   return (
     <button
@@ -29,11 +21,27 @@ export function AssistantFab() {
         "liquid-nav fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full",
         "transition-transform duration-200 ease-out active:scale-90",
       )}
-      style={{ bottom: "calc(5.25rem + env(safe-area-inset-bottom, 0px))" }}
+      style={{ bottom: `calc(${FAB_TOP} - 3.5rem)` }}
     >
       <SparkIcon className="h-7 w-7" gradientId="fab-spark" />
     </button>
   );
+}
+
+/** Distance from the bottom of the screen to the top edge of the launcher. */
+export const FAB_TOP = "calc(8.75rem + env(safe-area-inset-bottom, 0px))";
+
+/** Whether the launcher is on screen, so pages can leave room to scroll their last row above it. */
+export function useAssistantFabVisible(): boolean {
+  const location = useLocation();
+  const { student } = useAuth();
+
+  // The assistant is for DAU accounts only; demo logins never see the launcher.
+  if (student?.isDemo) return false;
+
+  // Only where people actually look someone up: home and search. Not on profile, timetable, etc.
+  const visibleOn = ["/dashboard", "/search"];
+  return visibleOn.some((p) => location.pathname === p || location.pathname.startsWith(p + "/"));
 }
 
 /**
