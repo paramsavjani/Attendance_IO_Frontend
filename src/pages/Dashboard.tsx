@@ -199,36 +199,48 @@ export default function Dashboard() {
   // Fetch sleep duration for "time until first lecture" warning
   useEffect(() => {
     if (!student) return;
+    const controller = new AbortController();
     const fetchSleepDuration = async () => {
       try {
-        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, { method: "GET" });
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_SLEEP_DURATION, {
+          method: "GET",
+          signal: controller.signal,
+        });
         if (response.ok) {
           const data = await response.json();
           setSleepDurationHours(data.sleepDurationHours ?? 8);
         } else if (response.status === 404) {
           setSleepDurationHours(8);
         }
-      } catch {
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         setSleepDurationHours(8);
       }
     };
     fetchSleepDuration();
+    return () => controller.abort();
   }, [student]);
 
   // Fetch standard lecture time slots (dynamic - varies by semester's timetable)
   useEffect(() => {
+    const controller = new AbortController();
     const fetchLectureSlots = async () => {
       try {
-        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIME_SLOTS, { method: "GET" });
+        const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIME_SLOTS, {
+          method: "GET",
+          signal: controller.signal,
+        });
         if (response.ok) {
           const data = await response.json();
           setLectureSlots(data);
         }
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error('Error fetching time slots:', error);
       }
     };
     fetchLectureSlots();
+    return () => controller.abort();
   }, []);
 
   // Helper to format time for display
@@ -247,11 +259,13 @@ export default function Dashboard() {
       return;
     }
 
+    const controller = new AbortController();
     const fetchLabTimetable = async () => {
       try {
         setIsLoadingLab(true);
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.LAB_TIMETABLE, {
           method: "GET",
+          signal: controller.signal,
         });
 
         if (response.ok) {
@@ -261,14 +275,18 @@ export default function Dashboard() {
           setLabTimetable([]);
         }
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error('Error fetching lab timetable:', error);
         setLabTimetable([]);
       } finally {
-        setIsLoadingLab(false);
+        if (!controller.signal.aborted) {
+          setIsLoadingLab(false);
+        }
       }
     };
 
     fetchLabTimetable();
+    return () => controller.abort();
   }, [student]);
 
   // Fetch tutorial timetable
@@ -278,11 +296,13 @@ export default function Dashboard() {
       return;
     }
 
+    const controller = new AbortController();
     const fetchTutorialTimetable = async () => {
       try {
         setIsLoadingTutorial(true);
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE, {
           method: "GET",
+          signal: controller.signal,
         });
 
         if (response.ok) {
@@ -292,14 +312,18 @@ export default function Dashboard() {
           setTutorialTimetable([]);
         }
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error('Error fetching tutorial timetable:', error);
         setTutorialTimetable([]);
       } finally {
-        setIsLoadingTutorial(false);
+        if (!controller.signal.aborted) {
+          setIsLoadingTutorial(false);
+        }
       }
     };
 
     fetchTutorialTimetable();
+    return () => controller.abort();
   }, [student]);
 
   // Fetch lab/tutorial attendance stats
@@ -309,11 +333,13 @@ export default function Dashboard() {
       return;
     }
 
+    const controller = new AbortController();
     const fetchLabTutStats = async () => {
       try {
         setIsLoadingLabTutStats(true);
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_LAB_TUTORIAL_ATTENDANCE, {
           method: "GET",
+          signal: controller.signal,
         });
 
         if (response.ok) {
@@ -336,26 +362,32 @@ export default function Dashboard() {
           setLabTutStats({});
         }
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error('Error fetching lab/tutorial attendance stats:', error);
         setLabTutStats({});
       } finally {
-        setIsLoadingLabTutStats(false);
+        if (!controller.signal.aborted) {
+          setIsLoadingLabTutStats(false);
+        }
       }
     };
 
     fetchLabTutStats();
+    return () => controller.abort();
   }, [student]);
 
   // Refresh lab/tutorial stats when attendance is marked
   useEffect(() => {
     if (!student || isLoadingLabTutStats) return;
 
+    const controller = new AbortController();
     // Refresh stats after a short delay to allow backend to process
     const timeoutId = setTimeout(() => {
       const fetchLabTutStats = async () => {
         try {
           const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.GET_LAB_TUTORIAL_ATTENDANCE, {
             method: "GET",
+            signal: controller.signal,
           });
 
           if (response.ok) {
@@ -376,6 +408,7 @@ export default function Dashboard() {
             setLabTutStats(statsMap);
           }
         } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
           console.error('Error refreshing lab/tutorial attendance stats:', error);
         }
       };
@@ -383,7 +416,10 @@ export default function Dashboard() {
       fetchLabTutStats();
     }, 500);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [todayAttendance, student, isLoadingLabTutStats]);
 
   // Get schedule for any date - returns standard lecture slots + custom slots + lab/tutorial
@@ -539,8 +575,10 @@ export default function Dashboard() {
 
   // Fetch classes start date
   useEffect(() => {
+    const controller = new AbortController();
     fetch(API_CONFIG.ENDPOINTS.CLASSES_START_DATE, {
       credentials: 'include',
+      signal: controller.signal,
     })
       .then(res => res.json())
       .then(data => {
@@ -549,8 +587,10 @@ export default function Dashboard() {
         }
       })
       .catch(err => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         console.error('Error fetching classes start date:', err);
       });
+    return () => controller.abort();
   }, []);
 
   const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
@@ -568,13 +608,19 @@ export default function Dashboard() {
       return;
     }
     const tomorrowKey = format(addDays(now, 1), "yyyy-MM-dd");
+    const controller = new AbortController();
     const fetchTomorrowAttendance = async () => {
       setHasLoadedSleepTargetAttendance(false);
       try {
-        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${tomorrowKey}`, { method: "GET" });
+        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${tomorrowKey}`, {
+          method: "GET",
+          signal: controller.signal,
+        });
         if (!response.ok) {
-          setAttendanceForSleepTargetDate(null);
-          setSleepTargetDateKey(null);
+          if (!controller.signal.aborted) {
+            setAttendanceForSleepTargetDate(null);
+            setSleepTargetDateKey(null);
+          }
           return;
         }
         const data = await response.json();
@@ -590,16 +636,22 @@ export default function Dashboard() {
           }
           attendanceMap[key] = record.status as "present" | "absent" | "cancelled";
         });
-        setAttendanceForSleepTargetDate(attendanceMap);
-        setSleepTargetDateKey(tomorrowKey);
-      } catch {
+        if (!controller.signal.aborted) {
+          setAttendanceForSleepTargetDate(attendanceMap);
+          setSleepTargetDateKey(tomorrowKey);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         setAttendanceForSleepTargetDate(null);
         setSleepTargetDateKey(null);
       } finally {
-        setHasLoadedSleepTargetAttendance(true);
+        if (!controller.signal.aborted) {
+          setHasLoadedSleepTargetAttendance(true);
+        }
       }
     };
     fetchTomorrowAttendance();
+    return () => controller.abort();
   }, [student, sleepWarningTick, dateKey]);
 
   // Get extra classes for the selected date
@@ -863,22 +915,29 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (activeTab !== "subjects" || subjectsAttendanceView !== "official") return;
+    const controller = new AbortController();
     const fetchOfficial = async () => {
       setIsLoadingOfficial(true);
       try {
-        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?view=official`);
+        const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?view=official`, {
+          signal: controller.signal,
+        });
         if (response.ok) {
           const data = await response.json();
           setOfficialStats(data.subjectStats || []);
           setOfficialCutoffDate(data.officialCutoffDate || null);
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Failed to fetch official attendance:", err);
       } finally {
-        setIsLoadingOfficial(false);
+        if (!controller.signal.aborted) {
+          setIsLoadingOfficial(false);
+        }
       }
     };
     fetchOfficial();
+    return () => controller.abort();
   }, [activeTab, subjectsAttendanceView]);
 
   const officialBySubjectId = useMemo(() => {
