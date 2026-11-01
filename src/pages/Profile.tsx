@@ -16,7 +16,7 @@ import { FeedbackComposer } from "@/components/feedback/FeedbackComposer";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
-import { ContributorsSection } from "@/components/contributors/ContributorsSection";
+// import { ContributorsSection } from "@/components/contributors/ContributorsSection";
 import { GitHubContributors } from "@/components/contributors/GitHubContributors";
 import {
   Dialog,
@@ -501,7 +501,7 @@ export default function Profile() {
           <span className="h-5 w-5 shrink-0" aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[14px] font-semibold text-white">
-              Made with <span className="text-rose-400">♥</span> by Param & Nidhi
+              Made with <span className="text-rose-400">♥</span> by Param Savjani
             </span>
             <span className="mt-0.5 block truncate text-[11.5px] text-white/45">About the app & contributors</span>
           </span>
@@ -585,7 +585,7 @@ export default function Profile() {
             <DialogTitle className="text-base">About Attendance IO</DialogTitle>
           </DialogHeader>
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            Built and maintained by <span className="font-semibold text-foreground">Param Savjani</span> &amp; <span className="font-semibold text-foreground">Nidhi Dodiya</span>, DA-IICT students, for DA-IICT students.
+            Built and maintained by <span className="font-semibold text-foreground">Param Savjani</span>, a DA-IICT student, for DA-IICT students.
             Open source — a star on GitHub keeps it going.
           </p>
           <div className="flex gap-2">
@@ -597,7 +597,8 @@ export default function Profile() {
             </a>
           </div>
           <GitHubContributors />
-          <ContributorsSection className="pt-1" />
+          {/* Feature ideas and Beta testers, hidden for now. */}
+          {/* <ContributorsSection className="pt-1" /> */}
           <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</p>
         </DialogContent>
       </Dialog>
