@@ -16,7 +16,7 @@ import { FeedbackComposer } from "@/components/feedback/FeedbackComposer";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
-import { ContributorsSection } from "@/components/contributors/ContributorsSection";
+// import { ContributorsSection } from "@/components/contributors/ContributorsSection";
 import { GitHubContributors } from "@/components/contributors/GitHubContributors";
 import {
   Dialog,
@@ -501,7 +501,7 @@ export default function Profile() {
           <span className="h-5 w-5 shrink-0" aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[14px] font-semibold text-white">
-              Made with <span className="text-rose-400">♥</span> by Param Savjani & Nidhi Dodiya
+              Made with <span className="text-rose-400">♥</span> by Param Savjani
             </span>
             <span className="mt-0.5 block truncate text-[11.5px] text-white/45">About the app & contributors</span>
           </span>
@@ -597,7 +597,8 @@ export default function Profile() {
             </a>
           </div>
           <GitHubContributors />
-          <ContributorsSection className="pt-1" />
+          {/* Feature ideas and Beta testers, hidden for now. */}
+          {/* <ContributorsSection className="pt-1" /> */}
           <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</p>
         </DialogContent>
       </Dialog>
