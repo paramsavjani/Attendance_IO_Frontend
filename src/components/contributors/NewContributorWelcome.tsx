@@ -6,15 +6,18 @@ import { useGitHubContributors } from "@/components/contributors/GitHubContribut
 /** GitHub logins that never get a welcome: Claude's own accounts, not people. */
 const NO_WELCOME = new Set(["claude", "claude[bot]", "claude-code", "claude-code[bot]", "claude-ai", "anthropic-claude"]);
 
-/** Logins this phone has already seen, so each new contributor is welcomed once. */
-const SEEN_KEY = "welcomed_contributors_v1";
+/** The makers: never "new", so a phone starts out having seen only them and welcomes everyone after. */
+const FOUNDERS = ["paramsavjani", "NidhiDodiya1014"];
 
-function readSeen(): Set<string> | null {
+/** Logins this phone has already seen, so each new contributor is welcomed once. */
+const SEEN_KEY = "welcomed_contributors_v2";
+
+function readSeen(): Set<string> {
   try {
     const raw = localStorage.getItem(SEEN_KEY);
-    return raw ? new Set(JSON.parse(raw) as string[]) : null;
+    return new Set(raw ? (JSON.parse(raw) as string[]) : FOUNDERS);
   } catch {
-    return null;
+    return new Set(FOUNDERS);
   }
 }
 
@@ -26,11 +29,7 @@ function saveSeen(logins: string[]) {
   }
 }
 
-/**
- * When a new person shows up in the GitHub contributors list, welcome them once with a popup.
- * The first time this runs on a phone it only remembers who is already there, so nobody sees
- * "welcome" for the people who built the app from the start.
- */
+/** When a new person shows up in the GitHub contributors list, welcome them once with a popup. */
 export function NewContributorWelcome() {
   const people = useGitHubContributors();
   const [newcomers, setNewcomers] = useState<NonNullable<typeof people>>([]);
@@ -38,10 +37,6 @@ export function NewContributorWelcome() {
   useEffect(() => {
     if (!people || people.length === 0) return;
     const seen = readSeen();
-    if (!seen) {
-      saveSeen(people.map((p) => p.login));
-      return;
-    }
     const fresh = people.filter((p) => !seen.has(p.login) && !NO_WELCOME.has(p.login.toLowerCase()));
     if (fresh.length === 0) return;
 
