@@ -4,9 +4,8 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, ArrowUpRight } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, ArrowUpRight, Github, Users } from "lucide-react";
 import { ProfileHero } from "@/components/profile/ProfileHero";
-import packageJson from "../../package.json";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
 import { Subject } from "@/types/attendance";
@@ -17,7 +16,12 @@ import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
 // import { ContributorsSection } from "@/components/contributors/ContributorsSection";
-import { GitHubContributors } from "@/components/contributors/GitHubContributors";
+import {
+  ContributorFaces,
+  GitHubContributors,
+  REPO_URL,
+  useGitHubContributors,
+} from "@/components/contributors/GitHubContributors";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +64,7 @@ export default function Profile() {
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const contributors = useGitHubContributors();
 
   useEffect(() => {
     const fetchCurrentSemester = async () => {
@@ -492,21 +497,53 @@ export default function Profile() {
           <ChevronRight className="h-5 w-5 shrink-0 text-white/25" />
         </button>
 
-        {/* Credit — opens About with links and the contributors (replaces the old Hall of Fame block) */}
-        <button
-          type="button"
-          onClick={() => setShowAbout(true)}
-          className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-center transition-colors active:bg-white/[0.08] touch-manipulation"
-        >
-          <span className="h-5 w-5 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[14px] font-semibold text-white">
-              Made with <span className="text-rose-400">♥</span> by Param Savjani
+        {/* Contributors (opens About with the full list) and the source code, side by side */}
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setShowAbout(true)}
+            className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
+          >
+            {contributors && contributors.length > 0 ? (
+              <ContributorFaces people={contributors} />
+            ) : (
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/15 text-violet-300">
+                <Users className="h-4 w-4" />
+              </span>
+            )}
+            <span className="mt-2.5 block text-[13.5px] font-semibold text-white">Contributors</span>
+            <span className="block text-[11px] text-white/45">
+              {contributors && contributors.length > 0
+                ? `${contributors.length} ${contributors.length === 1 ? "person" : "people"}`
+                : "Who built it"}
             </span>
-            <span className="mt-0.5 block truncate text-[11.5px] text-white/45">About the app & contributors</span>
-          </span>
-          <ChevronRight className="h-5 w-5 shrink-0 text-white/25" />
-        </button>
+          </button>
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08]">
+              <Github className="h-4 w-4 text-white/80" />
+            </span>
+            <span className="mt-2.5 block text-[13.5px] font-semibold text-white">Source code</span>
+            <span className="block text-[11px] text-white/45">Open on GitHub</span>
+          </a>
+        </div>
+
+        <p className="mt-8 text-center text-[12px] text-white/40">
+          Made with <span className="text-rose-400">♥</span> by{" "}
+          <a
+            href="https://paramsavjani.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-0.5 font-medium text-white/70 active:opacity-70"
+          >
+            Param Savjani
+            <ArrowUpRight className="h-3 w-3 text-white/40" />
+          </a>
+        </p>
       </div>
 
       {/* Sleep Duration Modal */}
@@ -598,9 +635,7 @@ export default function Profile() {
           </p>
           <GitHubContributors />
           {/* Feature ideas and Beta testers, hidden for now. */}
-          {/* <ContributorsSection className="pt-1" /> */}
-          <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</p>
-        </DialogContent>
+          {/* <ContributorsSection className="pt-1" /> */}        </DialogContent>
       </Dialog>
 
       {/* Subject Editor Dialog */}

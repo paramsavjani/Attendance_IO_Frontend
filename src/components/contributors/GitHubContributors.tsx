@@ -48,8 +48,10 @@ async function fetchContributors(signal: AbortSignal): Promise<CodeContributor[]
   return [...byLogin.values()].sort((a, b) => b.contributions - a.contributions);
 }
 
-/** Code contributors from GitHub; each one opens their GitHub profile. */
-export function GitHubContributors() {
+export const REPO_URL = `https://github.com/${REPOS[0]}`;
+
+/** The contributor list: null while loading, empty when GitHub could not be reached. */
+export function useGitHubContributors(): CodeContributor[] | null {
   const [people, setPeople] = useState<CodeContributor[] | null>(readCache);
 
   useEffect(() => {
@@ -71,6 +73,30 @@ export function GitHubContributors() {
     return () => controller.abort();
   }, [people]);
 
+  return people;
+}
+
+/** Overlapping round photos of the first few contributors. */
+export function ContributorFaces({ people, size = 28 }: { people: CodeContributor[]; size?: number }) {
+  return (
+    <span className="flex -space-x-2">
+      {people.slice(0, 4).map((p) => (
+        <img
+          key={p.login}
+          src={`${p.avatarUrl}${p.avatarUrl.includes("?") ? "&" : "?"}s=64`}
+          alt=""
+          style={{ width: size, height: size }}
+          className="rounded-full border-2 border-background bg-muted object-cover"
+        />
+      ))}
+    </span>
+  );
+}
+
+/** Code contributors from GitHub; each one opens their GitHub profile. */
+export function GitHubContributors() {
+  const people = useGitHubContributors();
+
   if (people === null) {
     return (
       <div className="flex items-center justify-center py-2.5">
@@ -90,7 +116,7 @@ export function GitHubContributors() {
           </p>
         </div>
         <a
-          href={`https://github.com/${REPOS[0]}`}
+          href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="flex shrink-0 items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted-foreground active:bg-white/[0.08]"
