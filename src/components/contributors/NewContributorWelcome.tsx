@@ -108,6 +108,28 @@ export function NewContributorWelcome() {
               <Github className="h-4 w-4" /> See their GitHub
             </a>
           )}
+          {/* Invite whoever is reading to join in */}
+          <div className="mt-2 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 text-center">
+            <p className="text-[13px] font-semibold text-foreground">Want to contribute too?</p>
+            <p className="mt-0.5 text-[11.5px] text-muted-foreground">Attendance IO is open source. Pick a repo and send a pull request.</p>
+            <div className="mt-2.5 grid grid-cols-2 gap-2">
+              {[
+                { label: "Frontend", href: "https://github.com/paramsavjani/Attendance_IO_Frontend" },
+                { label: "Backend", href: "https://github.com/paramsavjani/Attendance_IO_Backend" },
+              ].map((repo) => (
+                <a
+                  key={repo.label}
+                  href={repo.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={close}
+                  className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] text-[12.5px] font-medium text-foreground active:bg-white/[0.08]"
+                >
+                  <Github className="h-3.5 w-3.5" /> {repo.label}
+                </a>
+              ))}
+            </div>
+          </div>
           <button
             type="button"
             onClick={close}
