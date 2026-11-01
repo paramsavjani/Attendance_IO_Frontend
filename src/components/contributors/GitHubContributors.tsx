@@ -81,17 +81,22 @@ export function GitHubContributors() {
   if (people.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
-      <div className="mb-2.5 flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
-          <Github className="h-4 w-4" />
-        </span>
-        <div className="min-w-0 flex-1">
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5">
+      <div className="mb-3.5 flex items-center justify-between gap-2">
+        <div className="min-w-0">
           <p className="text-[13px] font-semibold leading-tight text-foreground">Code contributors</p>
           <p className="text-[11px] text-muted-foreground">
-            {people.length} {people.length === 1 ? "person" : "people"} on GitHub
+            {people.length} {people.length === 1 ? "person" : "people"} · tap to open GitHub
           </p>
         </div>
+        <a
+          href={`https://github.com/${REPOS[0]}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex shrink-0 items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted-foreground active:bg-white/[0.08]"
+        >
+          <Github className="h-3 w-3" /> Repo
+        </a>
       </div>
       <div className="space-y-1">
         {people.map((p) => (
@@ -100,13 +105,12 @@ export function GitHubContributors() {
             href={p.profileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 rounded-xl px-1.5 py-1.5 transition-colors active:bg-white/[0.06] hover:bg-white/[0.04] touch-manipulation"
+            className="flex items-center gap-3 rounded-xl px-1.5 py-1.5 transition-colors active:bg-white/[0.06] hover:bg-white/[0.04] touch-manipulation"
           >
             <img
-              src={`${p.avatarUrl}${p.avatarUrl.includes("?") ? "&" : "?"}s=64`}
+              src={`${p.avatarUrl}${p.avatarUrl.includes("?") ? "&" : "?"}s=96`}
               alt=""
-              loading="lazy"
-              className="h-7 w-7 shrink-0 rounded-full bg-muted"
+              className="h-9 w-9 shrink-0 rounded-full bg-muted object-cover"
             />
             <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">@{p.login}</span>
             <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">

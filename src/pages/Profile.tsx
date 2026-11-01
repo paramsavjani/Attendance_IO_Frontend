@@ -4,7 +4,7 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, Github } from "lucide-react";
+import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, ArrowUpRight } from "lucide-react";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import packageJson from "../../package.json";
 import { Input } from "@/components/ui/input";
@@ -585,17 +585,17 @@ export default function Profile() {
             <DialogTitle className="text-base">About Attendance IO</DialogTitle>
           </DialogHeader>
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            Built and maintained by <span className="font-semibold text-foreground">Param Savjani</span>, a DA-IICT student, for DA-IICT students.
-            Open source — a star on GitHub keeps it going.
+            Open source, made for DA-IICT students. Built and maintained by{" "}
+            <a
+              href="https://paramsavjani.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 font-semibold text-foreground underline decoration-white/30 underline-offset-[3px] active:opacity-70"
+            >
+              Param Savjani
+              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
+            </a>
           </p>
-          <div className="flex gap-2">
-            <a href="https://paramsavjani.in" target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[13px] font-medium">
-              Website
-            </a>
-            <a href="https://github.com/paramsavjani/Attendance_IO_Frontend" target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[13px] font-medium">
-              <Github className="h-3.5 w-3.5" /> Star on GitHub
-            </a>
-          </div>
           <GitHubContributors />
           {/* Feature ideas and Beta testers, hidden for now. */}
           {/* <ContributorsSection className="pt-1" /> */}
