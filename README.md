@@ -218,7 +218,7 @@ npm run build
 
 ## 📄 License
 
-This project is private and proprietary.
+Attendance IO is open source under the [MIT License](LICENSE).
 
 ## 📞 Support
 
