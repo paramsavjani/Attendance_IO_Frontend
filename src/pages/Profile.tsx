@@ -17,6 +17,7 @@ import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { requestAppReview } from "@/lib/in-app-review";
 import { Slider } from "@/components/ui/slider";
 import { ContributorsSection } from "@/components/contributors/ContributorsSection";
+import { GitHubContributors } from "@/components/contributors/GitHubContributors";
 import {
   Dialog,
   DialogContent,
@@ -595,6 +596,7 @@ export default function Profile() {
               <Github className="h-3.5 w-3.5" /> Star on GitHub
             </a>
           </div>
+          <GitHubContributors />
           <ContributorsSection className="pt-1" />
           <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/60">Version {packageJson.version}</p>
         </DialogContent>
