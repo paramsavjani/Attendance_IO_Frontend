@@ -33,6 +33,7 @@ import AssistantGuide from "./pages/AssistantGuide";
 import { ServerPopup } from "@/components/ServerPopup";
 import { OtaUpdatePopup } from "@/components/OtaUpdatePopup";
 import { FeedbackReplyDialog } from "@/components/FeedbackReplyDialog";
+import { NewContributorWelcome } from "@/components/contributors/NewContributorWelcome";
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef, useState } from "react";
 import { API_CONFIG, checkAppUpdate, type AppUpdateResponse } from "@/lib/api";
@@ -311,6 +312,7 @@ function AppRoutes() {
       {!isErrorPage && <OtaUpdatePopup />}
       {!isErrorPage && isAuthenticated && <ServerPopup />}
       {!isErrorPage && isAuthenticated && <FeedbackReplyDialog />}
+      {!isErrorPage && isAuthenticated && <NewContributorWelcome />}
       <Routes>
         <Route
           path="/"
