@@ -78,3 +78,4 @@ export function PollList({
     </div>
   );
 }
+
