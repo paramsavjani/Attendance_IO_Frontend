@@ -9,14 +9,18 @@ import {
   ArrowUpDown,
   Calendar,
   X,
+  Vote,
+  BarChart3,
 } from "lucide-react";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   SubjectDistributionInsights,
   type AttendanceRange,
   type SubjectAttendanceStats,
 } from "@/components/subject-analysis/SubjectDistributionInsights";
+import { PollSection } from "@/components/polls/PollSection";
 
 interface SubjectStudent {
   studentId: string;
@@ -62,8 +66,10 @@ function getBarColor(pct: number): string {
 
 export default function SubjectAnalysisDetail() {
   const navigate = useNavigate();
+  const { student } = useAuth();
   const { subjectCode } = useParams<{ subjectCode: string }>();
   const [data, setData] = useState<SubjectDetail | null>(null);
+  const [activeTab, setActiveTab] = useState<"analysis" | "polls">("analysis");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [query, setQuery] = useState("");
@@ -74,7 +80,7 @@ export default function SubjectAnalysisDetail() {
     if (!subjectCode) return;
     const fetchData = async () => {
       try {
-        const response = await fetch(
+        const response = await authenticatedFetch(
           `${API_CONFIG.ENDPOINTS.SUBJECT_ANALYSIS}/${subjectCode}`
         );
         if (response.ok) {
@@ -203,7 +209,47 @@ export default function SubjectAnalysisDetail() {
         </div>
       </div>
 
-      {/* Summary Stats */}
+      {/* Tabs Switcher: Analysis vs Subject Polls */}
+      <div className="flex items-center p-1 rounded-xl bg-card border border-border gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab("analysis")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all",
+            activeTab === "analysis"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          Attendance Analysis
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("polls")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all",
+            activeTab === "polls"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Vote className="w-3.5 h-3.5" />
+          Subject Polls
+        </button>
+      </div>
+
+      {activeTab === "polls" ? (
+        <PollSection
+          subjectId={data.subjectId}
+          subjectCode={data.subjectCode}
+          subjectName={data.subjectName}
+          currentUserId={student?.id}
+          currentUserName={student?.name}
+        />
+      ) : (
+        <>
+          {/* Summary Stats */}
       <div className="rounded-2xl bg-card border border-border p-4">
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
@@ -371,6 +417,8 @@ export default function SubjectAnalysisDetail() {
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

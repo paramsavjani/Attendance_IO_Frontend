@@ -54,6 +54,15 @@ export const API_CONFIG = {
     TRACK_EVENT: `${API_BASE_URL}/api/event/track`,
     CHECK_APP_UPDATE: `${API_BASE_URL}/api/app/check-update`,
     POPUPS: `${API_BASE_URL}/api/app/popups`,
+    POLLS: `${API_BASE_URL}/api/polls`,
+    POLLS_BY_SUBJECT: (subjectId: string) => `${API_BASE_URL}/api/polls/subject/${subjectId}`,
+    POLL_DETAIL: (pollId: string) => `${API_BASE_URL}/api/polls/${pollId}`,
+    POLL_VOTE: (pollId: string) => `${API_BASE_URL}/api/polls/${pollId}/vote`,
+    POLL_CLOSE: (pollId: string) => `${API_BASE_URL}/api/polls/${pollId}/close`,
+    POLL_DELETE: (pollId: string) => `${API_BASE_URL}/api/polls/${pollId}`,
+    POLL_REPORT: (pollId: string) => `${API_BASE_URL}/api/polls/${pollId}/report`,
+    POLL_MY_POLLS: `${API_BASE_URL}/api/polls/my-polls`,
+    POLL_NOTIFICATION_PREFERENCES: `${API_BASE_URL}/api/user/poll-notification-preferences`,
   },
 } as const;
 

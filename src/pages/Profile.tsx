@@ -31,6 +31,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import {
+  getPollNotificationPreferences,
+  savePollNotificationPreferences,
+} from "@/lib/polls";
 
 interface CurrentSemester {
   year: number;
@@ -62,6 +66,8 @@ export default function Profile() {
   const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
   const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
+  const [notifyNewPolls, setNotifyNewPolls] = useState(true);
+  const [notifyPollResults, setNotifyPollResults] = useState(true);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const contributors = useGitHubContributors();
@@ -424,9 +430,16 @@ export default function Profile() {
             </button>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 setDailyReminderHours(student?.dailyReminderHours ?? []);
                 setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
+                try {
+                  const pollPrefs = await getPollNotificationPreferences();
+                  setNotifyNewPolls(pollPrefs.notifyNewPolls);
+                  setNotifyPollResults(pollPrefs.notifyPollResults);
+                } catch {
+                  // ignore
+                }
                 setShowNotificationPreferences(true);
               }}
               className={profileGridBtn}
@@ -960,6 +973,42 @@ export default function Profile() {
                 className="data-[state=unchecked]:bg-zinc-500 data-[state=unchecked]:border-zinc-500"
               />
             </label>
+
+            {/* Subject Poll Notifications */}
+            <div className="space-y-3 pt-2 border-t border-border/60">
+              <Label className="text-xs font-semibold">Subject Polls</Label>
+              <label
+                htmlFor="notify-new-polls"
+                className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer"
+              >
+                <div className="space-y-0.5 pointer-events-none">
+                  <span className="text-xs font-semibold block">New subject polls</span>
+                  <p className="text-[11px] text-muted-foreground">Get notified when classmates launch a new poll in your enrolled subjects</p>
+                </div>
+                <Switch
+                  id="notify-new-polls"
+                  checked={notifyNewPolls}
+                  onCheckedChange={setNotifyNewPolls}
+                  className="data-[state=unchecked]:bg-zinc-500 data-[state=unchecked]:border-zinc-500"
+                />
+              </label>
+
+              <label
+                htmlFor="notify-poll-results"
+                className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer"
+              >
+                <div className="space-y-0.5 pointer-events-none">
+                  <span className="text-xs font-semibold block">Poll closure & results</span>
+                  <p className="text-[11px] text-muted-foreground">Get notified when polls you participated in conclude with final results</p>
+                </div>
+                <Switch
+                  id="notify-poll-results"
+                  checked={notifyPollResults}
+                  onCheckedChange={setNotifyPollResults}
+                  className="data-[state=unchecked]:bg-zinc-500 data-[state=unchecked]:border-zinc-500"
+                />
+              </label>
+            </div>
           </div>
           <div className="p-2.5 pt-2 flex gap-1.5">
             <Button
@@ -986,6 +1035,10 @@ export default function Profile() {
                     const err = await res.json().catch(() => ({}));
                     throw new Error(err?.error || "Failed to save");
                   }
+                  await savePollNotificationPreferences({
+                    notifyNewPolls,
+                    notifyPollResults,
+                  });
                   await checkAuth();
                   setShowNotificationPreferences(false);
                   toast.success("Notification preferences saved");
