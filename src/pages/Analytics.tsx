@@ -408,7 +408,7 @@ export default function Analytics() {
       {/* Tab Toggle */}
       <div className="relative flex rounded-2xl p-1 gap-1 border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
         <div
-          className="absolute top-1 bottom-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+          className="absolute top-1 bottom-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-spring"
           style={{
             width: 'calc((100% - 12px) / 2)',
             left: activeTab === "my" ? '4px' : 'calc(50% + 2px)',

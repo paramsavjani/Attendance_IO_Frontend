@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
 import {
   Dialog,
   DialogContent,
@@ -59,7 +59,7 @@ export function NotificationPermissionGate({ children }: { children: React.React
     checkPermissionStatus();
 
     // Also check when app comes back to foreground (in case user changed settings)
-    let listener: any = null;
+    let listener: PluginListenerHandle | null = null;
     
     if (Capacitor.isNativePlatform()) {
       const setupAppStateListener = async () => {

@@ -89,7 +89,7 @@ export function OtaUpdateBanner({ open, restarting, onRestart, onDismiss }: OtaU
         aria-live="polite"
         className={cn(
           "flex h-16 w-full max-w-[420px] items-center gap-3 rounded-[20px] border-[0.5px] border-white/10 bg-[#1a1a19]/95 pl-3 pr-2.5 text-[#f0efec] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] backdrop-blur-xl",
-          "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "transition-all duration-300 ease-spring",
           shown ? "pointer-events-auto translate-y-0 opacity-100" : "-translate-y-[140%] opacity-0"
         )}
       >

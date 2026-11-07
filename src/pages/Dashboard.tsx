@@ -29,7 +29,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
-import { TimetableSlot } from "@/types/attendance";
+import { Subject, TimetableSlot } from "@/types/attendance";
+
+// One row in the day's timeline: a lecture/lab/tutorial slot, an extra class, or a merged free gap
+type ScheduleSlot = {
+  time: string;
+  slotIndex: number | null;
+  startTime: string;
+  endTime: string;
+  subject: Subject | null;
+  isCustom: boolean;
+  type: "lecture" | "lab" | "tutorial";
+  location?: string;
+  isExtraClass?: boolean;
+  extraClassIndex?: number;
+  extraListIndex?: number;
+  freeCount?: number;
+};
+
+type ApiSubjectStat = {
+  subjectId: string;
+  present: number;
+  absent: number;
+  total: number;
+  totalUntilEndDate: number;
+  percentage: number;
+  classesNeeded: number;
+  bunkableClasses: number;
+};
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -344,8 +371,8 @@ export default function Dashboard() {
 
         if (response.ok) {
           const data = await response.json();
-          const statsMap: Record<string, any> = {};
-          data.subjectStats?.forEach((stat: any) => {
+          const statsMap: Record<string, ApiSubjectStat> = {};
+          data.subjectStats?.forEach((stat: ApiSubjectStat) => {
             statsMap[stat.subjectId] = {
               subjectId: stat.subjectId,
               present: stat.present,
@@ -392,8 +419,8 @@ export default function Dashboard() {
 
           if (response.ok) {
             const data = await response.json();
-            const statsMap: Record<string, any> = {};
-            data.subjectStats?.forEach((stat: any) => {
+            const statsMap: Record<string, ApiSubjectStat> = {};
+            data.subjectStats?.forEach((stat: ApiSubjectStat) => {
               statsMap[stat.subjectId] = {
                 subjectId: stat.subjectId,
                 present: stat.present,
@@ -464,7 +491,7 @@ export default function Dashboard() {
       });
 
     // Get lab/tutorial slots if requested
-    let labTutorialSlots: any[] = [];
+    let labTutorialSlots: ScheduleSlot[] = [];
     if (includeLabTutorial) {
       const labDaySlots = labTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
       const tutorialDaySlots = tutorialTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
@@ -679,7 +706,7 @@ export default function Dashboard() {
         extraListIndex: listIdx,
         type: "lecture" as const,
       };
-    }).filter(Boolean) as any[];
+    }).filter(Boolean) as ScheduleSlot[];
   }, [extraClassesForDate, enrolledSubjects]);
 
   // Combine regular schedule with extra classes
@@ -696,7 +723,7 @@ export default function Dashboard() {
     const trimmed = combined.slice(firstWithSubject, lastWithSubject + 1);
     // Collapse runs of consecutive free slots into a single compact "Free" row that spans
     // the whole gap, so a two-hour break takes one thin line instead of two full-height rows.
-    const merged: any[] = [];
+    const merged: ScheduleSlot[] = [];
     for (const slot of trimmed) {
       const prev = merged[merged.length - 1];
       if (!slot.subject && prev && !prev.subject) {
@@ -713,7 +740,7 @@ export default function Dashboard() {
   // Index of the first afternoon slot (start hour >= 13:00). Used to render a
   // morning/afternoon divider. -1 (or 0) means no divider needed (all-morning or all-afternoon day).
   const firstAfternoonIndex = useMemo(() => {
-    return fullSchedule.findIndex((s: any) => {
+    return fullSchedule.findIndex((s) => {
       const st = s.startTime || (s.time ? s.time.split(" - ")[0] : "");
       const h = st ? parseInt(st.split(":")[0]) : null;
       return h !== null && h >= 13;
@@ -1049,19 +1076,7 @@ export default function Dashboard() {
             throw new Error('Failed to delete attendance');
           }
 
-          // Remove from attendance state
-          setTodayAttendance(prev => {
-            const updated = { ...prev };
-            delete updated[slotKey];
-            return updated;
-          });
-
-          setAttendanceIds(prev => {
-            const updated = { ...prev };
-            delete updated[slotKey];
-            return updated;
-          });
-        } catch (error: any) {
+        } catch (error) {
           console.error('Error deleting attendance:', error);
           toast.error('Failed to delete attendance record');
           // Continue to remove from UI even if backend deletion fails
@@ -1162,7 +1177,7 @@ export default function Dashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0 flex-1 flex flex-col overflow-hidden">
           <TabsList className="relative grid w-full grid-cols-3 p-1 gap-1 h-11 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
             <div
-              className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+              className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-spring"
               style={{
                 width: "calc((100% - 4px) / 3)",
                 transform: `translateX(${activeTab === "schedule" ? "0%" : activeTab === "lab-tutorial" ? "100%" : "200%"})`
@@ -1306,10 +1321,10 @@ export default function Dashboard() {
                       // Parse hour from 24-hour format (only for slots with time)
                       const startHour = timeStart ? parseInt(timeStart.split(":")[0]) : null;
                       const isCurrent = isSelectedToday && startHour !== null && startHour === currentHour;
-                      const isExtraClass = (slot as any).isExtraClass === true;
+                      const isExtraClass = slot.isExtraClass === true;
                       // Position in the extra classes list (for deletion). Read from the slot
                       // itself so it stays correct even though fullSchedule is trimmed for display.
-                      const extraClassIndex = isExtraClass ? ((slot as any).extraListIndex ?? -1) : -1;
+                      const extraClassIndex = isExtraClass ? (slot.extraListIndex ?? -1) : -1;
 
                       // Show a divider before the first afternoon slot (only when the day
                       // also has morning slots), separating the morning and afternoon blocks.
@@ -1329,8 +1344,8 @@ export default function Dashboard() {
                         // from the previous class's real end to the next class's real start (custom slots
                         // included), rounded to the nearest half hour, and size the row to match.
                         const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
-                        const slotStart = (sl: any) => sl.startTime || (sl.time ? sl.time.split(" - ")[0] : "");
-                        const slotEnd = (sl: any) => sl.endTime || (sl.time ? sl.time.split(" - ")[1] : "");
+                        const slotStart = (sl: ScheduleSlot) => sl.startTime || (sl.time ? sl.time.split(" - ")[0] : "");
+                        const slotEnd = (sl: ScheduleSlot) => sl.endTime || (sl.time ? sl.time.split(" - ")[1] : "");
                         const prev = fullSchedule[index - 1];
                         const next = fullSchedule[index + 1];
                         const fromMin = prev?.subject && slotEnd(prev) ? toMin(slotEnd(prev)) : toMin(timeStart);
@@ -1722,7 +1737,7 @@ export default function Dashboard() {
                       aria-label="Choose attendance source"
                     >
                       <div
-                        className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-none"
+                        className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-spring pointer-events-none"
                         style={{
                           width: "calc((100% - 4px) / 2)",
                           transform: `translateX(${subjectsAttendanceView === "total" ? "0%" : "100%"})`,

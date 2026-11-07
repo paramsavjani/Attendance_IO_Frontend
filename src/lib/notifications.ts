@@ -56,7 +56,7 @@ export async function requestNotificationPermission(): Promise<string | null> {
     // The registration event can fire immediately, so listeners must be ready
     return new Promise((resolve) => {
       let resolved = false;
-      let timeoutId: NodeJS.Timeout;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
 
       // Listen for registration - MUST be set up before register()
       const registrationListener = PushNotifications.addListener('registration', (token) => {
@@ -81,8 +81,9 @@ export async function requestNotificationPermission(): Promise<string | null> {
         if (resolved) return;
         resolved = true;
         console.warn('[FCM] ⏱️ Push notification registration timeout after 15 seconds');
-        registrationListener.remove();
-        errorListener.remove();
+        // addListener resolves to the handle (Capacitor 7), so remove once it is available
+        registrationListener.then((l) => l.remove());
+        errorListener.then((l) => l.remove());
         resolve(null);
       }, 15000);
 
@@ -97,8 +98,8 @@ export async function requestNotificationPermission(): Promise<string | null> {
           resolved = true;
           clearTimeout(timeoutId);
           console.error('[FCM] ❌ Error during register() call:', error);
-          registrationListener.remove();
-          errorListener.remove();
+          registrationListener.then((l) => l.remove());
+          errorListener.then((l) => l.remove());
           resolve(null);
         });
     });

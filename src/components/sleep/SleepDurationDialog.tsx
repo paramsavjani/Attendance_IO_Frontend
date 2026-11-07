@@ -62,9 +62,9 @@ export function SleepDurationDialog({
 
       toast.success("Sleep preference saved!");
       onSave();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving sleep duration:', error);
-      toast.error(error.message || 'Failed to save sleep duration');
+      toast.error(error instanceof Error ? error.message : 'Failed to save sleep duration');
     } finally {
       setIsSaving(false);
     }

@@ -198,9 +198,9 @@ export default function Profile() {
 
       toast.success("Minimum criteria updated successfully");
       handleCancelEdit(subjectId);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating minimum criteria:', error);
-      toast.error(error.message || 'Failed to update minimum criteria');
+      toast.error(error instanceof Error ? error.message : 'Failed to update minimum criteria');
     } finally {
       setIsSavingCriteria(prev => {
         const updated = { ...prev };
@@ -249,9 +249,9 @@ export default function Profile() {
       setSleepDuration(hoursNum);
       setIsEditingSleepDuration(false);
       toast.success("Sleep duration updated successfully");
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating sleep duration:', error);
-      toast.error(error.message || 'Failed to update sleep duration');
+      toast.error(error instanceof Error ? error.message : 'Failed to update sleep duration');
     } finally {
       setIsSavingSleepDuration(false);
     }
@@ -303,9 +303,9 @@ export default function Profile() {
 
       toast.success("Classroom location updated successfully");
       handleCancelEditClassroomLocation(subjectId);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating classroom location:', error);
-      toast.error(error.message || 'Failed to update classroom location');
+      toast.error(error instanceof Error ? error.message : 'Failed to update classroom location');
     } finally {
       setIsSavingClassroomLocation(prev => {
         const updated = { ...prev };

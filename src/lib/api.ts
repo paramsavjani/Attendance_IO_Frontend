@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { getToken } from './token';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.attendanceio.paramsavjani.in';
@@ -101,7 +102,6 @@ export interface AppUpdateResponse {
  */
 export async function getAppBuildNumber(): Promise<number> {
   try {
-    const { Capacitor } = await import('@capacitor/core');
     if (!Capacitor.isNativePlatform()) {
       // For web, return 0 (no update check needed on web)
       return 0;

@@ -44,7 +44,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper function to track app events - exported for use in other components
-export async function trackAppEvent(eventType: string, metadata?: Record<string, any>) {
+export async function trackAppEvent(eventType: string, metadata?: Record<string, unknown>) {
   const token = getToken();
   if (!token) return; // Only track if authenticated
   

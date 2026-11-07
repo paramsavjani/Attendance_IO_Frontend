@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
-import { TimetableSlot } from "@/types/attendance";
+import { Subject, TimetableSlot } from "@/types/attendance";
 
 // Swipe navigation hook
 function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
@@ -146,7 +146,7 @@ export default function LabTutorial() {
             slotIndex: number | null;
             startTime: string;
             endTime: string;
-            subject: any;
+            subject: Subject;
             isCustom: boolean;
             type: "lab" | "tutorial";
         }> = [];
@@ -175,7 +175,7 @@ export default function LabTutorial() {
             slotIndex: number | null;
             startTime: string;
             endTime: string;
-            subject: any;
+            subject: Subject;
             isCustom: boolean;
             type: "lab" | "tutorial";
         }> = [];

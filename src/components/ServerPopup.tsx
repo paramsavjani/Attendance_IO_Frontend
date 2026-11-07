@@ -177,7 +177,9 @@ function isActionClicked(popupId: string, slot: ActionSlot): boolean {
 function markActionClicked(popupId: string, slot: ActionSlot): void {
   try {
     localStorage.setItem(POPUP_CLICK_STORAGE_PREFIX + popupId + "_" + slot, "1");
-  } catch {}
+  } catch {
+    // Storage unavailable; click tracking is best-effort
+  }
 }
 
 function isDualLinkPopup(p: ServerPopupData): boolean {
@@ -259,7 +261,9 @@ function markPopupShown(popup: ServerPopupData): void {
           localStorage.setItem(key, "shown");
         }
     }
-  } catch {}
+  } catch {
+    // Storage unavailable; popup may show again
+  }
 }
 
 export function ServerPopup() {

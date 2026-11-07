@@ -19,7 +19,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: unknown) {
     // Keep a console trail for Android Studio / logcat debugging.
-    // eslint-disable-next-line no-console
     console.error("App crashed:", error);
   }
 

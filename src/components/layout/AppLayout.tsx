@@ -262,7 +262,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
                   "group relative flex items-center gap-1.5 rounded-full px-3.5 py-2.5",
-                  "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "transition-all duration-300 ease-spring",
                   "active:scale-95",
                   isActive
                     ? "bg-primary/20 text-foreground shadow-[0_2px_14px_-50px_hsl(var(--primary)/0.55),0_0_0_1px_hsl(var(--primary)/0.35)_inset]"
@@ -278,14 +278,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                 )}
                 <item.icon
                   className={cn(
-                    "h-[18px] w-[18px] shrink-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    "h-[18px] w-[18px] shrink-0 transition-all duration-300 ease-spring",
                     isActive && "scale-105 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.45)]"
                   )}
                 />
                 <span
                   className={cn(
                     "overflow-hidden whitespace-nowrap text-[12px] font-semibold tracking-[-0.01em]",
-                    "max-w-0 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    "max-w-0 opacity-0 transition-all duration-300 ease-spring",
                     isActive && "max-w-20 pl-0.5 opacity-100"
                   )}
                 >

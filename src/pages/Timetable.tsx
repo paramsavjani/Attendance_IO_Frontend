@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { days } from "@/data/mockData";
-import { TimetableSlot } from "@/types/attendance";
+import { Subject, TimetableSlot } from "@/types/attendance";
+
+// A row in the timetable editor: a standard/custom lecture slot or a lab/tutorial slot
+type TimelineSlot<T extends string = "standard" | "custom"> = {
+  type: T;
+  timeSlot: number | null;
+  time: string;
+  slot: TimetableSlot | undefined;
+  startTime: string;
+  endTime: string;
+};
 import { cn } from "@/lib/utils";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import {
@@ -76,9 +86,9 @@ interface TimelineContentProps {
   activeDay: number;
   setActiveDay: (day: number) => void;
   totalDays: number;
-  getAllSlotsForDay: (day: number) => any[];
+  getAllSlotsForDay: (day: number) => TimelineSlot[];
   formatTime: (time: string) => string;
-  enrolledSubjects: any[];
+  enrolledSubjects: Subject[];
   handleSlotClick: (day: number, timeSlot: number | null, startTime?: string, endTime?: string) => void;
   handleClearSlot: (day: number, timeSlot: number | null, e: React.MouseEvent, startTime?: string, endTime?: string) => void;
   onAddCustomTime: () => void;
@@ -226,9 +236,9 @@ interface LabTutorialTimelineProps {
   activeDay: number;
   setActiveDay: (day: number) => void;
   totalDays: number;
-  getAllSlotsForDay: (day: number, type: "lab" | "tutorial") => any[];
+  getAllSlotsForDay: (day: number, type: "lab" | "tutorial") => TimelineSlot<"lab" | "tutorial">[];
   formatTime: (time: string) => string;
-  enrolledSubjects: any[];
+  enrolledSubjects: Subject[];
   handleSlotClick: (day: number, timeSlot: number | null, startTime?: string, endTime?: string, type?: "lab" | "tutorial") => void;
   handleClearSlot: (day: number, timeSlot: number | null, e: React.MouseEvent, startTime?: string, endTime?: string, type?: "lab" | "tutorial") => void;
   onAddCustomTime: (type: "lab" | "tutorial") => void;
@@ -726,7 +736,7 @@ export default function Timetable() {
 
       if (!selectedSlot.startTime || !selectedSlot.endTime) return;
 
-      let updatedTimetable: TimetableSlot[] = currentTimetable.map((slot) =>
+      const updatedTimetable: TimetableSlot[] = currentTimetable.map((slot) =>
         slot.day === selectedSlot.day &&
           slot.startTime === selectedSlot.startTime &&
           slot.endTime === selectedSlot.endTime
@@ -957,10 +967,10 @@ export default function Timetable() {
       if (!silent) {
         toast.success('Lecture timetable saved');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving timetable:', error);
       if (!silent) {
-        toast.error(error.message || 'Failed to save timetable');
+        toast.error(error instanceof Error ? error.message : 'Failed to save timetable');
       }
       throw error;
     } finally {
@@ -990,10 +1000,10 @@ export default function Timetable() {
       if (!silent) {
         toast.success('Lab timetable saved');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving lab timetable:', error);
       if (!silent) {
-        toast.error(error.message || 'Failed to save lab timetable');
+        toast.error(error instanceof Error ? error.message : 'Failed to save lab timetable');
       }
       throw error;
     } finally {
@@ -1023,10 +1033,10 @@ export default function Timetable() {
       if (!silent) {
         toast.success('Tutorial timetable saved');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving tutorial timetable:', error);
       if (!silent) {
-        toast.error(error.message || 'Failed to save tutorial timetable');
+        toast.error(error instanceof Error ? error.message : 'Failed to save tutorial timetable');
       }
       throw error;
     } finally {
@@ -1042,7 +1052,7 @@ export default function Timetable() {
         saveTutorialTimetable(true),
       ]);
       toast.success('Timetable saved');
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to save timetable');
     }
   };
@@ -1192,7 +1202,7 @@ export default function Timetable() {
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "lecture" | "lab-tutorial")} className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="relative grid w-full grid-cols-2 p-1 gap-1 h-11 mb-3 flex-shrink-0 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-black/20 backdrop-blur-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] dark:shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
               <div
-                className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                className="absolute top-1 bottom-1 left-0.5 rounded-3xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-spring"
                 style={{
                   width: "calc((100% - 4px) / 2)",
                   transform: `translateX(${activeTab === "lecture" ? "0%" : "100%"})`

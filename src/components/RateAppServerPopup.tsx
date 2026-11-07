@@ -60,12 +60,6 @@ export function RateAppServerPopup({
         onEscapeKeyDown={(e) => {
           if (!showDismiss) e.preventDefault();
         }}
-        onPointerDownOutside={(e) => {
-          if (!showDismiss) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if (!showDismiss) e.preventDefault();
-        }}
       >
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-semibold tracking-tight">{title}</AlertDialogTitle>

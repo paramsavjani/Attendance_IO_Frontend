@@ -38,7 +38,9 @@ export function FeatureAnnouncement({ onClose }: { onClose?: () => void }) {
   const close = () => {
     try {
       localStorage.setItem(STORAGE_KEY, VERSION);
-    } catch {}
+    } catch {
+      // Storage unavailable (private mode / quota); announcement may show again
+    }
     setOpen(false);
     onClose?.();
   };

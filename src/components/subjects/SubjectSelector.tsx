@@ -56,7 +56,7 @@ export function SubjectSelector({
         const data = await response.json();
         
         // Convert backend response to frontend Subject format
-        const formattedSubjects: Subject[] = data.map((subject: any) => ({
+        const formattedSubjects: Subject[] = data.map((subject: { id: string; code: string; name: string; lecturePlace?: string | null; color?: string | null }) => ({
           id: subject.id,
           code: subject.code,
           name: subject.name,
@@ -223,9 +223,9 @@ export function SubjectSelector({
       
       // Step 2: No conflicts detected, proceed with save (no resolutions needed)
       await performSave(selected, null);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving subjects:', error);
-      toast.error(error.message || 'Failed to save subjects');
+      toast.error(error instanceof Error ? error.message : 'Failed to save subjects');
     } finally {
       setIsSaving(false);
     }
@@ -307,9 +307,9 @@ export function SubjectSelector({
       setTimeout(() => {
         onSave(subjectsToSave, false);
       }, 200);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving subjects:', error);
-      toast.error(error.message || 'Failed to save subjects');
+      toast.error(error instanceof Error ? error.message : 'Failed to save subjects');
       throw error; // Re-throw to be caught by caller
     } finally {
       setIsSaving(false);

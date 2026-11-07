@@ -20,6 +20,41 @@ interface SubjectStats {
   bunkableClasses?: number;
 }
 
+// Shapes returned by the backend (ids/dates may arrive as numbers or with a time part)
+interface ApiEnrolledSubject {
+  subjectId: string;
+  subjectCode: string;
+  subjectName: string;
+  lecturePlace?: string | null;
+  classroomLocation?: string | null;
+  color?: string | null;
+  minimumCriteria?: number | null;
+}
+
+interface ApiAttendanceRecord {
+  attendanceId?: number | string | null;
+  lectureDate?: string | null;
+  subjectId?: string | number | null;
+  status: string;
+  timeSlot?: number | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  isExtraClass?: boolean;
+  extraClassIndex?: number | null;
+}
+
+interface MarkAttendanceRequest {
+  subjectId: string;
+  lectureDate: string;
+  status: 'present' | 'absent' | 'cancelled';
+  timeSlot?: number;
+  startTime?: string;
+  endTime?: string;
+  isExtraClass?: boolean;
+  extraClass?: boolean;
+  extraClassIndex?: number;
+}
+
 interface AttendanceContextType {
   subjectStats: Record<string, SubjectStats>;
   subjectStatsToday: Record<string, SubjectStats>; // Always shows today's total attendance
@@ -90,7 +125,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         // Convert backend response to Subject format
-        const subjects: Subject[] = data.subjects.map((s: any) => ({
+        const subjects: Subject[] = data.subjects.map((s: ApiEnrolledSubject) => ({
           id: s.subjectId,
           code: s.subjectCode,
           name: s.subjectName,
@@ -272,7 +307,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
         // Convert subject stats to the format expected by the frontend
         const statsMap: Record<string, SubjectStats> = {};
-        data.subjectStats?.forEach((stat: any) => {
+        data.subjectStats?.forEach((stat: SubjectStats) => {
           statsMap[stat.subjectId] = {
             subjectId: stat.subjectId,
             present: stat.present,
@@ -310,11 +345,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         // Normalize so keys match regardless of API returning subjectId as string/number and lectureDate with or without time
         const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
         const idsMap: Record<string, number | null> = {};
-        const norm = (r: any) => ({
+        const norm = (r: ApiAttendanceRecord) => ({
           date: (r.lectureDate != null ? String(r.lectureDate) : '').slice(0, 10),
           subjectId: String(r.subjectId ?? ''),
         });
-        data.todayAttendance?.forEach((record: any) => {
+        data.todayAttendance?.forEach((record: ApiAttendanceRecord) => {
           const { date: d, subjectId: sid } = norm(record);
           let slotKey: string;
           if (record.isExtraClass === true) {
@@ -377,7 +412,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
         // Convert subject stats to the format expected by the frontend
         const statsMap: Record<string, SubjectStats> = {};
-        data.subjectStats?.forEach((stat: any) => {
+        data.subjectStats?.forEach((stat: SubjectStats) => {
           statsMap[stat.subjectId] = {
             subjectId: stat.subjectId,
             present: stat.present,
@@ -651,7 +686,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
             throw new Error('Failed to delete attendance');
           }
 
-        } catch (error: any) {
+        } catch (error) {
           console.error('Error deleting attendance:', error);
           toast.error('Failed to unmark attendance');
           setSavingState(null);
@@ -696,7 +731,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       updateStatsLocally(subjectId, previousStatus, status);
 
       // Call backend API to mark attendance
-      const requestBody: any = {
+      const requestBody: MarkAttendanceRequest = {
         subjectId,
         lectureDate: date,
         status,
@@ -754,9 +789,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
       // Refresh attendance data from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error marking attendance:', error);
-      toast.error(error.message || 'Failed to mark attendance');
+      toast.error(error instanceof Error ? error.message : 'Failed to mark attendance');
       // Don't update local state on error (already reverted above)
     } finally {
       setSavingState(null);

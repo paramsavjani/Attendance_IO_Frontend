@@ -117,9 +117,9 @@ export function BaselineAttendanceDialog({
       toast.success("Previous attendance saved successfully");
       onSave?.();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving previous attendance:', error);
-      toast.error(error.message || 'Failed to save previous attendance');
+      toast.error(error instanceof Error ? error.message : 'Failed to save previous attendance');
     } finally {
       setIsLoading(false);
     }

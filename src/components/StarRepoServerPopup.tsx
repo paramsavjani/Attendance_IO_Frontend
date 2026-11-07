@@ -97,12 +97,6 @@ export function StarRepoServerPopup({
         onEscapeKeyDown={(e) => {
           if (!showDismiss) e.preventDefault();
         }}
-        onPointerDownOutside={(e) => {
-          if (!showDismiss) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if (!showDismiss) e.preventDefault();
-        }}
       >
         <div className="relative px-6 pt-8 pb-5 flex flex-col items-center text-center overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
