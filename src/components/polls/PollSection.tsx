@@ -8,7 +8,7 @@ import {
   deletePoll,
   reportPoll,
 } from "@/lib/polls";
-import { PollCard } from "./PollCard";
+import { PollList } from "./PollList";
 import { CreatePollDialog } from "./CreatePollDialog";
 import { ReportPollDialog } from "./ReportPollDialog";
 import { Button } from "@/components/ui/button";
@@ -165,47 +165,17 @@ export function PollSection({
       </div>
 
       {/* Poll Cards Feed */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-primary" />
-        </div>
-      ) : filteredPolls.length === 0 ? (
-        <div className="text-center py-12 px-4 rounded-2xl bg-card border border-dashed border-border/80 space-y-3">
-          <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-            <BarChart2 className="w-5 h-5" />
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold">No polls found</h4>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              {filter === "ALL"
-                ? "No questions or polls have been raised for this subject yet. Be the first to start one!"
-                : `No ${filter.toLowerCase()} polls right now.`}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCreateDialog(true)}
-            className="text-xs h-8 rounded-xl gap-1.5"
-          >
-            <Plus className="w-3 h-3" /> Create first poll
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredPolls.map((poll) => (
-            <PollCard
-              key={poll.id}
-              poll={poll}
-              currentUserId={currentUserId}
-              onVote={handleVote}
-              onClosePoll={handleClosePoll}
-              onDeletePoll={handleDeletePoll}
-              onOpenReport={(p) => setReportingPoll(p)}
-            />
-          ))}
-        </div>
-      )}
+      <PollList
+        polls={filteredPolls}
+        isLoading={isLoading}
+        filter={filter}
+        currentUserId={currentUserId}
+        onVote={handleVote}
+        onClosePoll={handleClosePoll}
+        onDeletePoll={handleDeletePoll}
+        onOpenReport={(p) => setReportingPoll(p)}
+        onCreateClick={() => setShowCreateDialog(true)}
+      />
 
       {/* Creation Modal */}
       <CreatePollDialog
@@ -230,3 +200,4 @@ export function PollSection({
     </div>
   );
 }
+

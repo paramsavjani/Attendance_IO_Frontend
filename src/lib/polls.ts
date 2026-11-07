@@ -329,3 +329,4 @@ export async function savePollNotificationPreferences(
     return false;
   }
 }
+

@@ -75,3 +75,4 @@ export interface PollNotificationPreferences {
   notifyNewPolls: boolean;
   notifyPollResults: boolean;
 }
+
