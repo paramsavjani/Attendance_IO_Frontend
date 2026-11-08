@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, EyeOff, Flag, Loader2, Lock, MoreHorizontal, Trash2, VenetianMask } from "lucide-react";
+import { Check, EyeOff, Flag, Loader2, Lock, MoreHorizontal, Trash2, Trophy, VenetianMask } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { optionPercent, pollTimeLabel } from "@/lib/polls";
 import type { Poll } from "@/types/poll";
@@ -52,6 +52,11 @@ export function PollCard({
   // so a stray tap while scrolling home can never change someone's ballot.
   const choosing = canVote && (editing || !hasVoted);
   const leadingVotes = Math.max(0, ...poll.options.map((o) => o.votes));
+  // Once voting stops the card becomes a result: the winner (or a tie) is called out and the
+  // other options step back. Open polls keep plain live bars.
+  const ended = !poll.isOpen;
+  const winners = ended && leadingVotes > 0 ? poll.options.filter((o) => o.votes === leadingVotes) : [];
+  const noVotes = poll.totalVoters === 0;
   const accent = poll.subject.color;
 
   const pickSingle = (optionId: number) => {
@@ -169,17 +174,21 @@ export function PollCard({
         </div>
       )}
 
+      {ended && !poll.hidden && <ResultBanner poll={poll} winners={winners} />}
+
       <ul className="mt-3 space-y-1.5" role={collectingMulti ? "group" : "radiogroup"} aria-label={poll.question}>
         {poll.options.map((option) => {
           const mine = poll.myOptionIds.includes(option.id);
           const picked = collectingMulti ? draft.includes(option.id) : mine;
 
           const percent = optionPercent(option.votes, poll.totalVoters);
-          const isLeader = !poll.isOpen && option.votes > 0 && option.votes === leadingVotes;
+          const isWinner = winners.some((w) => w.id === option.id);
+          // Live polls tint your own pick; final results tint the winner instead.
+          const strong = ended ? isWinner : picked;
           const bar = (
             <span
               className="absolute inset-y-0 left-0 transition-[width] duration-700 ease-spring"
-              style={{ width: `${percent}%`, backgroundColor: picked ? `${accent}59` : `${accent}24` }}
+              style={{ width: `${percent}%`, backgroundColor: strong ? `${accent}66` : `${accent}24` }}
               aria-hidden
             />
           );
@@ -189,21 +198,48 @@ export function PollCard({
             </span>
           );
 
+          if (ended && noVotes) {
+            return (
+              <li key={option.id}>
+                <div className="flex w-full items-center rounded-xl border border-dashed border-border/60 px-3 py-2.5 text-sm text-muted-foreground">
+                  <span className="min-w-0 flex-1 truncate">{option.text}</span>
+                </div>
+              </li>
+            );
+          }
+
           if (!choosing) {
             return (
               <li key={option.id}>
                 <div
                   className={cn(
-                    "relative flex w-full items-center gap-2 overflow-hidden rounded-xl border px-3 py-2.5 text-sm",
-                    mine ? "border-transparent" : "border-border/60",
+                    "relative flex w-full items-center gap-2 overflow-hidden rounded-xl border px-3 py-2.5 text-sm transition-opacity",
+                    ended
+                      ? isWinner
+                        ? "border-amber-400/40"
+                        : "border-border/50 opacity-60"
+                      : mine
+                        ? "border-transparent"
+                        : "border-border/60",
                   )}
-                  aria-label={`${option.text}: ${percent}%${mine ? ", your vote" : ""}`}
+                  aria-label={`${option.text}: ${percent}%${isWinner ? ", winner" : ""}${mine ? ", your vote" : ""}`}
                 >
                   {bar}
-                  <span className={cn("relative z-10 min-w-0 flex-1 truncate", (mine || isLeader) && "font-semibold")}>
+                  {ended && isWinner && <Trophy className="relative z-10 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />}
+                  <span
+                    className={cn("relative z-10 min-w-0 flex-1 truncate", (ended ? isWinner : mine) && "font-semibold")}
+                  >
                     {option.text}
                   </span>
-                  {mine && <Check className="relative z-10 h-3.5 w-3.5 flex-shrink-0 text-foreground" />}
+                  {mine &&
+                    (ended ? (
+                      <span className="relative z-10 flex flex-shrink-0 items-center gap-0.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium text-foreground/80">
+                        <Check className="h-2.5 w-2.5 stroke-[3]" />
+                        Your vote
+                      </span>
+                    ) : (
+                      <Check className="relative z-10 h-3.5 w-3.5 flex-shrink-0 text-foreground" />
+                    ))}
                   {percentLabel}
                 </div>
               </li>
@@ -249,7 +285,11 @@ export function PollCard({
 
       <footer className="mt-2.5 flex min-h-[28px] items-center gap-2 text-[11px] text-muted-foreground">
         <span className="tabular-nums">
-          {poll.totalVoters === 0 ? "No votes yet" : `${poll.totalVoters} ${poll.totalVoters === 1 ? "vote" : "votes"}`}
+          {noVotes
+            ? ended
+              ? "No votes"
+              : "No votes yet"
+            : `${ended ? "Final · " : ""}${poll.totalVoters} ${poll.totalVoters === 1 ? "vote" : "votes"}`}
         </span>
         {poll.allowMultiple && (
           <>
@@ -313,5 +353,47 @@ export function PollCard({
         </div>
       </footer>
     </article>
+  );
+}
+
+/** The outcome line on an ended poll: who won, a tie, or that nobody voted. */
+function ResultBanner({ poll, winners }: { poll: Poll; winners: Poll["options"] }) {
+  if (poll.totalVoters === 0) {
+    return (
+      <div className="mt-2.5 rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+        No one voted before this poll ended.
+      </div>
+    );
+  }
+  const percent = optionPercent(winners[0]?.votes ?? 0, poll.totalVoters);
+  const names = winners.map((w) => w.text);
+  const tieText =
+    names.length > 2 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join(" and ");
+  return (
+    <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2">
+      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-400/20">
+        <Trophy className="h-3.5 w-3.5 text-amber-400" />
+      </span>
+      <div className="min-w-0 text-xs leading-snug">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-400/90">Final result</p>
+        {winners.length === 1 ? (
+          <p className="line-clamp-2 text-foreground">
+            <span className="font-semibold">{names[0]}</span>
+            <span className="text-muted-foreground">
+              {" "}
+              {poll.allowMultiple ? "was picked most" : "won"} · {percent}%
+            </span>
+          </p>
+        ) : (
+          <p className="line-clamp-2 text-foreground">
+            <span className="font-semibold">Tie</span>
+            <span className="text-muted-foreground">
+              {" "}
+              between {tieText} · {percent}% each
+            </span>
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
