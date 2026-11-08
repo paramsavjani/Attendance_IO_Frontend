@@ -58,6 +58,7 @@ type ApiSubjectStat = {
   bunkableClasses: number;
 };
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
@@ -150,6 +151,25 @@ export default function Dashboard() {
     setPollsSheetView(view);
     setPollsSheetOpen(true);
   };
+
+  // Deep link from popups and notifications: /dashboard?polls=open (list) or ?polls=ask (new poll).
+  const location = useLocation();
+  useEffect(() => {
+    const target = new URLSearchParams(location.search).get("polls");
+    if (target !== "open" && target !== "ask") return;
+    // Drop the parameter from the address bar without a router navigation: AppLayout keys the
+    // page on location.key, so navigating would remount Dashboard and lose the open sheet.
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.href.replace(/([?&])polls=(open|ask)&?/, "$1").replace(/[?&]$/, ""),
+    );
+    // Wait for whatever sent us here (a popup) to finish closing; its focus hand-back would
+    // otherwise count as an outside tap and close the sheet straight away.
+    const timer = setTimeout(() => openPollsSheet(target === "ask" ? "create" : "list"), 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   // On home (Dashboard) only: double back button closes the app
   useEffect(() => {

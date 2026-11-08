@@ -11,7 +11,14 @@ import {
 } from "@/lib/polls";
 import type { CreatePollInput, Poll, PollFeed, PollReportReason } from "@/types/poll";
 
-const EMPTY_FEED: PollFeed = { polls: [], unvotedOpenCount: 0, canCreate: false, createdToday: 0, dailyLimit: 3 };
+const EMPTY_FEED: PollFeed = {
+  polls: [],
+  unvotedOpenCount: 0,
+  canCreate: false,
+  blocked: false,
+  createdToday: 0,
+  dailyLimit: 3,
+};
 
 const countUnvoted = (polls: Poll[]) => polls.filter((p) => p.isOpen && !p.isMine && p.myOptionIds.length === 0).length;
 

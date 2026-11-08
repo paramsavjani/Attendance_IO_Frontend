@@ -50,7 +50,7 @@ export function PollActionDialogs({
           <AlertDialogHeader>
             <AlertDialogTitle>Report this poll?</AlertDialogTitle>
             <AlertDialogDescription>
-              It's hidden from the class once a few classmates report it. The person who asked won't see who reported.
+              It's hidden from the class once enough classmates report it. The person who asked won't see who reported.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-1.5" role="radiogroup" aria-label="Reason">

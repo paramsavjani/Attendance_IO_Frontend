@@ -29,6 +29,8 @@ export interface PollFeed {
   polls: Poll[];
   unvotedOpenCount: number;
   canCreate: boolean;
+  /** Too many of your polls were hidden after reports; you can't ask new ones. */
+  blocked: boolean;
   createdToday: number;
   dailyLimit: number;
 }
