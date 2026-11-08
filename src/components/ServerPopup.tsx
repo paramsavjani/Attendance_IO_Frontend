@@ -22,6 +22,9 @@ import { RateAppServerPopup } from "@/components/RateAppServerPopup";
 import { StarRepoServerPopup } from "@/components/StarRepoServerPopup";
 import { PopupYearChart } from "@/components/PopupYearChart";
 import { PopupPollPreview } from "@/components/polls/PopupPollPreview";
+
+/** Features this web bundle ships; sent with the popups request. Add a name when a popup needs it. */
+const SUPPORTED_FEATURES = ["polls"];
 import confetti from "canvas-confetti";
 
 /**
@@ -321,7 +324,9 @@ export function ServerPopup() {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(API_CONFIG.ENDPOINTS.POPUPS, {
+        // Tell the backend which features this bundle has, so it never shows a popup for a
+        // feature an older bundle is missing (popups list them in "requires").
+        const response = await fetch(`${API_CONFIG.ENDPOINTS.POPUPS}?supports=${SUPPORTED_FEATURES.join(",")}`, {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
