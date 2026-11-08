@@ -19,6 +19,8 @@ interface Student {
   /** Selected hours for daily reminder: 18 = 6 PM, 20 = 8 PM, 22 = 10 PM. Empty = off. */
   dailyReminderHours?: number[];
   afterLectureReminderEnabled?: boolean;
+  /** Push when a classmate asks a poll in one of my subjects. */
+  pollNotificationsEnabled?: boolean;
 }
 
 interface EnrolledSubject {
@@ -108,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isDemo: userData.isDemo || false,
           dailyReminderHours: Array.isArray(userData.dailyReminderHours) ? userData.dailyReminderHours : [],
           afterLectureReminderEnabled: userData.afterLectureReminderEnabled !== false,
+          pollNotificationsEnabled: userData.pollNotificationsEnabled !== false,
         };
         setStudent(studentData);
         
