@@ -6,11 +6,9 @@ import {
   Search,
   BarChart3,
   User,
-  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AssistantFab, FAB_TOP, useAssistantFabVisible } from "@/components/assistant/AssistantFab";
-import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Capacitor } from "@capacitor/core";
 import { FEEDBACK_READ_EVENT, fetchMyFeedback } from "@/lib/feedback";
 
@@ -54,25 +52,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       window.removeEventListener(FEEDBACK_READ_EVENT, recount);
     };
   }, [location.pathname]);
-
-  const handleRefresh = async () => {
-    // Small delay for visual feedback
-    await new Promise(resolve => setTimeout(resolve, 300));
-    // Reload page for Capacitor or web
-    window.location.reload();
-  };
-
-  const {
-    pullDistance,
-    isRefreshing,
-    progress,
-    shouldRefresh,
-    handlers,
-  } = usePullToRefresh({
-    onRefresh: handleRefresh,
-    threshold: 60,
-    maxPull: 100,
-  });
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -147,69 +126,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       // Exactly the viewport, never taller: the document itself must not scroll, otherwise mobile
       // browsers shift position:fixed elements (nav, launcher) as their toolbar collapses/expands.
       className="h-screen supports-[height:100dvh]:h-[100dvh] overflow-hidden bg-background flex flex-col"
-      {...handlers}
     >
-      {/* Pull to Refresh Indicator - Fixed at top */}
-      <div
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 flex flex-col items-center justify-center overflow-hidden",
-          "transition-all duration-300 ease-out"
-        )}
-        style={{
-          height: pullDistance,
-          opacity: progress > 0.1 ? 1 : 0,
-        }}
-      >
-        <div
-          className={cn(
-            "flex items-center justify-center w-9 h-9 rounded-full",
-            "bg-card border border-border shadow-lg",
-            "transition-transform duration-200"
-          )}
-          style={{
-            transform: `scale(${0.5 + progress * 0.5}) rotate(${progress * 180}deg)`,
-          }}
-        >
-          {isRefreshing ? (
-            <Loader2 className="w-4 h-4 text-primary animate-spin" />
-          ) : (
-            <svg
-              className="w-4 h-4 text-primary transition-transform duration-150"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 5v14M5 12l7-7 7 7" />
-            </svg>
-          )}
-        </div>
-
-        {/* Status text */}
-        <span
-          className={cn(
-            "text-[10px] font-medium text-muted-foreground mt-1",
-            "transition-opacity duration-200",
-            progress > 0.3 ? "opacity-100" : "opacity-0"
-          )}
-        >
-          {isRefreshing ? "Refreshing..." : shouldRefresh ? "Release to refresh" : "Pull to refresh"}
-        </span>
-      </div>
-
-      {/* Main Content - moves down with pull */}
-      <main
-        data-scroll-container
-        className={cn(
-          "flex-1 flex flex-col overflow-hidden safe-area-top",
-          "transition-transform duration-300 ease-out"
-        )}
-        style={{
-          transform: `translateY(${pullDistance}px)`,
-        }}
-      >
+      <main data-scroll-container className="flex-1 flex flex-col overflow-hidden safe-area-top">
         {/* On desktop (md+) the scroll container is full-width so the scrollbar sits at the window
             edge and the content column is centred inside it; on phones it is the column itself. */}
         <div

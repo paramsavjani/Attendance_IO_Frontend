@@ -62,6 +62,7 @@ export default function Profile() {
   const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
   const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
+  const [pollNotificationsEnabled, setPollNotificationsEnabled] = useState(true);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const contributors = useGitHubContributors();
@@ -427,6 +428,7 @@ export default function Profile() {
               onClick={() => {
                 setDailyReminderHours(student?.dailyReminderHours ?? []);
                 setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
+                setPollNotificationsEnabled(student?.pollNotificationsEnabled !== false);
                 setShowNotificationPreferences(true);
               }}
               className={profileGridBtn}
@@ -913,7 +915,7 @@ export default function Profile() {
               </DialogTitle>
             </DialogHeader>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              Choose when you want attendance reminders. You can turn them off.
+              Choose which notifications you get. You can turn any of them off.
             </p>
           </div>
           <div className="p-4 space-y-5 flex-1 min-h-0 overflow-y-auto">
@@ -960,6 +962,21 @@ export default function Profile() {
                 className="data-[state=unchecked]:bg-zinc-500 data-[state=unchecked]:border-zinc-500"
               />
             </label>
+            <label
+              htmlFor="class-polls"
+              className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer"
+            >
+              <div className="space-y-0.5 pointer-events-none">
+                <span className="text-xs font-semibold block">Class polls</span>
+                <p className="text-[11px] text-muted-foreground">Notify me when a classmate asks a poll in one of my subjects</p>
+              </div>
+              <Switch
+                id="class-polls"
+                checked={pollNotificationsEnabled}
+                onCheckedChange={setPollNotificationsEnabled}
+                className="data-[state=unchecked]:bg-zinc-500 data-[state=unchecked]:border-zinc-500"
+              />
+            </label>
           </div>
           <div className="p-2.5 pt-2 flex gap-1.5">
             <Button
@@ -980,6 +997,7 @@ export default function Profile() {
                     body: JSON.stringify({
                       dailyReminderHours,
                       afterLectureReminderEnabled,
+                      pollNotificationsEnabled,
                     }),
                   });
                   if (!res.ok) {

@@ -21,6 +21,10 @@ import { requestAppReview } from "@/lib/in-app-review";
 import { RateAppServerPopup } from "@/components/RateAppServerPopup";
 import { StarRepoServerPopup } from "@/components/StarRepoServerPopup";
 import { PopupYearChart } from "@/components/PopupYearChart";
+import { PopupPollPreview } from "@/components/polls/PopupPollPreview";
+
+/** Features this web bundle ships; sent with the popups request. Add a name when a popup needs it. */
+const SUPPORTED_FEATURES = ["polls"];
 import confetti from "canvas-confetti";
 
 /**
@@ -98,8 +102,11 @@ interface ServerPopupData {
   badge?: string;
   /** Headline numbers shown as tiles under the subtitle, e.g. 2,940 alumni. */
   stats?: { value: string; label: string }[];
-  /** Live chart under the stats; "batch_years" = official average per B.Tech year of study. */
-  chart?: { source: "batch_years" | string; title: string };
+  /**
+   * Visual under the stats: "batch_years" = live official average per B.Tech year of study;
+   * "poll_preview" = a sample class poll.
+   */
+  chart?: { source: "batch_years" | "poll_preview" | string; title: string };
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -317,7 +324,9 @@ export function ServerPopup() {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(API_CONFIG.ENDPOINTS.POPUPS, {
+        // Tell the backend which features this bundle has, so it never shows a popup for a
+        // feature an older bundle is missing (popups list them in "requires").
+        const response = await fetch(`${API_CONFIG.ENDPOINTS.POPUPS}?supports=${SUPPORTED_FEATURES.join(",")}`, {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
@@ -545,6 +554,9 @@ export function ServerPopup() {
               className={cn("mt-2", riseClass)}
               style={rise()}
             />
+          )}
+          {popup.chart?.source === "poll_preview" && (
+            <PopupPollPreview visible={isVisible} className={cn("mt-2", riseClass)} style={rise()} />
           )}
         </div>
 

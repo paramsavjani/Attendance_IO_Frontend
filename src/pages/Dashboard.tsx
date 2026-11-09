@@ -63,6 +63,13 @@ type ApiSubjectStat = {
   bunkableClasses: number;
 };
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
+import { isOverlayOpen } from "@/lib/backOverlay";
+import { usePollFeed } from "@/hooks/usePollFeed";
+import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
+import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
+import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
+import type { Poll } from "@/types/poll";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -139,6 +146,36 @@ export default function Dashboard() {
   } = useAttendance();
   const lastBackPressAt = useRef<number | null>(null);
 
+  // Class polls
+  const polls = usePollFeed(Boolean(student));
+  const [pollsSheetOpen, setPollsSheetOpen] = useState(false);
+  const [pollsSheetView, setPollsSheetView] = useState<PollsSheetView>("list");
+  const [reportingPoll, setReportingPoll] = useState<Poll | null>(null);
+  const [deletingPoll, setDeletingPoll] = useState<Poll | null>(null);
+  const openPollsSheet = (view: PollsSheetView) => {
+    setPollsSheetView(view);
+    setPollsSheetOpen(true);
+  };
+
+  // Deep link from popups and notifications: /dashboard?polls=open (list) or ?polls=ask (new poll).
+  const location = useLocation();
+  useEffect(() => {
+    const target = new URLSearchParams(location.search).get("polls");
+    if (target !== "open" && target !== "ask") return;
+    // Drop the parameter from the address bar without a router navigation: AppLayout keys the
+    // page on location.key, so navigating would remount Dashboard and lose the open sheet.
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.href.replace(/([?&])polls=(open|ask)&?/, "$1").replace(/[?&]$/, ""),
+    );
+    // Wait for whatever sent us here (a popup) to finish closing; its focus hand-back would
+    // otherwise count as an outside tap and close the sheet straight away.
+    const timer = setTimeout(() => openPollsSheet(target === "ask" ? "create" : "list"), 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   // On home (Dashboard) only: double back button closes the app
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -146,6 +183,7 @@ export default function Dashboard() {
     (async () => {
       const { App } = await import("@capacitor/app");
       listenerHandle = await App.addListener("backButton", () => {
+        if (isOverlayOpen()) return;
         const now = Date.now();
         if (lastBackPressAt.current !== null && now - lastBackPressAt.current <= DOUBLE_BACK_PRESS_MS) {
           lastBackPressAt.current = null;
@@ -644,6 +682,21 @@ export default function Dashboard() {
   }, []);
 
   const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
+
+  // A new poll is usually about the class that's coming up, so the form starts on it.
+  const suggestedPollSubjectId = useMemo(() => {
+    if (!pollsSheetOpen) return null;
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const today = getScheduleForDate(now, true).filter((slot) => slot.subject && slot.startTime);
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(":").map(Number);
+      return h * 60 + (m || 0);
+    };
+    const upcoming = today.find((slot) => toMinutes(slot.endTime || slot.startTime) > nowMinutes);
+    return (upcoming ?? today[today.length - 1])?.subject?.id ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pollsSheetOpen, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
   const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
 
@@ -1303,6 +1356,14 @@ export default function Dashboard() {
                 />
               ))}
 
+            <PollsHomeEntry
+              polls={polls}
+              isDemo={Boolean(student?.isDemo)}
+              onOpenSheet={openPollsSheet}
+              onReport={setReportingPoll}
+              onDelete={setDeletingPoll}
+            />
+
             {/* Compact Notices */}
             {isSelectedTomorrow && showingTomorrowByDefault && (
               <div className="flex items-center gap-2 px-3 py-1 bg-primary/5 rounded-xl border border-primary/20">
@@ -1313,6 +1374,7 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* Compact Notices */}
             {isBeforeStartDate && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
@@ -2016,6 +2078,27 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <PollsSheet
+        open={pollsSheetOpen}
+        view={pollsSheetView}
+        onOpenChange={setPollsSheetOpen}
+        onViewChange={setPollsSheetView}
+        polls={polls}
+        subjects={enrolledSubjects}
+        suggestedSubjectId={suggestedPollSubjectId}
+        isDemo={Boolean(student?.isDemo)}
+        onReport={setReportingPoll}
+        onDelete={setDeletingPoll}
+      />
+      <PollActionDialogs
+        reporting={reportingPoll}
+        deleting={deletingPoll}
+        onDismissReport={() => setReportingPoll(null)}
+        onDismissDelete={() => setDeletingPoll(null)}
+        onReport={polls.report}
+        onDelete={polls.remove}
+      />
 
       {/* Past Date Warning Dialog */}
       <AlertDialog open={showPastDateWarning} onOpenChange={setShowPastDateWarning}>
