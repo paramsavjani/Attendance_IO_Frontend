@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { Github } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { useGitHubContributors } from "@/components/contributors/GitHubContributors";
-
-/** GitHub logins that never get a welcome: Claude's own accounts, not people. */
-const NO_WELCOME = new Set(["claude", "claude[bot]", "claude-code", "claude-code[bot]", "claude-ai", "anthropic-claude"]);
+import { isHiddenContributor, useGitHubContributors } from "@/components/contributors/GitHubContributors";
 
 /** The makers: never "new", so a phone starts out having seen only them and welcomes everyone after. */
 const FOUNDERS = ["paramsavjani", "NidhiDodiya1014"];
@@ -37,7 +34,7 @@ export function NewContributorWelcome() {
   useEffect(() => {
     if (!people || people.length === 0) return;
     const seen = readSeen();
-    const fresh = people.filter((p) => !seen.has(p.login) && !NO_WELCOME.has(p.login.toLowerCase()));
+    const fresh = people.filter((p) => !seen.has(p.login) && !isHiddenContributor(p.login));
     if (fresh.length === 0) return;
 
     // Wait for the app to settle, and never on top of another popup (updates, announcements).

@@ -2,9 +2,18 @@ import { useEffect, useState } from "react";
 import { Github, Loader2 } from "lucide-react";
 
 const REPOS = ["paramsavjani/Attendance_IO_Frontend", "paramsavjani/Attendance_IO_Backend"];
-const CACHE_KEY = "github_contributors_v1";
+// v2: lists cached before Claude was filtered out must not be shown again
+const CACHE_KEY = "github_contributors_v2";
 /** GitHub allows 60 unauthenticated calls an hour per IP, so the list is reused for a day. */
 const CACHE_MS = 24 * 60 * 60 * 1000;
+
+/** Claude's GitHub accounts: AI tooling, not people, so never listed as contributors. */
+const HIDDEN_LOGINS = new Set(["claude", "claude[bot]", "claude-code", "claude-code[bot]", "claude-ai", "anthropic-claude"]);
+
+export function isHiddenContributor(login: string): boolean {
+  const name = login.toLowerCase();
+  return HIDDEN_LOGINS.has(name) || name.startsWith("claude-") || name.includes("anthropic");
+}
 
 interface CodeContributor {
   login: string;
@@ -24,7 +33,9 @@ interface GitHubContributor {
 function readCache(): CodeContributor[] | null {
   try {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-    return cached && Date.now() - cached.at < CACHE_MS ? cached.people : null;
+    return cached && Date.now() - cached.at < CACHE_MS
+      ? (cached.people as CodeContributor[]).filter((p) => !isHiddenContributor(p.login))
+      : null;
   } catch {
     return null;
   }
@@ -41,6 +52,7 @@ async function fetchContributors(signal: AbortSignal): Promise<CodeContributor[]
   const byLogin = new Map<string, CodeContributor>();
   for (const c of lists.flat()) {
     if (c.type !== "User") continue; // dependabot and other bots
+    if (isHiddenContributor(c.login)) continue;
     const seen = byLogin.get(c.login);
     if (seen) seen.contributions += c.contributions;
     else byLogin.set(c.login, { login: c.login, avatarUrl: c.avatar_url, profileUrl: c.html_url, contributions: c.contributions });
