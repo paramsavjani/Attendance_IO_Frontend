@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { UrgentNotice } from "@/types/notice";
+import { Subject } from "@/types/attendance";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Flag, Ban, HelpCircle, FileCheck2, AlertCircle, Clock } from "lucide-react";
@@ -8,11 +9,13 @@ import { formatDistanceToNow } from "date-fns";
 
 interface NoticeCardProps {
   notice: UrgentNotice;
+  /** The enrolled subject the notice is about, so the card can say which class it means. */
+  subject?: Subject;
   onDismiss: (noticeId: string) => void;
   onReport: (notice: UrgentNotice) => void;
 }
 
-export function NoticeCard({ notice, onDismiss, onReport }: NoticeCardProps) {
+export function NoticeCard({ notice, subject, onDismiss, onReport }: NoticeCardProps) {
   const [isDismissing, setIsDismissing] = useState(false);
 
   const getTypeIcon = () => {
@@ -41,6 +44,22 @@ export function NoticeCard({ notice, onDismiss, onReport }: NoticeCardProps) {
     }
   };
 
+  const getCardTone = () => {
+    switch (notice.noticeType) {
+      case "CANCELLED_LECTURE":
+        return "border-red-500/30 from-red-500/10";
+      case "QUIZ":
+        return "border-amber-500/30 from-amber-500/10";
+      case "MARKS":
+        return "border-blue-500/30 from-blue-500/10";
+      default:
+        return "border-primary/30 from-primary/10";
+    }
+  };
+
+  const subjectName = subject?.name ?? notice.subjectName;
+  const subjectCode = subject?.code ?? notice.subjectCode;
+
   const handleGotIt = () => {
     setIsDismissing(true);
     setTimeout(() => {
@@ -51,38 +70,29 @@ export function NoticeCard({ notice, onDismiss, onReport }: NoticeCardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/10 via-background to-background p-3.5 shadow-sm transition-all duration-300 relative overflow-hidden",
+        "rounded-2xl border bg-gradient-to-r via-background to-background p-3.5 shadow-sm transition-all duration-300 relative overflow-hidden",
+        getCardTone(),
         isDismissing && "opacity-0 scale-95"
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge variant="outline" className={cn("text-[10px] py-0 px-2 h-5 font-semibold gap-1", getTypeBadge())}>
-            {getTypeIcon()}
-            {notice.noticeType === "CANCELLED_LECTURE"
-              ? "Cancelled Lecture"
-              : notice.noticeType === "QUIZ"
-              ? "Surprise Quiz"
-              : notice.noticeType === "MARKS"
-              ? "Marks"
-              : "Urgent Update"}
-          </Badge>
-          {notice.subjectCode && (
-            <span className="text-[11px] font-bold text-foreground">
-              · {notice.subjectCode}
-            </span>
-          )}
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <Badge variant="outline" className={cn("text-[10px] py-0 px-2 h-5 font-semibold gap-1 min-w-0", getTypeBadge())}>
+          {getTypeIcon()}
+          <span className="truncate">
+            {subjectName ?? "Urgent notice"}
+            {subjectCode && <span className="opacity-70"> · {subjectCode}</span>}
+          </span>
+        </Badge>
 
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground flex-shrink-0">
           <Clock className="w-3 h-3" />
           <span>{formatDistanceToNow(new Date(notice.createdAt), { addSuffix: true })}</span>
         </div>
       </div>
 
       {/* Content */}
-      <div className="mt-2 space-y-1">
-        <h4 className="text-xs font-bold text-foreground">{notice.title}</h4>
+      <div className="mt-2.5 space-y-1">
+        <h4 className="text-sm font-semibold text-foreground leading-tight">{notice.title}</h4>
         <p className="text-xs text-muted-foreground leading-snug">{notice.message}</p>
       </div>
 

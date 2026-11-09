@@ -1314,12 +1314,11 @@ export default function Dashboard() {
                         setNoticePreselectedSubject(null);
                         setCreateNoticeDialogOpen(true);
                       }}
-                      className="h-9 px-2.5 rounded-full flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 active:scale-[0.98] transition-all font-medium text-xs"
+                      className="w-9 h-9 rounded-full flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 active:scale-[0.95] transition-all"
                       title="Urgent notice for class"
+                      aria-label="Urgent notice for class"
                     >
-                      <BellRing className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span className="hidden sm:inline">Urgent notice</span>
-                      <span className="sm:hidden">Notice</span>
+                      <BellRing className="w-4 h-4 stroke-[2.25]" />
                     </button>
                     <button
                       onClick={() => setAddClassDialogOpen(true)}
@@ -1341,6 +1340,7 @@ export default function Dashboard() {
                 <NoticeCard
                   key={notice.id}
                   notice={notice}
+                  subject={enrolledSubjects.find((s) => s.id === notice.subjectId)}
                   onDismiss={(id) => {
                     markNoticeSeen(id);
                     setDismissedNoticeIds((prev) => [...prev, id]);
@@ -1363,16 +1363,6 @@ export default function Dashboard() {
               onReport={setReportingPoll}
               onDelete={setDeletingPoll}
             />
-
-            {/* Compact Notices */}
-            {isSelectedTomorrow && showingTomorrowByDefault && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-primary/5 rounded-xl border border-primary/20">
-                <Sunrise className="w-4 h-4 text-primary flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Today's done — showing tomorrow's schedule
-                </p>
-              </div>
-            )}
 
             {/* Compact Notices */}
             {isBeforeStartDate && (
@@ -1625,6 +1615,20 @@ export default function Dashboard() {
                                       : (slot.location || slot.subject.classroomLocation || slot.subject.lecturePlace || slot.subject.code)}
                                   </p>
                                 </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNoticePreselectedSubject(slot.subject);
+                                    setCreateNoticeDialogOpen(true);
+                                  }}
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 active:scale-[0.92] transition-all"
+                                  title="Notify class about this lecture"
+                                  aria-label={`Notify class about ${slot.subject.name}`}
+                                >
+                                  <BellRing className="w-3.5 h-3.5" />
+                                </button>
                                 {/* Cancelled badge or Attendance percentage badge */}
                                 {status === 'cancelled' ? (
                                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted-foreground/10 flex-shrink-0">
@@ -1652,6 +1656,7 @@ export default function Dashboard() {
                                     </span>
                                   </div>
                                 )}
+                                </div>
                               </div>
 
                               {/* Action buttons */}
@@ -1752,19 +1757,6 @@ export default function Dashboard() {
                                     )}
                                   </button>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setNoticePreselectedSubject(slot.subject);
-                                    setCreateNoticeDialogOpen(true);
-                                  }}
-                                  className="h-7 px-2 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
-                                  title="Notify class about this lecture"
-                                >
-                                  <BellRing className="w-2.5 h-2.5" />
-                                  <span>Notify</span>
-                                </button>
                               </div>
                             </div>
                           </div>
