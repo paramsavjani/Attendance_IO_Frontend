@@ -59,6 +59,12 @@ export const API_CONFIG = {
     TRACK_EVENT: `${API_BASE_URL}/api/event/track`,
     CHECK_APP_UPDATE: `${API_BASE_URL}/api/app/check-update`,
     POPUPS: `${API_BASE_URL}/api/app/popups`,
+    NOTICES: `${API_BASE_URL}/api/notices`,
+    NOTICES_ACTIVE_TODAY: `${API_BASE_URL}/api/notices/active-today`,
+    NOTICES_BY_SUBJECT: (subjectId: string) => `${API_BASE_URL}/api/notices/subject/${subjectId}`,
+    NOTICES_SEEN: (noticeId: string) => `${API_BASE_URL}/api/notices/${noticeId}/seen`,
+    NOTICES_REPORT: (noticeId: string) => `${API_BASE_URL}/api/notices/${noticeId}/report`,
+    DELETE_NOTICE: (noticeId: string) => `${API_BASE_URL}/api/notices/${noticeId}`,
   },
 } as const;
 
