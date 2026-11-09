@@ -117,3 +117,4 @@ export function NoticeCard({ notice, onDismiss, onReport }: NoticeCardProps) {
     </div>
   );
 }
+

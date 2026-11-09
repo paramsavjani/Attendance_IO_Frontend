@@ -32,3 +32,4 @@ export interface ReportNoticePayload {
   noticeId: string;
   reason?: string;
 }
+
