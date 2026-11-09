@@ -1301,8 +1301,6 @@ export default function Dashboard() {
               polls={polls}
               isDemo={Boolean(student?.isDemo)}
               onOpenSheet={openPollsSheet}
-              onReport={setReportingPoll}
-              onDelete={setDeletingPoll}
             />
 
             {/* Compact Notices */}
