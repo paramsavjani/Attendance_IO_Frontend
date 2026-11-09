@@ -30,6 +30,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { Subject, TimetableSlot } from "@/types/attendance";
+import { UrgentNotice } from "@/types/notice";
+import { fetchActiveNotices, markNoticeSeen, reportNotice } from "@/lib/notices";
+import { NoticeCard } from "@/components/notices/NoticeCard";
+import { CreateNoticeDialog } from "@/components/notices/CreateNoticeDialog";
+import { BellRing } from "lucide-react";
 
 // One row in the day's timeline: a lecture/lab/tutorial slot, an extra class, or a merged free gap
 type ScheduleSlot = {
@@ -199,6 +204,10 @@ export default function Dashboard() {
     return {};
   });
   const [addClassDialogOpen, setAddClassDialogOpen] = useState(false);
+  const [createNoticeDialogOpen, setCreateNoticeDialogOpen] = useState(false);
+  const [noticePreselectedSubject, setNoticePreselectedSubject] = useState<Subject | null>(null);
+  const [activeNotices, setActiveNotices] = useState<UrgentNotice[]>([]);
+  const [dismissedNoticeIds, setDismissedNoticeIds] = useState<string[]>([]);
 
   // Track which extra class is being deleted (for loading state)
   const [deletingExtraClass, setDeletingExtraClass] = useState<{ subjectId: string; index: number } | null>(null);
@@ -448,6 +457,20 @@ export default function Dashboard() {
       controller.abort();
     };
   }, [todayAttendance, student, isLoadingLabTutStats]);
+
+  // Load active urgent notices for today
+  useEffect(() => {
+    if (!student) return;
+    const loadNotices = async () => {
+      try {
+        const notices = await fetchActiveNotices();
+        setActiveNotices(notices);
+      } catch (e) {
+        console.error("Failed to load active notices:", e);
+      }
+    };
+    loadNotices();
+  }, [student]);
 
   // Get schedule for any date - returns standard lecture slots + custom slots + lab/tutorial
   function getScheduleForDate(date: Date, includeLabTutorial: boolean = true) {
@@ -1232,17 +1255,53 @@ export default function Dashboard() {
                   <ChevronRight className="w-4 h-4" />
                 </button>
                 {!isBeforeStartDate && (
-                  <button
-                    onClick={() => setAddClassDialogOpen(true)}
-                    className="h-9 pl-2.5 pr-3 rounded-full flex items-center gap-1.5 bg-neutral-900/80 dark:bg-neutral-900/80 text-white border border-neutral-700/50 dark:border-neutral-500/30 backdrop-blur-md hover:bg-neutral-800/90 dark:hover:bg-neutral-800/90 active:scale-[0.98] transition-all shadow-lg hover:shadow-xl font-medium text-xs"
-                    title="Add a class"
-                  >
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>Add class</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        setNoticePreselectedSubject(null);
+                        setCreateNoticeDialogOpen(true);
+                      }}
+                      className="h-9 px-2.5 rounded-full flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 active:scale-[0.98] transition-all font-medium text-xs"
+                      title="Urgent notice for class"
+                    >
+                      <BellRing className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span className="hidden sm:inline">Urgent notice</span>
+                      <span className="sm:hidden">Notice</span>
+                    </button>
+                    <button
+                      onClick={() => setAddClassDialogOpen(true)}
+                      className="h-9 pl-2.5 pr-3 rounded-full flex items-center gap-1.5 bg-neutral-900/80 dark:bg-neutral-900/80 text-white border border-neutral-700/50 dark:border-neutral-500/30 backdrop-blur-md hover:bg-neutral-800/90 dark:hover:bg-neutral-800/90 active:scale-[0.98] transition-all shadow-lg hover:shadow-xl font-medium text-xs"
+                      title="Add a class"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Add class</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
+
+            {/* Unseen Urgent Notices on Home */}
+            {activeNotices
+              .filter((n) => !dismissedNoticeIds.includes(n.id))
+              .map((notice) => (
+                <NoticeCard
+                  key={notice.id}
+                  notice={notice}
+                  onDismiss={(id) => {
+                    markNoticeSeen(id);
+                    setDismissedNoticeIds((prev) => [...prev, id]);
+                  }}
+                  onReport={async (n) => {
+                    const res = await reportNotice({ noticeId: n.id });
+                    if (res.isHidden) {
+                      setDismissedNoticeIds((prev) => [...prev, n.id]);
+                      setActiveNotices((prev) => prev.filter((item) => item.id !== n.id));
+                    }
+                    toast.success(res.message);
+                  }}
+                />
+              ))}
 
             {/* Compact Notices */}
             {isSelectedTomorrow && showingTomorrowByDefault && (
@@ -1631,6 +1690,19 @@ export default function Dashboard() {
                                     )}
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNoticePreselectedSubject(slot.subject);
+                                    setCreateNoticeDialogOpen(true);
+                                  }}
+                                  className="h-7 px-2 rounded-md text-[10px] font-medium transition-all flex items-center justify-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
+                                  title="Notify class about this lecture"
+                                >
+                                  <BellRing className="w-2.5 h-2.5" />
+                                  <span>Notify</span>
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -2015,6 +2087,25 @@ export default function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Urgent Notice Creation Modal */}
+      {student && (
+        <CreateNoticeDialog
+          open={createNoticeDialogOpen}
+          onOpenChange={setCreateNoticeDialogOpen}
+          preselectedSubject={noticePreselectedSubject}
+          enrolledSubjects={enrolledSubjects}
+          currentStudent={{
+            id: student.id,
+            name: student.name,
+            rollNumber: student.rollNumber || student.sid,
+            pictureUrl: student.pictureUrl,
+          }}
+          onNoticeCreated={(notice) => {
+            setActiveNotices((prev) => [notice, ...prev]);
+          }}
+        />
+      )}
 
     </>
   );
