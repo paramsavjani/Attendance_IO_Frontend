@@ -7,6 +7,7 @@ import { PhotoCropper } from "@/components/profile/PhotoCropper";
 import { uploadProfilePicture, removeProfilePicture } from "@/lib/profilePicture";
 import { cn } from "@/lib/utils";
 import { photoThumb } from "@/lib/photoUrl";
+import { useCloseOnBack } from "@/lib/backOverlay";
 
 interface ProfileHeroProps {
   name?: string;
@@ -31,6 +32,7 @@ export function ProfileHero({ name, rollNumber, pictureUrl, hasUploadedPicture, 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [picked, setPicked] = useState<File | null>(null);
+  useCloseOnBack(sheetOpen, () => setSheetOpen(false));
   const [saving, setSaving] = useState(false);
   /** The small version; the full photo is only fetched when the viewer opens. */
   const photo = photoThumb(pictureUrl) || DEFAULT_AVATAR;

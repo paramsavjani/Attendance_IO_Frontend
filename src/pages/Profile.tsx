@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getClassCheck, getWidgetCounts, hasAdoptedClassCheck, setClassCheck } from "@/lib/widgetBridge";
 import { WidgetsSheet } from "@/components/widgets/WidgetsSheet";
+import { useCloseOnBack } from "@/lib/backOverlay";
 import { useNavigate } from "react-router-dom";
 import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
@@ -88,6 +89,13 @@ export default function Profile() {
   }, []);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  // The phone's back button closes whichever of these is open instead of leaving Profile
+  useCloseOnBack(showSubjectEditor, () => setShowSubjectEditor(false));
+  useCloseOnBack(showCriteriaModal, () => setShowCriteriaModal(false));
+  useCloseOnBack(showClassroomLocationModal, () => setShowClassroomLocationModal(false));
+  useCloseOnBack(isEditingSleepDuration, () => setIsEditingSleepDuration(false));
+  useCloseOnBack(showNotificationPreferences, () => setShowNotificationPreferences(false));
+  useCloseOnBack(showAbout, () => setShowAbout(false));
   const contributors = useGitHubContributors();
 
   useEffect(() => {

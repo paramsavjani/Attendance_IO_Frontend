@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { useCloseOnBack } from "@/lib/backOverlay";
 
 type Kind = "bug" | "feedback" | "suggestion";
 
@@ -38,6 +39,7 @@ export function FeedbackComposer({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  useCloseOnBack(open, () => onOpenChange(false));
 
   const ready = title.trim().length > 0 && body.trim().length > 0;
   const placeholder = PLACEHOLDERS[kind];
