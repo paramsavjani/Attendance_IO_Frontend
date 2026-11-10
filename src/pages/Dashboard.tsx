@@ -215,6 +215,9 @@ export default function Dashboard() {
     const key = "attendance_io_widget_launch_seen";
     try {
       if (localStorage.getItem(key)) return;
+      // The web code built into 1.0.362 still shows the older bottom-sheet intro before this update
+      // arrives; a student who has seen that one isn't shown this one too.
+      if (localStorage.getItem("attendance_io_widget_promo_seen")) return;
     } catch {
       return;
     }
@@ -233,6 +236,7 @@ export default function Dashboard() {
         if (waited < 3 || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
         clearInterval(timer);
         localStorage.setItem(key, "1");
+        localStorage.setItem("attendance_io_widget_promo_seen", "1");
         setWidgetPromoOpen(true);
       }, 1000);
     });
