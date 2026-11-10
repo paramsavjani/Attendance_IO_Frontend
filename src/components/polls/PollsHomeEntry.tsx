@@ -1,5 +1,5 @@
-import { Plane } from "lucide-react";
 import type { PollFeedController } from "@/hooks/usePollFeed";
+import { LeaveIcon } from "@/components/leave/LeaveIcon";
 import { PollsIcon } from "./PollsIcon";
 import type { PollsSheetView } from "./PollsSheet";
 
@@ -32,10 +32,7 @@ export function PollsHomeEntry({ polls, onOpenSheet, onPlanLeave }: PollsHomeEnt
   return (
     <div className="grid grid-cols-2 gap-2">
       <button type="button" onClick={() => onOpenSheet("list")} className={tile} aria-label={`Class polls, ${pollsDetail}`}>
-        <span className="relative flex-shrink-0">
-          <PollsIcon className="h-8 w-8" />
-          {waiting > 0 && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-rose-500" />}
-        </span>
+        <PollsIcon className="h-8 w-8" />
         <span className="min-w-0">
           <span className="block truncate text-xs font-semibold">Class polls</span>
           <span className={waiting > 0 ? "block truncate text-[10.5px] font-medium text-rose-400" : "block truncate text-[10.5px] text-muted-foreground"}>
@@ -44,9 +41,7 @@ export function PollsHomeEntry({ polls, onOpenSheet, onPlanLeave }: PollsHomeEnt
         </span>
       </button>
       <button type="button" onClick={onPlanLeave} className={tile}>
-        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
-          <Plane className="h-4 w-4 text-primary" />
-        </span>
+        <LeaveIcon className="h-8 w-8" />
         <span className="min-w-0">
           <span className="block truncate text-xs font-semibold">Plan a leave</span>
           <span className="block truncate text-[10.5px] text-muted-foreground">See days off</span>
