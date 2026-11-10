@@ -62,6 +62,7 @@ import { useLocation } from "react-router-dom";
 import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
+import { WrappedHomeEntry } from "@/components/wrapped/WrappedHomeEntry";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -1302,6 +1303,8 @@ export default function Dashboard() {
               isDemo={Boolean(student?.isDemo)}
               onOpenSheet={openPollsSheet}
             />
+
+            <WrappedHomeEntry />
 
             {/* Compact Notices */}
             {isBeforeStartDate && (
