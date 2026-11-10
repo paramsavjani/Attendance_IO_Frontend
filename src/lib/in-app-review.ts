@@ -68,3 +68,52 @@ export async function requestAppReview(options?: RequestAppReviewOptions): Promi
     // Do not open Play Store for auto prompt
   }
 }
+
+const REVIEW_KEY = "attendance_io_review_prompt_v1";
+/** Ask only once the student has used the app a few days and marked some classes. */
+const MIN_DAYS_USED = 3;
+const MIN_PRESENT_MARKS = 5;
+/** Google rations its sheet on its own; this keeps us from asking more often than that anyway. */
+const ASK_AGAIN_AFTER_DAYS = 60;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+interface ReviewPromptState {
+  firstSeen: number;
+  presentMarks: number;
+  lastAsked?: number;
+}
+
+/**
+ * Called after the student marks a class present today: a good moment to show Google Play's own
+ * rating sheet (the one that slides up from the bottom). Google decides whether it actually
+ * appears and nothing tells the app, so this never shows anything of its own.
+ */
+export async function maybeAskForReview(
+  track: (eventType: string, metadata: Record<string, unknown>) => Promise<void>,
+): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  let state: ReviewPromptState;
+  try {
+    state = JSON.parse(localStorage.getItem(REVIEW_KEY) || "null") ?? { firstSeen: Date.now(), presentMarks: 0 };
+    state.presentMarks += 1;
+    const now = Date.now();
+    const ready =
+      state.presentMarks >= MIN_PRESENT_MARKS &&
+      now - state.firstSeen >= MIN_DAYS_USED * DAY_MS &&
+      (!state.lastAsked || now - state.lastAsked >= ASK_AGAIN_AFTER_DAYS * DAY_MS);
+    if (ready) state.lastAsked = now;
+    localStorage.setItem(REVIEW_KEY, JSON.stringify(state));
+    if (!ready) return;
+  } catch {
+    return;
+  }
+  // Let the mark's own feedback land first
+  await new Promise((r) => setTimeout(r, 1200));
+  try {
+    const { InAppReview } = await import("@capacitor-community/in-app-review");
+    await InAppReview.requestReview();
+    void track("in_app_review_requested", { presentMarks: state.presentMarks });
+  } catch {
+    // not available on this device or build
+  }
+}

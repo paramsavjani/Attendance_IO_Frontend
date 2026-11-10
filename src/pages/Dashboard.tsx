@@ -66,6 +66,7 @@ import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
 import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
 import { WidgetLaunchPopup } from "@/components/widgets/WidgetLaunchPopup";
+import { maybeAskForReview } from "@/lib/in-app-review";
 import { adoptClassCheck, canPinWidget, getWidgetCounts, reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
@@ -1231,6 +1232,7 @@ export default function Dashboard() {
     }
 
     await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
+    if (status === 'present' && !student?.isDemo) void maybeAskForReview(trackAppEvent);
   };
 
   const confirmPastDateAttendance = async () => {
