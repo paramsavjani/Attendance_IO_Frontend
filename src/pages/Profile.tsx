@@ -6,7 +6,9 @@ import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, LayoutGrid, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, ArrowUpRight, Github, Users } from "lucide-react";
+import { LogOut, BookOpen, Edit, LayoutGrid, Target, Save, Moon, MessageSquare, MapPin, BarChart3, Star, Bell, ArrowUpRight, Github, Users, Inbox } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { SettingsGroup, SettingsRow } from "@/components/profile/SettingsGroup";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -32,7 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 
 interface CurrentSemester {
   year: number;
@@ -66,6 +67,12 @@ export default function Profile() {
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
   const [pollNotificationsEnabled, setPollNotificationsEnabled] = useState(true);
   const [classCheckOnPhone, setClassCheckOnPhone] = useState(false);
+  const [classCheckEnabled, setClassCheckEnabled] = useState<boolean | null>(null);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    void import("@capacitor/app").then(({ App }) => App.getInfo()).then((info) => setAppVersion(info.version)).catch(() => null);
+  }, []);
   // Only app builds with widgets report counts; the web and older builds don't show the button
   const [widgetCount, setWidgetCount] = useState<number | null>(null);
   const [showWidgets, setShowWidgets] = useState(false);
@@ -74,7 +81,10 @@ export default function Profile() {
     void getWidgetCounts().then((c) => setWidgetCount(c ? c.today + c.subjects + c.mini : null));
   }, [showWidgets]);
   useEffect(() => {
-    void getClassCheck().then((onPhone) => setClassCheckOnPhone(onPhone !== null));
+    void getClassCheck().then((onPhone) => {
+      setClassCheckOnPhone(onPhone !== null);
+      setClassCheckEnabled(onPhone);
+    });
   }, []);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -348,15 +358,39 @@ export default function Profile() {
       ? `${feedbackSent} sent · ${feedbackUnread} new ${feedbackUnread === 1 ? "reply" : "replies"}`
       : feedbackSent > 0
         ? `${feedbackSent} sent · tap to see replies`
-        : "Report a bug or send a suggestion";
+        : "Replies to what you send show up here";
 
-  /** Simple bordered actions — one flat list: Subjects + 8 grid buttons */
-  const profileGridBtn =
-    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-white/[0.12] bg-white/[0.03] px-3 py-2.5 text-left transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]";
-  const profileSubjectsBtn =
-    "group flex w-full items-center gap-3.5 rounded-xl border border-white/[0.12] bg-white/[0.03] px-4 py-3.5 text-left transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99] touch-manipulation dark:border-white/[0.1] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]";
-  const profileLogoutBtn =
-    "group flex min-h-[48px] w-full items-center justify-start gap-2.5 rounded-xl border border-red-500/35 bg-red-500/[0.06] px-3 py-2.5 text-left transition-all hover:border-red-500/50 hover:bg-red-500/12 active:scale-[0.99] touch-manipulation sm:min-h-[52px] dark:border-red-500/40 dark:bg-red-500/10 dark:hover:bg-red-500/15";
+  const openNotificationPreferences = () => {
+    setDailyReminderHours(student?.dailyReminderHours ?? []);
+    setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
+    setPollNotificationsEnabled(student?.pollNotificationsEnabled !== false);
+    setShowNotificationPreferences(true);
+    // On builds that ask after class on the phone, that is where this setting lives
+    void getClassCheck().then((onPhone) => {
+      if (onPhone !== null && hasAdoptedClassCheck(student?.id)) setAfterLectureReminderEnabled(onPhone);
+    });
+  };
+
+  const rateApp = async () => {
+    try {
+      await requestAppReview({ openPlayStoreOnly: true });
+    } catch (e) {
+      console.error("Rate us failed:", e);
+      toast.error("Could not open review. Please try again.");
+    }
+  };
+
+  const criteriaValues = new Set(enrolledSubjects.map((s) => s.minimumCriteria ?? 70));
+  const criteriaSummary =
+    enrolledSubjects.length === 0 ? undefined : criteriaValues.size === 1 ? `${[...criteriaValues][0]}%` : "Mixed";
+  const customLocations = enrolledSubjects.filter((s) => s.classroomLocation).length;
+  const afterLectureOn =
+    classCheckEnabled !== null && hasAdoptedClassCheck(student?.id)
+      ? classCheckEnabled
+      : student?.afterLectureReminderEnabled !== false;
+  const notificationsOn =
+    (student?.dailyReminderHours?.length ?? 0) + (afterLectureOn ? 1 : 0) + (student?.pollNotificationsEnabled !== false ? 1 : 0);
+  const noSubjects = enrolledSubjects.length === 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 pb-6">
@@ -376,208 +410,138 @@ export default function Profile() {
         onPhotoChanged={checkAuth}
       />
 
-      {/* Settings — Subjects first, then 8 bordered buttons (no section headings / nested boxes) */}
-      <div className="relative shrink-0 overflow-hidden rounded-xl">
-        <div className="flex flex-col gap-3 px-0 pb-1">
-          <button type="button" onClick={() => setShowSubjectEditor(true)} className={profileSubjectsBtn}>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400 transition-transform group-active:scale-95 dark:bg-blue-500/10">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Subjects</p>
-              <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">{enrolledSubjects.length} enrolled · edit your list</p>
-            </div>
-            <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
-          </button>
+      <div className="mt-2 flex flex-col gap-5">
+        <SettingsGroup title="Classes">
+          <SettingsRow
+            icon={BookOpen}
+            tint="bg-blue-500/15 text-blue-400"
+            label="Subjects"
+            detail="Add or drop subjects"
+            value={enrolledSubjects.length}
+            onClick={() => setShowSubjectEditor(true)}
+          />
+          <SettingsRow
+            icon={Target}
+            tint="bg-violet-500/15 text-violet-400"
+            label="Attendance target"
+            detail="The % you want to stay above"
+            value={criteriaSummary}
+            disabled={noSubjects}
+            onClick={() => setShowCriteriaModal(true)}
+          />
+          <SettingsRow
+            icon={MapPin}
+            tint="bg-emerald-500/15 text-emerald-400"
+            label="Classrooms"
+            detail={customLocations > 0 ? `${customLocations} changed by you` : "Where each lecture happens"}
+            disabled={noSubjects}
+            onClick={() => setShowClassroomLocationModal(true)}
+          />
+        </SettingsGroup>
 
+        <SettingsGroup title="Your phone">
           {widgetCount !== null && (
-            <button type="button" onClick={() => setShowWidgets(true)} className={profileSubjectsBtn}>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-300 transition-transform group-active:scale-95 dark:bg-indigo-500/10">
-                <LayoutGrid className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Home screen widgets</p>
-                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">
-                  {widgetCount > 0 ? `${widgetCount} on your home screen · add more` : "Add today's classes or your % to your home screen"}
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
-            </button>
+            <SettingsRow
+              icon={LayoutGrid}
+              tint="bg-indigo-500/15 text-indigo-300"
+              label="Home screen widgets"
+              detail={widgetCount > 0 ? "Add another or try a new one" : "Today's classes and your % at a glance"}
+              value={widgetCount > 0 ? `${widgetCount} added` : "New"}
+              onClick={() => setShowWidgets(true)}
+            />
           )}
+          <SettingsRow
+            icon={Bell}
+            tint="bg-amber-500/15 text-amber-400"
+            label="Notifications"
+            detail="Reminders, after class and polls"
+            value={`${notificationsOn} on`}
+            onClick={openNotificationPreferences}
+          />
+          <SettingsRow
+            icon={Moon}
+            tint="bg-sky-500/15 text-sky-400"
+            label="Sleep"
+            detail="So reminders skip your night"
+            value={isLoadingSleepDuration ? undefined : `${sleepDuration ?? 8} h`}
+            onClick={handleEditSleepDuration}
+          />
+        </SettingsGroup>
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={enrolledSubjects.length === 0}
-              onClick={() => enrolledSubjects.length > 0 && setShowCriteriaModal(true)}
-              className={cn(
-                profileGridBtn,
-                enrolledSubjects.length === 0 &&
-                  "cursor-not-allowed opacity-45 hover:border-white/[0.12] hover:bg-white/[0.03] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04]"
-              )}
-            >
-              <div className="rounded-lg bg-violet-500/15 p-1.5 text-violet-400 dark:bg-violet-500/12">
-                <Target className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Criteria</span>
-            </button>
-            <button
-              type="button"
-              disabled={enrolledSubjects.length === 0}
-              onClick={() => enrolledSubjects.length > 0 && setShowClassroomLocationModal(true)}
-              className={cn(
-                profileGridBtn,
-                enrolledSubjects.length === 0 &&
-                  "cursor-not-allowed opacity-45 hover:border-white/[0.12] hover:bg-white/[0.03] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04]"
-              )}
-            >
-              <div className="rounded-lg bg-emerald-500/15 p-1.5 text-emerald-400 dark:bg-emerald-500/12">
-                <MapPin className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Locations</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingSleepHours(sleepDuration?.toString() || "8");
-                setIsEditingSleepDuration(true);
-              }}
-              className={profileGridBtn}
-            >
-              <div className="rounded-lg bg-indigo-500/15 p-1.5 text-indigo-400 dark:bg-indigo-500/12">
-                <Moon className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">
-                {isLoadingSleepDuration ? "Sleep" : `${sleepDuration ?? 8}h sleep`}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDailyReminderHours(student?.dailyReminderHours ?? []);
-                setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
-                setPollNotificationsEnabled(student?.pollNotificationsEnabled !== false);
-                setShowNotificationPreferences(true);
-                // On builds that ask after class on the phone, that is where this setting lives
-                void getClassCheck().then((onPhone) => {
-                  if (onPhone !== null && hasAdoptedClassCheck(student?.id)) setAfterLectureReminderEnabled(onPhone);
-                });
-              }}
-              className={profileGridBtn}
-            >
-              <div className="rounded-lg bg-amber-500/15 p-1.5 text-amber-400 dark:bg-amber-500/12">
-                <Bell className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Notifications</span>
-            </button>
-            <button type="button" onClick={() => navigate("/app-analytics")} className={profileGridBtn}>
-              <div className="rounded-lg bg-pink-500/15 p-1.5 text-pink-400 dark:bg-pink-500/12">
-                <BarChart3 className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Analytics</span>
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await requestAppReview({ openPlayStoreOnly: true });
-                } catch (e) {
-                  console.error("Rate us failed:", e);
-                  toast.error("Could not open review. Please try again.");
-                }
-              }}
-              className={profileGridBtn}
-            >
-              <div className="rounded-lg bg-yellow-500/15 p-1.5 text-yellow-400 dark:bg-yellow-500/12">
-                <Star className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Rate us</span>
-            </button>
-            <button type="button" onClick={() => setShowFeedbackModal(true)} className={profileGridBtn}>
-              <div className="rounded-lg bg-cyan-500/15 p-1.5 text-cyan-400 dark:bg-cyan-500/12">
-                <MessageSquare className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-semibold text-white">Feedback</span>
-            </button>
-            <button type="button" onClick={handleLogout} className={profileLogoutBtn}>
-              <div className="rounded-lg bg-red-500/25 p-1.5 text-red-400">
-                <LogOut className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-[11px] font-bold text-red-400">Log out</span>
-            </button>
-          </div>
-        </div>
+        <SettingsGroup title="Feedback">
+          <SettingsRow
+            icon={MessageSquare}
+            tint="bg-cyan-500/15 text-cyan-400"
+            label="Send feedback"
+            detail="Report a bug or suggest something"
+            onClick={() => setShowFeedbackModal(true)}
+          />
+          <SettingsRow
+            icon={Inbox}
+            tint="bg-teal-500/15 text-teal-400"
+            label="Your feedback"
+            detail={feedbackSummary}
+            badge={feedbackUnread}
+            onClick={() => navigate("/my-feedback")}
+          />
+          <SettingsRow
+            icon={Star}
+            tint="bg-yellow-500/15 text-yellow-400"
+            label="Rate on Play Store"
+            detail="Helps other students find the app"
+            onClick={rateApp}
+          />
+        </SettingsGroup>
 
-        {/* Your feedback — the only place a student can see what they sent and what came back */}
+        <SettingsGroup title="About">
+          <SettingsRow
+            icon={BarChart3}
+            tint="bg-pink-500/15 text-pink-400"
+            label="App analytics"
+            detail="How students use Attendance IO"
+            onClick={() => navigate("/app-analytics")}
+          />
+          <SettingsRow
+            icon={Users}
+            tint="bg-violet-500/15 text-violet-300"
+            label="Contributors"
+            detail="The people who built it"
+            value={contributors && contributors.length > 0 ? <ContributorFaces people={contributors} size={22} /> : undefined}
+            onClick={() => setShowAbout(true)}
+          />
+          <SettingsRow
+            icon={Github}
+            tint="bg-white/[0.08] text-white/80"
+            label="Source code"
+            detail="Open source on GitHub"
+            href={REPO_URL}
+          />
+        </SettingsGroup>
+
         <button
           type="button"
-          onClick={() => navigate("/my-feedback")}
-          className="mt-3 flex min-h-[60px] w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
+          onClick={handleLogout}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/[0.07] text-[14px] font-semibold text-red-400 transition-colors active:bg-red-500/15 touch-manipulation"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400">
-            <MessageSquare className="h-[18px] w-[18px]" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[14px] font-semibold text-white">Your feedback</span>
-            <span className="mt-0.5 block truncate text-[11.5px] text-white/45">
-              {feedbackSummary}
-            </span>
-          </span>
-          {feedbackUnread > 0 && (
-            <span className="flex h-[20px] min-w-[20px] shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[11px] font-bold text-white">
-              {feedbackUnread}
-            </span>
-          )}
-          <ChevronRight className="h-5 w-5 shrink-0 text-white/25" />
+          <LogOut className="h-4 w-4" />
+          Log out
         </button>
 
-        {/* Contributors (opens About with the full list) and the source code, side by side */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setShowAbout(true)}
-            className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
-          >
-            {contributors && contributors.length > 0 ? (
-              <ContributorFaces people={contributors} />
-            ) : (
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/15 text-violet-300">
-                <Users className="h-4 w-4" />
-              </span>
-            )}
-            <span className="mt-2.5 block text-[13.5px] font-semibold text-white">Contributors</span>
-            <span className="block text-[11px] text-white/45">
-              {contributors && contributors.length > 0
-                ? `${contributors.length} ${contributors.length === 1 ? "person" : "people"}`
-                : "Who built it"}
-            </span>
-          </button>
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5 text-left transition-colors active:bg-white/[0.08] touch-manipulation"
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08]">
-              <Github className="h-4 w-4 text-white/80" />
-            </span>
-            <span className="mt-2.5 block text-[13.5px] font-semibold text-white">Source code</span>
-            <span className="block text-[11px] text-white/45">Open on GitHub</span>
-          </a>
+        <div className="space-y-1 text-center">
+          <p className="text-[12px] text-white/40">
+            Made with <span className="text-rose-400">♥</span> by{" "}
+            <a
+              href="https://paramsavjani.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 font-medium text-white/70 active:opacity-70"
+            >
+              Param Savjani
+              <ArrowUpRight className="h-3 w-3 text-white/40" />
+            </a>
+          </p>
+          {appVersion && <p className="text-[11px] text-white/25">Version {appVersion}</p>}
         </div>
-
-        <p className="mt-8 text-center text-[12px] text-white/40">
-          Made with <span className="text-rose-400">♥</span> by{" "}
-          <a
-            href="https://paramsavjani.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-0.5 font-medium text-white/70 active:opacity-70"
-          >
-            Param Savjani
-            <ArrowUpRight className="h-3 w-3 text-white/40" />
-          </a>
-        </p>
       </div>
 
       {/* Sleep Duration Modal */}
@@ -1028,6 +992,7 @@ export default function Profile() {
                 try {
                   // The phone asks after class itself; the server's push stays off so they don't both arrive
                   const onPhone = hasAdoptedClassCheck(student?.id) && (await setClassCheck(afterLectureReminderEnabled));
+                  if (onPhone) setClassCheckEnabled(afterLectureReminderEnabled);
                   const res = await authenticatedFetch(API_CONFIG.ENDPOINTS.NOTIFICATION_PREFERENCES, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },

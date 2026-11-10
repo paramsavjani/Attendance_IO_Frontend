@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch, getAppBuildNumber } from "@/lib/api";
 import { readCachedJson } from "@/lib/offlineCache";
 import { Subject, TimetableSlot } from "@/types/attendance";
 
@@ -65,8 +65,8 @@ import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
 import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
-import { WidgetsSheet } from "@/components/widgets/WidgetsSheet";
-import { adoptClassCheck, getWidgetCounts, reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
+import { WidgetLaunchPopup } from "@/components/widgets/WidgetLaunchPopup";
+import { adoptClassCheck, canPinWidget, getWidgetCounts, reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -88,6 +88,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DemoBanner } from "@/components/DemoBanner";
+
+/** First Play Store build (1.0.362) the widget popup is shown on; older ones get the update prompt. */
+const WIDGET_POPUP_MIN_BUILD = 411;
 
 // Swipe navigation hook
 function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
@@ -204,19 +207,21 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [location.search]);
 
-  // Introduce home-screen widgets once, to students on an app build that has them and none placed yet
+  // Introduce home-screen widgets once, after the student has updated from the Play Store to a
+  // build that can add them from the app; until then the update prompt is what they see.
   const [widgetPromoOpen, setWidgetPromoOpen] = useState(false);
   useEffect(() => {
     if (!student || student.isDemo) return;
-    const key = "attendance_io_widget_promo_seen";
+    const key = "attendance_io_widget_launch_seen";
     try {
       if (localStorage.getItem(key)) return;
     } catch {
       return;
     }
     let timer: ReturnType<typeof setInterval> | undefined;
-    void getWidgetCounts().then((counts) => {
-      if (!counts) return; // the web, or a build without widgets
+    let cancelled = false;
+    void Promise.all([getAppBuildNumber(), getWidgetCounts(), canPinWidget()]).then(([build, counts, pin]) => {
+      if (cancelled || build < WIDGET_POPUP_MIN_BUILD || !counts || pin === null) return;
       if (counts.today + counts.subjects + counts.mini > 0) {
         localStorage.setItem(key, "1");
         return;
@@ -231,7 +236,10 @@ export default function Dashboard() {
         setWidgetPromoOpen(true);
       }, 1000);
     });
-    return () => clearInterval(timer);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, [student]);
 
   // Let the phone ask after each class itself (with buttons to mark), in place of the server's push
@@ -2148,7 +2156,7 @@ export default function Dashboard() {
         </Tabs>
       </div>
 
-      <WidgetsSheet open={widgetPromoOpen} onOpenChange={setWidgetPromoOpen} intro />
+      <WidgetLaunchPopup open={widgetPromoOpen} onClose={() => setWidgetPromoOpen(false)} />
       <PollsSheet
         open={pollsSheetOpen}
         view={pollsSheetView}
