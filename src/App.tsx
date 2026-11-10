@@ -135,7 +135,16 @@ import { MainLayout } from "@/components/layout/MainLayout";
 
 let launchLinkHandled = false;
 
-/** App-icon shortcuts open com.attendanceio.app://open?polls=open (or ?leave=open) on the home page. */
+const SHORTCUT_PAGES: Record<string, string> = {
+  assistant: "/assistant",
+  search: "/search",
+  profile: "/profile",
+};
+
+/**
+ * App-icon shortcuts open com.attendanceio.app://open?page=assistant|search|profile. Older links
+ * like ?polls=open still open on the home page.
+ */
 function ShortcutLinks() {
   const navigate = useNavigate();
   useEffect(() => {
@@ -143,7 +152,9 @@ function ShortcutLinks() {
     const go = (url?: string) => {
       if (!url?.startsWith("com.attendanceio.app://open")) return;
       const query = url.split("?")[1] ?? "";
-      navigate(`/dashboard${query ? `?${query}` : ""}`);
+      const page = new URLSearchParams(query).get("page");
+      if (page && SHORTCUT_PAGES[page]) navigate(SHORTCUT_PAGES[page]);
+      else navigate(`/dashboard${query ? `?${query}` : ""}`);
     };
     let handle: { remove: () => Promise<void> } | undefined;
     let cancelled = false;

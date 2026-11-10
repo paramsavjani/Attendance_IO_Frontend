@@ -1,43 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Long-press the app icon. Marking happens in MarkActivity without opening the app; the rest open a part of it. -->
+<!-- Long-press the app icon: each opens a part of the app. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
-        android:shortcutId="mark_current"
-        android:icon="@drawable/shortcut_check"
-        android:shortcutShortLabel="@string/shortcut_mark_current_short"
-        android:shortcutLongLabel="@string/shortcut_mark_current_long">
-        <intent
-            android:action="com.attendanceio.app.MARK_CURRENT"
-            android:targetPackage="com.attendanceio.app"
-            android:targetClass="com.attendanceio.app.MarkActivity" />
-    </shortcut>
-    <shortcut
-        android:shortcutId="mark_pick"
-        android:icon="@drawable/shortcut_list"
-        android:shortcutShortLabel="@string/shortcut_mark_pick_short"
-        android:shortcutLongLabel="@string/shortcut_mark_pick_long">
-        <intent
-            android:action="com.attendanceio.app.MARK_PICK"
-            android:targetPackage="com.attendanceio.app"
-            android:targetClass="com.attendanceio.app.MarkActivity" />
-    </shortcut>
-    <shortcut
-        android:shortcutId="polls"
-        android:icon="@drawable/shortcut_poll"
-        android:shortcutShortLabel="@string/shortcut_polls_short">
+        android:shortcutId="assistant"
+        android:icon="@drawable/shortcut_assistant"
+        android:shortcutShortLabel="@string/shortcut_assistant_short">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="com.attendanceio.app://open?polls=open"
+            android:data="com.attendanceio.app://open?page=assistant"
             android:targetPackage="com.attendanceio.app"
             android:targetClass="com.attendanceio.app.MainActivity" />
     </shortcut>
     <shortcut
-        android:shortcutId="leave"
-        android:icon="@drawable/shortcut_leave"
-        android:shortcutShortLabel="@string/shortcut_leave_short">
+        android:shortcutId="search"
+        android:icon="@drawable/shortcut_search"
+        android:shortcutShortLabel="@string/shortcut_search_short">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="com.attendanceio.app://open?leave=open"
+            android:data="com.attendanceio.app://open?page=search"
+            android:targetPackage="com.attendanceio.app"
+            android:targetClass="com.attendanceio.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="profile"
+        android:icon="@drawable/shortcut_profile"
+        android:shortcutShortLabel="@string/shortcut_profile_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="com.attendanceio.app://open?page=profile"
             android:targetPackage="com.attendanceio.app"
             android:targetClass="com.attendanceio.app.MainActivity" />
     </shortcut>
