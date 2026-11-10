@@ -9,6 +9,8 @@ import {
   reportPoll,
   votePoll,
 } from "@/lib/polls";
+import { API_CONFIG } from "@/lib/api";
+import { readCachedJson, saveToOfflineCache } from "@/lib/offlineCache";
 import type { CreatePollInput, Poll, PollFeed, PollReportReason } from "@/types/poll";
 
 const EMPTY_FEED: PollFeed = {
@@ -27,8 +29,9 @@ const countUnvoted = (polls: Poll[]) => polls.filter((p) => p.isOpen && !p.isMin
  * refuses, so tapping an option never feels like waiting on the network.
  */
 export function usePollFeed(enabled: boolean) {
-  const [feed, setFeed] = useState<PollFeed>(EMPTY_FEED);
-  const [isLoading, setIsLoading] = useState(true);
+  // Start from the last saved feed so the polls row is on screen from the first paint.
+  const [feed, setFeed] = useState<PollFeed>(() => readCachedJson<PollFeed>(API_CONFIG.ENDPOINTS.POLLS) ?? EMPTY_FEED);
+  const [isLoading, setIsLoading] = useState(() => !readCachedJson(API_CONFIG.ENDPOINTS.POLLS));
   const [votingPollId, setVotingPollId] = useState<number | null>(null);
 
   const replacePolls = useCallback((update: (polls: Poll[]) => Poll[]) => {
@@ -52,6 +55,11 @@ export function usePollFeed(enabled: boolean) {
       setIsLoading(false);
     }
   }, []);
+
+  // Keep the saved copy in step with votes and new polls, so the next open starts from them.
+  useEffect(() => {
+    if (!isLoading) saveToOfflineCache(API_CONFIG.ENDPOINTS.POLLS, JSON.stringify(feed));
+  }, [feed, isLoading]);
 
   useEffect(() => {
     if (!enabled) return;

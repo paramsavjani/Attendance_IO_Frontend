@@ -16,7 +16,6 @@ interface PollsHomeEntryProps {
  */
 export function PollsHomeEntry({ polls, isDemo, onOpenSheet }: PollsHomeEntryProps) {
   const { openPolls, feed, isLoading } = polls;
-  if (isLoading && feed.polls.length === 0) return null;
 
   const waiting = openPolls.find((p) => !p.isMine && p.myOptionIds.length === 0);
   if (waiting) {
@@ -50,7 +49,7 @@ export function PollsHomeEntry({ polls, isDemo, onOpenSheet }: PollsHomeEntryPro
           <span className="font-semibold">Class polls</span>
           <span className="text-muted-foreground">
             {" "}
-            · {openCount > 0 ? `${openCount} open ${openCount === 1 ? "poll" : "polls"}` : "Ask your class"}
+            · {isLoading ? "Loading…" : openCount > 0 ? `${openCount} open ${openCount === 1 ? "poll" : "polls"}` : "Ask your class"}
           </span>
         </span>
       </button>

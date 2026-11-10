@@ -25,6 +25,7 @@ const CACHEABLE_PATHS = [
   "/api/time-slots",
   "/api/attendance",
   "/api/attendance/lab-tutorial",
+  "/api/polls",
 ];
 
 interface Entry {
