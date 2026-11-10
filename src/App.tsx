@@ -25,6 +25,9 @@ import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
 import BackendUpdating from "./pages/BackendUpdating";
 import NoInternet from "./pages/NoInternet";
+import { OfflineStatusPill } from "@/components/offline/OfflineStatusPill";
+import { hasOfflineSnapshot } from "@/lib/offlineCache";
+import { hasToken } from "@/lib/token";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
 import ErrorOldVersion from "./pages/ErrorOldVersion";
@@ -143,6 +146,7 @@ function AppRoutes() {
   );
   // Track previous backend state so we know when it transitions to available
   const prevBackendAvailableRef = useRef<boolean | null>(isNativeApp ? null : true);
+  const hasShownAppRef = useRef(false);
 
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";
@@ -270,11 +274,16 @@ function AppRoutes() {
     prevBackendAvailableRef.current = isBackendAvailableOnNative;
   }, [isNativeApp, isBackendAvailableOnNative, checkAuth]);
 
-  if (isOfflineOnNative) {
+  // Offline with a saved copy of this account's data: open on that instead of the error page
+  const canOpenOffline = isOfflineOnNative && hasToken() && hasOfflineSnapshot();
+
+  if (isOfflineOnNative && !canOpenOffline) {
     return <NoInternet />;
   }
 
-  if (isNativeApp && isBackendAvailableOnNative === null) {
+  // Block on the health check only before the app has been shown; once it's open, a reconnect
+  // shouldn't flash a loading screen over what the student is doing.
+  if (isNativeApp && isBackendAvailableOnNative === null && !isOfflineOnNative && !hasShownAppRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
         <div>Loading...</div>
@@ -282,7 +291,7 @@ function AppRoutes() {
     );
   }
 
-  if (isNativeApp && isBackendAvailableOnNative === false) {
+  if (isNativeApp && isBackendAvailableOnNative === false && !isOfflineOnNative) {
     return <BackendUpdating />;
   }
 
@@ -305,8 +314,11 @@ function AppRoutes() {
     );
   }
 
+  hasShownAppRef.current = true;
+
   return (
     <>
+      {!isErrorPage && isAuthenticated && <OfflineStatusPill />}
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
       {!isErrorPage && <OtaUpdatePopup />}

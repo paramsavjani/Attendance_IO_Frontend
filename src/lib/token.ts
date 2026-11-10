@@ -1,3 +1,5 @@
+import { clearOfflineCache } from './offlineCache';
+import { clearQueue } from './offlineQueue';
 const TOKEN_STORAGE_KEY = 'attendance_io_jwt_token';
 
 /**
@@ -22,6 +24,9 @@ export function setToken(token: string): void {
 export function removeToken(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(TOKEN_STORAGE_KEY);
+  // Saved data and unsent marks belong to the account that just left
+  clearOfflineCache();
+  clearQueue();
 }
 
 /**

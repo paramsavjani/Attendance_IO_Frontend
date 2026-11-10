@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { getToken } from './token';
+import { isCacheable, offlineResponse, saveToOfflineCache } from './offlineCache';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.attendanceio.paramsavjani.in';
 
@@ -84,11 +85,23 @@ export async function authenticatedFetch(
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+
+  if (!isCacheable(url, options.method)) {
+    return fetch(url, { ...options, headers });
+  }
+
+  // Read-only app data: keep the last good copy, and answer from it when the network is gone
+  try {
+    const response = await fetch(url, { ...options, headers });
+    if (response.ok) {
+      response.clone().text().then((body) => saveToOfflineCache(url, body)).catch(() => undefined);
+    }
+    return response;
+  } catch (error) {
+    const cached = offlineResponse(url);
+    if (cached) return cached;
+    throw error;
+  }
 }
 
 /**

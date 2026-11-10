@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode, useCallback, useEffect,
 import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { dequeueMark, enqueueMark, findQueued, isNetworkError, readQueue, subscribeQueue, type QueuedMark } from "@/lib/offlineQueue";
 import { useAuth } from "./AuthContext";
 import { hexToHslLightened } from "@/lib/utils";
 import { toast } from "sonner";
@@ -55,6 +56,95 @@ interface MarkAttendanceRequest {
   extraClassIndex?: number;
 }
 
+// NOTE: Total class count is NOT modified during live updates - only present/absent counts change
+// The total comes from the backend and should remain constant during optimistic updates
+const calculateNewStats = (
+  currentStats: SubjectStats,
+  previousStatus: 'present' | 'absent' | 'cancelled' | null,
+  newStatus: 'present' | 'absent' | 'cancelled' | null
+) => {
+  let newPresent = currentStats.present;
+  let newAbsent = currentStats.absent;
+  // Keep total unchanged - it comes from backend and should not be modified locally
+  const newTotal = currentStats.total;
+
+  // Handle deletion (unmarking)
+  if (newStatus === null) {
+    if (previousStatus === 'present') {
+      newPresent = Math.max(0, newPresent - 1);
+    } else if (previousStatus === 'absent') {
+      newAbsent = Math.max(0, newAbsent - 1);
+    }
+    // Total remains unchanged - backend will handle total updates
+  } else {
+    // Handle marking new attendance or changing status
+    if (previousStatus === null) {
+      // New attendance mark
+      if (newStatus === 'present') {
+        newPresent += 1;
+      } else if (newStatus === 'absent') {
+        newAbsent += 1;
+      }
+      // Total remains unchanged - backend will handle total updates
+    } else if (previousStatus === newStatus) {
+      // Clicking the same status again - should not change stats
+      // This is a no-op, stats remain the same
+      // (The toggle logic in markAttendance handles deletion separately)
+    } else if (previousStatus !== newStatus) {
+      // Changing from one status to another
+      if (previousStatus === 'present') {
+        newPresent = Math.max(0, newPresent - 1);
+      } else if (previousStatus === 'absent') {
+        newAbsent = Math.max(0, newAbsent - 1);
+      }
+      // Total remains unchanged regardless of status changes
+
+      if (newStatus === 'present') {
+        newPresent += 1;
+      } else if (newStatus === 'absent') {
+        newAbsent += 1;
+      }
+      // Total remains unchanged - cancelled or not, total stays the same
+    }
+  }
+
+  // Recalculate percentage based on updated present/absent counts
+  const newPercentage = newTotal > 0 ? (newPresent / newTotal) * 100 : 0;
+
+  return {
+    ...currentStats,
+    present: newPresent,
+    absent: newAbsent,
+    total: newTotal, // Total remains constant during live updates
+    percentage: newPercentage, // Recalculate percentage for real-time updates
+    // Note: classesNeeded and bunkableClasses are not recalculated here
+    // They will be updated when backend response is received
+  };
+};
+
+/**
+ * Marks still waiting to sync, laid over data from the server (or its offline copy) so they don't
+ * vanish when a screen refreshes. Stats only count classes up to `forDate`.
+ */
+function overlayQueuedStats(forDate: string, stats: Record<string, SubjectStats>): void {
+  for (const item of readQueue()) {
+    if (item.date > forDate || !stats[item.subjectId]) continue;
+    const next = item.kind === "mark" ? item.status ?? null : null;
+    stats[item.subjectId] = calculateNewStats(stats[item.subjectId], item.serverStatus ?? null, next);
+  }
+}
+
+function overlayQueuedStatuses(
+  forDate: string,
+  attendance: Record<string, 'present' | 'absent' | 'cancelled' | null>
+): void {
+  for (const item of readQueue()) {
+    if (item.date !== forDate) continue;
+    if (item.kind === "mark" && item.status) attendance[item.slotKey] = item.status;
+    else delete attendance[item.slotKey];
+  }
+}
+
 interface AttendanceContextType {
   subjectStats: Record<string, SubjectStats>;
   subjectStatsToday: Record<string, SubjectStats>; // Always shows today's total attendance
@@ -76,6 +166,8 @@ interface AttendanceContextType {
     endTime?: string;
     extraClassIndex?: number;
   } | null; // Currently saving attendance
+  /** Marks made offline that haven't reached the server yet. */
+  pendingSyncCount: number;
   markAttendance: (
     subjectId: string, 
     date: string, 
@@ -250,10 +342,16 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const lastStudentIdRef = useRef<string | null>(null);
   // Track ongoing attendance operations to prevent duplicate calls
   const ongoingOperationsRef = useRef<Set<string>>(new Set());
+  /** Date of the last attendance load, so a finished sync can refresh the screen the student is on. */
+  const lastFetchedDateRef = useRef<string | undefined>(undefined);
+  const offlineToastShownRef = useRef(false);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  useEffect(() => subscribeQueue(setPendingSyncCount), []);
 
   // Fetch attendance data from backend for a specific date (defaults to today)
   // silent = true skips showing loading state (used for background refresh after marking)
   const fetchAttendanceData = useCallback(async (date?: string, silent: boolean = false) => {
+    lastFetchedDateRef.current = date;
     if (!student) {
       // Only clear data if we had a different student before (actual logout)
       // Don't clear if student is just temporarily null during auth check
@@ -324,6 +422,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         if (data.subjectStats && data.subjectStats.length > 0) {
           const firstStat = data.subjectStats[0];
         }
+        overlayQueuedStats(date || new Date().toISOString().split('T')[0], statsMap);
         setSubjectStats(statsMap);
 
         // If fetching today's date, also update subjectStatsToday for real-time updates in Subject Section
@@ -365,6 +464,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
           idsMap[slotKey] = record.attendanceId != null ? Number(record.attendanceId) : null;
         });
+        overlayQueuedStatuses(date || new Date().toISOString().split('T')[0], attendanceMap);
         setTodayAttendance(attendanceMap);
         setAttendanceIds(idsMap);
         hasLoadedDataRef.current = true;
@@ -445,6 +545,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
             bunkableClasses: firstStat.bunkableClasses,
           });
         }
+        overlayQueuedStats(today, statsMap);
         setSubjectStatsToday(statsMap);
       }
     } catch (error) {
@@ -533,72 +634,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [fetchTimetable]);
 
   // Helper to calculate new stats logic (reused for both Today and All-Time stats)
-  // NOTE: Total class count is NOT modified during live updates - only present/absent counts change
-  // The total comes from the backend and should remain constant during optimistic updates
-  const calculateNewStats = (
-    currentStats: SubjectStats,
-    previousStatus: 'present' | 'absent' | 'cancelled' | null,
-    newStatus: 'present' | 'absent' | 'cancelled' | null
-  ) => {
-    let newPresent = currentStats.present;
-    let newAbsent = currentStats.absent;
-    // Keep total unchanged - it comes from backend and should not be modified locally
-    const newTotal = currentStats.total;
-
-    // Handle deletion (unmarking)
-    if (newStatus === null) {
-      if (previousStatus === 'present') {
-        newPresent = Math.max(0, newPresent - 1);
-      } else if (previousStatus === 'absent') {
-        newAbsent = Math.max(0, newAbsent - 1);
-      }
-      // Total remains unchanged - backend will handle total updates
-    } else {
-      // Handle marking new attendance or changing status
-      if (previousStatus === null) {
-        // New attendance mark
-        if (newStatus === 'present') {
-          newPresent += 1;
-        } else if (newStatus === 'absent') {
-          newAbsent += 1;
-        }
-        // Total remains unchanged - backend will handle total updates
-      } else if (previousStatus === newStatus) {
-        // Clicking the same status again - should not change stats
-        // This is a no-op, stats remain the same
-        // (The toggle logic in markAttendance handles deletion separately)
-      } else if (previousStatus !== newStatus) {
-        // Changing from one status to another
-        if (previousStatus === 'present') {
-          newPresent = Math.max(0, newPresent - 1);
-        } else if (previousStatus === 'absent') {
-          newAbsent = Math.max(0, newAbsent - 1);
-        }
-        // Total remains unchanged regardless of status changes
-
-        if (newStatus === 'present') {
-          newPresent += 1;
-        } else if (newStatus === 'absent') {
-          newAbsent += 1;
-        }
-        // Total remains unchanged - cancelled or not, total stays the same
-      }
-    }
-
-    // Recalculate percentage based on updated present/absent counts
-    const newPercentage = newTotal > 0 ? (newPresent / newTotal) * 100 : 0;
-
-    return {
-      ...currentStats,
-      present: newPresent,
-      absent: newAbsent,
-      total: newTotal, // Total remains constant during live updates
-      percentage: newPercentage, // Recalculate percentage for real-time updates
-      // Note: classesNeeded and bunkableClasses are not recalculated here
-      // They will be updated when backend response is received
-    };
-  };
-
   const updateStatsLocally = useCallback((
     subjectId: string,
     previousStatus: 'present' | 'absent' | 'cancelled' | null,
@@ -675,9 +710,16 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
-      // Delete from backend if we have the attendance ID
-      if (attendanceId) {
+      const queued = findQueued(slotKey);
+      let savedOffline = false;
+      if (queued?.kind === 'mark' && !attendanceId) {
+        // This mark never reached the server: forgetting it is enough
+        dequeueMark(slotKey);
+        savedOffline = true;
+      } else if (attendanceId) {
+        // Delete from backend if we have the attendance ID
         try {
+          if (!navigator.onLine) throw new TypeError('offline');
           const deleteResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(attendanceId.toString()), {
             method: 'DELETE',
           });
@@ -685,12 +727,22 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           if (!deleteResponse.ok) {
             throw new Error('Failed to delete attendance');
           }
+          if (queued) dequeueMark(slotKey, queued.queuedAt);
 
         } catch (error) {
-          console.error('Error deleting attendance:', error);
-          toast.error('Failed to unmark attendance');
-          setSavingState(null);
-          return;
+          if (isNetworkError(error)) {
+            enqueueMark({
+              slotKey, date, subjectId, kind: 'delete', attendanceId,
+              serverStatus: queued ? queued.serverStatus ?? null : previousStatus,
+            });
+            savedOffline = true;
+          } else {
+            console.error('Error deleting attendance:', error);
+            toast.error('Failed to unmark attendance');
+            setSavingState(null);
+            ongoingOperationsRef.current.delete(operationKey);
+            return;
+          }
         }
       } else {
         // If no attendance ID, just clear local state (shouldn't happen, but handle gracefully)
@@ -714,11 +766,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       });
 
       // Refresh from backend to get updated stats for this date (silent - no loading UI)
-      await fetchAttendanceData(date, true);
+      if (!savedOffline) await fetchAttendanceData(date, true);
       setSavingState(null);
       ongoingOperationsRef.current.delete(operationKey);
       return;
     }
+
+    let requestBody: MarkAttendanceRequest | null = null;
 
     try {
       // Update local state optimistically BEFORE API call to prevent race conditions
@@ -731,7 +785,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       updateStatsLocally(subjectId, previousStatus, status);
 
       // Call backend API to mark attendance
-      const requestBody: MarkAttendanceRequest = {
+      requestBody = {
         subjectId,
         lectureDate: date,
         status,
@@ -754,6 +808,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         }
       }
       
+      if (!navigator.onLine) throw new TypeError('offline');
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
         method: 'POST',
         headers: {
@@ -779,6 +834,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       }
 
       const result = await response.json();
+      // The server now has this tap; an older offline one for the same class is moot
+      const stale = findQueued(slotKey);
+      if (stale) dequeueMark(slotKey, stale.queuedAt);
 
       // Store attendance ID for future deletion
       if (result.attendanceId) {
@@ -790,14 +848,88 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       // Refresh attendance data from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
     } catch (error) {
-      console.error('Error marking attendance:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to mark attendance');
-      // Don't update local state on error (already reverted above)
+      if (requestBody && isNetworkError(error)) {
+        // No connection: keep the mark on screen and send it when the phone is back online
+        const queued = findQueued(slotKey);
+        enqueueMark({
+          slotKey, date, subjectId, kind: 'mark', status, body: { ...requestBody },
+          serverStatus: queued ? queued.serverStatus ?? null : previousStatus,
+        });
+        if (!offlineToastShownRef.current) {
+          offlineToastShownRef.current = true;
+          toast.info("Saved offline. It'll sync when you're back online.");
+        }
+      } else {
+        console.error('Error marking attendance:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to mark attendance');
+        // Don't update local state on error (already reverted above)
+      }
     } finally {
       setSavingState(null);
       ongoingOperationsRef.current.delete(operationKey);
     }
   }, [todayAttendance, attendanceIds, fetchAttendanceData, updateStatsLocally]);
+
+  // Send marks made offline, oldest first, once there is a connection again
+  const isSyncingRef = useRef(false);
+  const syncQueuedMarks = useCallback(async () => {
+    if (!student || isSyncingRef.current || !navigator.onLine) return;
+    const items: QueuedMark[] = readQueue();
+    if (items.length === 0) return;
+
+    isSyncingRef.current = true;
+    let synced = 0;
+    let rejected = 0;
+    try {
+      for (const item of items) {
+        let response: Response;
+        try {
+          response = item.kind === 'mark'
+            ? await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item.body),
+              })
+            : await authenticatedFetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(String(item.attendanceId)), {
+                method: 'DELETE',
+              });
+        } catch {
+          break; // still no network: try again on the next "online"
+        }
+        if (response.ok || (item.kind === 'delete' && response.status === 404)) {
+          dequeueMark(item.slotKey, item.queuedAt);
+          synced++;
+        } else if (response.status === 401 || response.status >= 500) {
+          break; // signed out or server trouble: keep the marks for later
+        } else {
+          // The server refused it (e.g. a date it won't accept); sending it again won't help
+          dequeueMark(item.slotKey, item.queuedAt);
+          rejected++;
+        }
+      }
+    } finally {
+      isSyncingRef.current = false;
+    }
+
+    if (synced > 0) {
+      toast.success(`Synced ${synced} offline ${synced === 1 ? 'mark' : 'marks'}`);
+      offlineToastShownRef.current = false;
+    }
+    if (rejected > 0) {
+      toast.error(`${rejected} offline ${rejected === 1 ? 'mark was' : 'marks were'} rejected by the server`);
+    }
+    if (synced > 0 || rejected > 0) {
+      await fetchAttendanceData(lastFetchedDateRef.current, true);
+      fetchTodayStats();
+    }
+  }, [student, fetchAttendanceData, fetchTodayStats]);
+
+  useEffect(() => {
+    if (!student) return;
+    syncQueuedMarks();
+    window.addEventListener('online', syncQueuedMarks);
+    return () => window.removeEventListener('online', syncQueuedMarks);
+  }, [student, syncQueuedMarks]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {
@@ -825,6 +957,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         isLoadingTimetable,
         isLoadingAttendance,
         savingState,
+        pendingSyncCount,
         markAttendance,
         setSubjectMin,
         getSubjectStats,
