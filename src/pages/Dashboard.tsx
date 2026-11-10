@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarSearch,
+  Plane,
   Sun,
   Sunrise,
   Loader2,
@@ -62,6 +63,7 @@ import { useLocation } from "react-router-dom";
 import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
+import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -237,6 +239,12 @@ export default function Dashboard() {
     return {};
   });
   const [addClassDialogOpen, setAddClassDialogOpen] = useState(false);
+  const [leavePlannerOpen, setLeavePlannerOpen] = useState(false);
+  // Same rule as the Subjects tab: the student's own minimum, then the course's, then 75%
+  const minimumFor = useCallback(
+    (subject: Subject) => subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
+    [subjectMinAttendance]
+  );
 
   // Track which extra class is being deleted (for loading state)
   const [deletingExtraClass, setDeletingExtraClass] = useState<{ subjectId: string; index: number } | null>(null);
@@ -1889,6 +1897,21 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setLeavePlannerOpen(true)}
+                  className="w-full flex items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2.5 text-left transition-colors active:bg-muted/60"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                    <Plane className="w-4 h-4 text-primary" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Plan a leave</span>
+                    <span className="block text-[11px] text-muted-foreground truncate">See how days off change each subject</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </button>
+
                 {subjectsAttendanceView === "total" ? (
                   enrolledSubjects.map((subject) => {
                     const stats = subjectStatsToday[subject.id] || {
@@ -2036,6 +2059,15 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <LeavePlannerSheet
+        open={leavePlannerOpen}
+        onOpenChange={setLeavePlannerOpen}
+        subjects={enrolledSubjects}
+        timetable={timetable}
+        stats={Object.keys(subjectStatsToday).length > 0 ? subjectStatsToday : subjectStats}
+        minimumFor={minimumFor}
+      />
 
       {/* Add a Class Dialog */}
       <Dialog open={addClassDialogOpen} onOpenChange={setAddClassDialogOpen}>
