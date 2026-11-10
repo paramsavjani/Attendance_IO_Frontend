@@ -1,68 +1,57 @@
-import { Plus } from "lucide-react";
+import { Plane } from "lucide-react";
 import type { PollFeedController } from "@/hooks/usePollFeed";
 import { PollsIcon } from "./PollsIcon";
 import type { PollsSheetView } from "./PollsSheet";
 
 interface PollsHomeEntryProps {
   polls: PollFeedController;
-  isDemo: boolean;
   onOpenSheet: (view: PollsSheetView) => void;
+  onPlanLeave: () => void;
 }
 
+const tile =
+  "flex h-12 min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-card px-2 text-left shadow-sm transition-transform active:scale-[0.98]";
+
 /**
- * Polls on the home screen, kept to one short row so the schedule stays near the top. When a
- * classmate's poll is waiting for your vote it shows that question with a Vote button;
- * otherwise a compact row leads to all polls and to asking one.
+ * One short row on the home screen so the schedule stays near the top: class polls on the left
+ * (a poll waiting for your vote shows up here), the leave planner on the right.
  */
-export function PollsHomeEntry({ polls, isDemo, onOpenSheet }: PollsHomeEntryProps) {
-  const { openPolls, feed, isLoading } = polls;
-
-  const waiting = openPolls.find((p) => !p.isMine && p.myOptionIds.length === 0);
-  if (waiting) {
-    return (
-      <button
-        type="button"
-        onClick={() => onOpenSheet("list")}
-        className="flex w-full items-center gap-2.5 rounded-2xl border border-border/70 bg-card p-1.5 text-left shadow-sm active:scale-[0.99]"
-        aria-label={`Class poll: ${waiting.question}. Vote`}
-      >
-        <PollsIcon className="h-8 w-8" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[10.5px] text-muted-foreground">
-            {waiting.creatorName ?? "Anonymous"} · {waiting.subject.name}
-          </span>
-          <span className="block truncate text-xs font-semibold">{waiting.question}</span>
-        </span>
-        <span className="flex h-7 flex-shrink-0 items-center rounded-full bg-foreground px-3 text-[11px] font-semibold text-background">
-          Vote
-        </span>
-      </button>
-    );
-  }
-
+export function PollsHomeEntry({ polls, onOpenSheet, onPlanLeave }: PollsHomeEntryProps) {
+  const { openPolls, isLoading } = polls;
+  const waiting = openPolls.filter((p) => !p.isMine && p.myOptionIds.length === 0).length;
   const openCount = openPolls.length;
+
+  const pollsDetail = isLoading
+    ? "Loading…"
+    : waiting > 0
+      ? `${waiting} to vote on`
+      : openCount > 0
+        ? `${openCount} open`
+        : "Ask your class";
+
   return (
-    <div className="flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-card px-1.5 shadow-sm">
-      <button type="button" onClick={() => onOpenSheet("list")} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-        <PollsIcon className="h-7 w-7" />
-        <span className="truncate text-xs">
-          <span className="font-semibold">Class polls</span>
-          <span className="text-muted-foreground">
-            {" "}
-            · {isLoading ? "Loading…" : openCount > 0 ? `${openCount} open ${openCount === 1 ? "poll" : "polls"}` : "Ask your class"}
+    <div className="grid grid-cols-2 gap-2">
+      <button type="button" onClick={() => onOpenSheet("list")} className={tile} aria-label={`Class polls, ${pollsDetail}`}>
+        <span className="relative flex-shrink-0">
+          <PollsIcon className="h-8 w-8" />
+          {waiting > 0 && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-rose-500" />}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-xs font-semibold">Class polls</span>
+          <span className={waiting > 0 ? "block truncate text-[10.5px] font-medium text-rose-400" : "block truncate text-[10.5px] text-muted-foreground"}>
+            {pollsDetail}
           </span>
         </span>
       </button>
-      {!isDemo && feed.canCreate && (
-        <button
-          type="button"
-          onClick={() => onOpenSheet("create")}
-          className="flex h-7 flex-shrink-0 items-center gap-1 rounded-full bg-foreground px-2.5 text-[11px] font-semibold text-background"
-        >
-          <Plus className="h-3 w-3 stroke-[2.5]" />
-          Ask
-        </button>
-      )}
+      <button type="button" onClick={onPlanLeave} className={tile}>
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+          <Plane className="h-4 w-4 text-primary" />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-xs font-semibold">Plan a leave</span>
+          <span className="block truncate text-[10.5px] text-muted-foreground">See days off</span>
+        </span>
+      </button>
     </div>
   );
 }

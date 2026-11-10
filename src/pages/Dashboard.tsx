@@ -1445,8 +1445,8 @@ export default function Dashboard() {
 
             <PollsHomeEntry
               polls={polls}
-              isDemo={Boolean(student?.isDemo)}
               onOpenSheet={openPollsSheet}
+              onPlanLeave={() => setLeavePlannerOpen(true)}
             />
 
             {/* Compact Notices */}
