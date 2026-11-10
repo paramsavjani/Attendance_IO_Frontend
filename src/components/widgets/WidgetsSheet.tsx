@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, Plus } from "lucide-react";
-import { toast } from "sonner";
 import { useCloseOnBack } from "@/lib/backOverlay";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { canPinWidget, getWidgetCounts, pinWidget, type WidgetCounts, type WidgetKind } from "@/lib/widgetBridge";
@@ -54,9 +53,11 @@ export function WidgetsSheet({ open, onOpenChange, intro = false }: WidgetsSheet
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [open, refresh]);
 
+  // Some launchers (ColorOS on Oppo, Realme and OnePlus) say they can add widgets for an app but
+  // then refuse; from then on show the manual steps instead of buttons that do nothing.
   const add = async (kind: WidgetKind) => {
     const asked = await pinWidget(kind);
-    if (!asked) toast.error("Your launcher can't add widgets from here. Long-press your home screen and pick Widgets.");
+    if (!asked) setCanPin(false);
   };
 
   return (
@@ -71,9 +72,25 @@ export function WidgetsSheet({ open, onOpenChange, intro = false }: WidgetsSheet
           <DrawerTitle className="text-lg font-semibold">{intro ? "Your attendance, on your home screen" : "Home screen widgets"}</DrawerTitle>
           <DrawerDescription className="text-xs">
             {canPin === false
-              ? "Long-press an empty spot on your home screen, tap Widgets and find Attendance IO."
+              ? "Your phone adds widgets from the home screen. It takes a few seconds:"
               : "Tap Add and confirm, and the widget lands on your home screen. They update on their own."}
           </DrawerDescription>
+          {canPin === false && (
+            <ol className="mt-3 space-y-2 rounded-2xl border border-border/60 bg-card/50 p-3 text-xs">
+              {[
+                "Go to your home screen and long-press an empty spot",
+                "Tap Widgets",
+                "Find Attendance IO and pick the widget you want",
+              ].map((step, i) => (
+                <li key={step} className="flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-[10px] font-bold text-indigo-300">
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6">
