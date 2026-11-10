@@ -377,7 +377,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const syncedAtRef = useRef(readLastSyncAt());
   /** The day whose attendance is on screen, so reloading it doesn't flash the loading state. */
   const shownDateRef = useRef<string | null>(null);
-  const offlineToastShownRef = useRef(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   useEffect(() => subscribeQueue(setPendingSyncCount), []);
 
@@ -918,10 +917,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           slotKey, date, subjectId, kind: 'mark', status, body: { ...requestBody },
           serverStatus: queued ? queued.serverStatus ?? null : previousStatus,
         });
-        if (!offlineToastShownRef.current) {
-          offlineToastShownRef.current = true;
-          toast.info("Saved offline. It'll sync when you're back online.");
-        }
+        // No toast: the "Offline · N marks to sync" pill already says so; toasts are for errors only
       } else {
         console.error('Error marking attendance:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to mark attendance');
@@ -974,10 +970,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       isSyncingRef.current = false;
     }
 
-    if (synced > 0) {
-      toast.success(`Synced ${synced} offline ${synced === 1 ? 'mark' : 'marks'}`);
-      offlineToastShownRef.current = false;
-    }
     if (rejected > 0) {
       toast.error(`${rejected} offline ${rejected === 1 ? 'mark was' : 'marks were'} rejected by the server`);
     }
