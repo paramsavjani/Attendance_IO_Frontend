@@ -806,6 +806,16 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, subjectStatsToday, subjectMinAttendance, todayAttendance, selectedDate]);
 
+  // Adding or removing a widget happens on the home screen, outside the app; count again when the
+  // student comes back so the change is reported now rather than on the next data reload.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void reportWidgetCounts(trackAppEvent);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
   // A new poll is usually about the class that's coming up, so the form starts on it.
   const suggestedPollSubjectId = useMemo(() => {
     if (!pollsSheetOpen) return null;
