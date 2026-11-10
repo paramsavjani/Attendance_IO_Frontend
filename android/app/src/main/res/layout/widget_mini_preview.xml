@@ -4,12 +4,12 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background"
+    
     android:gravity="center"
     android:orientation="vertical"
     android:padding="6dp">
 
-    <FrameLayout android:id="@+id/mini_ring_box" android:layout_width="52dp" android:layout_height="52dp">
+    <FrameLayout android:id="@+id/mini_ring_box" android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/widget_disc" android:padding="3dp">
         <ProgressBar android:id="@+id/mini_ring" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:indeterminate="false" android:max="100" android:progressDrawable="@drawable/widget_ring" android:progress="81" android:progressTint="#FF34D399" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
             <TextView android:id="@+id/mini_percent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="14sp" android:textColor="#FFF4F4F5" android:textStyle="bold" android:fontFamily="sans-serif-black" android:text="81%" android:includeFontPadding="false"  />
