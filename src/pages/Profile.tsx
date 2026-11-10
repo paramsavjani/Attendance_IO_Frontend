@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { getClassCheck, hasAdoptedClassCheck, setClassCheck } from "@/lib/widgetBridge";
+import { getClassCheck, getWidgetCounts, hasAdoptedClassCheck, setClassCheck } from "@/lib/widgetBridge";
+import { WidgetsSheet } from "@/components/widgets/WidgetsSheet";
 import { useNavigate } from "react-router-dom";
 import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Edit, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, ArrowUpRight, Github, Users } from "lucide-react";
+import { LogOut, BookOpen, Edit, LayoutGrid, Target, Save, Moon, MessageSquare, ChevronRight, MapPin, BarChart3, Star, Bell, ArrowUpRight, Github, Users } from "lucide-react";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { Input } from "@/components/ui/input";
 import { SubjectSelector } from "@/components/subjects/SubjectSelector";
@@ -65,6 +66,13 @@ export default function Profile() {
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
   const [pollNotificationsEnabled, setPollNotificationsEnabled] = useState(true);
   const [classCheckOnPhone, setClassCheckOnPhone] = useState(false);
+  // Only app builds with widgets report counts; the web and older builds don't show the button
+  const [widgetCount, setWidgetCount] = useState<number | null>(null);
+  const [showWidgets, setShowWidgets] = useState(false);
+  useEffect(() => {
+    if (showWidgets) return;
+    void getWidgetCounts().then((c) => setWidgetCount(c ? c.today + c.subjects + c.mini : null));
+  }, [showWidgets]);
   useEffect(() => {
     void getClassCheck().then((onPhone) => setClassCheckOnPhone(onPhone !== null));
   }, []);
@@ -381,6 +389,21 @@ export default function Profile() {
             </div>
             <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
           </button>
+
+          {widgetCount !== null && (
+            <button type="button" onClick={() => setShowWidgets(true)} className={profileSubjectsBtn}>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-300 transition-transform group-active:scale-95 dark:bg-indigo-500/10">
+                <LayoutGrid className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold leading-tight tracking-tight text-white">Home screen widgets</p>
+                <p className="mt-0.5 text-xs text-white/45 dark:text-white/50">
+                  {widgetCount > 0 ? `${widgetCount} on your home screen · add more` : "Add today's classes or your % to your home screen"}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition-transform group-hover:translate-x-0.5 group-hover:text-white/40" />
+            </button>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -1038,6 +1061,7 @@ export default function Profile() {
       </Dialog>
 
       {/* Feedback Modal */}
+      <WidgetsSheet open={showWidgets} onOpenChange={setShowWidgets} />
       <FeedbackComposer
         open={showFeedbackModal}
         onOpenChange={setShowFeedbackModal}

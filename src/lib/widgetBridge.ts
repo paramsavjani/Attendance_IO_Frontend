@@ -11,7 +11,11 @@ interface WidgetBridgePlugin {
   setClassCheck(options: { enabled: boolean }): Promise<void>;
   getClassCheck(): Promise<{ enabled: boolean }>;
   takeMarks(): Promise<{ marks: string }>;
+  canPin(): Promise<{ supported: boolean }>;
+  pin(options: { kind: WidgetKind }): Promise<{ requested: boolean }>;
 }
+
+export type WidgetKind = "today" | "subjects" | "mini";
 
 /** How many of each widget the student has on their home screen. */
 export interface WidgetCounts {
@@ -33,6 +37,8 @@ export interface WidgetClass {
   /** What a mark from the notification or a shortcut sends: the subject, and its lecture slot (null for labs and custom times). */
   subjectId: string;
   slot: number | null;
+  /** Today's classes only: how the student marked it, if they have. */
+  status: "present" | "absent" | "cancelled" | null;
 }
 
 export interface WidgetSubject {
@@ -193,5 +199,35 @@ export async function adoptClassCheck(student: ReminderPrefs): Promise<void> {
     localStorage.setItem(key, "1");
   } catch {
     // asked again next open; harmless
+  }
+}
+
+/** Widgets on the home screen right now, or null on the web and builds without widgets. */
+export async function getWidgetCounts(): Promise<WidgetCounts | null> {
+  if (!available()) return null;
+  try {
+    return await WidgetBridge.status();
+  } catch {
+    return null;
+  }
+}
+
+/** True when the launcher can add a widget straight from the app; null on builds that can't ask. */
+export async function canPinWidget(): Promise<boolean | null> {
+  if (!available()) return null;
+  try {
+    return (await WidgetBridge.canPin()).supported;
+  } catch {
+    return null;
+  }
+}
+
+/** Ask the launcher to add a widget; it shows its own "Add to home screen" sheet. */
+export async function pinWidget(kind: WidgetKind): Promise<boolean> {
+  if (!available()) return false;
+  try {
+    return (await WidgetBridge.pin({ kind })).requested;
+  } catch {
+    return false;
   }
 }

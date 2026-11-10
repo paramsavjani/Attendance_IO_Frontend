@@ -65,7 +65,8 @@ import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
 import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
-import { adoptClassCheck, reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
+import { WidgetsSheet } from "@/components/widgets/WidgetsSheet";
+import { adoptClassCheck, getWidgetCounts, reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -124,6 +125,22 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
 }
 
 const DOUBLE_BACK_PRESS_MS = 1000;
+
+
+/** A class's mark today, using the same keys as AttendanceContext (slot for lectures, times otherwise). */
+function markFor(
+  marks: Record<string, string>,
+  date: string,
+  subjectId: string,
+  slot: { slotIndex: number | null; startTime: string; endTime: string; isCustom?: boolean },
+): WidgetClass["status"] {
+  const base = `${date}-${subjectId}`;
+  const key = slot.slotIndex !== null && slot.slotIndex !== undefined && !slot.isCustom
+    ? `${base}-slot${slot.slotIndex}`
+    : `${base}-${slot.startTime}-${slot.endTime}`;
+  const status = marks[key] ?? marks[base];
+  return status === "present" || status === "absent" || status === "cancelled" ? status : null;
+}
 
 export default function Dashboard() {
   const { student } = useAuth();
@@ -186,6 +203,36 @@ export default function Dashboard() {
     const timer = setTimeout(() => setLeavePlannerOpen(true), 400);
     return () => clearTimeout(timer);
   }, [location.search]);
+
+  // Introduce home-screen widgets once, to students on an app build that has them and none placed yet
+  const [widgetPromoOpen, setWidgetPromoOpen] = useState(false);
+  useEffect(() => {
+    if (!student || student.isDemo) return;
+    const key = "attendance_io_widget_promo_seen";
+    try {
+      if (localStorage.getItem(key)) return;
+    } catch {
+      return;
+    }
+    let timer: ReturnType<typeof setInterval> | undefined;
+    void getWidgetCounts().then((counts) => {
+      if (!counts) return; // the web, or a build without widgets
+      if (counts.today + counts.subjects + counts.mini > 0) {
+        localStorage.setItem(key, "1");
+        return;
+      }
+      // Let the app settle, and never on top of another popup
+      let waited = 0;
+      timer = setInterval(() => {
+        waited += 1;
+        if (waited < 3 || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+        clearInterval(timer);
+        localStorage.setItem(key, "1");
+        setWidgetPromoOpen(true);
+      }, 1000);
+    });
+    return () => clearInterval(timer);
+  }, [student]);
 
   // Let the phone ask after each class itself (with buttons to mark), in place of the server's push
   useEffect(() => {
@@ -693,9 +740,20 @@ export default function Dashboard() {
 
   const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
 
+  // Today's marks for the widget. The context holds whichever date is on screen, so remember
+  // today's while it is showing and keep them when the student looks at another day.
+  const widgetMarksRef = useRef<Record<string, string>>({});
+
   // Keep the home-screen widgets' snapshot (next 7 days of classes, and each subject's standing) up to date
   useEffect(() => {
     if (lectureSlots.length === 0 || enrolledSubjects.length === 0) return;
+    const todayKey = format(new Date(), "yyyy-MM-dd");
+    if (format(selectedDate, "yyyy-MM-dd") === todayKey) {
+      widgetMarksRef.current = Object.fromEntries(
+        Object.entries(todayAttendance).filter(([key, status]) => key.startsWith(`${todayKey}-`) && status),
+      ) as Record<string, string>;
+    }
+    const marks = widgetMarksRef.current;
     const timer = setTimeout(() => {
       const days: Record<string, WidgetClass[]> = {};
       for (let offset = 0; offset < 7; offset++) {
@@ -716,6 +774,7 @@ export default function Dashboard() {
               min: subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
               subjectId: subject.id,
               slot: slot.slotIndex ?? null,
+              status: offset === 0 ? markFor(marks, todayKey, subject.id, slot) : null,
             };
           });
       }
@@ -737,7 +796,7 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
     // getScheduleForDate reads these same inputs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, subjectStatsToday, subjectMinAttendance]);
+  }, [timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, subjectStatsToday, subjectMinAttendance, todayAttendance, selectedDate]);
 
   // A new poll is usually about the class that's coming up, so the form starts on it.
   const suggestedPollSubjectId = useMemo(() => {
@@ -2089,6 +2148,7 @@ export default function Dashboard() {
         </Tabs>
       </div>
 
+      <WidgetsSheet open={widgetPromoOpen} onOpenChange={setWidgetPromoOpen} intro />
       <PollsSheet
         open={pollsSheetOpen}
         view={pollsSheetView}

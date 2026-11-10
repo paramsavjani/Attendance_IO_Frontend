@@ -26,7 +26,7 @@
         </LinearLayout>
         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:orientation="vertical">
             <TextView android:id="@+id/name_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" android:textColor="#FF5A5963" android:fontFamily="sans-serif-medium" android:text="Operating Systems" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end" />
-            <TextView android:id="@+id/room_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="#FF8E8D96" android:text="Done · LT-1" android:includeFontPadding="false" android:layout_marginTop="2dp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/room_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="#FF34D399" android:text="Present · LT-1" android:includeFontPadding="false" android:layout_marginTop="2dp" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
         <TextView android:id="@+id/percent_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="14sp" android:textColor="#FF5A5963" android:textStyle="bold" android:fontFamily="sans-serif-black" android:text="86%" android:includeFontPadding="false" android:layout_marginStart="8dp" />
     </LinearLayout>

@@ -6,6 +6,7 @@
     android:minHeight="110dp"
     android:minResizeWidth="40dp"
     android:minResizeHeight="40dp"
+    android:previewImage="@drawable/widget_bars_preview_image"
     android:previewLayout="@layout/widget_bars_preview"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"

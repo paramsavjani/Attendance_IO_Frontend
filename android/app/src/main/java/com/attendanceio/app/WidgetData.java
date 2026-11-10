@@ -19,6 +19,8 @@ final class WidgetData {
         /** What marking this class sends: the subject, and its lecture slot (null for labs and custom times). */
         String subjectId;
         Integer slot;
+        /** Today only: "present", "absent", "cancelled", or null when not marked. */
+        String status;
     }
 
     static final class Subject {
@@ -100,6 +102,7 @@ final class WidgetData {
             ci.min = o.optInt("min", 75);
             ci.subjectId = o.optString("subjectId", "");
             ci.slot = o.isNull("slot") || !o.has("slot") ? null : o.optInt("slot");
+            ci.status = o.isNull("status") || !o.has("status") ? null : o.optString("status");
             d.classes.add(ci);
         }
         return d;

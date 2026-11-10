@@ -20,6 +20,15 @@ final class WidgetStyle {
     static final int DIM = Color.parseColor("#3A3940");
     static final int ACCENT_SOFT = Color.parseColor("#A5B4FC");
 
+    /** "Present · LT-1" with the first part in its own colour and the rest muted. */
+    static CharSequence twoTone(String first, int color, String rest) {
+        android.text.SpannableString text = new android.text.SpannableString(first + rest);
+        text.setSpan(new android.text.style.ForegroundColorSpan(color), 0, first.length(), 0);
+        text.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, first.length(), 0);
+        text.setSpan(new android.text.style.ForegroundColorSpan(MUTED), first.length(), text.length(), 0);
+        return text;
+    }
+
     /** Green at or above the minimum, amber within 5 points under it, red below that. */
     static int tone(Integer percent, int min) {
         if (percent == null) return MUTED;

@@ -70,6 +70,34 @@ public class WidgetBridgePlugin extends Plugin {
         call.resolve(counts);
     }
 
+    /** Whether the launcher can add a widget straight from the app (Android 8+, and most launchers). */
+    @PluginMethod
+    public void canPin(PluginCall call) {
+        JSObject result = new JSObject();
+        boolean supported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
+            && AppWidgetManager.getInstance(getContext()).isRequestPinAppWidgetSupported();
+        result.put("supported", supported);
+        call.resolve(result);
+    }
+
+    /** Ask the launcher to add one widget ("today", "subjects" or "mini"); it shows its own confirm sheet. */
+    @PluginMethod
+    public void pin(PluginCall call) {
+        String kind = call.getString("kind", "today");
+        Class<?> provider = "subjects".equals(kind) ? SubjectBarsWidget.class
+            : "mini".equals(kind) ? MiniPercentWidget.class : TodayWidgetProvider.class;
+        JSObject result = new JSObject();
+        boolean asked = false;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            AppWidgetManager manager = AppWidgetManager.getInstance(getContext());
+            if (manager.isRequestPinAppWidgetSupported()) {
+                asked = manager.requestPinAppWidget(new ComponentName(getContext(), provider), null, null);
+            }
+        }
+        result.put("requested", asked);
+        call.resolve(result);
+    }
+
     /** On logout: the widget must not keep showing the previous student's classes. */
     @PluginMethod
     public void clear(PluginCall call) {

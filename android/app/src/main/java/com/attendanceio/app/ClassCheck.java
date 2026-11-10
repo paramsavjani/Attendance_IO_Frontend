@@ -207,17 +207,41 @@ final class ClassCheck {
             conn.disconnect();
             if (code >= 200 && code < 300) {
                 handOff(context, t, status, true);
+                showOnWidgets(context, t, status);
                 return Result.SENT;
             }
             if (code == 401 || code == 403) return Result.SIGNED_OUT;
             if (code >= 500) {
                 handOff(context, t, status, false);
+                showOnWidgets(context, t, status);
                 return Result.OFFLINE;
             }
             return Result.REFUSED;
         } catch (Exception e) {
             handOff(context, t, status, false);
+            showOnWidgets(context, t, status);
             return Result.OFFLINE;
+        }
+    }
+
+    /** Put the new mark in the widgets' snapshot so "Today's classes" shows it before the app is opened. */
+    private static synchronized void showOnWidgets(Context context, Target t, String status) {
+        try {
+            SharedPreferences p = prefs(context);
+            JSONObject snapshot = new JSONObject(p.getString(TodayWidgetProvider.KEY_SNAPSHOT, "{}"));
+            JSONArray classes = snapshot.optJSONObject("days") == null ? null : snapshot.getJSONObject("days").optJSONArray(t.date);
+            if (classes == null) return;
+            for (int i = 0; i < classes.length(); i++) {
+                JSONObject c = classes.getJSONObject(i);
+                boolean sameSlot = t.slot != null
+                    ? !c.isNull("slot") && c.optInt("slot", -1) == t.slot
+                    : c.isNull("slot") && t.start.equals(c.optString("start")) && t.end.equals(c.optString("end"));
+                if (t.subjectId.equals(c.optString("subjectId")) && sameSlot) c.put("status", status);
+            }
+            p.edit().putString(TodayWidgetProvider.KEY_SNAPSHOT, snapshot.toString()).apply();
+            BaseWidget.refreshAll(context);
+        } catch (Exception ignored) {
+            // the widget catches up the next time the app opens
         }
     }
 

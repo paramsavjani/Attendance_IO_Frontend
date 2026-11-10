@@ -44,7 +44,7 @@ public class MiniPercentWidget extends BaseWidget {
         }
         v.setTextViewTextSize(R.id.mini_percent, TypedValue.COMPLEX_UNIT_SP, Math.max(12, Math.min(28, ring * 0.27f)));
         // "OVERALL" only where the ring is wide enough inside to hold it
-        v.setViewVisibility(R.id.mini_caption, ring >= 60 ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(R.id.mini_caption, ring >= 76 ? View.VISIBLE : View.GONE);
         v.setTextViewTextSize(R.id.mini_caption, TypedValue.COMPLEX_UNIT_SP, Math.max(7, Math.min(10, ring * 0.11f)));
     }
 }

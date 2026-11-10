@@ -84,8 +84,15 @@ public class TodayWidgetProvider extends BaseWidget {
             v.setTextColor(NAMES[shown], done ? WidgetStyle.FAINT : WidgetStyle.TEXT);
             String place = "lecture".equals(c.type) ? c.room
                 : ("lab".equals(c.type) ? "Lab" : "Tutorial") + (c.room.isEmpty() ? "" : " · " + c.room);
-            v.setTextViewText(ROOMS[shown], done ? "Done · " + place : on ? "Now · " + place : place);
-            v.setTextColor(ROOMS[shown], on ? WidgetStyle.ACCENT_SOFT : WidgetStyle.MUTED);
+            // How it was marked, else whether it's on now or ended without a mark
+            String label = null;
+            int labelColor = WidgetStyle.MUTED;
+            if ("present".equals(c.status)) { label = "Present"; labelColor = WidgetStyle.GREEN; }
+            else if ("absent".equals(c.status)) { label = "Absent"; labelColor = WidgetStyle.RED; }
+            else if ("cancelled".equals(c.status)) { label = "Cancelled"; labelColor = WidgetStyle.MUTED; }
+            else if (on) { label = "Now"; labelColor = WidgetStyle.ACCENT_SOFT; }
+            else if (done) { label = "Not marked"; labelColor = WidgetStyle.AMBER; }
+            v.setTextViewText(ROOMS[shown], label == null ? place : WidgetStyle.twoTone(label, labelColor, " · " + place));
             v.setTextViewText(PERCENTS[shown], c.percent == null ? "" : c.percent + "%");
             v.setTextColor(PERCENTS[shown], done ? WidgetStyle.FAINT : tone);
         }
