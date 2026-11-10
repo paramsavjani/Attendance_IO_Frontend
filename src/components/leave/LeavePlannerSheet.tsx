@@ -99,6 +99,8 @@ export function LeavePlannerSheet({ open, onOpenChange, subjects, timetable, sta
               toDate={endDate ?? undefined}
               disabled={(day) => isWeekend(day) || day < tomorrow || (endDate !== null && isAfter(startOfDay(day), endDate))}
               className="pointer-events-auto"
+              // Today can't be picked, so it gets an outline instead of a fill that reads as "selected"
+              classNames={{ day_today: "border border-primary/50 text-foreground" }}
             />
           </div>
 
