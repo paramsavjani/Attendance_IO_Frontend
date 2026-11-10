@@ -171,6 +171,31 @@ function overlayQueuedStatuses(
   }
 }
 
+/** One class to mark absent: a lecture slot, or a lab/tutorial/custom class by its times. */
+export interface PlannedAbsence {
+  date: string; // yyyy-MM-dd
+  subjectId: string;
+  timeSlot: number | null;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface PlannedAbsenceResult {
+  marked: number;
+  /** Already marked (present, absent or cancelled) and left as it was. */
+  skipped: number;
+  /** No connection: saved and sent when back online. */
+  queued: number;
+  failed: number;
+}
+
+/** The slot key AttendanceContext uses for a class, e.g. `2026-11-17-3-slot2`. */
+function slotKeyFor(date: string, subjectId: string, timeSlot: number | null, startTime?: string, endTime?: string): string {
+  if (timeSlot !== null && timeSlot !== undefined) return `${date}-${subjectId}-slot${timeSlot}`;
+  if (startTime && endTime) return `${date}-${subjectId}-${startTime}-${endTime}`;
+  return `${date}-${subjectId}`;
+}
+
 interface AttendanceContextType {
   subjectStats: Record<string, SubjectStats>;
   subjectStatsToday: Record<string, SubjectStats>; // Always shows today's total attendance
@@ -204,6 +229,8 @@ interface AttendanceContextType {
     isExtraClass?: boolean,
     extraClassIndex?: number
   ) => Promise<void>;
+  /** Mark many classes absent at once (a planned leave), leaving any that are already marked. */
+  markClassesAbsent: (classes: PlannedAbsence[]) => Promise<PlannedAbsenceResult>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
   setEnrolledSubjects: (subjects: Subject[]) => void;
@@ -983,6 +1010,66 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
   }, [student, fetchAttendanceData, fetchTodayStats]);
 
+  const markClassesAbsent = useCallback(async (classes: PlannedAbsence[]): Promise<PlannedAbsenceResult> => {
+    const result: PlannedAbsenceResult = { marked: 0, skipped: 0, queued: 0, failed: 0 };
+    const byDate = new Map<string, PlannedAbsence[]>();
+    classes.forEach((c) => byDate.set(c.date, [...(byDate.get(c.date) ?? []), c]));
+
+    for (const [date, list] of byDate) {
+      // What the server already has that day, so a class marked cancelled (a holiday) or present isn't overwritten
+      const existing = new Set<string>();
+      try {
+        const res = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`);
+        if (res.ok) {
+          const data = await res.json();
+          (data.todayAttendance ?? []).forEach((r: { subjectId: string; timeSlot?: number | null; startTime?: string; endTime?: string; isExtraClass?: boolean }) => {
+            if (!r.isExtraClass) existing.add(slotKeyFor(date, String(r.subjectId), r.timeSlot ?? null, r.startTime, r.endTime));
+          });
+        }
+      } catch {
+        // offline: mark everything; the queue sends it later
+      }
+      for (const c of list) {
+        const slotKey = slotKeyFor(date, c.subjectId, c.timeSlot, c.startTime, c.endTime);
+        if (existing.has(slotKey) || existing.has(`${date}-${c.subjectId}`) || findQueued(slotKey)) {
+          result.skipped++;
+          continue;
+        }
+        const body: Record<string, unknown> = { subjectId: c.subjectId, lectureDate: date, status: 'absent' };
+        if (c.timeSlot !== null && c.timeSlot !== undefined) body.timeSlot = c.timeSlot;
+        else if (c.startTime && c.endTime) {
+          body.startTime = c.startTime;
+          body.endTime = c.endTime;
+        }
+        try {
+          if (!navigator.onLine) throw new TypeError('offline');
+          const res = await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (res.ok) result.marked++;
+          else result.failed++;
+        } catch (error) {
+          if (isNetworkError(error)) {
+            enqueueMark({ slotKey, date, subjectId: c.subjectId, kind: 'mark', status: 'absent', body, serverStatus: null });
+            result.queued++;
+          } else {
+            result.failed++;
+          }
+        }
+      }
+    }
+
+    if (result.marked > 0) {
+      syncedAtRef.current = Date.now();
+      writeLastSyncAt(syncedAtRef.current);
+      fetchTodayStats();
+      await fetchAttendanceData(lastFetchedDateRef.current, true);
+    }
+    return result;
+  }, [fetchAttendanceData, fetchTodayStats]);
+
   // Marks made from the after-class notification or an app-icon shortcut while the app was closed.
   // Sent ones only need a refresh; ones that found no connection join the offline queue.
   const catchUpOutsideMarks = useCallback(async () => {
@@ -1057,6 +1144,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         savingState,
         pendingSyncCount,
         markAttendance,
+        markClassesAbsent,
         setSubjectMin,
         getSubjectStats,
         setEnrolledSubjects,

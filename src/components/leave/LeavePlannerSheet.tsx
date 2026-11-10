@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { addDays, format, isAfter, isWeekend, parseISO, startOfDay } from "date-fns";
-import { AlertTriangle, CalendarX2, CheckCircle2, CircleAlert } from "lucide-react";
+import { AlertTriangle, CalendarX2, CheckCircle2, CircleAlert, Loader2, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
 import { useCloseOnBack } from "@/lib/backOverlay";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAttendance, type PlannedAbsence, type PlannedAbsenceResult } from "@/contexts/AttendanceContext";
 import { countLecturesOnDates, projectLeave, type LeaveProjection, type LeaveStats } from "@/lib/leavePlanner";
 import type { Subject, TimetableSlot } from "@/types/attendance";
 
@@ -16,6 +27,8 @@ interface LeavePlannerSheetProps {
   timetable: TimetableSlot[];
   stats: Record<string, LeaveStats | undefined>;
   minimumFor: (subject: Subject) => number;
+  /** Every class on these days (lectures, labs, tutorials), for marking the leave absent. */
+  classesOn?: (dates: Date[]) => PlannedAbsence[];
 }
 
 interface Row {
@@ -27,8 +40,27 @@ interface Row {
 const VERDICT_RANK: Record<LeaveProjection["verdict"], number> = { unreachable: 0, below: 1, tight: 2, safe: 3 };
 
 /** Pick the days you'll be away and see where every subject ends the semester. */
-export function LeavePlannerSheet({ open, onOpenChange, subjects, timetable, stats, minimumFor }: LeavePlannerSheetProps) {
+export function LeavePlannerSheet({ open, onOpenChange, subjects, timetable, stats, minimumFor, classesOn }: LeavePlannerSheetProps) {
   const [dates, setDates] = useState<Date[]>([]);
+  const { markClassesAbsent } = useAttendance();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [marking, setMarking] = useState(false);
+  const [markResult, setMarkResult] = useState<PlannedAbsenceResult | null>(null);
+  const plannedClasses = useMemo(() => (classesOn ? classesOn(dates) : []), [classesOn, dates]);
+  const sortedDates = useMemo(() => [...dates].sort((a, b) => a.getTime() - b.getTime()), [dates]);
+
+  // A new choice of days starts fresh
+  useEffect(() => setMarkResult(null), [dates]);
+
+  const markAbsent = async () => {
+    setConfirmOpen(false);
+    setMarking(true);
+    try {
+      setMarkResult(await markClassesAbsent(plannedClasses));
+    } finally {
+      setMarking(false);
+    }
+  };
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   useCloseOnBack(open, () => onOpenChange(false));
@@ -143,6 +175,39 @@ export function LeavePlannerSheet({ open, onOpenChange, subjects, timetable, sta
             </div>
           )}
 
+          {/* Taking the leave: mark every class on those days absent */}
+          {dates.length > 0 && plannedClasses.length > 0 && (
+            markResult ? (
+              <div className="mt-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-sm">
+                <p className="flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  {markResult.marked + markResult.queued > 0
+                    ? `${markResult.marked + markResult.queued} ${markResult.marked + markResult.queued === 1 ? "class" : "classes"} marked absent`
+                    : "Nothing new to mark"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {[
+                    markResult.skipped > 0 && `${markResult.skipped} already marked, left as ${markResult.skipped === 1 ? "it was" : "they were"}`,
+                    markResult.queued > 0 && `${markResult.queued} will sync when you're back online`,
+                    markResult.failed > 0 && `${markResult.failed} couldn't be saved, try again`,
+                  ].filter(Boolean).join(" · ") || "You can change any of them on the schedule."}
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={marking}
+                onClick={() => setConfirmOpen(true)}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive transition-colors active:bg-destructive/20 disabled:opacity-60"
+              >
+                {marking ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4" />}
+                {marking
+                  ? "Marking…"
+                  : `Mark ${plannedClasses.length} ${plannedClasses.length === 1 ? "class" : "classes"} absent`}
+              </button>
+            )
+          )}
+
           {/* Subjects the leave touches */}
           {affected.length > 0 && (
             <div className="mt-3 space-y-2">
@@ -165,6 +230,28 @@ export function LeavePlannerSheet({ open, onOpenChange, subjects, timetable, sta
           </p>
         </div>
       </DrawerContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="max-w-sm rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark these days absent?</AlertDialogTitle>
+            <AlertDialogDescription>
+              All {plannedClasses.length} {plannedClasses.length === 1 ? "class" : "classes"} on{" "}
+              {sortedDates.length <= 4
+                ? sortedDates.map((d) => format(d, "EEE d MMM")).join(", ")
+                : `${sortedDates.length} days`}{" "}
+              will be marked absent, labs and tutorials included. Classes you've already marked stay as they are, and you
+              can change any of them later on the schedule.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not now</AlertDialogCancel>
+            <AlertDialogAction onClick={markAbsent} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Mark absent
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Drawer>
   );
 }

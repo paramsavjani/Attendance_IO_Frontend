@@ -2198,6 +2198,19 @@ export default function Dashboard() {
         timetable={timetable}
         stats={Object.keys(subjectStatsToday).length > 0 ? subjectStatsToday : subjectStats}
         minimumFor={minimumFor}
+        classesOn={(days) =>
+          days.flatMap((day) =>
+            getScheduleForDate(day, true)
+              .filter((slot) => slot.subject)
+              .map((slot) => ({
+                date: format(day, "yyyy-MM-dd"),
+                subjectId: slot.subject!.id,
+                timeSlot: slot.type === "lecture" && !slot.isCustom ? slot.slotIndex : null,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+              })),
+          )
+        }
       />
 
       {/* Add a Class Dialog */}
