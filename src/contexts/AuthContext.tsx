@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
+import { clearWidget } from "@/lib/widgetBridge";
 import { API_CONFIG, authenticatedFetch, getAppBuildNumber } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { initializePushNotifications, clearFcmToken } from "@/lib/notifications";
@@ -137,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStudent(null);
         setEnrolledSubjects([]);
         removeToken();
+        void clearWidget();
         hasTrackedAppOpen.current = false; // Reset tracking flag on logout
       } else {
         // For other errors (500, network issues, etc.), don't remove token
@@ -306,6 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStudent(null);
       setEnrolledSubjects([]);
       removeToken();
+      void clearWidget();
     }
   };
 

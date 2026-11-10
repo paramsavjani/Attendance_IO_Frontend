@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback, Fragment } from "react";
 import { Capacitor } from "@capacitor/core";
-import { useAuth } from "@/contexts/AuthContext";
+import { trackAppEvent, useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO, setHours, setMinutes } from "date-fns";
@@ -64,6 +64,7 @@ import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
 import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
+import { reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -667,6 +668,50 @@ export default function Dashboard() {
   }, []);
 
   const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
+
+  // Keep the home-screen widgets' snapshot (next 7 days of classes, and each subject's standing) up to date
+  useEffect(() => {
+    if (lectureSlots.length === 0 || enrolledSubjects.length === 0) return;
+    const timer = setTimeout(() => {
+      const days: Record<string, WidgetClass[]> = {};
+      for (let offset = 0; offset < 7; offset++) {
+        const day = addDays(new Date(), offset);
+        days[format(day, "yyyy-MM-dd")] = getScheduleForDate(day, true)
+          .filter((slot) => slot.subject && slot.startTime && slot.endTime)
+          .sort((a, b) => a.startTime.localeCompare(b.startTime))
+          .map((slot) => {
+            const subject = slot.subject!;
+            const stats = slot.type === "lecture" ? subjectStatsToday[subject.id] : undefined;
+            return {
+              start: slot.startTime.slice(0, 5),
+              end: slot.endTime.slice(0, 5),
+              name: subject.name,
+              room: slot.location || subject.classroomLocation || subject.lecturePlace || subject.code,
+              type: slot.type,
+              percent: stats && stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : null,
+              min: subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
+            };
+          });
+      }
+      const subjects: WidgetSubject[] = enrolledSubjects.map((subject) => {
+        const stats = subjectStatsToday[subject.id];
+        return {
+          name: subject.name,
+          code: subject.code,
+          present: stats?.present ?? 0,
+          total: stats?.total ?? 0,
+          percent: stats && stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : null,
+          min: subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
+          canSkip: stats?.bunkableClasses ?? 0,
+          needed: stats?.classesNeeded ?? 0,
+        };
+      });
+      void updateWidget(days, subjects).then(() => reportWidgetCounts(trackAppEvent));
+    }, 1000);
+    return () => clearTimeout(timer);
+    // getScheduleForDate reads these same inputs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, subjectStatsToday, subjectMinAttendance]);
 
   // A new poll is usually about the class that's coming up, so the form starts on it.
   const suggestedPollSubjectId = useMemo(() => {

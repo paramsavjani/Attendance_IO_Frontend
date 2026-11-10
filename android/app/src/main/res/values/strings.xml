@@ -4,4 +4,10 @@
     <string name="title_activity_main">Attendance IO</string>
     <string name="package_name">com.attendanceio.app</string>
     <string name="custom_url_scheme">com.attendanceio.app</string>
+    <string name="widget_today_label">Today\'s classes</string>
+    <string name="widget_today_description">Your classes for the day with their attendance percentage</string>
+    <string name="widget_mini_label">Attendance percentage</string>
+    <string name="widget_mini_description">Just your overall percentage</string>
+    <string name="widget_bars_label">Subjects</string>
+    <string name="widget_bars_description">Every subject with skips left</string>
 </resources>

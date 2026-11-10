@@ -33,6 +33,42 @@
             </intent-filter>
         </activity>
 
+        <!-- Home-screen widgets: all draw the snapshot the app stores (see BaseWidget) -->
+        <receiver
+            android:name=".TodayWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_today_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_today_info" />
+        </receiver>
+
+        <receiver
+            android:name=".MiniPercentWidget"
+            android:exported="false"
+            android:label="@string/widget_mini_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_mini_info" />
+        </receiver>
+        <receiver
+            android:name=".SubjectBarsWidget"
+            android:exported="false"
+            android:label="@string/widget_bars_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_bars_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
