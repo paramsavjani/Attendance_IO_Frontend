@@ -16,6 +16,9 @@ final class WidgetData {
         String start, end, name, room, type;
         Integer percent;
         int min;
+        /** What marking this class sends: the subject, and its lecture slot (null for labs and custom times). */
+        String subjectId;
+        Integer slot;
     }
 
     static final class Subject {
@@ -28,6 +31,8 @@ final class WidgetData {
     static final class Day {
         String label;
         Date date;
+        /** yyyy-MM-dd, as the API takes it. */
+        String key;
         List<ClassItem> classes = new ArrayList<>();
     }
 
@@ -78,8 +83,9 @@ final class WidgetData {
         Day d = new Day();
         d.date = c.getTime();
         d.label = offset == 0 ? "Today" : offset == 1 ? "Tomorrow" : new SimpleDateFormat("EEEE", Locale.US).format(d.date);
+        d.key = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(d.date);
         if (days == null) return d;
-        JSONArray arr = days.optJSONArray(new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(d.date));
+        JSONArray arr = days.optJSONArray(d.key);
         if (arr == null) return d;
         for (int i = 0; i < arr.length(); i++) {
             JSONObject o = arr.optJSONObject(i);
@@ -92,6 +98,8 @@ final class WidgetData {
             ci.type = o.optString("type", "lecture");
             ci.percent = o.isNull("percent") || !o.has("percent") ? null : o.optInt("percent");
             ci.min = o.optInt("min", 75);
+            ci.subjectId = o.optString("subjectId", "");
+            ci.slot = o.isNull("slot") || !o.has("slot") ? null : o.optInt("slot");
             d.classes.add(ci);
         }
         return d;

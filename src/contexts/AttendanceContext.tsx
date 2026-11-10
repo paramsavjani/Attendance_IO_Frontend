@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
 import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { OFFLINE_HEADER, readCachedJson, savedAt } from "@/lib/offlineCache";
 import { dequeueMark, enqueueMark, findQueued, isNetworkError, readQueue, subscribeQueue, type QueuedMark } from "@/lib/offlineQueue";
+import { takeNativeMarks } from "@/lib/widgetBridge";
 import { useAuth } from "./AuthContext";
 import { hexToHslLightened } from "@/lib/utils";
 import { toast } from "sonner";
@@ -981,12 +983,51 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
   }, [student, fetchAttendanceData, fetchTodayStats]);
 
+  // Marks made from the after-class notification or an app-icon shortcut while the app was closed.
+  // Sent ones only need a refresh; ones that found no connection join the offline queue.
+  const catchUpOutsideMarks = useCallback(async () => {
+    const marks = await takeNativeMarks();
+    for (const m of marks) {
+      if (m.sent) continue;
+      const slotKey = m.slot !== null && m.slot !== undefined
+        ? `${m.date}-${m.subjectId}-slot${m.slot}`
+        : `${m.date}-${m.subjectId}-${m.start}-${m.end}`;
+      const queued = findQueued(slotKey);
+      enqueueMark({
+        slotKey, date: m.date, subjectId: m.subjectId, kind: 'mark', status: m.status, body: m.body,
+        serverStatus: queued ? queued.serverStatus ?? null : null,
+      });
+    }
+    await syncQueuedMarks();
+    if (marks.some((m) => m.sent)) {
+      syncedAtRef.current = Date.now();
+      writeLastSyncAt(syncedAtRef.current);
+      await fetchAttendanceData(lastFetchedDateRef.current, true);
+      fetchTodayStats();
+    }
+  }, [syncQueuedMarks, fetchAttendanceData, fetchTodayStats]);
+
   useEffect(() => {
     if (!student) return;
-    syncQueuedMarks();
+    catchUpOutsideMarks();
     window.addEventListener('online', syncQueuedMarks);
-    return () => window.removeEventListener('online', syncQueuedMarks);
-  }, [student, syncQueuedMarks]);
+    let resume: { remove: () => Promise<void> } | undefined;
+    let cancelled = false;
+    if (Capacitor.isNativePlatform()) {
+      import("@capacitor/app").then(async ({ App }) => {
+        const handle = await App.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) catchUpOutsideMarks();
+        });
+        if (cancelled) handle.remove();
+        else resume = handle;
+      });
+    }
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', syncQueuedMarks);
+      resume?.remove();
+    };
+  }, [student, syncQueuedMarks, catchUpOutsideMarks]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {

@@ -28,8 +28,35 @@ public class WidgetBridgePlugin extends Plugin {
             .edit()
             .putString(TodayWidgetProvider.KEY_SNAPSHOT, snapshot)
             .apply();
+        // Marking from a notification or shortcut sends with the app's own sign-in
+        String token = call.getString("token");
+        String apiBase = call.getString("apiBase");
+        if (token != null && apiBase != null) ClassCheck.saveAuth(getContext(), token, apiBase);
         BaseWidget.refreshAll(getContext());
+        ClassCheck.schedule(getContext());
         call.resolve();
+    }
+
+    /** Turn the after-class question on or off (the app's "After lecture" reminder setting). */
+    @PluginMethod
+    public void setClassCheck(PluginCall call) {
+        ClassCheck.setEnabled(getContext(), Boolean.TRUE.equals(call.getBoolean("enabled", true)));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void getClassCheck(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("enabled", ClassCheck.isEnabled(getContext()));
+        call.resolve(result);
+    }
+
+    /** Marks made from a notification or shortcut since the app last asked: `sent`, or waiting for a connection. */
+    @PluginMethod
+    public void takeMarks(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("marks", ClassCheck.takeHandoff(getContext()).toString());
+        call.resolve(result);
     }
 
     /** How many of each widget this student has on their home screen, for usage analytics. */
@@ -51,6 +78,7 @@ public class WidgetBridgePlugin extends Plugin {
             .edit()
             .remove(TodayWidgetProvider.KEY_SNAPSHOT)
             .apply();
+        ClassCheck.clear(getContext());
         BaseWidget.refreshAll(getContext());
         call.resolve();
     }

@@ -31,7 +31,42 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.attendanceio.app" android:host="auth" />
             </intent-filter>
+
+            <!-- App-icon shortcuts that open a part of the app (com.attendanceio.app://open?polls=open) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="com.attendanceio.app" android:host="open" />
+            </intent-filter>
+
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- "Mark current class" / "Mark a class" from the app icon: a dialog over the home screen -->
+        <activity
+            android:name=".MarkActivity"
+            android:theme="@style/MarkHost"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:noHistory="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.attendanceio.app.MARK_CURRENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.attendanceio.app.MARK_PICK" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- The after-class question: its alarm, its Present/Absent/Cancelled buttons, and re-arming after reboot -->
+        <receiver android:name=".ClassCheckReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Home-screen widgets: all draw the snapshot the app stores (see BaseWidget) -->
         <receiver

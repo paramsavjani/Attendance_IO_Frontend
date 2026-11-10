@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getClassCheck, hasAdoptedClassCheck, setClassCheck } from "@/lib/widgetBridge";
 import { useNavigate } from "react-router-dom";
 import { useAuth, trackAppEvent } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
@@ -63,6 +64,10 @@ export default function Profile() {
   const [dailyReminderHours, setDailyReminderHours] = useState<number[]>([]);
   const [afterLectureReminderEnabled, setAfterLectureReminderEnabled] = useState(true);
   const [pollNotificationsEnabled, setPollNotificationsEnabled] = useState(true);
+  const [classCheckOnPhone, setClassCheckOnPhone] = useState(false);
+  useEffect(() => {
+    void getClassCheck().then((onPhone) => setClassCheckOnPhone(onPhone !== null));
+  }, []);
   const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const contributors = useGitHubContributors();
@@ -430,6 +435,10 @@ export default function Profile() {
                 setAfterLectureReminderEnabled(student?.afterLectureReminderEnabled !== false);
                 setPollNotificationsEnabled(student?.pollNotificationsEnabled !== false);
                 setShowNotificationPreferences(true);
+                // On builds that ask after class on the phone, that is where this setting lives
+                void getClassCheck().then((onPhone) => {
+                  if (onPhone !== null && hasAdoptedClassCheck(student?.id)) setAfterLectureReminderEnabled(onPhone);
+                });
               }}
               className={profileGridBtn}
             >
@@ -953,7 +962,10 @@ export default function Profile() {
             >
               <div className="space-y-0.5 pointer-events-none">
                 <span className="text-xs font-semibold block">After lecture</span>
-                <p className="text-[11px] text-muted-foreground">Remind me 5 min after a lecture ends if I haven&apos;t marked attendance</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Remind me 5 min after a class ends if I haven&apos;t marked it
+                  {classCheckOnPhone ? ", with buttons to mark it right there" : ""}
+                </p>
               </div>
               <Switch
                 id="after-lecture"
@@ -991,12 +1003,14 @@ export default function Profile() {
               onClick={async () => {
                 setSavingNotificationPrefs(true);
                 try {
+                  // The phone asks after class itself; the server's push stays off so they don't both arrive
+                  const onPhone = hasAdoptedClassCheck(student?.id) && (await setClassCheck(afterLectureReminderEnabled));
                   const res = await authenticatedFetch(API_CONFIG.ENDPOINTS.NOTIFICATION_PREFERENCES, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                       dailyReminderHours,
-                      afterLectureReminderEnabled,
+                      afterLectureReminderEnabled: onPhone ? false : afterLectureReminderEnabled,
                       pollNotificationsEnabled,
                     }),
                   });

@@ -10,4 +10,10 @@
     <string name="widget_mini_description">Just your overall percentage</string>
     <string name="widget_bars_label">Subjects</string>
     <string name="widget_bars_description">Every subject with skips left</string>
+    <string name="shortcut_mark_current_short">Mark current class</string>
+    <string name="shortcut_mark_current_long">Mark the class on now</string>
+    <string name="shortcut_mark_pick_short">Mark a class</string>
+    <string name="shortcut_mark_pick_long">Mark one of today\'s classes</string>
+    <string name="shortcut_polls_short">Class polls</string>
+    <string name="shortcut_leave_short">Plan a leave</string>
 </resources>

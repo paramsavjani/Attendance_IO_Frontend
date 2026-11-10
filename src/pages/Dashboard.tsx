@@ -65,7 +65,7 @@ import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
 import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
-import { reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
+import { adoptClassCheck, reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -174,6 +174,23 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
+
+  // App-icon shortcut "Plan a leave": /dashboard?leave=open
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("leave") !== "open") return;
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.href.replace(/([?&])leave=open&?/, "$1").replace(/[?&]$/, ""),
+    );
+    const timer = setTimeout(() => setLeavePlannerOpen(true), 400);
+    return () => clearTimeout(timer);
+  }, [location.search]);
+
+  // Let the phone ask after each class itself (with buttons to mark), in place of the server's push
+  useEffect(() => {
+    if (student && !student.isDemo) void adoptClassCheck(student);
+  }, [student]);
 
   // On home (Dashboard) only: double back button closes the app
   useEffect(() => {
@@ -697,6 +714,8 @@ export default function Dashboard() {
               type: slot.type,
               percent: stats && stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : null,
               min: subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
+              subjectId: subject.id,
+              slot: slot.slotIndex ?? null,
             };
           });
       }

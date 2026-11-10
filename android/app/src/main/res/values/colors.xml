@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="shortcut_check">#10B981</color>
+    <color name="shortcut_list">#6366F1</color>
+    <color name="shortcut_poll">#8B5CF6</color>
+    <color name="shortcut_leave">#F59E0B</color>
+</resources>

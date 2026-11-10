@@ -1,10 +1,16 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { getToken } from "@/lib/token";
 
 /** Native side lives in android/.../WidgetBridgePlugin.java. */
 interface WidgetBridgePlugin {
-  update(options: { snapshot: string }): Promise<void>;
+  update(options: { snapshot: string; token?: string; apiBase?: string }): Promise<void>;
   clear(): Promise<void>;
   status(): Promise<WidgetCounts>;
+  // Added with marking from notifications and shortcuts; older app builds reject these
+  setClassCheck(options: { enabled: boolean }): Promise<void>;
+  getClassCheck(): Promise<{ enabled: boolean }>;
+  takeMarks(): Promise<{ marks: string }>;
 }
 
 /** How many of each widget the student has on their home screen. */
@@ -24,6 +30,9 @@ export interface WidgetClass {
   type: "lecture" | "lab" | "tutorial";
   percent: number | null;
   min: number;
+  /** What a mark from the notification or a shortcut sends: the subject, and its lecture slot (null for labs and custom times). */
+  subjectId: string;
+  slot: number | null;
 }
 
 export interface WidgetSubject {
@@ -48,7 +57,12 @@ function available(): boolean {
 export async function updateWidget(days: Record<string, WidgetClass[]>, subjects: WidgetSubject[]): Promise<void> {
   if (!available()) return;
   try {
-    await WidgetBridge.update({ snapshot: JSON.stringify({ updatedAt: Date.now(), days, subjects }) });
+    await WidgetBridge.update({
+      snapshot: JSON.stringify({ updatedAt: Date.now(), days, subjects }),
+      // Lets the after-class notification and the app-icon shortcuts mark with this sign-in
+      token: getToken() ?? undefined,
+      apiBase: API_CONFIG.BASE_URL,
+    });
   } catch (error) {
     console.debug("Widget update failed:", error);
   }
@@ -80,5 +94,104 @@ export async function clearWidget(): Promise<void> {
     await WidgetBridge.clear();
   } catch {
     // nothing to clear
+  }
+}
+
+/** A mark made from the after-class notification or an app-icon shortcut, handed back by the native side. */
+export interface NativeMark {
+  date: string;
+  subjectId: string;
+  slot: number | null;
+  start: string;
+  end: string;
+  status: "present" | "absent" | "cancelled";
+  /** False when there was no connection: the app should queue it like any offline mark. */
+  sent: boolean;
+  body: Record<string, unknown>;
+}
+
+/** Marks made outside the app since the last call (each is returned once). */
+export async function takeNativeMarks(): Promise<NativeMark[]> {
+  if (!available()) return [];
+  try {
+    const { marks } = await WidgetBridge.takeMarks();
+    const parsed = JSON.parse(marks);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return []; // an app build without it
+  }
+}
+
+/** Whether the phone asks after each class itself; null on builds that can't. */
+export async function getClassCheck(): Promise<boolean | null> {
+  if (!available()) return null;
+  try {
+    return (await WidgetBridge.getClassCheck()).enabled;
+  } catch {
+    return null;
+  }
+}
+
+export async function setClassCheck(enabled: boolean): Promise<boolean> {
+  if (!available()) return false;
+  try {
+    await WidgetBridge.setClassCheck({ enabled });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+interface ReminderPrefs {
+  id: string;
+  dailyReminderHours?: number[];
+  afterLectureReminderEnabled?: boolean;
+  pollNotificationsEnabled?: boolean;
+}
+
+/**
+ * Builds that can ask after class on the phone (with Present / Absent buttons) take over the
+ * server's "after lecture" push, once per student on this phone: the phone's question follows the
+ * student's setting, and the server one is switched off so the two never both arrive.
+ */
+const adoptedKey = (studentId: string) => `attendance_io_class_check_adopted_${studentId}`;
+
+/** True once this phone has taken over the after-lecture reminder for this student. */
+export function hasAdoptedClassCheck(studentId: string | undefined): boolean {
+  if (!studentId) return false;
+  try {
+    return localStorage.getItem(adoptedKey(studentId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export async function adoptClassCheck(student: ReminderPrefs): Promise<void> {
+  const key = adoptedKey(student.id);
+  try {
+    if (localStorage.getItem(key)) return;
+  } catch {
+    return;
+  }
+  if ((await getClassCheck()) === null || !navigator.onLine) return;
+
+  const wanted = student.afterLectureReminderEnabled !== false;
+  if (wanted) {
+    const res = await authenticatedFetch(API_CONFIG.ENDPOINTS.NOTIFICATION_PREFERENCES, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dailyReminderHours: student.dailyReminderHours ?? [],
+        afterLectureReminderEnabled: false,
+        pollNotificationsEnabled: student.pollNotificationsEnabled !== false,
+      }),
+    }).catch(() => null);
+    if (!res?.ok) return; // try again next open
+  }
+  await setClassCheck(wanted);
+  try {
+    localStorage.setItem(key, "1");
+  } catch {
+    // asked again next open; harmless
   }
 }

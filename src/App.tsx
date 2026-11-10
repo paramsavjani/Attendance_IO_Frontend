@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext";
@@ -132,6 +132,37 @@ function AppUpdateChecker() {
 }
 
 import { MainLayout } from "@/components/layout/MainLayout";
+
+let launchLinkHandled = false;
+
+/** App-icon shortcuts open com.attendanceio.app://open?polls=open (or ?leave=open) on the home page. */
+function ShortcutLinks() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const go = (url?: string) => {
+      if (!url?.startsWith("com.attendanceio.app://open")) return;
+      const query = url.split("?")[1] ?? "";
+      navigate(`/dashboard${query ? `?${query}` : ""}`);
+    };
+    let handle: { remove: () => Promise<void> } | undefined;
+    let cancelled = false;
+    import("@capacitor/app").then(async ({ App }) => {
+      if (!launchLinkHandled) {
+        launchLinkHandled = true;
+        go((await App.getLaunchUrl())?.url);
+      }
+      const h = await App.addListener("appUrlOpen", ({ url }) => go(url));
+      if (cancelled) h.remove();
+      else handle = h;
+    });
+    return () => {
+      cancelled = true;
+      handle?.remove();
+    };
+  }, [navigate]);
+  return null;
+}
 
 function AppRoutes() {
   const { isAuthenticated, isLoadingAuth, checkAuth } = useAuth();
@@ -327,6 +358,7 @@ function AppRoutes() {
       {!isErrorPage && isAuthenticated && <ServerPopup />}
       {!isErrorPage && isAuthenticated && <FeedbackReplyDialog />}
       {!isErrorPage && isAuthenticated && <NewContributorWelcome />}
+      {!isErrorPage && isAuthenticated && <ShortcutLinks />}
       <Routes>
         <Route
           path="/"

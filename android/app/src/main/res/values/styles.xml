@@ -19,4 +19,19 @@
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
     </style>
+    <!-- Invisible host for the shortcut dialogs, so they sit over the home screen -->
+    <style name="MarkHost" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
+    <style name="MarkDialog" parent="ThemeOverlay.AppCompat.Dialog.Alert">
+        <item name="colorAccent">#A5B4FC</item>
+        <item name="android:textColorPrimary">#F4F4F5</item>
+        <item name="android:textColorSecondary">#A1A1AA</item>
+        <item name="android:windowBackground">@drawable/mark_dialog_background</item>
+    </style>
 </resources>
