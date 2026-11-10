@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode, useCallback, useEffect,
 import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { OFFLINE_HEADER, readCachedJson, savedAt } from "@/lib/offlineCache";
 import { dequeueMark, enqueueMark, findQueued, isNetworkError, readQueue, subscribeQueue, type QueuedMark } from "@/lib/offlineQueue";
 import { useAuth } from "./AuthContext";
 import { hexToHslLightened } from "@/lib/utils";
@@ -121,6 +122,29 @@ const calculateNewStats = (
     // They will be updated when backend response is received
   };
 };
+
+const LAST_SYNC_KEY = "attendance_io_last_sync_at";
+
+function readLastSyncAt(): number {
+  try {
+    return Number(localStorage.getItem(LAST_SYNC_KEY) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function writeLastSyncAt(at: number): void {
+  try {
+    localStorage.setItem(LAST_SYNC_KEY, String(at));
+  } catch {
+    // storage blocked: the in-memory guard still covers this launch
+  }
+}
+
+/** Today as YYYY-MM-DD in the phone's own time zone (the Dashboard's date keys use the same). */
+function localDateKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 /**
  * Marks still waiting to sync, laid over data from the server (or its offline copy) so they don't
@@ -275,8 +299,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [fetchEnrolledSubjects]);
 
   // Timetable - fetch from backend
-  const [timetable, setTimetableState] = useState<TimetableSlot[]>([]);
-  const [isLoadingTimetable, setIsLoadingTimetable] = useState(true);
+  // Seeded from the saved copy so the schedule draws instantly; fetchTimetable refreshes it
+  const [timetable, setTimetableState] = useState<TimetableSlot[]>(
+    () => readCachedJson<{ slots?: TimetableSlot[] }>(API_CONFIG.ENDPOINTS.TIMETABLE)?.slots ?? []
+  );
+  const [isLoadingTimetable, setIsLoadingTimetable] = useState(() => timetable.length === 0);
 
   // Fetch timetable from backend
   const fetchTimetable = useCallback(async () => {
@@ -286,7 +313,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      setIsLoadingTimetable(true);
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
         method: "GET",
       });
@@ -344,12 +370,90 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const ongoingOperationsRef = useRef<Set<string>>(new Set());
   /** Date of the last attendance load, so a finished sync can refresh the screen the student is on. */
   const lastFetchedDateRef = useRef<string | undefined>(undefined);
+  /**
+   * When the last offline sync sent something; replies and saved copies from before it are stale
+   * (see fetchAttendanceData). Kept across launches so a pre-sync saved copy is never drawn again.
+   */
+  const syncedAtRef = useRef(readLastSyncAt());
+  /** The day whose attendance is on screen, so reloading it doesn't flash the loading state. */
+  const shownDateRef = useRef<string | null>(null);
   const offlineToastShownRef = useRef(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   useEffect(() => subscribeQueue(setPendingSyncCount), []);
 
   // Fetch attendance data from backend for a specific date (defaults to today)
   // silent = true skips showing loading state (used for background refresh after marking)
+  /** Draw a GET /api/attendance reply (from the server or the saved copy), with offline marks laid on top. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyAttendanceData = useCallback((data: any, date?: string) => {
+    shownDateRef.current = date || localDateKey();
+
+    // Convert subject stats to the format expected by the frontend
+    const statsMap: Record<string, SubjectStats> = {};
+    data.subjectStats?.forEach((stat: SubjectStats) => {
+      statsMap[stat.subjectId] = {
+        subjectId: stat.subjectId,
+        present: stat.present,
+        absent: stat.absent,
+        total: stat.total,
+        totalUntilEndDate: stat.totalUntilEndDate,
+        percentage: stat.percentage,
+        classesNeeded: stat.classesNeeded,
+        bunkableClasses: stat.bunkableClasses,
+      };
+    });
+    
+    // Debug: Log first subject stats to verify new fields are present
+    if (data.subjectStats && data.subjectStats.length > 0) {
+      const firstStat = data.subjectStats[0];
+    }
+    overlayQueuedStats(date || new Date().toISOString().split('T')[0], statsMap);
+    setSubjectStats(statsMap);
+
+    // If fetching today's date, also update subjectStatsToday for real-time updates in Subject Section
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const fetchDate = date || today;
+    if (fetchDate === today) {
+      setSubjectStatsToday(statsMap);
+    }
+
+    const cutoffRaw = data.officialCutoffDate;
+    setTrackingOfficialCutoffDate(
+      cutoffRaw != null && String(cutoffRaw).trim() !== ""
+        ? String(cutoffRaw).slice(0, 10)
+        : null
+    );
+
+    // Convert attendance records to the format expected by the frontend
+    // Key format: date-subjectId-slotN | date-subjectId-start-end | date-subjectId-extra-N | date-subjectId (backward compat)
+    // Normalize so keys match regardless of API returning subjectId as string/number and lectureDate with or without time
+    const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
+    const idsMap: Record<string, number | null> = {};
+    const norm = (r: ApiAttendanceRecord) => ({
+      date: (r.lectureDate != null ? String(r.lectureDate) : '').slice(0, 10),
+      subjectId: String(r.subjectId ?? ''),
+    });
+    data.todayAttendance?.forEach((record: ApiAttendanceRecord) => {
+      const { date: d, subjectId: sid } = norm(record);
+      let slotKey: string;
+      if (record.isExtraClass === true) {
+        const idx = record.extraClassIndex != null ? record.extraClassIndex : 0;
+        slotKey = `${d}-${sid}-extra-${idx}`;
+      } else if (record.timeSlot !== null && record.timeSlot !== undefined) {
+        slotKey = `${d}-${sid}-slot${record.timeSlot}`;
+      } else if (record.startTime && record.endTime) {
+        slotKey = `${d}-${sid}-${record.startTime}-${record.endTime}`;
+      } else {
+        slotKey = `${d}-${sid}`;
+      }
+      attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
+      idsMap[slotKey] = record.attendanceId != null ? Number(record.attendanceId) : null;
+    });
+    overlayQueuedStatuses(date || new Date().toISOString().split('T')[0], attendanceMap);
+    setTodayAttendance(attendanceMap);
+    setAttendanceIds(idsMap);
+  }, []);
+
   const fetchAttendanceData = useCallback(async (date?: string, silent: boolean = false) => {
     lastFetchedDateRef.current = date;
     if (!student) {
@@ -363,6 +467,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setAttendanceIds({});
         setTrackingOfficialCutoffDate(null);
         hasLoadedDataRef.current = false;
+        shownDateRef.current = null;
         lastStudentIdRef.current = null;
       }
       if (!silent) {
@@ -383,90 +488,44 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setAttendanceIds({});
       setTrackingOfficialCutoffDate(null);
       hasLoadedDataRef.current = false;
+        shownDateRef.current = null;
     }
 
     lastStudentIdRef.current = currentStudentId;
 
-    if (!silent) {
-      setIsLoadingAttendance(true);
+    const url = date
+      ? `${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`
+      : API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE;
+
+    // Already showing this day: refresh quietly. Otherwise draw its saved copy straight away (unless
+    // it predates the last sync) and only fall back to the loading state when there is none.
+    if (!silent && shownDateRef.current !== (date || localDateKey())) {
+      const saved = savedAt(url) >= syncedAtRef.current ? readCachedJson(url) : null;
+      if (saved) {
+        applyAttendanceData(saved, date);
+        hasLoadedDataRef.current = true;
+        setIsLoadingAttendance(false);
+      } else {
+        setIsLoadingAttendance(true);
+      }
     }
 
     try {
-      const url = date
-        ? `${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`
-        : API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE;
 
+      const requestedAt = Date.now();
       const response = await authenticatedFetch(url, {
         method: "GET",
       });
 
+      // A reply that set off before the last sync finished, or an offline copy saved before it,
+      // is older than the marks on screen: drawing it would undo marks that just synced.
+      const offlineCopyAt = Number(response.headers.get(OFFLINE_HEADER) || 0);
+      if (requestedAt < syncedAtRef.current || (offlineCopyAt && offlineCopyAt < syncedAtRef.current)) {
+        return;
+      }
+
       if (response.ok) {
-        const data = await response.json();
-
-        // Convert subject stats to the format expected by the frontend
-        const statsMap: Record<string, SubjectStats> = {};
-        data.subjectStats?.forEach((stat: SubjectStats) => {
-          statsMap[stat.subjectId] = {
-            subjectId: stat.subjectId,
-            present: stat.present,
-            absent: stat.absent,
-            total: stat.total,
-            totalUntilEndDate: stat.totalUntilEndDate,
-            percentage: stat.percentage,
-            classesNeeded: stat.classesNeeded,
-            bunkableClasses: stat.bunkableClasses,
-          };
-        });
-        
-        // Debug: Log first subject stats to verify new fields are present
-        if (data.subjectStats && data.subjectStats.length > 0) {
-          const firstStat = data.subjectStats[0];
-        }
-        overlayQueuedStats(date || new Date().toISOString().split('T')[0], statsMap);
-        setSubjectStats(statsMap);
-
-        // If fetching today's date, also update subjectStatsToday for real-time updates in Subject Section
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        const fetchDate = date || today;
-        if (fetchDate === today) {
-          setSubjectStatsToday(statsMap);
-        }
-
-        const cutoffRaw = data.officialCutoffDate;
-        setTrackingOfficialCutoffDate(
-          cutoffRaw != null && String(cutoffRaw).trim() !== ""
-            ? String(cutoffRaw).slice(0, 10)
-            : null
-        );
-
-        // Convert attendance records to the format expected by the frontend
-        // Key format: date-subjectId-slotN | date-subjectId-start-end | date-subjectId-extra-N | date-subjectId (backward compat)
-        // Normalize so keys match regardless of API returning subjectId as string/number and lectureDate with or without time
-        const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
-        const idsMap: Record<string, number | null> = {};
-        const norm = (r: ApiAttendanceRecord) => ({
-          date: (r.lectureDate != null ? String(r.lectureDate) : '').slice(0, 10),
-          subjectId: String(r.subjectId ?? ''),
-        });
-        data.todayAttendance?.forEach((record: ApiAttendanceRecord) => {
-          const { date: d, subjectId: sid } = norm(record);
-          let slotKey: string;
-          if (record.isExtraClass === true) {
-            const idx = record.extraClassIndex != null ? record.extraClassIndex : 0;
-            slotKey = `${d}-${sid}-extra-${idx}`;
-          } else if (record.timeSlot !== null && record.timeSlot !== undefined) {
-            slotKey = `${d}-${sid}-slot${record.timeSlot}`;
-          } else if (record.startTime && record.endTime) {
-            slotKey = `${d}-${sid}-${record.startTime}-${record.endTime}`;
-          } else {
-            slotKey = `${d}-${sid}`;
-          }
-          attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
-          idsMap[slotKey] = record.attendanceId != null ? Number(record.attendanceId) : null;
-        });
-        overlayQueuedStatuses(date || new Date().toISOString().split('T')[0], attendanceMap);
-        setTodayAttendance(attendanceMap);
-        setAttendanceIds(idsMap);
+        applyAttendanceData(await response.json(), date);
         hasLoadedDataRef.current = true;
       } else {
         // Only clear on error if we haven't loaded data yet, or if it's a 401 (unauthorized)
@@ -477,6 +536,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           setAttendanceIds({});
           setTrackingOfficialCutoffDate(null);
           hasLoadedDataRef.current = false;
+        shownDateRef.current = null;
         }
       }
     } catch (error) {
@@ -495,7 +555,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setIsLoadingAttendance(false);
       }
     }
-  }, [student]);
+  }, [student, applyAttendanceData]);
 
   // Fetch today's subject stats separately (for Subjects tab)
   const fetchTodayStats = useCallback(async () => {
@@ -503,9 +563,12 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     try {
       const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+      const requestedAt = Date.now();
       const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${today}`, {
         method: "GET",
       });
+      const offlineCopyAt = Number(response.headers.get(OFFLINE_HEADER) || 0);
+      if (requestedAt < syncedAtRef.current || (offlineCopyAt && offlineCopyAt < syncedAtRef.current)) return;
 
       if (response.ok) {
         const data = await response.json();
@@ -919,6 +982,8 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       toast.error(`${rejected} offline ${rejected === 1 ? 'mark was' : 'marks were'} rejected by the server`);
     }
     if (synced > 0 || rejected > 0) {
+      syncedAtRef.current = Date.now();
+      writeLastSyncAt(syncedAtRef.current);
       await fetchAttendanceData(lastFetchedDateRef.current, true);
       fetchTodayStats();
     }

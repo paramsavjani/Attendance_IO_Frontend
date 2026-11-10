@@ -11,6 +11,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       position="top-right"
+      // Clear the phone's status bar: the app draws edge-to-edge, so a plain offset lands on top of it
+      offset={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)" }}
+      mobileOffset={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)", left: 12, right: 12 }}
       toastOptions={{
         classNames: {
           toast:

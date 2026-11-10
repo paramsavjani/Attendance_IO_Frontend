@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { readCachedJson } from "@/lib/offlineCache";
 import { Subject, TimetableSlot } from "@/types/attendance";
 
 // One row in the day's timeline: a lecture/lab/tutorial slot, an extra class, or a merged free gap
@@ -197,14 +198,22 @@ export default function Dashboard() {
   }, []);
 
   // Lab/Tutorial timetable states
-  const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
-  const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>([]);
-  const [isLoadingLab, setIsLoadingLab] = useState(true);
-  const [isLoadingTutorial, setIsLoadingTutorial] = useState(true);
+  // Seeded from the saved copy so the schedule draws instantly; the effects below refresh them
+  const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>(
+    () => readCachedJson<{ slots?: TimetableSlot[] }>(API_CONFIG.ENDPOINTS.LAB_TIMETABLE)?.slots ?? []
+  );
+  const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>(
+    () => readCachedJson<{ slots?: TimetableSlot[] }>(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE)?.slots ?? []
+  );
+  // No loading state when the saved copy already drew them
+  const [isLoadingLab, setIsLoadingLab] = useState(() => !readCachedJson(API_CONFIG.ENDPOINTS.LAB_TIMETABLE));
+  const [isLoadingTutorial, setIsLoadingTutorial] = useState(() => !readCachedJson(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE));
 
   // Standard lecture time slots, fetched from backend (do not hardcode - the institute
   // timetable can include slots beyond the classic 8am-12:50pm morning block, e.g. afternoon lectures)
-  const [lectureSlots, setLectureSlots] = useState<{ index: number; startTime: string; endTime: string }[]>([]);
+  const [lectureSlots, setLectureSlots] = useState<{ index: number; startTime: string; endTime: string }[]>(
+    () => readCachedJson<{ index: number; startTime: string; endTime: string }[]>(API_CONFIG.ENDPOINTS.TIME_SLOTS) ?? []
+  );
 
   // Lab/Tutorial attendance stats
   const [labTutStats, setLabTutStats] = useState<Record<string, {
@@ -336,7 +345,6 @@ export default function Dashboard() {
     const controller = new AbortController();
     const fetchLabTimetable = async () => {
       try {
-        setIsLoadingLab(true);
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.LAB_TIMETABLE, {
           method: "GET",
           signal: controller.signal,
@@ -373,7 +381,6 @@ export default function Dashboard() {
     const controller = new AbortController();
     const fetchTutorialTimetable = async () => {
       try {
-        setIsLoadingTutorial(true);
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE, {
           method: "GET",
           signal: controller.signal,

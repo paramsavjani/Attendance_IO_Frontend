@@ -27,6 +27,7 @@ export function removeToken(): void {
   // Saved data and unsent marks belong to the account that just left
   clearOfflineCache();
   clearQueue();
+  localStorage.removeItem('attendance_io_last_sync_at');
 }
 
 /**

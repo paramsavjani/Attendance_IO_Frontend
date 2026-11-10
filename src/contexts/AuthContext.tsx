@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
+import { readCachedJson } from "@/lib/offlineCache";
 import { clearWidget } from "@/lib/widgetBridge";
 import { API_CONFIG, authenticatedFetch, getAppBuildNumber } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
@@ -68,10 +69,39 @@ export async function trackAppEvent(eventType: string, metadata?: Record<string,
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toStudent(userData: any): Student {
+  return {
+    id: userData.id,
+    name: userData.isDemo ? "Demo User" : userData.name,
+    email: userData.email,
+    rollNumber: userData.sid,
+    pictureUrl: userData.pictureUrl,
+    hasUploadedPicture: userData.hasUploadedPicture === true,
+    sid: userData.sid,
+    phone: userData.phone,
+    isDemo: userData.isDemo || false,
+    dailyReminderHours: Array.isArray(userData.dailyReminderHours) ? userData.dailyReminderHours : [],
+    afterLectureReminderEnabled: userData.afterLectureReminderEnabled !== false,
+    pollNotificationsEnabled: userData.pollNotificationsEnabled !== false,
+  };
+}
+
+/** The account saved by the last successful launch, so the app can open without waiting on the network. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function savedSession(): any | null {
+  if (!getToken()) return null;
+  return readCachedJson(API_CONFIG.ENDPOINTS.USER_INIT);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [student, setStudent] = useState<Student | null>(null);
-  const [enrolledSubjects, setEnrolledSubjects] = useState<EnrolledSubject[]>([]);
-  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+  // Start from the saved account when there is one; checkAuth below still refreshes it from the server
+  const [saved] = useState(savedSession);
+  const [student, setStudent] = useState<Student | null>(() => (saved ? toStudent(saved) : null));
+  const [enrolledSubjects, setEnrolledSubjects] = useState<EnrolledSubject[]>(() =>
+    Array.isArray(saved?.subjects) ? saved.subjects : []
+  );
+  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(!saved);
   const hasCompletedInitialCheck = useRef<boolean>(false);
   const hasTrackedAppOpen = useRef<boolean>(false);
 
@@ -99,21 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const userData = await response.json();
-        const studentData: Student = {
-          id: userData.id,
-          name: userData.isDemo ? "Demo User" : userData.name,
-          email: userData.email,
-          rollNumber: userData.sid,
-          pictureUrl: userData.pictureUrl,
-          hasUploadedPicture: userData.hasUploadedPicture === true,
-          sid: userData.sid,
-          phone: userData.phone,
-          isDemo: userData.isDemo || false,
-          dailyReminderHours: Array.isArray(userData.dailyReminderHours) ? userData.dailyReminderHours : [],
-          afterLectureReminderEnabled: userData.afterLectureReminderEnabled !== false,
-          pollNotificationsEnabled: userData.pollNotificationsEnabled !== false,
-        };
-        setStudent(studentData);
+        setStudent(toStudent(userData));
         
         // If using the init endpoint, also set enrolled subjects
         if (isInitialLoad && userData.subjects) {

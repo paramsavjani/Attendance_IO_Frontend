@@ -146,7 +146,9 @@ function AppRoutes() {
   );
   // Track previous backend state so we know when it transitions to available
   const prevBackendAvailableRef = useRef<boolean | null>(isNativeApp ? null : true);
-  const hasShownAppRef = useRef(false);
+  // With a saved copy of this account's data the app draws straight away; the health check and
+  // login refresh run behind it instead of holding a "Loading..." screen for a network round trip.
+  const hasShownAppRef = useRef(isNativeApp && hasToken() && hasOfflineSnapshot());
 
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";

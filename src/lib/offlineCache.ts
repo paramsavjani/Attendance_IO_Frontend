@@ -3,6 +3,9 @@
  * timetables and attendance. When a request can't reach the server, `authenticatedFetch` answers
  * from here, so the app opens on its last-known state instead of the "No internet" page.
  *
+ * The same copy also lets the app draw its first screen immediately on a normal launch, then
+ * refresh from the network (see AuthContext / AttendanceContext).
+ *
  * Only GET responses from the endpoints below are kept, and everything is wiped on logout.
  */
 const CACHE_KEY = "attendance_io_offline_cache_v1";
@@ -75,6 +78,25 @@ export function offlineResponse(url: string): Response | null {
     status: 200,
     headers: { "Content-Type": "application/json", [OFFLINE_HEADER]: String(entry.at) },
   });
+}
+
+/**
+ * The saved body for `url`, parsed, for drawing the first screen instantly while the network
+ * catches up. Null when nothing is saved.
+ */
+export function readCachedJson<T = unknown>(url: string): T | null {
+  const entry = readAll()[url];
+  if (!entry) return null;
+  try {
+    return JSON.parse(entry.body) as T;
+  } catch {
+    return null;
+  }
+}
+
+/** When `url`'s saved copy was stored (ms), or 0 if there is none. */
+export function savedAt(url: string): number {
+  return readAll()[url]?.at ?? 0;
 }
 
 /** True when the app has enough saved to open without a connection. */
