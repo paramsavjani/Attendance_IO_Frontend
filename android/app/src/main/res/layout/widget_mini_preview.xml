@@ -7,13 +7,13 @@
     android:background="@drawable/widget_background"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="6dp">
 
-    <FrameLayout android:layout_width="68dp" android:layout_height="68dp">
+    <FrameLayout android:id="@+id/mini_ring_box" android:layout_width="52dp" android:layout_height="52dp">
         <ProgressBar android:id="@+id/mini_ring" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:indeterminate="false" android:max="100" android:progressDrawable="@drawable/widget_ring" android:progress="81" android:progressTint="#FF34D399" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-            <TextView android:id="@+id/mini_percent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="17sp" android:textColor="#FFF4F4F5" android:textStyle="bold" android:fontFamily="sans-serif-black" android:text="81%" android:includeFontPadding="false"  />
-            <TextView android:id="@+id/mini_caption" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="7sp" android:textColor="#FF8E8D96" android:textStyle="bold" android:text="OVERALL" android:includeFontPadding="false" android:letterSpacing="0.14" android:layout_marginTop="2dp" />
+            <TextView android:id="@+id/mini_percent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="14sp" android:textColor="#FFF4F4F5" android:textStyle="bold" android:fontFamily="sans-serif-black" android:text="81%" android:includeFontPadding="false"  />
+            <TextView android:id="@+id/mini_caption" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="6sp" android:textColor="#FF8E8D96" android:textStyle="bold" android:text="OVERALL" android:includeFontPadding="false" android:letterSpacing="0.14" android:layout_marginTop="2dp" />
         </LinearLayout>
     </FrameLayout>
     <TextView android:id="@+id/mini_detail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="#FFA1A1AA" android:includeFontPadding="false" android:layout_marginTop="8dp" android:visibility="gone" />
