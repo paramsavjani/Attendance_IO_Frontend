@@ -30,7 +30,7 @@ const WIDGETS: { kind: WidgetKind; label: string; text: string; image: string; s
 ];
 
 /** Seconds before "Not now" works, so the popup is seen rather than closed by reflex. */
-const DISMISS_DELAY = 3;
+const DISMISS_DELAY = 5;
 
 interface WidgetLaunchPopupProps {
   open: boolean;
