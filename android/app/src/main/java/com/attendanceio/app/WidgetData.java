@@ -38,13 +38,38 @@ final class WidgetData {
         List<ClassItem> classes = new ArrayList<>();
     }
 
+    /** Overall % at the end of each recent week, oldest first; the last point is today. */
+    static final class TrendPoint {
+        String date;
+        int percent;
+    }
+
     final boolean empty;
     private final JSONObject days;
     final List<Subject> subjects = new ArrayList<>();
+    final List<TrendPoint> trend = new ArrayList<>();
+    /** Null until the app has fetched it (only done while a trend or streak widget exists). */
+    Integer streak, bestStreak;
 
-    private WidgetData(JSONObject days, JSONArray subjects) {
+    private WidgetData(JSONObject days, JSONArray subjects, JSONObject progress) {
         this.empty = days == null;
         this.days = days;
+        if (progress != null) {
+            JSONArray t = progress.optJSONArray("trend");
+            for (int i = 0; t != null && i < t.length(); i++) {
+                JSONObject o = t.optJSONObject(i);
+                if (o == null) continue;
+                TrendPoint p = new TrendPoint();
+                p.date = o.optString("date");
+                p.percent = o.optInt("percent");
+                trend.add(p);
+            }
+            JSONObject st = progress.optJSONObject("streak");
+            if (st != null) {
+                streak = st.optInt("current");
+                bestStreak = st.optInt("best");
+            }
+        }
         if (subjects == null) return;
         for (int i = 0; i < subjects.length(); i++) {
             JSONObject o = subjects.optJSONObject(i);
@@ -65,12 +90,12 @@ final class WidgetData {
     static WidgetData load(Context context) {
         String raw = context.getSharedPreferences(TodayWidgetProvider.PREFS, Context.MODE_PRIVATE)
             .getString(TodayWidgetProvider.KEY_SNAPSHOT, null);
-        if (raw == null) return new WidgetData(null, null);
+        if (raw == null) return new WidgetData(null, null, null);
         try {
             JSONObject o = new JSONObject(raw);
-            return new WidgetData(o.getJSONObject("days"), o.optJSONArray("subjects"));
+            return new WidgetData(o.getJSONObject("days"), o.optJSONArray("subjects"), o.optJSONObject("progress"));
         } catch (Exception e) {
-            return new WidgetData(null, null);
+            return new WidgetData(null, null, null);
         }
     }
 

@@ -4,7 +4,7 @@ import { useCloseOnBack } from "@/lib/backOverlay";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { canPinWidget, getWidgetCounts, pinWidget, type WidgetCounts, type WidgetKind } from "@/lib/widgetBridge";
 
-const WIDGETS: { kind: WidgetKind; title: string; text: string; image: string; small?: boolean }[] = [
+const WIDGETS: { kind: WidgetKind; title: string; text: string; image: string; small?: boolean; isNew?: boolean }[] = [
   {
     kind: "today",
     title: "Today's classes",
@@ -23,6 +23,28 @@ const WIDGETS: { kind: WidgetKind; title: string; text: string; image: string; s
     text: "Just your overall attendance in a small ring.",
     image: "/widgets/widget_mini_preview_image.png",
     small: true,
+  },
+  {
+    kind: "ask",
+    title: "Ask AI",
+    text: "Ask the assistant about your attendance straight from the home screen.",
+    image: "/widgets/widget_ask_preview_image.png",
+    isNew: true,
+  },
+  {
+    kind: "trend",
+    title: "Weekly trend",
+    text: "Your overall % over the last 8 weeks, and how this week moved it.",
+    image: "/widgets/widget_trend_preview_image.png",
+    isNew: true,
+  },
+  {
+    kind: "streak",
+    title: "Streak",
+    text: "Days in a row you've attended every class you marked.",
+    image: "/widgets/widget_streak_preview_image.png",
+    small: true,
+    isNew: true,
   },
 ];
 
@@ -94,7 +116,8 @@ export function WidgetsSheet({ open, onOpenChange, intro = false }: WidgetsSheet
         </div>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6">
-          {WIDGETS.map((w) => {
+          {/* App builds before 1.0.373 don't have the newer widgets; they report no count for them */}
+          {WIDGETS.filter((w) => !w.isNew || counts?.ask !== undefined).map((w) => {
             const placed = counts?.[w.kind] ?? 0;
             return (
               <div key={w.kind} className="rounded-2xl border border-border/60 bg-card/50 p-3">
@@ -102,13 +125,16 @@ export function WidgetsSheet({ open, onOpenChange, intro = false }: WidgetsSheet
                   <img
                     src={w.image}
                     alt={`${w.title} widget`}
-                    className={w.small ? "h-24 w-24" : "w-full max-w-[340px]"}
+                    className={w.small ? "h-28 w-auto" : "w-full max-w-[340px]"}
                     draggable={false}
                   />
                 </div>
                 <div className="mt-3 flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold">{w.title}</p>
+                    <p className="text-sm font-semibold">
+                      {w.title}
+                      {w.isNew && <span className="ml-1.5 rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-indigo-300">New</span>}
+                    </p>
                     <p className="text-[11px] text-muted-foreground">{w.text}</p>
                   </div>
                   {canPin !== false && (

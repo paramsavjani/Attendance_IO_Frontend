@@ -13,4 +13,10 @@
     <string name="shortcut_assistant_short">Ask AI</string>
     <string name="shortcut_search_short">Search users</string>
     <string name="shortcut_profile_short">Profile</string>
+    <string name="widget_ask_label">Ask AI</string>
+    <string name="widget_ask_description">Ask the assistant about your attendance</string>
+    <string name="widget_trend_label">Weekly trend</string>
+    <string name="widget_trend_description">Your overall % over the last 8 weeks</string>
+    <string name="widget_streak_label">Streak</string>
+    <string name="widget_streak_description">Days in a row with full attendance</string>
 </resources>

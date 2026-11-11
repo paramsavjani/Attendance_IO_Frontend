@@ -67,7 +67,7 @@ import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
 import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
 import { WidgetLaunchPopup } from "@/components/widgets/WidgetLaunchPopup";
 import { maybeAskForReview } from "@/lib/in-app-review";
-import { adoptClassCheck, canPinWidget, getWidgetCounts, reportWidgetCounts, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
+import { adoptClassCheck, canPinWidget, getWidgetCounts, refreshWidgetProgress, reportWidgetCounts, totalWidgets, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -226,7 +226,7 @@ export default function Dashboard() {
     let cancelled = false;
     void Promise.all([getAppBuildNumber(), getWidgetCounts(), canPinWidget()]).then(([build, counts, pin]) => {
       if (cancelled || build < WIDGET_POPUP_MIN_BUILD || !counts || pin === null) return;
-      if (counts.today + counts.subjects + counts.mini > 0) {
+      if (totalWidgets(counts) > 0) {
         localStorage.setItem(key, "1");
         return;
       }
@@ -804,7 +804,10 @@ export default function Dashboard() {
           needed: stats?.classesNeeded ?? 0,
         };
       });
-      void updateWidget(days, subjects).then(() => reportWidgetCounts(trackAppEvent));
+      void updateWidget(days, subjects).then(() => {
+        void reportWidgetCounts(trackAppEvent);
+        void refreshWidgetProgress();
+      });
     }, 1000);
     return () => clearTimeout(timer);
     // getScheduleForDate reads these same inputs
@@ -815,7 +818,9 @@ export default function Dashboard() {
   // student comes back so the change is reported now rather than on the next data reload.
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === "visible") void reportWidgetCounts(trackAppEvent);
+      if (document.visibilityState !== "visible") return;
+      void reportWidgetCounts(trackAppEvent);
+      void refreshWidgetProgress(); // a trend or streak widget just added needs its numbers
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
@@ -1233,6 +1238,7 @@ export default function Dashboard() {
 
     await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
     if (status === 'present' && !student?.isDemo) void maybeAskForReview(trackAppEvent);
+    void refreshWidgetProgress(true); // the streak and this week's point change with each mark
   };
 
   const confirmPastDateAttendance = async () => {

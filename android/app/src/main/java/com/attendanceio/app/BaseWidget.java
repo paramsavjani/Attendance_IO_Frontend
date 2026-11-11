@@ -13,7 +13,10 @@ import android.widget.RemoteViews;
  * Widgets are told their size so they can show more or less as the student resizes them.
  */
 abstract class BaseWidget extends AppWidgetProvider {
-    static final Class<?>[] ALL = {TodayWidgetProvider.class, SubjectBarsWidget.class, MiniPercentWidget.class};
+    static final Class<?>[] ALL = {
+        TodayWidgetProvider.class, SubjectBarsWidget.class, MiniPercentWidget.class,
+        AskAiWidget.class, TrendWidget.class, StreakWidget.class,
+    };
 
     abstract RemoteViews build(Context context, WidgetData data, int widthDp, int heightDp);
 

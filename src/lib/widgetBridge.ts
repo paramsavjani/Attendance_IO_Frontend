@@ -15,13 +15,41 @@ interface WidgetBridgePlugin {
   pin(options: { kind: WidgetKind }): Promise<{ requested: boolean }>;
 }
 
-export type WidgetKind = "today" | "subjects" | "mini";
+export type WidgetKind = "today" | "subjects" | "mini" | "ask" | "trend" | "streak";
 
-/** How many of each widget the student has on their home screen. */
+/** How many of each widget the student has on their home screen. Builds before 1.0.373 report only the first three. */
 export interface WidgetCounts {
   today: number;
   subjects: number;
   mini: number;
+  ask?: number;
+  trend?: number;
+  streak?: number;
+}
+
+/** Sum of every widget kind the build reports. */
+export function totalWidgets(c: WidgetCounts): number {
+  return c.today + c.subjects + c.mini + (c.ask ?? 0) + (c.trend ?? 0) + (c.streak ?? 0);
+}
+
+/** Weekly overall % and the attendance streak, from /api/attendance/progress. */
+export interface WidgetProgress {
+  trend: { date: string; percent: number }[];
+  streak: { current: number; best: number };
+}
+
+const PROGRESS_KEY = "attendance_io_widget_progress_v1";
+/** The trend only moves when a class is marked, and the streak once a day; this keeps requests rare. */
+const PROGRESS_MAX_AGE_MS = 3 * 60 * 60 * 1000;
+
+let lastSnapshot: { days: Record<string, WidgetClass[]>; subjects: WidgetSubject[] } | null = null;
+
+function cachedProgress(): { at: number; day: string; data: WidgetProgress } | null {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "null");
+  } catch {
+    return null;
+  }
 }
 
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>("WidgetBridge");
@@ -62,15 +90,46 @@ function available(): boolean {
 /** Hand the widgets the coming days' classes (keyed by date, YYYY-MM-DD) and every subject's standing. */
 export async function updateWidget(days: Record<string, WidgetClass[]>, subjects: WidgetSubject[]): Promise<void> {
   if (!available()) return;
+  lastSnapshot = { days, subjects };
   try {
     await WidgetBridge.update({
-      snapshot: JSON.stringify({ updatedAt: Date.now(), days, subjects }),
+      snapshot: JSON.stringify({ updatedAt: Date.now(), days, subjects, progress: cachedProgress()?.data ?? null }),
       // Lets the after-class notification and the app-icon shortcuts mark with this sign-in
       token: getToken() ?? undefined,
       apiBase: API_CONFIG.BASE_URL,
     });
   } catch (error) {
     console.debug("Widget update failed:", error);
+  }
+}
+
+/**
+ * Fetch the weekly trend and streak for the trend and streak widgets, at most every few hours (or
+ * right away with `force`, e.g. after marking a class), then redraw the widgets with them.
+ */
+export async function refreshWidgetProgress(force = false): Promise<void> {
+  if (!available() || !navigator.onLine) return;
+  const cached = cachedProgress();
+  const today = new Date().toLocaleDateString("en-CA");
+  if (!force && cached && cached.day === today && Date.now() - cached.at < PROGRESS_MAX_AGE_MS) return;
+  try {
+    // Only students with one of these widgets need the numbers; builds before them report no count
+    const counts = await WidgetBridge.status();
+    if (!counts.trend && !counts.streak) return;
+    const res = await authenticatedFetch(`${API_CONFIG.BASE_URL}/api/attendance/progress?weeks=8`);
+    if (!res.ok) return;
+    const body = await res.json();
+    const data: WidgetProgress = {
+      trend: (body.trend ?? []).map((p: { date: string; present: number; total: number }) => ({
+        date: p.date,
+        percent: p.total > 0 ? Math.round((p.present / p.total) * 100) : 0,
+      })),
+      streak: { current: body.streak?.current ?? 0, best: body.streak?.best ?? 0 },
+    };
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ at: Date.now(), day: today, data }));
+    if (lastSnapshot) await updateWidget(lastSnapshot.days, lastSnapshot.subjects);
+  } catch {
+    // offline or an older server: keep the last numbers
   }
 }
 
@@ -85,9 +144,9 @@ export async function reportWidgetCounts(track: (eventType: string, metadata: Re
   if (!available() || !navigator.onLine) return;
   try {
     const counts = await WidgetBridge.status();
-    const key = `${counts.today},${counts.subjects},${counts.mini}`;
+    const key = `${counts.today},${counts.subjects},${counts.mini},${counts.ask ?? 0},${counts.trend ?? 0},${counts.streak ?? 0}`;
     if (localStorage.getItem(REPORTED_KEY) === key) return;
-    await track("widget_status", { ...counts, total: counts.today + counts.subjects + counts.mini });
+    await track("widget_status", { ...counts, total: totalWidgets(counts) });
     localStorage.setItem(REPORTED_KEY, key);
   } catch {
     // older app versions or a failed request: try again next time
@@ -96,6 +155,12 @@ export async function reportWidgetCounts(track: (eventType: string, metadata: Re
 
 export async function clearWidget(): Promise<void> {
   if (!available()) return;
+  lastSnapshot = null;
+  try {
+    localStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    // nothing stored
+  }
   try {
     await WidgetBridge.clear();
   } catch {

@@ -142,7 +142,8 @@ const SHORTCUT_PAGES: Record<string, string> = {
 };
 
 /**
- * App-icon shortcuts open com.attendanceio.app://open?page=assistant|search|profile. Older links
+ * App-icon shortcuts and widgets open com.attendanceio.app://open?page=assistant|search|profile
+ * (the Ask AI widget adds &q=<question>). Older links
  * like ?polls=open still open on the home page.
  */
 function ShortcutLinks() {
@@ -152,8 +153,11 @@ function ShortcutLinks() {
     const go = (url?: string) => {
       if (!url?.startsWith("com.attendanceio.app://open")) return;
       const query = url.split("?")[1] ?? "";
-      const page = new URLSearchParams(query).get("page");
-      if (page && SHORTCUT_PAGES[page]) navigate(SHORTCUT_PAGES[page]);
+      const params = new URLSearchParams(query);
+      const page = params.get("page");
+      // The Ask AI widget's chips carry their question (?page=assistant&q=...)
+      const question = params.get("q");
+      if (page && SHORTCUT_PAGES[page]) navigate(SHORTCUT_PAGES[page] + (question ? `?q=${encodeURIComponent(question)}` : ""));
       else navigate(`/dashboard${query ? `?${query}` : ""}`);
     };
     let handle: { remove: () => Promise<void> } | undefined;

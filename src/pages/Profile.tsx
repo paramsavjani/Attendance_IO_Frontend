@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getClassCheck, getWidgetCounts, hasAdoptedClassCheck, setClassCheck } from "@/lib/widgetBridge";
+import { getClassCheck, getWidgetCounts, hasAdoptedClassCheck, setClassCheck, totalWidgets } from "@/lib/widgetBridge";
 import { WidgetsSheet } from "@/components/widgets/WidgetsSheet";
 import { useCloseOnBack } from "@/lib/backOverlay";
 import { useNavigate } from "react-router-dom";
@@ -79,7 +79,7 @@ export default function Profile() {
   const [showWidgets, setShowWidgets] = useState(false);
   useEffect(() => {
     if (showWidgets) return;
-    void getWidgetCounts().then((c) => setWidgetCount(c ? c.today + c.subjects + c.mini : null));
+    void getWidgetCounts().then((c) => setWidgetCount(c ? totalWidgets(c) : null));
   }, [showWidgets]);
   useEffect(() => {
     void getClassCheck().then((onPhone) => {

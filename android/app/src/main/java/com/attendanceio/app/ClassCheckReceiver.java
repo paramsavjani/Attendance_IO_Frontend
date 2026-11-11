@@ -22,8 +22,10 @@ public class ClassCheckReceiver extends BroadcastReceiver {
                     ClassCheck.Result result = ClassCheck.mark(app, t, status);
                     ClassCheck.showResult(app, t.notificationId(), t, status, result);
                 } else {
-                    // BOOT_COMPLETED, MY_PACKAGE_REPLACED: alarms don't survive either
+                    // BOOT_COMPLETED, MY_PACKAGE_REPLACED: alarms don't survive either, and after an
+                    // update the widgets are redrawn with the new version's layouts
                     ClassCheck.schedule(app);
+                    BaseWidget.refreshAll(app);
                 }
             } finally {
                 pending.finish();

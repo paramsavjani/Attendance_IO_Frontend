@@ -67,6 +67,9 @@ public class WidgetBridgePlugin extends Plugin {
         counts.put("today", manager.getAppWidgetIds(new ComponentName(getContext(), TodayWidgetProvider.class)).length);
         counts.put("subjects", manager.getAppWidgetIds(new ComponentName(getContext(), SubjectBarsWidget.class)).length);
         counts.put("mini", manager.getAppWidgetIds(new ComponentName(getContext(), MiniPercentWidget.class)).length);
+        counts.put("ask", manager.getAppWidgetIds(new ComponentName(getContext(), AskAiWidget.class)).length);
+        counts.put("trend", manager.getAppWidgetIds(new ComponentName(getContext(), TrendWidget.class)).length);
+        counts.put("streak", manager.getAppWidgetIds(new ComponentName(getContext(), StreakWidget.class)).length);
         call.resolve(counts);
     }
 
@@ -80,12 +83,15 @@ public class WidgetBridgePlugin extends Plugin {
         call.resolve(result);
     }
 
-    /** Ask the launcher to add one widget ("today", "subjects" or "mini"); it shows its own confirm sheet. */
+    /** Ask the launcher to add one widget (today, subjects, mini, ask, trend, streak); it shows its own confirm sheet. */
     @PluginMethod
     public void pin(PluginCall call) {
         String kind = call.getString("kind", "today");
         Class<?> provider = "subjects".equals(kind) ? SubjectBarsWidget.class
-            : "mini".equals(kind) ? MiniPercentWidget.class : TodayWidgetProvider.class;
+            : "mini".equals(kind) ? MiniPercentWidget.class
+            : "ask".equals(kind) ? AskAiWidget.class
+            : "trend".equals(kind) ? TrendWidget.class
+            : "streak".equals(kind) ? StreakWidget.class : TodayWidgetProvider.class;
         JSObject result = new JSObject();
         boolean asked = false;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

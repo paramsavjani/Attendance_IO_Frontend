@@ -82,6 +82,39 @@
         </receiver>
 
         <receiver
+            android:name=".AskAiWidget"
+            android:exported="false"
+            android:label="@string/widget_ask_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_ask_info" />
+        </receiver>
+        <receiver
+            android:name=".TrendWidget"
+            android:exported="false"
+            android:label="@string/widget_trend_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_trend_info" />
+        </receiver>
+        <receiver
+            android:name=".StreakWidget"
+            android:exported="false"
+            android:label="@string/widget_streak_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_streak_info" />
+        </receiver>
+        <receiver
             android:name=".MiniPercentWidget"
             android:exported="false"
             android:label="@string/widget_mini_label">

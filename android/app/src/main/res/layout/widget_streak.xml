@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Streak: days in a row with every marked class attended. Drawn by StreakWidget. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <TextView android:id="@+id/streak_icon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🔥" android:textSize="28sp" android:includeFontPadding="false" />
+    <TextView android:id="@+id/streak_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="#FFF4F4F5" android:textSize="40sp" android:fontFamily="sans-serif-black" android:includeFontPadding="false" />
+    <TextView android:id="@+id/streak_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="#FFE4E4E7" android:textSize="13sp" android:includeFontPadding="false" />
+    <TextView android:id="@+id/streak_best" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textColor="#FF8E8D96" android:textSize="11sp" android:includeFontPadding="false" />
+</LinearLayout>
