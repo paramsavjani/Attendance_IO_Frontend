@@ -3,11 +3,11 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useCloseOnBack } from "@/lib/backOverlay";
-import { canPinWidget, pinWidget, type WidgetKind } from "@/lib/widgetBridge";
+import { canPinWidget, getWidgetCounts, pinWidget, type WidgetKind } from "@/lib/widgetBridge";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
-const WIDGETS: { kind: WidgetKind; label: string; text: string; image: string; small?: boolean }[] = [
+const ALL_WIDGETS: { kind: WidgetKind; label: string; text: string; image: string; small?: boolean; isNew?: boolean }[] = [
   {
     kind: "today",
     label: "Today",
@@ -26,6 +26,27 @@ const WIDGETS: { kind: WidgetKind; label: string; text: string; image: string; s
     text: "A small ring with your overall attendance.",
     image: "/widgets/widget_mini_preview_image.png",
     small: true,
+  },
+  {
+    kind: "ask",
+    label: "Ask AI",
+    text: "Ask the assistant about your attendance right from the home screen.",
+    image: "/widgets/widget_ask_preview_image.png",
+    isNew: true,
+  },
+  {
+    kind: "trend",
+    label: "Trend",
+    text: "Your overall % over the last 8 weeks, and how this week moved it.",
+    image: "/widgets/widget_trend_preview_image.png",
+    isNew: true,
+  },
+  {
+    kind: "streak",
+    label: "Streak",
+    text: "Days in a row you've attended every class you marked.",
+    image: "/widgets/widget_streak_preview_image.png",
+    isNew: true,
   },
 ];
 
@@ -47,7 +68,10 @@ export function WidgetLaunchPopup({ open, onClose }: WidgetLaunchPopupProps) {
   const [wait, setWait] = useState(DISMISS_DELAY);
   const [canPin, setCanPin] = useState<boolean | null>(null);
   const [touched, setTouched] = useState(false);
-  const widget = WIDGETS[index];
+  // App builds before 1.0.373 can't add the newer widgets; they report no count for them
+  const [hasNewWidgets, setHasNewWidgets] = useState(false);
+  const WIDGETS = ALL_WIDGETS.filter((w) => !w.isNew || hasNewWidgets);
+  const widget = WIDGETS[Math.min(index, WIDGETS.length - 1)];
   const canClose = wait === 0;
 
   const close = () => {
@@ -59,6 +83,7 @@ export function WidgetLaunchPopup({ open, onClose }: WidgetLaunchPopupProps) {
     if (!open) return;
     setWait(DISMISS_DELAY);
     void canPinWidget().then(setCanPin);
+    void getWidgetCounts().then((c) => setHasNewWidgets(c?.ask !== undefined));
     trackAppEvent("widget_popup_shown", {}).catch(() => undefined);
     const timer = setInterval(() => setWait((w) => Math.max(0, w - 1)), 1000);
     return () => clearInterval(timer);
@@ -69,7 +94,7 @@ export function WidgetLaunchPopup({ open, onClose }: WidgetLaunchPopupProps) {
     if (!open || touched) return;
     const timer = setInterval(() => setIndex((i) => (i + 1) % WIDGETS.length), 2800);
     return () => clearInterval(timer);
-  }, [open, touched]);
+  }, [open, touched, WIDGETS.length]);
 
   const pick = (i: number) => {
     setTouched(true);
@@ -107,12 +132,12 @@ export function WidgetLaunchPopup({ open, onClose }: WidgetLaunchPopupProps) {
             <img
               key={w.kind}
               src={w.image}
-              alt={i === index ? `${w.label} widget` : ""}
+              alt={w === widget ? `${w.label} widget` : ""}
               draggable={false}
               className={cn(
                 "absolute top-1/2 -translate-y-[44%] drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)] transition-all duration-500",
                 w.small ? "h-[124px] w-[124px]" : "max-h-[176px] w-auto max-w-[86%] object-contain",
-                i === index ? "scale-100 opacity-100" : "scale-95 opacity-0",
+                w === widget ? "scale-100 opacity-100" : "scale-95 opacity-0",
               )}
             />
           ))}
@@ -134,7 +159,7 @@ export function WidgetLaunchPopup({ open, onClose }: WidgetLaunchPopupProps) {
                 onClick={() => pick(i)}
                 className={cn(
                   "h-9 rounded-xl text-[12.5px] font-semibold transition-colors",
-                  i === index ? "bg-white/[0.12] text-white" : "text-white/50",
+                  w === widget ? "bg-white/[0.12] text-white" : "text-white/50",
                 )}
               >
                 {w.label}
