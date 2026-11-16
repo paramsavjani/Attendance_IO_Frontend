@@ -4,4 +4,19 @@
     <string name="title_activity_main">Attendance IO</string>
     <string name="package_name">com.attendanceio.app</string>
     <string name="custom_url_scheme">com.attendanceio.app</string>
+    <string name="widget_today_label">Today\'s classes</string>
+    <string name="widget_today_description">Your classes for the day with their attendance percentage</string>
+    <string name="widget_mini_label">Attendance percentage</string>
+    <string name="widget_mini_description">Just your overall percentage</string>
+    <string name="widget_bars_label">Subjects</string>
+    <string name="widget_bars_description">Every subject with skips left</string>
+    <string name="shortcut_assistant_short">Ask AI</string>
+    <string name="shortcut_search_short">Search users</string>
+    <string name="shortcut_profile_short">Profile</string>
+    <string name="widget_ask_label">Ask AI</string>
+    <string name="widget_ask_description">Ask the assistant about your attendance</string>
+    <string name="widget_trend_label">Weekly trend</string>
+    <string name="widget_trend_description">Your overall % over the last 8 weeks</string>
+    <string name="widget_streak_label">Streak</string>
+    <string name="widget_streak_description">Days in a row with full attendance</string>
 </resources>

@@ -1,0 +1,158 @@
+import { useCallback, useEffect, useState } from "react";
+import { Check, Plus } from "lucide-react";
+import { useCloseOnBack } from "@/lib/backOverlay";
+import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
+import { canPinWidget, getWidgetCounts, pinWidget, type WidgetCounts, type WidgetKind } from "@/lib/widgetBridge";
+
+const WIDGETS: { kind: WidgetKind; title: string; text: string; image: string; small?: boolean; isNew?: boolean }[] = [
+  {
+    kind: "today",
+    title: "Today's classes",
+    text: "What's on now and next, and whether each class is marked.",
+    image: "/widgets/widget_today_preview_image.png",
+  },
+  {
+    kind: "subjects",
+    title: "Subjects",
+    text: "Every subject's %, with the skips you have left.",
+    image: "/widgets/widget_bars_preview_image.png",
+  },
+  {
+    kind: "mini",
+    title: "Your %",
+    text: "Just your overall attendance in a small ring.",
+    image: "/widgets/widget_mini_preview_image.png",
+    small: true,
+  },
+  {
+    kind: "ask",
+    title: "Ask AI",
+    text: "Ask the assistant about your attendance straight from the home screen.",
+    image: "/widgets/widget_ask_preview_image.png",
+    isNew: true,
+  },
+  {
+    kind: "trend",
+    title: "Weekly trend",
+    text: "Your overall % over the last 8 weeks, and how this week moved it.",
+    image: "/widgets/widget_trend_preview_image.png",
+    isNew: true,
+  },
+  {
+    kind: "streak",
+    title: "Streak",
+    text: "Days in a row you've attended every class you marked.",
+    image: "/widgets/widget_streak_preview_image.png",
+    small: true,
+    isNew: true,
+  },
+];
+
+interface WidgetsSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Shown once to introduce widgets, rather than opened from Profile. */
+  intro?: boolean;
+}
+
+/** The home-screen widgets with a preview each, and a button that asks the launcher to add one. */
+export function WidgetsSheet({ open, onOpenChange, intro = false }: WidgetsSheetProps) {
+  useCloseOnBack(open, () => onOpenChange(false));
+  const [canPin, setCanPin] = useState<boolean | null>(null);
+  const [counts, setCounts] = useState<WidgetCounts | null>(null);
+
+  const refresh = useCallback(() => {
+    void getWidgetCounts().then(setCounts);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    void canPinWidget().then(setCanPin);
+    refresh();
+    // The launcher's confirm sheet sends the app to the background; count again when it returns
+    const onVisible = () => document.visibilityState === "visible" && refresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [open, refresh]);
+
+  // Some launchers (ColorOS on Oppo, Realme and OnePlus) say they can add widgets for an app but
+  // then refuse; from then on show the manual steps instead of buttons that do nothing.
+  const add = async (kind: WidgetKind) => {
+    const asked = await pinWidget(kind);
+    if (!asked) setCanPin(false);
+  };
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[24px] border-border/60">
+        <div className="px-4 pb-2 pt-3">
+          {intro && (
+            <span className="mb-2 inline-flex rounded-full bg-indigo-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-300">
+              New
+            </span>
+          )}
+          <DrawerTitle className="text-lg font-semibold">{intro ? "Your attendance, on your home screen" : "Home screen widgets"}</DrawerTitle>
+          <DrawerDescription className="text-xs">
+            {canPin === false
+              ? "Your phone adds widgets from the home screen. It takes a few seconds:"
+              : "Tap Add and confirm, and the widget lands on your home screen. They update on their own."}
+          </DrawerDescription>
+          {canPin === false && (
+            <ol className="mt-3 space-y-2 rounded-2xl border border-border/60 bg-card/50 p-3 text-xs">
+              {[
+                "Go to your home screen and long-press an empty spot",
+                "Tap Widgets",
+                "Find Attendance IO and pick the widget you want",
+              ].map((step, i) => (
+                <li key={step} className="flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-[10px] font-bold text-indigo-300">
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6">
+          {/* App builds before 1.0.373 don't have the newer widgets; they report no count for them */}
+          {WIDGETS.filter((w) => !w.isNew || counts?.ask !== undefined).map((w) => {
+            const placed = counts?.[w.kind] ?? 0;
+            return (
+              <div key={w.kind} className="rounded-2xl border border-border/60 bg-card/50 p-3">
+                <div className="flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600/50 via-violet-700/40 to-slate-900 p-4">
+                  <img
+                    src={w.image}
+                    alt={`${w.title} widget`}
+                    className={w.small ? "h-28 w-auto" : "w-full max-w-[340px]"}
+                    draggable={false}
+                  />
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">
+                      {w.title}
+                      {w.isNew && <span className="ml-1.5 rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-indigo-300">New</span>}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{w.text}</p>
+                  </div>
+                  {canPin !== false && (
+                    <button
+                      type="button"
+                      onClick={() => add(w.kind)}
+                      className="flex h-9 flex-shrink-0 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-xs font-semibold text-background active:scale-[0.97]"
+                    >
+                      {placed > 0 ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5 stroke-[2.5]" />}
+                      {placed > 0 ? "Add another" : "Add"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}

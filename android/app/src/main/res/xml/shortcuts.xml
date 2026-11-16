@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the app icon: each opens a part of the app. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="assistant"
+        android:icon="@drawable/shortcut_assistant"
+        android:shortcutShortLabel="@string/shortcut_assistant_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="com.attendanceio.app://open?page=assistant"
+            android:targetPackage="com.attendanceio.app"
+            android:targetClass="com.attendanceio.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="search"
+        android:icon="@drawable/shortcut_search"
+        android:shortcutShortLabel="@string/shortcut_search_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="com.attendanceio.app://open?page=search"
+            android:targetPackage="com.attendanceio.app"
+            android:targetClass="com.attendanceio.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="profile"
+        android:icon="@drawable/shortcut_profile"
+        android:shortcutShortLabel="@string/shortcut_profile_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="com.attendanceio.app://open?page=profile"
+            android:targetPackage="com.attendanceio.app"
+            android:targetClass="com.attendanceio.app.MainActivity" />
+    </shortcut>
+</shortcuts>

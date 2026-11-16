@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { useCloseOnBack } from "@/lib/backOverlay";
 
 const MAX_ZOOM = 4;
 /** Longest side of the saved HD photo; the server makes the small thumbnail from it. */
@@ -26,6 +27,7 @@ interface Point {
  * position and pinched (or slid) to zoom. Only the part inside the circle's square is uploaded.
  */
 export function PhotoCropper({ file, saving, onCancel, onSave }: PhotoCropperProps) {
+  useCloseOnBack(file !== null, () => !saving && onCancel());
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);

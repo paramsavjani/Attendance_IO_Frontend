@@ -1,7 +1,11 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
 import { defaultTimetable as initialDefaultTimetable } from "@/data/mockData";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { OFFLINE_HEADER, readCachedJson, savedAt } from "@/lib/offlineCache";
+import { dequeueMark, enqueueMark, findQueued, isNetworkError, readQueue, subscribeQueue, type QueuedMark } from "@/lib/offlineQueue";
+import { takeNativeMarks } from "@/lib/widgetBridge";
 import { useAuth } from "./AuthContext";
 import { hexToHslLightened } from "@/lib/utils";
 import { toast } from "sonner";
@@ -55,6 +59,143 @@ interface MarkAttendanceRequest {
   extraClassIndex?: number;
 }
 
+// NOTE: Total class count is NOT modified during live updates - only present/absent counts change
+// The total comes from the backend and should remain constant during optimistic updates
+const calculateNewStats = (
+  currentStats: SubjectStats,
+  previousStatus: 'present' | 'absent' | 'cancelled' | null,
+  newStatus: 'present' | 'absent' | 'cancelled' | null
+) => {
+  let newPresent = currentStats.present;
+  let newAbsent = currentStats.absent;
+  // Keep total unchanged - it comes from backend and should not be modified locally
+  const newTotal = currentStats.total;
+
+  // Handle deletion (unmarking)
+  if (newStatus === null) {
+    if (previousStatus === 'present') {
+      newPresent = Math.max(0, newPresent - 1);
+    } else if (previousStatus === 'absent') {
+      newAbsent = Math.max(0, newAbsent - 1);
+    }
+    // Total remains unchanged - backend will handle total updates
+  } else {
+    // Handle marking new attendance or changing status
+    if (previousStatus === null) {
+      // New attendance mark
+      if (newStatus === 'present') {
+        newPresent += 1;
+      } else if (newStatus === 'absent') {
+        newAbsent += 1;
+      }
+      // Total remains unchanged - backend will handle total updates
+    } else if (previousStatus === newStatus) {
+      // Clicking the same status again - should not change stats
+      // This is a no-op, stats remain the same
+      // (The toggle logic in markAttendance handles deletion separately)
+    } else if (previousStatus !== newStatus) {
+      // Changing from one status to another
+      if (previousStatus === 'present') {
+        newPresent = Math.max(0, newPresent - 1);
+      } else if (previousStatus === 'absent') {
+        newAbsent = Math.max(0, newAbsent - 1);
+      }
+      // Total remains unchanged regardless of status changes
+
+      if (newStatus === 'present') {
+        newPresent += 1;
+      } else if (newStatus === 'absent') {
+        newAbsent += 1;
+      }
+      // Total remains unchanged - cancelled or not, total stays the same
+    }
+  }
+
+  // Recalculate percentage based on updated present/absent counts
+  const newPercentage = newTotal > 0 ? (newPresent / newTotal) * 100 : 0;
+
+  return {
+    ...currentStats,
+    present: newPresent,
+    absent: newAbsent,
+    total: newTotal, // Total remains constant during live updates
+    percentage: newPercentage, // Recalculate percentage for real-time updates
+    // Note: classesNeeded and bunkableClasses are not recalculated here
+    // They will be updated when backend response is received
+  };
+};
+
+const LAST_SYNC_KEY = "attendance_io_last_sync_at";
+
+function readLastSyncAt(): number {
+  try {
+    return Number(localStorage.getItem(LAST_SYNC_KEY) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function writeLastSyncAt(at: number): void {
+  try {
+    localStorage.setItem(LAST_SYNC_KEY, String(at));
+  } catch {
+    // storage blocked: the in-memory guard still covers this launch
+  }
+}
+
+/** Today as YYYY-MM-DD in the phone's own time zone (the Dashboard's date keys use the same). */
+function localDateKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Marks still waiting to sync, laid over data from the server (or its offline copy) so they don't
+ * vanish when a screen refreshes. Stats only count classes up to `forDate`.
+ */
+function overlayQueuedStats(forDate: string, stats: Record<string, SubjectStats>): void {
+  for (const item of readQueue()) {
+    if (item.date > forDate || !stats[item.subjectId]) continue;
+    const next = item.kind === "mark" ? item.status ?? null : null;
+    stats[item.subjectId] = calculateNewStats(stats[item.subjectId], item.serverStatus ?? null, next);
+  }
+}
+
+function overlayQueuedStatuses(
+  forDate: string,
+  attendance: Record<string, 'present' | 'absent' | 'cancelled' | null>
+): void {
+  for (const item of readQueue()) {
+    if (item.date !== forDate) continue;
+    if (item.kind === "mark" && item.status) attendance[item.slotKey] = item.status;
+    else delete attendance[item.slotKey];
+  }
+}
+
+/** One class to mark absent: a lecture slot, or a lab/tutorial/custom class by its times. */
+export interface PlannedAbsence {
+  date: string; // yyyy-MM-dd
+  subjectId: string;
+  timeSlot: number | null;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface PlannedAbsenceResult {
+  marked: number;
+  /** Already marked (present, absent or cancelled) and left as it was. */
+  skipped: number;
+  /** No connection: saved and sent when back online. */
+  queued: number;
+  failed: number;
+}
+
+/** The slot key AttendanceContext uses for a class, e.g. `2026-11-17-3-slot2`. */
+function slotKeyFor(date: string, subjectId: string, timeSlot: number | null, startTime?: string, endTime?: string): string {
+  if (timeSlot !== null && timeSlot !== undefined) return `${date}-${subjectId}-slot${timeSlot}`;
+  if (startTime && endTime) return `${date}-${subjectId}-${startTime}-${endTime}`;
+  return `${date}-${subjectId}`;
+}
+
 interface AttendanceContextType {
   subjectStats: Record<string, SubjectStats>;
   subjectStatsToday: Record<string, SubjectStats>; // Always shows today's total attendance
@@ -76,6 +217,8 @@ interface AttendanceContextType {
     endTime?: string;
     extraClassIndex?: number;
   } | null; // Currently saving attendance
+  /** Marks made offline that haven't reached the server yet. */
+  pendingSyncCount: number;
   markAttendance: (
     subjectId: string, 
     date: string, 
@@ -86,6 +229,8 @@ interface AttendanceContextType {
     isExtraClass?: boolean,
     extraClassIndex?: number
   ) => Promise<void>;
+  /** Mark many classes absent at once (a planned leave), leaving any that are already marked. */
+  markClassesAbsent: (classes: PlannedAbsence[]) => Promise<PlannedAbsenceResult>;
   setSubjectMin: (subjectId: string, value: number) => void;
   getSubjectStats: (subjectId: string) => SubjectStats;
   setEnrolledSubjects: (subjects: Subject[]) => void;
@@ -183,8 +328,11 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [fetchEnrolledSubjects]);
 
   // Timetable - fetch from backend
-  const [timetable, setTimetableState] = useState<TimetableSlot[]>([]);
-  const [isLoadingTimetable, setIsLoadingTimetable] = useState(true);
+  // Seeded from the saved copy so the schedule draws instantly; fetchTimetable refreshes it
+  const [timetable, setTimetableState] = useState<TimetableSlot[]>(
+    () => readCachedJson<{ slots?: TimetableSlot[] }>(API_CONFIG.ENDPOINTS.TIMETABLE)?.slots ?? []
+  );
+  const [isLoadingTimetable, setIsLoadingTimetable] = useState(() => timetable.length === 0);
 
   // Fetch timetable from backend
   const fetchTimetable = useCallback(async () => {
@@ -194,7 +342,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      setIsLoadingTimetable(true);
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TIMETABLE, {
         method: "GET",
       });
@@ -250,10 +397,93 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const lastStudentIdRef = useRef<string | null>(null);
   // Track ongoing attendance operations to prevent duplicate calls
   const ongoingOperationsRef = useRef<Set<string>>(new Set());
+  /** Date of the last attendance load, so a finished sync can refresh the screen the student is on. */
+  const lastFetchedDateRef = useRef<string | undefined>(undefined);
+  /**
+   * When the last offline sync sent something; replies and saved copies from before it are stale
+   * (see fetchAttendanceData). Kept across launches so a pre-sync saved copy is never drawn again.
+   */
+  const syncedAtRef = useRef(readLastSyncAt());
+  /** The day whose attendance is on screen, so reloading it doesn't flash the loading state. */
+  const shownDateRef = useRef<string | null>(null);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  useEffect(() => subscribeQueue(setPendingSyncCount), []);
 
   // Fetch attendance data from backend for a specific date (defaults to today)
   // silent = true skips showing loading state (used for background refresh after marking)
+  /** Draw a GET /api/attendance reply (from the server or the saved copy), with offline marks laid on top. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyAttendanceData = useCallback((data: any, date?: string) => {
+    shownDateRef.current = date || localDateKey();
+
+    // Convert subject stats to the format expected by the frontend
+    const statsMap: Record<string, SubjectStats> = {};
+    data.subjectStats?.forEach((stat: SubjectStats) => {
+      statsMap[stat.subjectId] = {
+        subjectId: stat.subjectId,
+        present: stat.present,
+        absent: stat.absent,
+        total: stat.total,
+        totalUntilEndDate: stat.totalUntilEndDate,
+        percentage: stat.percentage,
+        classesNeeded: stat.classesNeeded,
+        bunkableClasses: stat.bunkableClasses,
+      };
+    });
+    
+    // Debug: Log first subject stats to verify new fields are present
+    if (data.subjectStats && data.subjectStats.length > 0) {
+      const firstStat = data.subjectStats[0];
+    }
+    overlayQueuedStats(date || new Date().toISOString().split('T')[0], statsMap);
+    setSubjectStats(statsMap);
+
+    // If fetching today's date, also update subjectStatsToday for real-time updates in Subject Section
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const fetchDate = date || today;
+    if (fetchDate === today) {
+      setSubjectStatsToday(statsMap);
+    }
+
+    const cutoffRaw = data.officialCutoffDate;
+    setTrackingOfficialCutoffDate(
+      cutoffRaw != null && String(cutoffRaw).trim() !== ""
+        ? String(cutoffRaw).slice(0, 10)
+        : null
+    );
+
+    // Convert attendance records to the format expected by the frontend
+    // Key format: date-subjectId-slotN | date-subjectId-start-end | date-subjectId-extra-N | date-subjectId (backward compat)
+    // Normalize so keys match regardless of API returning subjectId as string/number and lectureDate with or without time
+    const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
+    const idsMap: Record<string, number | null> = {};
+    const norm = (r: ApiAttendanceRecord) => ({
+      date: (r.lectureDate != null ? String(r.lectureDate) : '').slice(0, 10),
+      subjectId: String(r.subjectId ?? ''),
+    });
+    data.todayAttendance?.forEach((record: ApiAttendanceRecord) => {
+      const { date: d, subjectId: sid } = norm(record);
+      let slotKey: string;
+      if (record.isExtraClass === true) {
+        const idx = record.extraClassIndex != null ? record.extraClassIndex : 0;
+        slotKey = `${d}-${sid}-extra-${idx}`;
+      } else if (record.timeSlot !== null && record.timeSlot !== undefined) {
+        slotKey = `${d}-${sid}-slot${record.timeSlot}`;
+      } else if (record.startTime && record.endTime) {
+        slotKey = `${d}-${sid}-${record.startTime}-${record.endTime}`;
+      } else {
+        slotKey = `${d}-${sid}`;
+      }
+      attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
+      idsMap[slotKey] = record.attendanceId != null ? Number(record.attendanceId) : null;
+    });
+    overlayQueuedStatuses(date || new Date().toISOString().split('T')[0], attendanceMap);
+    setTodayAttendance(attendanceMap);
+    setAttendanceIds(idsMap);
+  }, []);
+
   const fetchAttendanceData = useCallback(async (date?: string, silent: boolean = false) => {
+    lastFetchedDateRef.current = date;
     if (!student) {
       // Only clear data if we had a different student before (actual logout)
       // Don't clear if student is just temporarily null during auth check
@@ -265,6 +495,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setAttendanceIds({});
         setTrackingOfficialCutoffDate(null);
         hasLoadedDataRef.current = false;
+        shownDateRef.current = null;
         lastStudentIdRef.current = null;
       }
       if (!silent) {
@@ -285,88 +516,44 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setAttendanceIds({});
       setTrackingOfficialCutoffDate(null);
       hasLoadedDataRef.current = false;
+        shownDateRef.current = null;
     }
 
     lastStudentIdRef.current = currentStudentId;
 
-    if (!silent) {
-      setIsLoadingAttendance(true);
+    const url = date
+      ? `${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`
+      : API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE;
+
+    // Already showing this day: refresh quietly. Otherwise draw its saved copy straight away (unless
+    // it predates the last sync) and only fall back to the loading state when there is none.
+    if (!silent && shownDateRef.current !== (date || localDateKey())) {
+      const saved = savedAt(url) >= syncedAtRef.current ? readCachedJson(url) : null;
+      if (saved) {
+        applyAttendanceData(saved, date);
+        hasLoadedDataRef.current = true;
+        setIsLoadingAttendance(false);
+      } else {
+        setIsLoadingAttendance(true);
+      }
     }
 
     try {
-      const url = date
-        ? `${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`
-        : API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE;
 
+      const requestedAt = Date.now();
       const response = await authenticatedFetch(url, {
         method: "GET",
       });
 
+      // A reply that set off before the last sync finished, or an offline copy saved before it,
+      // is older than the marks on screen: drawing it would undo marks that just synced.
+      const offlineCopyAt = Number(response.headers.get(OFFLINE_HEADER) || 0);
+      if (requestedAt < syncedAtRef.current || (offlineCopyAt && offlineCopyAt < syncedAtRef.current)) {
+        return;
+      }
+
       if (response.ok) {
-        const data = await response.json();
-
-        // Convert subject stats to the format expected by the frontend
-        const statsMap: Record<string, SubjectStats> = {};
-        data.subjectStats?.forEach((stat: SubjectStats) => {
-          statsMap[stat.subjectId] = {
-            subjectId: stat.subjectId,
-            present: stat.present,
-            absent: stat.absent,
-            total: stat.total,
-            totalUntilEndDate: stat.totalUntilEndDate,
-            percentage: stat.percentage,
-            classesNeeded: stat.classesNeeded,
-            bunkableClasses: stat.bunkableClasses,
-          };
-        });
-        
-        // Debug: Log first subject stats to verify new fields are present
-        if (data.subjectStats && data.subjectStats.length > 0) {
-          const firstStat = data.subjectStats[0];
-        }
-        setSubjectStats(statsMap);
-
-        // If fetching today's date, also update subjectStatsToday for real-time updates in Subject Section
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        const fetchDate = date || today;
-        if (fetchDate === today) {
-          setSubjectStatsToday(statsMap);
-        }
-
-        const cutoffRaw = data.officialCutoffDate;
-        setTrackingOfficialCutoffDate(
-          cutoffRaw != null && String(cutoffRaw).trim() !== ""
-            ? String(cutoffRaw).slice(0, 10)
-            : null
-        );
-
-        // Convert attendance records to the format expected by the frontend
-        // Key format: date-subjectId-slotN | date-subjectId-start-end | date-subjectId-extra-N | date-subjectId (backward compat)
-        // Normalize so keys match regardless of API returning subjectId as string/number and lectureDate with or without time
-        const attendanceMap: Record<string, 'present' | 'absent' | 'cancelled' | null> = {};
-        const idsMap: Record<string, number | null> = {};
-        const norm = (r: ApiAttendanceRecord) => ({
-          date: (r.lectureDate != null ? String(r.lectureDate) : '').slice(0, 10),
-          subjectId: String(r.subjectId ?? ''),
-        });
-        data.todayAttendance?.forEach((record: ApiAttendanceRecord) => {
-          const { date: d, subjectId: sid } = norm(record);
-          let slotKey: string;
-          if (record.isExtraClass === true) {
-            const idx = record.extraClassIndex != null ? record.extraClassIndex : 0;
-            slotKey = `${d}-${sid}-extra-${idx}`;
-          } else if (record.timeSlot !== null && record.timeSlot !== undefined) {
-            slotKey = `${d}-${sid}-slot${record.timeSlot}`;
-          } else if (record.startTime && record.endTime) {
-            slotKey = `${d}-${sid}-${record.startTime}-${record.endTime}`;
-          } else {
-            slotKey = `${d}-${sid}`;
-          }
-          attendanceMap[slotKey] = record.status as 'present' | 'absent' | 'cancelled';
-          idsMap[slotKey] = record.attendanceId != null ? Number(record.attendanceId) : null;
-        });
-        setTodayAttendance(attendanceMap);
-        setAttendanceIds(idsMap);
+        applyAttendanceData(await response.json(), date);
         hasLoadedDataRef.current = true;
       } else {
         // Only clear on error if we haven't loaded data yet, or if it's a 401 (unauthorized)
@@ -377,6 +564,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           setAttendanceIds({});
           setTrackingOfficialCutoffDate(null);
           hasLoadedDataRef.current = false;
+        shownDateRef.current = null;
         }
       }
     } catch (error) {
@@ -395,7 +583,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setIsLoadingAttendance(false);
       }
     }
-  }, [student]);
+  }, [student, applyAttendanceData]);
 
   // Fetch today's subject stats separately (for Subjects tab)
   const fetchTodayStats = useCallback(async () => {
@@ -403,9 +591,12 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     try {
       const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+      const requestedAt = Date.now();
       const response = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${today}`, {
         method: "GET",
       });
+      const offlineCopyAt = Number(response.headers.get(OFFLINE_HEADER) || 0);
+      if (requestedAt < syncedAtRef.current || (offlineCopyAt && offlineCopyAt < syncedAtRef.current)) return;
 
       if (response.ok) {
         const data = await response.json();
@@ -445,6 +636,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
             bunkableClasses: firstStat.bunkableClasses,
           });
         }
+        overlayQueuedStats(today, statsMap);
         setSubjectStatsToday(statsMap);
       }
     } catch (error) {
@@ -533,72 +725,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   }, [fetchTimetable]);
 
   // Helper to calculate new stats logic (reused for both Today and All-Time stats)
-  // NOTE: Total class count is NOT modified during live updates - only present/absent counts change
-  // The total comes from the backend and should remain constant during optimistic updates
-  const calculateNewStats = (
-    currentStats: SubjectStats,
-    previousStatus: 'present' | 'absent' | 'cancelled' | null,
-    newStatus: 'present' | 'absent' | 'cancelled' | null
-  ) => {
-    let newPresent = currentStats.present;
-    let newAbsent = currentStats.absent;
-    // Keep total unchanged - it comes from backend and should not be modified locally
-    const newTotal = currentStats.total;
-
-    // Handle deletion (unmarking)
-    if (newStatus === null) {
-      if (previousStatus === 'present') {
-        newPresent = Math.max(0, newPresent - 1);
-      } else if (previousStatus === 'absent') {
-        newAbsent = Math.max(0, newAbsent - 1);
-      }
-      // Total remains unchanged - backend will handle total updates
-    } else {
-      // Handle marking new attendance or changing status
-      if (previousStatus === null) {
-        // New attendance mark
-        if (newStatus === 'present') {
-          newPresent += 1;
-        } else if (newStatus === 'absent') {
-          newAbsent += 1;
-        }
-        // Total remains unchanged - backend will handle total updates
-      } else if (previousStatus === newStatus) {
-        // Clicking the same status again - should not change stats
-        // This is a no-op, stats remain the same
-        // (The toggle logic in markAttendance handles deletion separately)
-      } else if (previousStatus !== newStatus) {
-        // Changing from one status to another
-        if (previousStatus === 'present') {
-          newPresent = Math.max(0, newPresent - 1);
-        } else if (previousStatus === 'absent') {
-          newAbsent = Math.max(0, newAbsent - 1);
-        }
-        // Total remains unchanged regardless of status changes
-
-        if (newStatus === 'present') {
-          newPresent += 1;
-        } else if (newStatus === 'absent') {
-          newAbsent += 1;
-        }
-        // Total remains unchanged - cancelled or not, total stays the same
-      }
-    }
-
-    // Recalculate percentage based on updated present/absent counts
-    const newPercentage = newTotal > 0 ? (newPresent / newTotal) * 100 : 0;
-
-    return {
-      ...currentStats,
-      present: newPresent,
-      absent: newAbsent,
-      total: newTotal, // Total remains constant during live updates
-      percentage: newPercentage, // Recalculate percentage for real-time updates
-      // Note: classesNeeded and bunkableClasses are not recalculated here
-      // They will be updated when backend response is received
-    };
-  };
-
   const updateStatsLocally = useCallback((
     subjectId: string,
     previousStatus: 'present' | 'absent' | 'cancelled' | null,
@@ -675,9 +801,16 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
     // Toggle off if same status - delete from backend
     if (previousStatus === status) {
-      // Delete from backend if we have the attendance ID
-      if (attendanceId) {
+      const queued = findQueued(slotKey);
+      let savedOffline = false;
+      if (queued?.kind === 'mark' && !attendanceId) {
+        // This mark never reached the server: forgetting it is enough
+        dequeueMark(slotKey);
+        savedOffline = true;
+      } else if (attendanceId) {
+        // Delete from backend if we have the attendance ID
         try {
+          if (!navigator.onLine) throw new TypeError('offline');
           const deleteResponse = await authenticatedFetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(attendanceId.toString()), {
             method: 'DELETE',
           });
@@ -685,12 +818,22 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
           if (!deleteResponse.ok) {
             throw new Error('Failed to delete attendance');
           }
+          if (queued) dequeueMark(slotKey, queued.queuedAt);
 
         } catch (error) {
-          console.error('Error deleting attendance:', error);
-          toast.error('Failed to unmark attendance');
-          setSavingState(null);
-          return;
+          if (isNetworkError(error)) {
+            enqueueMark({
+              slotKey, date, subjectId, kind: 'delete', attendanceId,
+              serverStatus: queued ? queued.serverStatus ?? null : previousStatus,
+            });
+            savedOffline = true;
+          } else {
+            console.error('Error deleting attendance:', error);
+            toast.error('Failed to unmark attendance');
+            setSavingState(null);
+            ongoingOperationsRef.current.delete(operationKey);
+            return;
+          }
         }
       } else {
         // If no attendance ID, just clear local state (shouldn't happen, but handle gracefully)
@@ -714,11 +857,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       });
 
       // Refresh from backend to get updated stats for this date (silent - no loading UI)
-      await fetchAttendanceData(date, true);
+      if (!savedOffline) await fetchAttendanceData(date, true);
       setSavingState(null);
       ongoingOperationsRef.current.delete(operationKey);
       return;
     }
+
+    let requestBody: MarkAttendanceRequest | null = null;
 
     try {
       // Update local state optimistically BEFORE API call to prevent race conditions
@@ -731,7 +876,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       updateStatsLocally(subjectId, previousStatus, status);
 
       // Call backend API to mark attendance
-      const requestBody: MarkAttendanceRequest = {
+      requestBody = {
         subjectId,
         lectureDate: date,
         status,
@@ -754,6 +899,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         }
       }
       
+      if (!navigator.onLine) throw new TypeError('offline');
       const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
         method: 'POST',
         headers: {
@@ -779,6 +925,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       }
 
       const result = await response.json();
+      // The server now has this tap; an older offline one for the same class is moot
+      const stale = findQueued(slotKey);
+      if (stale) dequeueMark(slotKey, stale.queuedAt);
 
       // Store attendance ID for future deletion
       if (result.attendanceId) {
@@ -790,14 +939,182 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       // Refresh attendance data from backend to get updated stats for this date (silent - no loading UI)
       await fetchAttendanceData(date, true);
     } catch (error) {
-      console.error('Error marking attendance:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to mark attendance');
-      // Don't update local state on error (already reverted above)
+      if (requestBody && isNetworkError(error)) {
+        // No connection: keep the mark on screen and send it when the phone is back online
+        const queued = findQueued(slotKey);
+        enqueueMark({
+          slotKey, date, subjectId, kind: 'mark', status, body: { ...requestBody },
+          serverStatus: queued ? queued.serverStatus ?? null : previousStatus,
+        });
+        // No toast: the "Offline · N marks to sync" pill already says so; toasts are for errors only
+      } else {
+        console.error('Error marking attendance:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to mark attendance');
+        // Don't update local state on error (already reverted above)
+      }
     } finally {
       setSavingState(null);
       ongoingOperationsRef.current.delete(operationKey);
     }
   }, [todayAttendance, attendanceIds, fetchAttendanceData, updateStatsLocally]);
+
+  // Send marks made offline, oldest first, once there is a connection again
+  const isSyncingRef = useRef(false);
+  const syncQueuedMarks = useCallback(async () => {
+    if (!student || isSyncingRef.current || !navigator.onLine) return;
+    const items: QueuedMark[] = readQueue();
+    if (items.length === 0) return;
+
+    isSyncingRef.current = true;
+    let synced = 0;
+    let rejected = 0;
+    try {
+      for (const item of items) {
+        let response: Response;
+        try {
+          response = item.kind === 'mark'
+            ? await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item.body),
+              })
+            : await authenticatedFetch(API_CONFIG.ENDPOINTS.DELETE_ATTENDANCE(String(item.attendanceId)), {
+                method: 'DELETE',
+              });
+        } catch {
+          break; // still no network: try again on the next "online"
+        }
+        if (response.ok || (item.kind === 'delete' && response.status === 404)) {
+          dequeueMark(item.slotKey, item.queuedAt);
+          synced++;
+        } else if (response.status === 401 || response.status >= 500) {
+          break; // signed out or server trouble: keep the marks for later
+        } else {
+          // The server refused it (e.g. a date it won't accept); sending it again won't help
+          dequeueMark(item.slotKey, item.queuedAt);
+          rejected++;
+        }
+      }
+    } finally {
+      isSyncingRef.current = false;
+    }
+
+    if (rejected > 0) {
+      toast.error(`${rejected} offline ${rejected === 1 ? 'mark was' : 'marks were'} rejected by the server`);
+    }
+    if (synced > 0 || rejected > 0) {
+      syncedAtRef.current = Date.now();
+      writeLastSyncAt(syncedAtRef.current);
+      await fetchAttendanceData(lastFetchedDateRef.current, true);
+      fetchTodayStats();
+    }
+  }, [student, fetchAttendanceData, fetchTodayStats]);
+
+  const markClassesAbsent = useCallback(async (classes: PlannedAbsence[]): Promise<PlannedAbsenceResult> => {
+    const result: PlannedAbsenceResult = { marked: 0, skipped: 0, queued: 0, failed: 0 };
+    const byDate = new Map<string, PlannedAbsence[]>();
+    classes.forEach((c) => byDate.set(c.date, [...(byDate.get(c.date) ?? []), c]));
+
+    for (const [date, list] of byDate) {
+      // What the server already has that day, so a class marked cancelled (a holiday) or present isn't overwritten
+      const existing = new Set<string>();
+      try {
+        const res = await authenticatedFetch(`${API_CONFIG.ENDPOINTS.GET_MY_ATTENDANCE}?date=${date}`);
+        if (res.ok) {
+          const data = await res.json();
+          (data.todayAttendance ?? []).forEach((r: { subjectId: string; timeSlot?: number | null; startTime?: string; endTime?: string; isExtraClass?: boolean }) => {
+            if (!r.isExtraClass) existing.add(slotKeyFor(date, String(r.subjectId), r.timeSlot ?? null, r.startTime, r.endTime));
+          });
+        }
+      } catch {
+        // offline: mark everything; the queue sends it later
+      }
+      for (const c of list) {
+        const slotKey = slotKeyFor(date, c.subjectId, c.timeSlot, c.startTime, c.endTime);
+        if (existing.has(slotKey) || existing.has(`${date}-${c.subjectId}`) || findQueued(slotKey)) {
+          result.skipped++;
+          continue;
+        }
+        const body: Record<string, unknown> = { subjectId: c.subjectId, lectureDate: date, status: 'absent' };
+        if (c.timeSlot !== null && c.timeSlot !== undefined) body.timeSlot = c.timeSlot;
+        else if (c.startTime && c.endTime) {
+          body.startTime = c.startTime;
+          body.endTime = c.endTime;
+        }
+        try {
+          if (!navigator.onLine) throw new TypeError('offline');
+          const res = await authenticatedFetch(API_CONFIG.ENDPOINTS.MARK_ATTENDANCE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (res.ok) result.marked++;
+          else result.failed++;
+        } catch (error) {
+          if (isNetworkError(error)) {
+            enqueueMark({ slotKey, date, subjectId: c.subjectId, kind: 'mark', status: 'absent', body, serverStatus: null });
+            result.queued++;
+          } else {
+            result.failed++;
+          }
+        }
+      }
+    }
+
+    if (result.marked > 0) {
+      syncedAtRef.current = Date.now();
+      writeLastSyncAt(syncedAtRef.current);
+      fetchTodayStats();
+      await fetchAttendanceData(lastFetchedDateRef.current, true);
+    }
+    return result;
+  }, [fetchAttendanceData, fetchTodayStats]);
+
+  // Marks made from the after-class notification or an app-icon shortcut while the app was closed.
+  // Sent ones only need a refresh; ones that found no connection join the offline queue.
+  const catchUpOutsideMarks = useCallback(async () => {
+    const marks = await takeNativeMarks();
+    for (const m of marks) {
+      if (m.sent) continue;
+      const slotKey = m.slot !== null && m.slot !== undefined
+        ? `${m.date}-${m.subjectId}-slot${m.slot}`
+        : `${m.date}-${m.subjectId}-${m.start}-${m.end}`;
+      const queued = findQueued(slotKey);
+      enqueueMark({
+        slotKey, date: m.date, subjectId: m.subjectId, kind: 'mark', status: m.status, body: m.body,
+        serverStatus: queued ? queued.serverStatus ?? null : null,
+      });
+    }
+    await syncQueuedMarks();
+    if (marks.some((m) => m.sent)) {
+      syncedAtRef.current = Date.now();
+      writeLastSyncAt(syncedAtRef.current);
+      await fetchAttendanceData(lastFetchedDateRef.current, true);
+      fetchTodayStats();
+    }
+  }, [syncQueuedMarks, fetchAttendanceData, fetchTodayStats]);
+
+  useEffect(() => {
+    if (!student) return;
+    catchUpOutsideMarks();
+    window.addEventListener('online', syncQueuedMarks);
+    let resume: { remove: () => Promise<void> } | undefined;
+    let cancelled = false;
+    if (Capacitor.isNativePlatform()) {
+      import("@capacitor/app").then(async ({ App }) => {
+        const handle = await App.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) catchUpOutsideMarks();
+        });
+        if (cancelled) handle.remove();
+        else resume = handle;
+      });
+    }
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', syncQueuedMarks);
+      resume?.remove();
+    };
+  }, [student, syncQueuedMarks, catchUpOutsideMarks]);
 
   const setSubjectMin = useCallback((subjectId: string, value: number) => {
     setSubjectMinAttendance(prev => {
@@ -825,7 +1142,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         isLoadingTimetable,
         isLoadingAttendance,
         savingState,
+        pendingSyncCount,
         markAttendance,
+        markClassesAbsent,
         setSubjectMin,
         getSubjectStats,
         setEnrolledSubjects,

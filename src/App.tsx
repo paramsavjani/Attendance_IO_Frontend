@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AttendanceProvider, useAttendance } from "@/contexts/AttendanceContext";
@@ -25,6 +25,9 @@ import Intro from "./pages/Intro";
 import NotFound from "./pages/NotFound";
 import BackendUpdating from "./pages/BackendUpdating";
 import NoInternet from "./pages/NoInternet";
+import { OfflineStatusPill } from "@/components/offline/OfflineStatusPill";
+import { hasOfflineSnapshot } from "@/lib/offlineCache";
+import { hasToken } from "@/lib/token";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteAccount from "./pages/DeleteAccount";
 import ErrorOldVersion from "./pages/ErrorOldVersion";
@@ -130,6 +133,52 @@ function AppUpdateChecker() {
 
 import { MainLayout } from "@/components/layout/MainLayout";
 
+let launchLinkHandled = false;
+
+const SHORTCUT_PAGES: Record<string, string> = {
+  assistant: "/assistant",
+  search: "/search",
+  profile: "/profile",
+};
+
+/**
+ * App-icon shortcuts and widgets open com.attendanceio.app://open?page=assistant|search|profile
+ * (the Ask AI widget adds &q=<question>). Older links
+ * like ?polls=open still open on the home page.
+ */
+function ShortcutLinks() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const go = (url?: string) => {
+      if (!url?.startsWith("com.attendanceio.app://open")) return;
+      const query = url.split("?")[1] ?? "";
+      const params = new URLSearchParams(query);
+      const page = params.get("page");
+      // The Ask AI widget's chips carry their question (?page=assistant&q=...)
+      const question = params.get("q");
+      if (page && SHORTCUT_PAGES[page]) navigate(SHORTCUT_PAGES[page] + (question ? `?q=${encodeURIComponent(question)}` : ""));
+      else navigate(`/dashboard${query ? `?${query}` : ""}`);
+    };
+    let handle: { remove: () => Promise<void> } | undefined;
+    let cancelled = false;
+    import("@capacitor/app").then(async ({ App }) => {
+      if (!launchLinkHandled) {
+        launchLinkHandled = true;
+        go((await App.getLaunchUrl())?.url);
+      }
+      const h = await App.addListener("appUrlOpen", ({ url }) => go(url));
+      if (cancelled) h.remove();
+      else handle = h;
+    });
+    return () => {
+      cancelled = true;
+      handle?.remove();
+    };
+  }, [navigate]);
+  return null;
+}
+
 function AppRoutes() {
   const { isAuthenticated, isLoadingAuth, checkAuth } = useAuth();
   const { hasCompletedOnboarding, hasSeenIntro, isLoadingEnrolledSubjects } = useAttendance();
@@ -143,6 +192,9 @@ function AppRoutes() {
   );
   // Track previous backend state so we know when it transitions to available
   const prevBackendAvailableRef = useRef<boolean | null>(isNativeApp ? null : true);
+  // With a saved copy of this account's data the app draws straight away; the health check and
+  // login refresh run behind it instead of holding a "Loading..." screen for a network round trip.
+  const hasShownAppRef = useRef(isNativeApp && hasToken() && hasOfflineSnapshot());
 
   // Don't show popups/announcements on error page
   const isErrorPage = location.pathname === "/error-old-version";
@@ -270,11 +322,16 @@ function AppRoutes() {
     prevBackendAvailableRef.current = isBackendAvailableOnNative;
   }, [isNativeApp, isBackendAvailableOnNative, checkAuth]);
 
-  if (isOfflineOnNative) {
+  // Offline with a saved copy of this account's data: open on that instead of the error page
+  const canOpenOffline = isOfflineOnNative && hasToken() && hasOfflineSnapshot();
+
+  if (isOfflineOnNative && !canOpenOffline) {
     return <NoInternet />;
   }
 
-  if (isNativeApp && isBackendAvailableOnNative === null) {
+  // Block on the health check only before the app has been shown; once it's open, a reconnect
+  // shouldn't flash a loading screen over what the student is doing.
+  if (isNativeApp && isBackendAvailableOnNative === null && !isOfflineOnNative && !hasShownAppRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center safe-area-top" style={{ backgroundColor: '#000', color: '#fff' }}>
         <div>Loading...</div>
@@ -282,7 +339,7 @@ function AppRoutes() {
     );
   }
 
-  if (isNativeApp && isBackendAvailableOnNative === false) {
+  if (isNativeApp && isBackendAvailableOnNative === false && !isOfflineOnNative) {
     return <BackendUpdating />;
   }
 
@@ -305,14 +362,18 @@ function AppRoutes() {
     );
   }
 
+  hasShownAppRef.current = true;
+
   return (
     <>
+      {!isErrorPage && isAuthenticated && <OfflineStatusPill />}
       {!isErrorPage && <AndroidWebViewBlock />}
       {!isErrorPage && <AppUpdateChecker />}
       {!isErrorPage && <OtaUpdatePopup />}
       {!isErrorPage && isAuthenticated && <ServerPopup />}
       {!isErrorPage && isAuthenticated && <FeedbackReplyDialog />}
       {!isErrorPage && isAuthenticated && <NewContributorWelcome />}
+      {!isErrorPage && isAuthenticated && <ShortcutLinks />}
       <Routes>
         <Route
           path="/"

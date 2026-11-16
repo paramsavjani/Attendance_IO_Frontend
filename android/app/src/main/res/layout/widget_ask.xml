@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ask AI: a question bar, and on taller widgets ready-made questions. Drawn by AskAiWidget. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout android:id="@+id/ask_bar_row" android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center_vertical" android:orientation="horizontal">
+        <FrameLayout android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/widget_sparkle_tile">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="center" android:src="@drawable/ic_widget_sparkle" android:importantForAccessibility="no" />
+        </FrameLayout>
+        <TextView android:id="@+id/ask_bar" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginStart="10dp" android:background="@drawable/widget_search_bar" android:gravity="center_vertical" android:paddingStart="14dp" android:paddingEnd="14dp" android:text="Ask about your attendance…" android:textColor="#FF8E8D96" android:textSize="13sp" android:maxLines="1" android:ellipsize="end" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/ask_chips" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+        <TextView android:id="@+id/ask_chip_0" android:layout_width="wrap_content" android:layout_height="28dp" android:background="@drawable/widget_chip_ai" android:gravity="center" android:paddingStart="11dp" android:paddingEnd="11dp" android:textColor="#FFD8B4FE" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" />
+        <TextView android:id="@+id/ask_chip_1" android:layout_width="wrap_content" android:layout_height="28dp" android:layout_marginStart="6dp" android:background="@drawable/widget_chip_ai" android:gravity="center" android:paddingStart="11dp" android:paddingEnd="11dp" android:textColor="#FFD8B4FE" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" />
+        <TextView android:id="@+id/ask_chip_2" android:layout_width="wrap_content" android:layout_height="28dp" android:layout_marginStart="6dp" android:background="@drawable/widget_chip_ai" android:gravity="center" android:paddingStart="11dp" android:paddingEnd="11dp" android:textColor="#FFD8B4FE" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" />
+    </LinearLayout>
+</LinearLayout>

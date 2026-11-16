@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback, Fragment } from "react";
 import { Capacitor } from "@capacitor/core";
-import { useAuth } from "@/contexts/AuthContext";
+import { trackAppEvent, useAuth } from "@/contexts/AuthContext";
 import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO, setHours, setMinutes } from "date-fns";
@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarSearch,
+  Plane,
   Sun,
   Sunrise,
   Loader2,
@@ -28,7 +29,8 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch, getAppBuildNumber } from "@/lib/api";
+import { readCachedJson } from "@/lib/offlineCache";
 import { Subject, TimetableSlot } from "@/types/attendance";
 import { UrgentNotice } from "@/types/notice";
 import { fetchActiveNotices, markNoticeSeen, reportNotice } from "@/lib/notices";
@@ -67,6 +69,10 @@ import { useLocation } from "react-router-dom";
 import { isOverlayOpen } from "@/lib/backOverlay";
 import { usePollFeed } from "@/hooks/usePollFeed";
 import { PollsHomeEntry } from "@/components/polls/PollsHomeEntry";
+import { LeavePlannerSheet } from "@/components/leave/LeavePlannerSheet";
+import { WidgetLaunchPopup } from "@/components/widgets/WidgetLaunchPopup";
+import { maybeAskForReview } from "@/lib/in-app-review";
+import { adoptClassCheck, canPinWidget, getWidgetCounts, refreshWidgetProgress, reportWidgetCounts, totalWidgets, updateWidget, type WidgetClass, type WidgetSubject } from "@/lib/widgetBridge";
 import { PollsSheet, type PollsSheetView } from "@/components/polls/PollsSheet";
 import { PollActionDialogs } from "@/components/polls/PollActionDialogs";
 import type { Poll } from "@/types/poll";
@@ -88,6 +94,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DemoBanner } from "@/components/DemoBanner";
+
+/** First Play Store build (1.0.362) the widget popup is shown on; older ones get the update prompt. */
+const WIDGET_POPUP_MIN_BUILD = 411;
 
 // Swipe navigation hook
 function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
@@ -125,6 +134,22 @@ function useSwipeNavigation(onSwipeLeft: () => void, onSwipeRight: () => void) {
 }
 
 const DOUBLE_BACK_PRESS_MS = 1000;
+
+
+/** A class's mark today, using the same keys as AttendanceContext (slot for lectures, times otherwise). */
+function markFor(
+  marks: Record<string, string>,
+  date: string,
+  subjectId: string,
+  slot: { slotIndex: number | null; startTime: string; endTime: string; isCustom?: boolean },
+): WidgetClass["status"] {
+  const base = `${date}-${subjectId}`;
+  const key = slot.slotIndex !== null && slot.slotIndex !== undefined && !slot.isCustom
+    ? `${base}-slot${slot.slotIndex}`
+    : `${base}-${slot.startTime}-${slot.endTime}`;
+  const status = marks[key] ?? marks[base];
+  return status === "present" || status === "absent" || status === "cancelled" ? status : null;
+}
 
 export default function Dashboard() {
   const { student } = useAuth();
@@ -176,6 +201,62 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
+  // App-icon shortcut "Plan a leave": /dashboard?leave=open
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("leave") !== "open") return;
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.href.replace(/([?&])leave=open&?/, "$1").replace(/[?&]$/, ""),
+    );
+    const timer = setTimeout(() => setLeavePlannerOpen(true), 400);
+    return () => clearTimeout(timer);
+  }, [location.search]);
+
+  // Introduce home-screen widgets once, after the student has updated from the Play Store to a
+  // build that can add them from the app; until then the update prompt is what they see.
+  const [widgetPromoOpen, setWidgetPromoOpen] = useState(false);
+  useEffect(() => {
+    if (!student || student.isDemo) return;
+    const key = "attendance_io_widget_launch_seen";
+    try {
+      if (localStorage.getItem(key)) return;
+      // The web code built into 1.0.362 still shows the older bottom-sheet intro before this update
+      // arrives; a student who has seen that one isn't shown this one too.
+      if (localStorage.getItem("attendance_io_widget_promo_seen")) return;
+    } catch {
+      return;
+    }
+    let timer: ReturnType<typeof setInterval> | undefined;
+    let cancelled = false;
+    void Promise.all([getAppBuildNumber(), getWidgetCounts(), canPinWidget()]).then(([build, counts, pin]) => {
+      if (cancelled || build < WIDGET_POPUP_MIN_BUILD || !counts || pin === null) return;
+      if (totalWidgets(counts) > 0) {
+        localStorage.setItem(key, "1");
+        return;
+      }
+      // Let the app settle, and never on top of another popup
+      let waited = 0;
+      timer = setInterval(() => {
+        waited += 1;
+        if (waited < 3 || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+        clearInterval(timer);
+        localStorage.setItem(key, "1");
+        localStorage.setItem("attendance_io_widget_promo_seen", "1");
+        setWidgetPromoOpen(true);
+      }, 1000);
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [student]);
+
+  // Let the phone ask after each class itself (with buttons to mark), in place of the server's push
+  useEffect(() => {
+    if (student && !student.isDemo) void adoptClassCheck(student);
+  }, [student]);
+
   // On home (Dashboard) only: double back button closes the app
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -199,14 +280,22 @@ export default function Dashboard() {
   }, []);
 
   // Lab/Tutorial timetable states
-  const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
-  const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>([]);
-  const [isLoadingLab, setIsLoadingLab] = useState(true);
-  const [isLoadingTutorial, setIsLoadingTutorial] = useState(true);
+  // Seeded from the saved copy so the schedule draws instantly; the effects below refresh them
+  const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>(
+    () => readCachedJson<{ slots?: TimetableSlot[] }>(API_CONFIG.ENDPOINTS.LAB_TIMETABLE)?.slots ?? []
+  );
+  const [tutorialTimetable, setTutorialTimetable] = useState<TimetableSlot[]>(
+    () => readCachedJson<{ slots?: TimetableSlot[] }>(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE)?.slots ?? []
+  );
+  // No loading state when the saved copy already drew them
+  const [isLoadingLab, setIsLoadingLab] = useState(() => !readCachedJson(API_CONFIG.ENDPOINTS.LAB_TIMETABLE));
+  const [isLoadingTutorial, setIsLoadingTutorial] = useState(() => !readCachedJson(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE));
 
   // Standard lecture time slots, fetched from backend (do not hardcode - the institute
   // timetable can include slots beyond the classic 8am-12:50pm morning block, e.g. afternoon lectures)
-  const [lectureSlots, setLectureSlots] = useState<{ index: number; startTime: string; endTime: string }[]>([]);
+  const [lectureSlots, setLectureSlots] = useState<{ index: number; startTime: string; endTime: string }[]>(
+    () => readCachedJson<{ index: number; startTime: string; endTime: string }[]>(API_CONFIG.ENDPOINTS.TIME_SLOTS) ?? []
+  );
 
   // Lab/Tutorial attendance stats
   const [labTutStats, setLabTutStats] = useState<Record<string, {
@@ -246,6 +335,12 @@ export default function Dashboard() {
   const [noticePreselectedSubject, setNoticePreselectedSubject] = useState<Subject | null>(null);
   const [activeNotices, setActiveNotices] = useState<UrgentNotice[]>([]);
   const [dismissedNoticeIds, setDismissedNoticeIds] = useState<string[]>([]);
+  const [leavePlannerOpen, setLeavePlannerOpen] = useState(false);
+  // Same rule as the Subjects tab: the student's own minimum, then the course's, then 75%
+  const minimumFor = useCallback(
+    (subject: Subject) => subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
+    [subjectMinAttendance]
+  );
 
   // Track which extra class is being deleted (for loading state)
   const [deletingExtraClass, setDeletingExtraClass] = useState<{ subjectId: string; index: number } | null>(null);
@@ -336,7 +431,6 @@ export default function Dashboard() {
     const controller = new AbortController();
     const fetchLabTimetable = async () => {
       try {
-        setIsLoadingLab(true);
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.LAB_TIMETABLE, {
           method: "GET",
           signal: controller.signal,
@@ -373,7 +467,6 @@ export default function Dashboard() {
     const controller = new AbortController();
     const fetchTutorialTimetable = async () => {
       try {
-        setIsLoadingTutorial(true);
         const response = await authenticatedFetch(API_CONFIG.ENDPOINTS.TUTORIAL_TIMETABLE, {
           method: "GET",
           signal: controller.signal,
@@ -682,6 +775,79 @@ export default function Dashboard() {
   }, []);
 
   const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
+
+  // Today's marks for the widget. The context holds whichever date is on screen, so remember
+  // today's while it is showing and keep them when the student looks at another day.
+  const widgetMarksRef = useRef<Record<string, string>>({});
+
+  // Keep the home-screen widgets' snapshot (next 7 days of classes, and each subject's standing) up to date
+  useEffect(() => {
+    if (lectureSlots.length === 0 || enrolledSubjects.length === 0) return;
+    const todayKey = format(new Date(), "yyyy-MM-dd");
+    if (format(selectedDate, "yyyy-MM-dd") === todayKey) {
+      widgetMarksRef.current = Object.fromEntries(
+        Object.entries(todayAttendance).filter(([key, status]) => key.startsWith(`${todayKey}-`) && status),
+      ) as Record<string, string>;
+    }
+    const marks = widgetMarksRef.current;
+    const timer = setTimeout(() => {
+      const days: Record<string, WidgetClass[]> = {};
+      for (let offset = 0; offset < 7; offset++) {
+        const day = addDays(new Date(), offset);
+        days[format(day, "yyyy-MM-dd")] = getScheduleForDate(day, true)
+          .filter((slot) => slot.subject && slot.startTime && slot.endTime)
+          .sort((a, b) => a.startTime.localeCompare(b.startTime))
+          .map((slot) => {
+            const subject = slot.subject!;
+            const stats = slot.type === "lecture" ? subjectStatsToday[subject.id] : undefined;
+            return {
+              start: slot.startTime.slice(0, 5),
+              end: slot.endTime.slice(0, 5),
+              name: subject.name,
+              room: slot.location || subject.classroomLocation || subject.lecturePlace || subject.code,
+              type: slot.type,
+              percent: stats && stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : null,
+              min: subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
+              subjectId: subject.id,
+              slot: slot.slotIndex ?? null,
+              status: offset === 0 ? markFor(marks, todayKey, subject.id, slot) : null,
+            };
+          });
+      }
+      const subjects: WidgetSubject[] = enrolledSubjects.map((subject) => {
+        const stats = subjectStatsToday[subject.id];
+        return {
+          name: subject.name,
+          code: subject.code,
+          present: stats?.present ?? 0,
+          total: stats?.total ?? 0,
+          percent: stats && stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : null,
+          min: subjectMinAttendance[subject.id] ?? subject.minimumCriteria ?? 75,
+          canSkip: stats?.bunkableClasses ?? 0,
+          needed: stats?.classesNeeded ?? 0,
+        };
+      });
+      void updateWidget(days, subjects).then(() => {
+        void reportWidgetCounts(trackAppEvent);
+        void refreshWidgetProgress();
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
+    // getScheduleForDate reads these same inputs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, subjectStatsToday, subjectMinAttendance, todayAttendance, selectedDate]);
+
+  // Adding or removing a widget happens on the home screen, outside the app; count again when the
+  // student comes back so the change is reported now rather than on the next data reload.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void reportWidgetCounts(trackAppEvent);
+      void refreshWidgetProgress(); // a trend or streak widget just added needs its numbers
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   // A new poll is usually about the class that's coming up, so the form starts on it.
   const suggestedPollSubjectId = useMemo(() => {
@@ -1094,6 +1260,8 @@ export default function Dashboard() {
     }
 
     await markAttendance(subjectId, dateKey, status, timeSlot, startTime, endTime, isExtraClass, extraClassIndex);
+    if (status === 'present' && !student?.isDemo) void maybeAskForReview(trackAppEvent);
+    void refreshWidgetProgress(true); // the streak and this week's point change with each mark
   };
 
   const confirmPastDateAttendance = async () => {
@@ -1358,10 +1526,8 @@ export default function Dashboard() {
 
             <PollsHomeEntry
               polls={polls}
-              isDemo={Boolean(student?.isDemo)}
               onOpenSheet={openPollsSheet}
-              onReport={setReportingPoll}
-              onDelete={setDeletingPoll}
+              onPlanLeave={() => setLeavePlannerOpen(true)}
             />
 
             {/* Compact Notices */}
@@ -1965,6 +2131,21 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setLeavePlannerOpen(true)}
+                  className="w-full flex items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2.5 text-left transition-colors active:bg-muted/60"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                    <Plane className="w-4 h-4 text-primary" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Plan a leave</span>
+                    <span className="block text-[11px] text-muted-foreground truncate">See how days off change each subject</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </button>
+
                 {subjectsAttendanceView === "total" ? (
                   enrolledSubjects.map((subject) => {
                     const stats = subjectStatsToday[subject.id] || {
@@ -2071,6 +2252,7 @@ export default function Dashboard() {
         </Tabs>
       </div>
 
+      <WidgetLaunchPopup open={widgetPromoOpen} onClose={() => setWidgetPromoOpen(false)} />
       <PollsSheet
         open={pollsSheetOpen}
         view={pollsSheetView}
@@ -2112,6 +2294,28 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <LeavePlannerSheet
+        open={leavePlannerOpen}
+        onOpenChange={setLeavePlannerOpen}
+        subjects={enrolledSubjects}
+        timetable={timetable}
+        stats={Object.keys(subjectStatsToday).length > 0 ? subjectStatsToday : subjectStats}
+        minimumFor={minimumFor}
+        classesOn={(days) =>
+          days.flatMap((day) =>
+            getScheduleForDate(day, true)
+              .filter((slot) => slot.subject)
+              .map((slot) => ({
+                date: format(day, "yyyy-MM-dd"),
+                subjectId: slot.subject!.id,
+                timeSlot: slot.type === "lecture" && !slot.isCustom ? slot.slotIndex : null,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+              })),
+          )
+        }
+      />
 
       {/* Add a Class Dialog */}
       <Dialog open={addClassDialogOpen} onOpenChange={setAddClassDialogOpen}>
