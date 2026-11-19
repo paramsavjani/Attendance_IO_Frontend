@@ -212,7 +212,44 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                7. Google Authentication
+                7. Placement Data
+              </h2>
+              <div className="bg-warning/10 border border-warning/40 rounded-lg p-4 mb-4">
+                <p className="text-foreground leading-relaxed">
+                  <strong>Placement data may contain mistakes. Do not treat it as a reference or rely on it for any
+                  decision.</strong> Always confirm details with the official placement cell before acting on them.
+                </p>
+              </div>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                The placements section and the AI assistant show this season's companies, roles, packages,
+                eligibility, job descriptions and selected students. Attendance IO does not create this data. It is
+                collected from sources that are already available to DA-IICT / DAU students, such as:
+              </p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-4 ml-4">
+                <li>Company and drive details shown to students on the college placement portal</li>
+                <li>Results and selection lists shared by the placement cell</li>
+                <li>Pre-placement offers (PPOs) and packages as reported by students themselves</li>
+              </ul>
+              <p className="text-muted-foreground leading-relaxed mb-4">Please keep in mind:</p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-4 ml-4">
+                <li>This is <strong>not</strong> official data. Attendance IO is an independent student project and is
+                  not run, verified or endorsed by the institute, its placement cell or any company listed</li>
+                <li>The data can be incomplete, out of date or wrong, including while copying it from its source,
+                  and packages are the figures advertised or reported, not individual offer letters</li>
+                <li>Statistics such as averages and highest packages are calculated only from the data we have and
+                  are not the institute's official placement statistics</li>
+                <li>Attendance IO is provided as is. We make no guarantee about the accuracy of this data and are not
+                  responsible or liable for any decision, loss or claim arising from its use</li>
+                <li>Placement data is shown only to students signed in with an <span className="font-semibold text-primary">@dau.ac.in</span> account.
+                  It is not available on the demo account or any public page, and must not be copied or shared outside the institute</li>
+                <li>If you are listed and want an entry corrected or removed, contact us (see "Contact Us" below) and
+                  we will act on it promptly</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
+                8. Google Authentication
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 Our application uses Google OAuth for authentication. By signing in with Google, you authorize us to access certain information from your Google account. We only access the minimum information necessary to provide our services. Your use of Google's services is also governed by Google's Privacy Policy.
@@ -224,7 +261,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                8. Your Rights and Choices
+                9. Your Rights and Choices
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 You have the right to:
@@ -253,7 +290,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                9. Data Retention
+                10. Data Retention
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 We retain your personal information and attendance data for as long as your account is active or as needed to provide you with our services. If you delete your account, we will delete or anonymize your personal information, except where we are required to retain it for legal purposes.
@@ -267,7 +304,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                10. Children's Privacy
+                11. Children's Privacy
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 Our application is intended for use by students and is restricted to users with institutional email addresses. We do not knowingly collect personal information from children under the age of 13. If you believe we have collected information from a child under 13, please contact us immediately.
@@ -276,7 +313,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                11. Changes to This Privacy Policy
+                12. Changes to This Privacy Policy
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
@@ -285,7 +322,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                12. Contact Us
+                13. Contact Us
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:
@@ -299,7 +336,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-foreground">
-                13. Consent
+                14. Consent
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 By using Attendance IO, you consent to the collection and use of your information as described in this Privacy Policy. If you do not agree with this policy, please do not use our application.
