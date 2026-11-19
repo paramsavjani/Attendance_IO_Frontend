@@ -12,6 +12,9 @@ import {
   Zap, Gift, Search, Star, Rocket, PartyPopper, Info, CheckCircle, Github,
   MessageCircle, Users, TrendingUp, CalendarDays, GraduationCap,
   type LucideIcon,
+  Briefcase,
+  BadgeIndianRupee,
+  FileText,
 } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { originOf, revealFrom } from "@/lib/revealTransition";
@@ -24,7 +27,7 @@ import { PopupYearChart } from "@/components/PopupYearChart";
 import { PopupPollPreview } from "@/components/polls/PopupPollPreview";
 
 /** Features this web bundle ships; sent with the popups request. Add a name when a popup needs it. */
-const SUPPORTED_FEATURES = ["polls"];
+const SUPPORTED_FEATURES = ["polls", "placements"];
 import confetti from "canvas-confetti";
 
 /**
@@ -130,6 +133,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   trend: TrendingUp,
   calendar: CalendarDays,
   graduation: GraduationCap,
+  briefcase: Briefcase,
+  rupee: BadgeIndianRupee,
+  file: FileText,
 };
 
 /** `assistant` is the app's own gradient spark, not a Lucide glyph, so it is rendered separately. */
