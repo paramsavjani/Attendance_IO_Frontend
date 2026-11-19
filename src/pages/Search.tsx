@@ -933,7 +933,7 @@ export default function Search() {
       {/* Empty state */}
       {query.length === 0 && !historyVisible && !showAllHistory && (
         <div className="space-y-4">
-          <button
+          {!me?.isDemo && <button
             type="button"
             onClick={() => navigate("/placements")}
             className="flex w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-indigo-600/25 via-violet-600/10 to-card p-3.5 text-left transition-transform active:scale-[0.99]"
@@ -946,7 +946,7 @@ export default function Search() {
               <span className="block truncate text-xs text-muted-foreground">Every company, its roles, CTC and who got selected</span>
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>
+          </button>}
           <div className="text-center py-10 text-muted-foreground">
             <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
             <p className="text-sm">Search for any student</p>

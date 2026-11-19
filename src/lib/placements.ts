@@ -97,8 +97,12 @@ export interface PlacementCompany extends Omit<PlacementCompanyCard, "roles"> {
   updatedAt: string | null;
 }
 
+/** Thrown for 403: placements are only for DAU students (not the demo login). */
+export class PlacementsForbiddenError extends Error {}
+
 export async function fetchPlacements(): Promise<PlacementList> {
   const res = await authenticatedFetch(`${API_CONFIG.BASE_URL}/api/placements`);
+  if (res.status === 403) throw new PlacementsForbiddenError("forbidden");
   if (!res.ok) throw new Error(`Placements failed: ${res.status}`);
   return res.json();
 }
@@ -106,6 +110,7 @@ export async function fetchPlacements(): Promise<PlacementList> {
 export async function fetchPlacementCompany(id: string): Promise<PlacementCompany | null> {
   const res = await authenticatedFetch(`${API_CONFIG.BASE_URL}/api/placements/${encodeURIComponent(id)}`);
   if (res.status === 404) return null;
+  if (res.status === 403) throw new PlacementsForbiddenError("forbidden");
   if (!res.ok) throw new Error(`Placement company failed: ${res.status}`);
   return res.json();
 }

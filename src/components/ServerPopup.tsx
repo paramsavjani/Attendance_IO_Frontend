@@ -20,6 +20,7 @@ import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { originOf, revealFrom } from "@/lib/revealTransition";
 import { cn } from "@/lib/utils";
 import { API_CONFIG } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { requestAppReview } from "@/lib/in-app-review";
 import { RateAppServerPopup } from "@/components/RateAppServerPopup";
 import { StarRepoServerPopup } from "@/components/StarRepoServerPopup";
@@ -287,6 +288,10 @@ export function ServerPopup() {
   const [secondaryClicked, setSecondaryClicked] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  // Placements are for DAU students only; the shared demo login never gets that announcement.
+  const { student } = useAuth();
+  const isDemoRef = useRef(Boolean(student?.isDemo));
+  isDemoRef.current = Boolean(student?.isDemo);
 
   const fireConfetti = useCallback(() => {
     const duration = 1500;
@@ -332,7 +337,8 @@ export function ServerPopup() {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         // Tell the backend which features this bundle has, so it never shows a popup for a
         // feature an older bundle is missing (popups list them in "requires").
-        const response = await fetch(`${API_CONFIG.ENDPOINTS.POPUPS}?supports=${SUPPORTED_FEATURES.join(",")}`, {
+        const supports = SUPPORTED_FEATURES.filter((f) => f !== "placements" || !isDemoRef.current);
+        const response = await fetch(`${API_CONFIG.ENDPOINTS.POPUPS}?supports=${supports.join(",")}`, {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
