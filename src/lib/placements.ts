@@ -66,6 +66,8 @@ export interface PlacementDrive {
   registrationEnd: string | null;
   bond: string | null;
   hasJdFile: boolean;
+  /** Text of the drive's job description files (PDF / Word). */
+  jdFiles?: { file: string; text: string; transcribed: boolean }[];
   profiles: PlacementProfile[];
   source: string | null;
 }

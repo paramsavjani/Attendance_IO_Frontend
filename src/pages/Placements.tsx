@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  FileText,
   GraduationCap,
   MapPin,
   Search as SearchIcon,
@@ -410,6 +411,15 @@ function DriveCard({ drive: d, multiple }: { drive: PlacementDrive; multiple: bo
         ))}
       </div>
 
+      {d.jdFiles && d.jdFiles.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="px-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Job description files</p>
+          {d.jdFiles.map((f, i) => (
+            <JdFileRow key={i} file={f} />
+          ))}
+        </div>
+      )}
+
       {d.bond && <p className="text-xs text-amber-300/90">Bond: {d.bond}</p>}
     </div>
   );
@@ -438,6 +448,36 @@ function RoleRow({ profile: p }: { profile: PlacementProfile }) {
       </button>
       {open && p.description && (
         <div className="whitespace-pre-line border-t border-white/[0.05] px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">{p.description}</div>
+      )}
+    </div>
+  );
+}
+
+function JdFileRow({ file: f }: { file: { file: string; text: string; transcribed: boolean } }) {
+  const [open, setOpen] = useState(false);
+  const [full, setFull] = useState(false);
+  const long = f.text.length > 1500;
+  return (
+    <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300">
+          <FileText className="h-3.5 w-3.5" />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{f.file}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="border-t border-white/[0.05] px-3 py-2.5">
+          {f.transcribed && <p className="mb-1.5 text-[10.5px] italic text-muted-foreground/70">Transcribed from an image in the file</p>}
+          <p className="whitespace-pre-line break-words text-xs leading-relaxed text-muted-foreground">
+            {long && !full ? `${f.text.slice(0, 1500)}…` : f.text}
+          </p>
+          {long && (
+            <button type="button" onClick={() => setFull((v) => !v)} className="mt-2 text-xs font-semibold text-primary">
+              {full ? "Show less" : "Read the whole file"}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
