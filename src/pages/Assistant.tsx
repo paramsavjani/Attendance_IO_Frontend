@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check, Copy, MessageCircleQuestion, RotateCcw, Square } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check, Copy, MessageSquare, RotateCcw, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -532,7 +532,7 @@ function showsQuestionsLeft(usage: AgentUsage | null): boolean {
 }
 
 /**
- * Floating glass pill under the header: "3 of 5 left today" with a question-bubble icon and a
+ * Floating glass pill under the header: "3 of 5 left today" with a chat-bubble icon and a
  * dot per question. Amber at the last one, rose when none are left. Hidden when there is no cap.
  */
 function QuestionsLeft({ usage }: { usage: AgentUsage | null }) {
@@ -552,7 +552,7 @@ function QuestionsLeft({ usage }: { usage: AgentUsage | null }) {
             </linearGradient>
           </defs>
         </svg>
-        <MessageCircleQuestion className="h-4 w-4" style={left > 1 ? { stroke: "url(#questions-left-grad)" } : undefined} aria-hidden />
+        <MessageSquare className="h-4 w-4" strokeWidth={2.2} style={left > 1 ? { stroke: "url(#questions-left-grad)" } : undefined} aria-hidden />
         <span className="text-foreground">
           {left === 0 ? "No questions left · resets at midnight" : `${left}${cap != null ? ` of ${cap}` : ""} left today`}
         </span>
