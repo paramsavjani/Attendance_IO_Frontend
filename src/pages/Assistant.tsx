@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check, Copy, RotateCcw, Square } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check, Copy, MessageCircleQuestion, RotateCcw, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -422,7 +422,12 @@ export default function Assistant() {
 
       {/* Messages */}
       <div className="relative min-h-0 flex-1">
-        <div ref={listRef} onScroll={onListScroll} className="h-full overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4">
+        <QuestionsLeft usage={usage} />
+        <div
+          ref={listRef}
+          onScroll={onListScroll}
+          className={cn("h-full overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4", showsQuestionsLeft(usage) && "pt-14")}
+        >
           <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
             {messages.length === 0 ? (
               <EmptyState suggestions={suggestions} onPick={(s) => void send(s)} onGuide={() => navigate("/assistant/guide")} />
@@ -467,7 +472,7 @@ export default function Assistant() {
               className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
             />
             <div className="mt-1.5 flex items-center justify-between gap-2">
-              <QuestionsLeft usage={usage} />
+              <span />
               {busy ? (
                 <button
                   type="button"
@@ -522,33 +527,44 @@ function useVisualViewportHeight(): number | null {
   return height;
 }
 
-/** "3 of 5 questions left today" under the input; hidden when there is no cap or the count is unknown. */
+function showsQuestionsLeft(usage: AgentUsage | null): boolean {
+  return Boolean(usage && !usage.unlimited && usage.remainingToday != null);
+}
+
+/**
+ * Floating glass pill under the header: "3 of 5 left today" with a question-bubble icon and a
+ * dot per question. Amber at the last one, rose when none are left. Hidden when there is no cap.
+ */
 function QuestionsLeft({ usage }: { usage: AgentUsage | null }) {
-  if (!usage || usage.unlimited || usage.remainingToday == null) return <span />;
-  const left = usage.remainingToday;
+  if (!usage || !showsQuestionsLeft(usage)) return null;
+  const left = usage.remainingToday ?? 0;
   const cap = usage.dailyLimit;
-  const resets = new Date(usage.resetsAt);
-  const at = Number.isNaN(resets.getTime()) ? "midnight" : resets.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  const tone = left === 0 ? "text-rose-300" : left <= 1 ? "text-amber-300" : "text-sky-200";
   return (
-    <span
-      className={cn(
-        "flex min-w-0 items-center gap-1.5 text-[11px]",
-        left === 0 ? "font-medium text-rose-400" : left <= 1 ? "text-amber-300" : "text-muted-foreground",
-      )}
-    >
-      <span className="flex gap-0.5" aria-hidden>
-        {cap != null &&
-          cap <= 10 &&
-          Array.from({ length: cap }).map((_, i) => (
-            <span key={i} className={cn("h-1.5 w-1.5 rounded-full", i < left ? "bg-current" : "bg-white/15")} />
-          ))}
-      </span>
-      <span className="truncate">
-        {left === 0
-          ? `No questions left today · resets ${at === "12:00 am" ? "at midnight" : at}`
-          : `${left}${cap != null ? ` of ${cap}` : ""} question${left === 1 ? "" : "s"} left today`}
-      </span>
-    </span>
+    <div className="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center" role="status" aria-live="polite">
+      <div className={cn("liquid-nav flex items-center gap-2 rounded-full px-3 py-1.5 text-[11.5px] font-medium shadow-lg", tone)}>
+        <svg width="0" height="0" className="absolute" aria-hidden>
+          <defs>
+            <linearGradient id="questions-left-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#8ab4f8" />
+              <stop offset="0.55" stopColor="#c58af9" />
+              <stop offset="1" stopColor="#f28b82" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <MessageCircleQuestion className="h-4 w-4" style={left > 1 ? { stroke: "url(#questions-left-grad)" } : undefined} aria-hidden />
+        <span className="text-foreground">
+          {left === 0 ? "No questions left · resets at midnight" : `${left}${cap != null ? ` of ${cap}` : ""} left today`}
+        </span>
+        {cap != null && cap <= 10 && left > 0 && (
+          <span className="flex gap-[3px]" aria-hidden>
+            {Array.from({ length: cap }).map((_, i) => (
+              <span key={i} className={cn("h-1.5 w-1.5 rounded-full", i < left ? "bg-current" : "bg-white/15")} />
+            ))}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
