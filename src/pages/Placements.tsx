@@ -282,13 +282,17 @@ function CompanyView({ id }: { id: string }) {
   const navigate = useNavigate();
   const [company, setCompany] = useState<PlacementCompany | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("roles");
+  const [tab, setTab] = useState<Tab>("selected");
 
   useEffect(() => {
     setCompany(undefined);
-    setTab("roles");
+    setTab("selected");
     fetchPlacementCompany(id)
-      .then(setCompany)
+      .then((c) => {
+        setCompany(c);
+        // Selected first; a company with no results yet opens on its roles instead of an empty list
+        if (c && c.selections.length === 0) setTab("roles");
+      })
       .catch((e) => setError(e instanceof PlacementsForbiddenError ? FORBIDDEN : "Couldn't load this company. Check your connection."));
   }, [id]);
 
@@ -315,8 +319,8 @@ function CompanyView({ id }: { id: string }) {
   const files = c.drives.flatMap((d) => (d.jdFiles ?? []).map((f) => ({ ...f, drive: d.title })));
   const selected = [...c.selections.filter((x) => x.kind === "PPO"), ...c.selections.filter((x) => x.kind !== "PPO")];
   const tabs: { key: Tab; label: string; count?: number }[] = [
-    { key: "roles", label: "Roles" },
     { key: "selected", label: "Selected", count: selected.length },
+    { key: "roles", label: "Roles" },
     ...(files.length ? [{ key: "files" as Tab, label: "JD files", count: files.length }] : []),
   ];
 
