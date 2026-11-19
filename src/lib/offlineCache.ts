@@ -15,6 +15,7 @@ const MAX_ENTRIES = 40;
 export const OFFLINE_HEADER = "X-Offline-Cache";
 
 const CACHEABLE_PATHS = [
+  "/api/placements",
   "/api/user/init",
   "/api/user/me",
   "/api/student/enrollment/subjects",
