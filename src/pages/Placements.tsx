@@ -96,8 +96,8 @@ function ListView() {
     return list;
   }, [data, query, filter, sort]);
 
-  const withResults = rows.filter((c) => c.selectedCount > 0);
-  const others = rows.filter((c) => c.selectedCount === 0);
+  const withResults = rows.filter((c) => c.selectedCount > 0 || c.resultDeclared);
+  const others = rows.filter((c) => c.selectedCount === 0 && !c.resultDeclared);
   const s = data?.summary;
   const nextSort = () => setSort((cur) => SORTS[(SORTS.findIndex((x) => x.key === cur) + 1) % SORTS.length].key);
 
@@ -262,6 +262,10 @@ function CompanyGroup({ title, companies, onOpen }: { title: string; companies: 
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   {c.selectedCount} placed
                 </span>
+              ) : c.resultDeclared ? (
+                <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-white/45">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/30" />0 placed
+                </span>
               ) : (
                 <span className="mt-0.5 block text-[11px] text-white/35">{c.offerTypes.filter((t) => t !== "PPO").join(" + ") || "Drive"}</span>
               )}
@@ -290,8 +294,8 @@ function CompanyView({ id }: { id: string }) {
     fetchPlacementCompany(id)
       .then((c) => {
         setCompany(c);
-        // Selected first; a company with no results yet opens on its roles instead of an empty list
-        if (c && c.selections.length === 0) setTab("roles");
+        // Selected first; a company whose result isn't out yet opens on its roles instead of an empty list
+        if (c && c.selections.length === 0 && !c.resultOn) setTab("roles");
       })
       .catch((e) => setError(e instanceof PlacementsForbiddenError ? FORBIDDEN : "Couldn't load this company. Check your connection."));
   }, [id]);
@@ -418,7 +422,14 @@ function CompanyView({ id }: { id: string }) {
 
       {tab === "selected" &&
         (selected.length === 0 ? (
-          <EmptyNote>No results announced for {c.name} yet. They'll show here once the placement cell shares them.</EmptyNote>
+          c.resultOn ? (
+            <EmptyNote>
+              <span className="mb-1 block text-[22px] font-bold tabular-nums text-foreground">0 selected</span>
+              {c.resultNote ?? "The placement cell announced the result; no B.Tech student was selected."} Announced {formatDay(c.resultOn)}.
+            </EmptyNote>
+          ) : (
+            <EmptyNote>No results announced for {c.name} yet. They'll show here once the placement cell shares them.</EmptyNote>
+          )
         ) : (
           <section>
             <h2 className={cn(label, "mb-1.5")}>

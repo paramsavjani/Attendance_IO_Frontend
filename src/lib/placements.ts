@@ -5,6 +5,7 @@ import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 export interface PlacementSummary {
   companiesOnPortal: number;
   companiesWithSelections: number;
+  companiesWithNoSelection?: number;
   offers: number;
   ppos: number;
   campusSelections: number;
@@ -29,6 +30,8 @@ export interface PlacementCompanyCard {
   minCpi: number | null;
   selectedCount: number;
   ppoCount: number;
+  /** The result is out; with selectedCount 0 it means no B.Tech student was selected. */
+  resultDeclared?: boolean;
   lastActivity: string | null;
   onPortal: boolean;
 }
@@ -93,6 +96,9 @@ export interface PlacementCompany extends Omit<PlacementCompanyCard, "roles"> {
   locations: string[];
   drives: PlacementDrive[];
   selections: PlacementSelection[];
+  /** Why a declared result has no selections, and when it was announced. */
+  resultNote?: string | null;
+  resultOn?: string | null;
   ctcNotes: { role: string | null; ctc: string | null; stipend: string | null; offerType: string | null; notes: string | null }[];
   updatedAt: string | null;
 }
