@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AgentLimitError, answerSubscriptionOffer, streamAgentChat, type AgentPersonCard } from "@/lib/agent";
+import { AgentLimitError, answerSubscriptionOffer, fetchAgentUsage, streamAgentChat, type AgentPersonCard, type AgentUsage } from "@/lib/agent";
 import { PhotoViewer, DEFAULT_AVATAR } from "@/components/PhotoViewer";
 import { photoThumb } from "@/lib/photoUrl";
 import { trackAppEvent, useAuth } from "@/contexts/AuthContext";
@@ -102,6 +102,21 @@ const ALUMNI_POOL = [
   "Seniors from my programme working at Atlassian",
 ];
 
+const PLACEMENT_POOL = [
+  "How is placement going this year? Average, highest and PPOs",
+  "Which companies gave PPOs this year and at what package?",
+  "Which companies came for MnC with a package above 20 LPA?",
+  "Who got placed at UnifyApps?",
+  "Did I get placed or get a PPO?",
+  "Tekion's package, stipend and CPI cut-off",
+  "What does JusPay's JD ask for?",
+  "Companies hiring for ML or AI roles this season",
+  "Which internships pay a stipend of 1 lakh or more?",
+  "Quant roles this season and what they pay",
+  "Top recruiters this year by number of offers",
+  "Which companies are open for M.Tech students?",
+];
+
 const CAMPUS_POOL = [
   "Who is the convener of the Cultural Committee and their phone number?",
   "Which clubs are there for coding and robotics?",
@@ -134,12 +149,12 @@ function shuffle<T>(list: T[]): T[] {
   return pool;
 }
 
-/** [count] prompts: half campus questions (newest, least discovered), then alumni, then attendance, in random order. */
+/** [count] prompts: placements first (the newest thing it knows), then campus, alumni and attendance, in random order. */
 function pickSuggestions(count: number): string[] {
-  const campus = shuffle(CAMPUS_POOL).slice(0, Math.ceil(count / 2)); // 2 of 4
-  const alumni = shuffle(ALUMNI_POOL).slice(0, Math.max(1, Math.floor((count - campus.length) / 2))); // 1 of 4
-  const attendance = shuffle(ATTENDANCE_POOL).slice(0, Math.max(0, count - campus.length - alumni.length));
-  return shuffle([...campus, ...alumni, ...attendance]);
+  const placement = shuffle(PLACEMENT_POOL).slice(0, Math.ceil(count / 2)); // 2 of 4
+  const campus = shuffle(CAMPUS_POOL).slice(0, 1);
+  const rest = shuffle([...ALUMNI_POOL, ...ATTENDANCE_POOL]).slice(0, Math.max(0, count - placement.length - campus.length));
+  return shuffle([...placement, ...campus, ...rest]);
 }
 
 let nextId = 0;
@@ -162,6 +177,7 @@ export default function Assistant() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>(() => pickSuggestions(4));
   const [showJump, setShowJump] = useState(false);
+  const [usage, setUsage] = useState<AgentUsage | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -300,6 +316,7 @@ export default function Assistant() {
       } finally {
         abortRef.current = null;
         setBusy(false);
+        void fetchAgentUsage().then(setUsage);
       }
     },
     [busy, conversationId, updateMessage],
@@ -333,6 +350,11 @@ export default function Assistant() {
     },
     [updateMessage],
   );
+
+  const refreshUsage = useCallback(() => {
+    void fetchAgentUsage().then(setUsage);
+  }, []);
+  useEffect(refreshUsage, [refreshUsage]);
 
   const stop = () => abortRef.current?.abort();
 
@@ -386,7 +408,7 @@ export default function Assistant() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-[15px] font-semibold leading-tight">Assistant</h1>
-            <p className="truncate text-[11px] text-muted-foreground">Attendance, alumni &amp; campus</p>
+            <p className="truncate text-[11px] text-muted-foreground">Attendance, placements &amp; campus</p>
           </div>
         </div>
         <Button variant="ghost" size="icon" onClick={() => navigate("/assistant/guide")} aria-label="What the assistant knows" className="h-9 w-9 rounded-full">
@@ -439,15 +461,13 @@ export default function Assistant() {
                 setTimeout(() => scrollToBottom("auto"), 250);
               }}
               onBlur={() => setFocused(false)}
-              placeholder={busy ? "Type your next question…" : "Ask about attendance, friends, batches…"}
+              placeholder={busy ? "Type your next question…" : "Ask about attendance, placements, campus…"}
               rows={1}
               enterKeyHint="send"
               className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
             />
             <div className="mt-1.5 flex items-center justify-between gap-2">
-              <span className="hidden text-[11px] text-muted-foreground sm:inline">
-              </span>
-              <span className="sm:hidden" />
+              <QuestionsLeft usage={usage} />
               {busy ? (
                 <button
                   type="button"
@@ -500,6 +520,36 @@ function useVisualViewportHeight(): number | null {
     };
   }, []);
   return height;
+}
+
+/** "3 of 5 questions left today" under the input; hidden when there is no cap or the count is unknown. */
+function QuestionsLeft({ usage }: { usage: AgentUsage | null }) {
+  if (!usage || usage.unlimited || usage.remainingToday == null) return <span />;
+  const left = usage.remainingToday;
+  const cap = usage.dailyLimit;
+  const resets = new Date(usage.resetsAt);
+  const at = Number.isNaN(resets.getTime()) ? "midnight" : resets.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  return (
+    <span
+      className={cn(
+        "flex min-w-0 items-center gap-1.5 text-[11px]",
+        left === 0 ? "font-medium text-rose-400" : left <= 1 ? "text-amber-300" : "text-muted-foreground",
+      )}
+    >
+      <span className="flex gap-0.5" aria-hidden>
+        {cap != null &&
+          cap <= 10 &&
+          Array.from({ length: cap }).map((_, i) => (
+            <span key={i} className={cn("h-1.5 w-1.5 rounded-full", i < left ? "bg-current" : "bg-white/15")} />
+          ))}
+      </span>
+      <span className="truncate">
+        {left === 0
+          ? `No questions left today · resets ${at === "12:00 am" ? "at midnight" : at}`
+          : `${left}${cap != null ? ` of ${cap}` : ""} question${left === 1 ? "" : "s"} left today`}
+      </span>
+    </span>
+  );
 }
 
 function EmptyState({ suggestions, onPick, onGuide }: { suggestions: string[]; onPick: (s: string) => void; onGuide: () => void }) {

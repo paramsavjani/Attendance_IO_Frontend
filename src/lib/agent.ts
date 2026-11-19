@@ -83,6 +83,32 @@ export class AgentLimitError extends Error {
   }
 }
 
+/** Questions left for the signed-in student (`/api/agent/usage`). Null limits mean no cap. */
+export interface AgentUsage {
+  unlimited: boolean;
+  dailyLimit: number | null;
+  usedToday: number;
+  remainingToday: number | null;
+  weeklyLimit: number | null;
+  remainingThisWeek: number | null;
+  resetsAt: string;
+}
+
+/** Null when the server is older than the endpoint or the request fails; the counter then just hides. */
+export async function fetchAgentUsage(): Promise<AgentUsage | null> {
+  const token = getToken();
+  try {
+    const response = await fetch(`${AGENT_BASE}/usage`, {
+      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as AgentUsage;
+  } catch {
+    return null;
+  }
+}
+
 /** Records the Yes/No answer to the paid-plan question; resolves to the thank-you line to show. */
 export async function answerSubscriptionOffer(interested: boolean): Promise<string> {
   const token = getToken();

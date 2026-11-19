@@ -73,8 +73,8 @@ const DOMAINS: Domain[] = [
   {
     icon: Briefcase,
     title: "Placements",
-    blurb: "Official placement figures by season and level (highest, average, median, sector and city split), recruiters, and company sessions on campus.",
-    examples: ["Average and highest package for UG in 2024-25", "Which sectors hired the most in 2023-24?", "Did Google recruit from DAU?"],
+    blurb: "This season (2026-27): every company that came, its roles, package, stipend, CPI cut-off, eligible programmes and JD files, who got selected or a PPO, and the season's average, median and highest. Past seasons: official figures by level, recruiters and company sessions.",
+    examples: ["How is placement going this year? Average, highest and PPOs", "Who got placed at Tekion?", "Which companies came for MnC above 20 LPA?", "Average and highest package for UG in 2024-25"],
   },
   {
     icon: Landmark,

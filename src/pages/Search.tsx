@@ -957,9 +957,9 @@ export default function Search() {
           {assistantAllowed && <AssistantPromo
             title="Or just ask the assistant"
             examples={[
+              "How is placement going this year?",
               "Compare my attendance with a friend",
               "Alumni at Google I can reach on LinkedIn",
-              "Convener of the Cultural Committee and their number",
               "When do end-sem exams start?",
             ]}
             onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
@@ -1047,6 +1047,7 @@ export default function Search() {
           examples={[
             `Show ${query.trim()}'s attendance this semester`,
             `Compare my attendance with ${query.trim()}`,
+            `Where did ${query.trim()} get placed?`,
             `Alumni named ${query.trim()} — where do they work?`,
           ]}
           onOpen={(q, origin) => revealFrom(origin, () => navigate(q ? `/assistant?q=${encodeURIComponent(q)}` : "/assistant"))}
