@@ -1469,6 +1469,7 @@ export default function Dashboard() {
               polls={polls}
               onOpenSheet={openPollsSheet}
               onPlanLeave={() => setLeavePlannerOpen(true)}
+              showPlacements={Boolean(student) && !student?.isDemo}
             />
 
             {/* Compact Notices */}
