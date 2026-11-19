@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { trackPlacements, type PlacementsFrom } from "@/lib/placementsTracking";
 import {
   ArrowDownWideNarrow,
   ArrowRight,
@@ -71,6 +72,7 @@ export default function Placements() {
 
 function ListView() {
   const navigate = useNavigate();
+  const openedFrom = ((useLocation().state as { from?: PlacementsFrom } | null)?.from ?? "direct") as PlacementsFrom;
   const [data, setData] = useState<PlacementList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -78,9 +80,12 @@ function ListView() {
   const [sort, setSort] = useState<SortKey>("recent");
 
   useEffect(() => {
+    trackPlacements("open_list", { from: openedFrom });
     fetchPlacements()
       .then(setData)
       .catch((e) => setError(e instanceof PlacementsForbiddenError ? FORBIDDEN : "Couldn't load placements. Check your connection and try again."));
+    // Logged once per visit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rows = useMemo(() => {
@@ -96,10 +101,28 @@ function ListView() {
     return list;
   }, [data, query, filter, sort]);
 
+  // Log what students search for, once they stop typing
+  const loggedQuery = useRef("");
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2 || q.toLowerCase() === loggedQuery.current || !data) return;
+    const t = setTimeout(() => {
+      loggedQuery.current = q.toLowerCase();
+      trackPlacements("search", { query: q, results: rows.length });
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [query, rows.length, data]);
+
+  const openCompany = (id: string, from: PlacementsFrom) => navigate(`/placements/${id}`, { state: { from } });
+
   const withResults = rows.filter((c) => c.selectedCount > 0 || c.resultDeclared);
   const others = rows.filter((c) => c.selectedCount === 0 && !c.resultDeclared);
   const s = data?.summary;
-  const nextSort = () => setSort((cur) => SORTS[(SORTS.findIndex((x) => x.key === cur) + 1) % SORTS.length].key);
+  const nextSort = () => {
+    const next = SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key;
+    setSort(next);
+    trackPlacements("sort", { sort: next });
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-5 pb-8">
@@ -146,7 +169,7 @@ function ListView() {
                   <button
                     key={r.id}
                     type="button"
-                    onClick={() => navigate(`/placements/${r.id}`)}
+                    onClick={() => openCompany(r.id, "top_recruiters")}
                     className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.04] py-1.5 pl-1.5 pr-3 active:scale-95"
                   >
                     <CompanyMark name={r.name} size="sm" />
@@ -184,7 +207,10 @@ function ListView() {
                 <button
                   key={f.key}
                   type="button"
-                  onClick={() => setFilter(f.key)}
+                  onClick={() => {
+                    setFilter(f.key);
+                    trackPlacements("filter", { filter: f.key });
+                  }}
                   className={cn(
                     "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
                     filter === f.key ? "bg-white text-black" : "border border-white/[0.08] bg-white/[0.035] text-white/60",
@@ -207,15 +233,18 @@ function ListView() {
           </div>
 
           {withResults.length > 0 && (
-            <CompanyGroup title={`Results announced · ${withResults.length}`} companies={withResults} onOpen={(id) => navigate(`/placements/${id}`)} />
+            <CompanyGroup title={`Results announced · ${withResults.length}`} companies={withResults} onOpen={(id) => openCompany(id, "list")} />
           )}
-          {others.length > 0 && <CompanyGroup title={`Other drives · ${others.length}`} companies={others} onOpen={(id) => navigate(`/placements/${id}`)} />}
+          {others.length > 0 && <CompanyGroup title={`Other drives · ${others.length}`} companies={others} onOpen={(id) => openCompany(id, "list")} />}
           {rows.length === 0 && <EmptyNote>No company matches that.</EmptyNote>}
 
           <AskAiCard
             title="Ask about placements"
             detail={'"Who got placed at Tekion?" · "Quant roles above 20 LPA"'}
-            onClick={() => navigate(`/assistant?q=${encodeURIComponent("How is placement going this year? Average, highest and PPOs")}`)}
+            onClick={() => {
+              trackPlacements("ask_ai", {});
+              navigate(`/assistant?q=${encodeURIComponent("How is placement going this year? Average, highest and PPOs")}`);
+            }}
           />
 
           {s && <p className="px-1 text-[11px] leading-relaxed text-white/35">{s.coverage}</p>}
@@ -284,6 +313,7 @@ type Tab = "roles" | "selected" | "files";
 
 function CompanyView({ id }: { id: string }) {
   const navigate = useNavigate();
+  const from = ((useLocation().state as { from?: PlacementsFrom } | null)?.from ?? "direct") as PlacementsFrom;
   const [company, setCompany] = useState<PlacementCompany | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("selected");
@@ -294,10 +324,13 @@ function CompanyView({ id }: { id: string }) {
     fetchPlacementCompany(id)
       .then((c) => {
         setCompany(c);
+        if (c) trackPlacements("view_company", { companyId: c.id, company: c.name, from });
         // Selected first; a company whose result isn't out yet opens on its roles instead of an empty list
         if (c && c.selections.length === 0 && !c.resultOn) setTab("roles");
       })
       .catch((e) => setError(e instanceof PlacementsForbiddenError ? FORBIDDEN : "Couldn't load this company. Check your connection."));
+    // `from` is read once per company; it doesn't change while the page is open
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate("/placements", { replace: true }));
@@ -374,7 +407,10 @@ function CompanyView({ id }: { id: string }) {
           <button
             key={t.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => {
+              setTab(t.key);
+              trackPlacements("tab", { companyId: c.id, company: c.name, tab: t.key });
+            }}
             className={cn(
               "flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold transition-colors",
               tab === t.key ? "bg-white/[0.1] text-white" : "text-white/45",
@@ -389,7 +425,7 @@ function CompanyView({ id }: { id: string }) {
       {tab === "roles" && (
         <div className="space-y-5">
           {c.drives.map((d) => (
-            <DriveSection key={d.eventId} drive={d} titled={c.drives.length > 1} />
+            <DriveSection key={d.eventId} drive={d} titled={c.drives.length > 1} co={{ id: c.id, name: c.name }} />
           ))}
           {!c.onPortal && (
             <EmptyNote>
@@ -459,7 +495,7 @@ function CompanyView({ id }: { id: string }) {
       {tab === "files" && (
         <section className="space-y-2">
           {files.map((f, i) => (
-            <JdFileCard key={i} file={f} />
+            <JdFileCard key={i} file={f} co={{ id: c.id, name: c.name }} />
           ))}
         </section>
       )}
@@ -467,7 +503,10 @@ function CompanyView({ id }: { id: string }) {
       <AskAiCard
         title={`Ask the AI about ${c.name}`}
         detail="Roles, CTC breakdown, rounds and who got selected"
-        onClick={() => navigate(`/assistant?q=${encodeURIComponent(`Tell me about ${c.name} placements this season: roles, CTC, stipend, CPI cut-off and who got selected`)}`)}
+        onClick={() => {
+          trackPlacements("ask_ai", { companyId: c.id, company: c.name });
+          navigate(`/assistant?q=${encodeURIComponent(`Tell me about ${c.name} placements this season: roles, CTC, stipend, CPI cut-off and who got selected`)}`);
+        }}
       />
 
       <p className="px-1 text-[11px] leading-relaxed text-white/35">
@@ -477,7 +516,9 @@ function CompanyView({ id }: { id: string }) {
   );
 }
 
-function DriveSection({ drive: d, titled }: { drive: PlacementDrive; titled: boolean }) {
+type Co = { id: string; name: string };
+
+function DriveSection({ drive: d, titled, co }: { drive: PlacementDrive; titled: boolean; co: Co }) {
   const when = d.driveDate ? `Drive ${formatDay(d.driveDate)}` : d.registrationStart ? `Registration ${formatDay(d.registrationStart)}` : null;
   const meta = [d.offerType, when, d.location ? titleCase(d.location) : null, d.ugCpi != null ? `CPI ≥ ${d.ugCpi}` : null].filter(Boolean);
   return (
@@ -485,7 +526,7 @@ function DriveSection({ drive: d, titled }: { drive: PlacementDrive; titled: boo
       <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
         <h2 className={cn(label, "truncate px-0")}>{titled ? d.title : "Roles"}</h2>
         {d.source && (
-          <a href={d.source} target="_blank" rel="noreferrer" className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-violet-300/80">
+          <a href={d.source} target="_blank" rel="noreferrer" onClick={() => trackPlacements("portal_link", { companyId: co.id, company: co.name })} className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-violet-300/80">
             Portal <ExternalLink className="h-3 w-3" />
           </a>
         )}
@@ -503,7 +544,7 @@ function DriveSection({ drive: d, titled }: { drive: PlacementDrive; titled: boo
           </div>
         )}
         {d.profiles.map((p, i) => (
-          <RoleRow key={i} profile={p} />
+          <RoleRow key={i} profile={p} co={co} />
         ))}
         {titled && d.openForLabels.length > 0 && <p className="px-3.5 py-2.5 text-[11.5px] text-white/45">Open for {d.openForLabels.join(", ")}</p>}
         {d.bond && <p className="px-3.5 py-2.5 text-[12px] text-amber-300/90">Bond: {d.bond}</p>}
@@ -512,7 +553,7 @@ function DriveSection({ drive: d, titled }: { drive: PlacementDrive; titled: boo
   );
 }
 
-function RoleRow({ profile: p }: { profile: PlacementProfile }) {
+function RoleRow({ profile: p, co }: { profile: PlacementProfile; co: Co }) {
   const [open, setOpen] = useState(false);
   const ug = p.ugCtcMax != null ? formatLpa(p.ugCtcMin, p.ugCtcMax) : null;
   const pg = p.pgCtcMax != null ? formatLpa(p.pgCtcMin, p.pgCtcMax) : null;
@@ -520,7 +561,11 @@ function RoleRow({ profile: p }: { profile: PlacementProfile }) {
     <div>
       <button
         type="button"
-        onClick={() => p.description && setOpen((o) => !o)}
+        onClick={() => {
+          if (!p.description) return;
+          if (!open) trackPlacements("role_open", { companyId: co.id, company: co.name, role: p.name });
+          setOpen((o) => !o);
+        }}
         className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors active:bg-white/[0.06]"
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
@@ -542,13 +587,20 @@ function RoleRow({ profile: p }: { profile: PlacementProfile }) {
   );
 }
 
-function JdFileCard({ file: f }: { file: { file: string; text: string; transcribed: boolean; drive: string } }) {
+function JdFileCard({ file: f, co }: { file: { file: string; text: string; transcribed: boolean; drive: string }; co: Co }) {
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState(false);
   const long = f.text.length > 1500;
   return (
     <div className={card}>
-      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-3 px-3.5 py-3 text-left active:bg-white/[0.06]">
+      <button
+        type="button"
+        onClick={() => {
+          if (!open) trackPlacements("jd_open", { companyId: co.id, company: co.name, file: f.file });
+          setOpen((o) => !o);
+        }}
+        className="flex w-full items-center gap-3 px-3.5 py-3 text-left active:bg-white/[0.06]"
+      >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
           <FileText className="h-[18px] w-[18px]" />
         </span>

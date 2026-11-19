@@ -935,7 +935,7 @@ export default function Search() {
         <div className="space-y-4">
           {!me?.isDemo && <button
             type="button"
-            onClick={() => navigate("/placements")}
+            onClick={() => navigate("/placements", { state: { from: "search" } })}
             className="flex w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-indigo-600/25 via-violet-600/10 to-card p-3.5 text-left transition-transform active:scale-[0.99]"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow">

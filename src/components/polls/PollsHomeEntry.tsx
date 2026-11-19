@@ -67,7 +67,7 @@ export function PollsHomeEntry({ polls, onOpenSheet, onPlanLeave, showPlacements
         </span>
       </button>
       {showPlacements ? (
-        <button type="button" onClick={() => navigate("/placements")} className={tile} aria-label={`Placements, ${placementsDetail}`}>
+        <button type="button" onClick={() => navigate("/placements", { state: { from: "home" } })} className={tile} aria-label={`Placements, ${placementsDetail}`}>
           <PlacementsIcon className="h-8 w-8" />
           <span className="min-w-0">
             <span className="block truncate text-xs font-semibold">Placements</span>
