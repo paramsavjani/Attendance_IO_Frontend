@@ -91,7 +91,8 @@ export default function Search() {
   const [isSearching, setIsSearching] = useState(false);
   const [attendanceData, setAttendanceData] = useState<StudentAttendanceData | null>(null);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
-  const [attendanceSource, setAttendanceSource] = useState<"STUDENT" | "INSTITUTE">("STUDENT");
+  // A profile opens on the institute's official attendance; "Student Marked" is one tap away
+  const [attendanceSource, setAttendanceSource] = useState<"STUDENT" | "INSTITUTE">("INSTITUTE");
   const [currentSemester, setCurrentSemester] = useState<{ year: number; type: string } | null>(null);
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -214,6 +215,8 @@ export default function Search() {
       }
     } else {
       setSelectedStudent(null);
+      // Leaving a profile: the next one opens on institute data again
+      setAttendanceSource("INSTITUTE");
     }
   }, [studentIdParam, students, setSearchParams]);
 
@@ -482,18 +485,9 @@ export default function Search() {
             className="absolute top-1 bottom-1 rounded-xl bg-white/80 dark:bg-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.3)] backdrop-blur-xl border border-white/20 transition-all duration-300 ease-spring"
             style={{
               width: "calc((100% - 12px) / 2)",
-              left: attendanceSource === "STUDENT" ? "4px" : "calc(50% + 2px)",
+              left: attendanceSource === "INSTITUTE" ? "4px" : "calc(50% + 2px)",
             }}
           />
-          <button
-            onClick={() => setAttendanceSource("STUDENT")}
-            className={cn(
-              "flex-1 py-1.5 px-3 rounded-xl text-sm font-medium transition-colors duration-200 relative z-10",
-              attendanceSource === "STUDENT" ? "text-foreground" : "text-muted-foreground"
-            )}
-          >
-            Student Marked
-          </button>
           <button
             onClick={() => setAttendanceSource("INSTITUTE")}
             className={cn(
@@ -502,6 +496,15 @@ export default function Search() {
             )}
           >
             Institute Marked
+          </button>
+          <button
+            onClick={() => setAttendanceSource("STUDENT")}
+            className={cn(
+              "flex-1 py-1.5 px-3 rounded-xl text-sm font-medium transition-colors duration-200 relative z-10",
+              attendanceSource === "STUDENT" ? "text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Student Marked
           </button>
         </div>
 
