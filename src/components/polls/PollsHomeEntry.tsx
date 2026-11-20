@@ -34,8 +34,8 @@ export function PollsHomeEntry({ polls, onOpenSheet, onPlanLeave, showPlacements
     fetchPlacements()
       .then(({ summary }) => {
         if (cancelled) return;
-        if (summary.averageCtcLpa != null) setPlacementsDetail(`Avg ${summary.averageCtcLpa.toFixed(1)} LPA · ${summary.offers} offers`);
-        else if (summary.offers > 0) setPlacementsDetail(`${summary.offers} offers so far`);
+        if (summary.averageCtcLpa != null) setPlacementsDetail(`Avg ${summary.averageCtcLpa.toFixed(1)} LPA · ${summary.studentsSelected} placed`);
+        else if (summary.studentsSelected > 0) setPlacementsDetail(`${summary.studentsSelected} placed so far`);
       })
       .catch(() => {});
     return () => {

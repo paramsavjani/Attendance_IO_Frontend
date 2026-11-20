@@ -208,9 +208,9 @@ function ListView() {
             </div>
           )}
           <div className="relative mt-4 grid grid-cols-3 divide-x divide-white/[0.07] rounded-xl bg-black/25 py-2.5">
-            <Metric value={s.offers} label="Offers" />
-            <Metric value={s.ppos} label="PPOs" />
             <Metric value={s.studentsSelected} label="Students" />
+            <Metric value={s.ppos} label="PPOs" />
+            <Metric value={s.companiesWithSelections} label="Companies" />
           </div>
           {s.topRecruiters.length > 0 && (
             <div className="relative mt-4">

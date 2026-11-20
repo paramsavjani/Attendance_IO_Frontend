@@ -6,7 +6,9 @@ export interface PlacementSummary {
   companiesOnPortal: number;
   companiesWithSelections: number;
   companiesWithNoSelection?: number;
+  /** One per student (best offer); allOffers counts every offer. */
   offers: number;
+  allOffers?: number;
   ppos: number;
   campusSelections: number;
   studentsSelected: number;
