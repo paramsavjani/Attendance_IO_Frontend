@@ -22,8 +22,10 @@ export default defineConfig(() => ({
         // Split large vendor libraries out of the main bundle so each chunk
         // stays under the 500 kB warning limit and caches independently.
         manualChunks(id) {
-          // Rollup's shared CommonJS helper: keep it in vendor, or it lands in (and drags in) the lazy pdf.js chunk
-          if (id.includes("commonjsHelpers")) return "vendor";
+          // Rollup's shared CommonJS helper goes with React, the chunk everything else already depends on.
+          // Not in vendor: React needs the helper too, so vendor <-> react would load in a cycle (black screen).
+          // Not left alone either: it would land in the lazy pdf.js chunk and load pdf.js at startup.
+          if (id.includes("commonjsHelpers")) return "react";
           if (!id.includes("node_modules")) return;
           // pdf.js is only imported when a JD PDF is opened, so keep it out of the vendor chunk loaded at start
           if (/[\\/]node_modules[\\/]pdfjs-dist[\\/]/.test(id)) return "pdfjs";
