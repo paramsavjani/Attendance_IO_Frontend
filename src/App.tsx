@@ -172,9 +172,21 @@ function ShortcutLinks() {
       if (cancelled) h.remove();
       else handle = h;
     });
+    // A tapped push notification can carry a page to open (data.route, e.g. "/placements").
+    // The plugin holds a tap that launched the app until this listener is added.
+    let tapHandle: { remove: () => Promise<void> } | undefined;
+    import("@capacitor/push-notifications").then(async ({ PushNotifications }) => {
+      const h = await PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
+        const route = (notification.data as { route?: string } | undefined)?.route;
+        if (route && /^\/[a-z0-9/_-]*$/i.test(route)) navigate(route, { state: { from: "notification" } });
+      });
+      if (cancelled) h.remove();
+      else tapHandle = h;
+    });
     return () => {
       cancelled = true;
       handle?.remove();
+      tapHandle?.remove();
     };
   }, [navigate]);
   return null;

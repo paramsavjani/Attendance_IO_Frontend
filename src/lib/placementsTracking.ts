@@ -22,4 +22,4 @@ export function trackPlacements(action: PlacementsAction, meta: Record<string, u
 }
 
 /** Where a company page was opened from, passed as router state. */
-export type PlacementsFrom = "list" | "top_recruiters" | "home" | "search" | "direct";
+export type PlacementsFrom = "list" | "top_recruiters" | "home" | "search" | "notification" | "direct";
