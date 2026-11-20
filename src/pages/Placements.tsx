@@ -192,6 +192,21 @@ function ListView() {
               </div>
             )}
           </div>
+          {s.placedPercent != null && s.batchStudents != null && (
+            <div className="relative mt-4">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-[12.5px] font-semibold text-white/85">
+                  <span className="text-[15px] font-bold tabular-nums text-emerald-300">{s.placedPercent.toFixed(1)}%</span> of B.Tech {s.batchYear} placed
+                </p>
+                <p className="text-[11px] tabular-nums text-white/45">
+                  {s.batchPlaced} of {s.batchStudents} students
+                </p>
+              </div>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+                <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300" style={{ width: `${Math.min(100, s.placedPercent)}%` }} />
+              </div>
+            </div>
+          )}
           <div className="relative mt-4 grid grid-cols-3 divide-x divide-white/[0.07] rounded-xl bg-black/25 py-2.5">
             <Metric value={s.offers} label="Offers" />
             <Metric value={s.ppos} label="PPOs" />

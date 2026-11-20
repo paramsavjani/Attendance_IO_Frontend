@@ -10,6 +10,11 @@ export interface PlacementSummary {
   ppos: number;
   campusSelections: number;
   studentsSelected: number;
+  /** The batch being placed, its size in the student list, how many have an offer, and that as a %. */
+  batchYear?: string | null;
+  batchStudents?: number | null;
+  batchPlaced?: number | null;
+  placedPercent?: number | null;
   highestCtcLpa: number | null;
   highestCtcCompany: string | null;
   averageCtcLpa: number | null;
