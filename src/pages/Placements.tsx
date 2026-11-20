@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
 import { trackPlacements, type PlacementsFrom } from "@/lib/placementsTracking";
 import {
   ArrowDownWideNarrow,
@@ -70,19 +70,54 @@ export default function Placements() {
 
 // ── Season list ──────────────────────────────────────────────────────────────
 
+/**
+ * What the list looked like when a company was opened, so pressing back lands on the same spot
+ * with the same search, filter and sort instead of the top. Lives for the app session only.
+ */
+const listMemory: { data: PlacementList | null; query: string; filter: string; sort: SortKey; scrollTop: number } = {
+  data: null,
+  query: "",
+  filter: "all",
+  sort: "recent",
+  scrollTop: 0,
+};
+
+/** The page scrolls inside the layout's container, not the window. */
+function scrollParent(el: HTMLElement | null): HTMLElement | null {
+  for (let p = el?.parentElement; p; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY;
+    if (o === "auto" || o === "scroll") return p;
+  }
+  return null;
+}
+
 function ListView() {
   const navigate = useNavigate();
+  // Back from a company (POP) restores the list as it was; any other way in starts fresh.
+  const returning = useNavigationType() === "POP" && listMemory.data != null;
   const openedFrom = ((useLocation().state as { from?: PlacementsFrom } | null)?.from ?? "direct") as PlacementsFrom;
-  const [data, setData] = useState<PlacementList | null>(null);
+  const [data, setData] = useState<PlacementList | null>(listMemory.data);
   const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<string>("all");
-  const [sort, setSort] = useState<SortKey>("recent");
+  const [query, setQuery] = useState(returning ? listMemory.query : "");
+  const [filter, setFilter] = useState<string>(returning ? listMemory.filter : "all");
+  const [sort, setSort] = useState<SortKey>(returning ? listMemory.sort : "recent");
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!returning || !listMemory.scrollTop) return;
+    const el = scrollParent(rootRef.current);
+    if (el) el.scrollTop = listMemory.scrollTop;
+    // Only on arrival
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     trackPlacements("open_list", { from: openedFrom });
     fetchPlacements()
-      .then(setData)
+      .then((d) => {
+        listMemory.data = d;
+        setData(d);
+      })
       .catch((e) => setError(e instanceof PlacementsForbiddenError ? FORBIDDEN : "Couldn't load placements. Check your connection and try again."));
     // Logged once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,7 +148,10 @@ function ListView() {
     return () => clearTimeout(t);
   }, [query, rows.length, data]);
 
-  const openCompany = (id: string, from: PlacementsFrom) => navigate(`/placements/${id}`, { state: { from } });
+  const openCompany = (id: string, from: PlacementsFrom) => {
+    Object.assign(listMemory, { query, filter, sort, scrollTop: scrollParent(rootRef.current)?.scrollTop ?? 0 });
+    navigate(`/placements/${id}`, { state: { from } });
+  };
 
   const s = data?.summary;
   const nextSort = () => {
@@ -123,7 +161,7 @@ function ListView() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-5 pb-8">
+    <div ref={rootRef} className="flex flex-1 flex-col gap-5 pb-8">
       <PageHeader
         title="Placements"
         subtitle={data ? `${data.season ?? ""} season${s?.resultsUpTo ? ` · results till ${formatDay(s.resultsUpTo)}` : ""}` : " "}
