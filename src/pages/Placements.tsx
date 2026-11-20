@@ -115,8 +115,6 @@ function ListView() {
 
   const openCompany = (id: string, from: PlacementsFrom) => navigate(`/placements/${id}`, { state: { from } });
 
-  const withResults = rows.filter((c) => c.selectedCount > 0 || c.resultDeclared);
-  const others = rows.filter((c) => c.selectedCount === 0 && !c.resultDeclared);
   const s = data?.summary;
   const nextSort = () => {
     const next = SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key;
@@ -232,10 +230,7 @@ function ListView() {
             </button>
           </div>
 
-          {withResults.length > 0 && (
-            <CompanyGroup title={`Results announced · ${withResults.length}`} companies={withResults} onOpen={(id) => openCompany(id, "list")} />
-          )}
-          {others.length > 0 && <CompanyGroup title={`Other drives · ${others.length}`} companies={others} onOpen={(id) => openCompany(id, "list")} />}
+          {rows.length > 0 && <CompanyGroup title={`All companies · ${rows.length}`} companies={rows} onOpen={(id) => openCompany(id, "list")} />}
           {rows.length === 0 && <EmptyNote>No company matches that.</EmptyNote>}
 
           <AskAiCard
@@ -296,7 +291,10 @@ function CompanyGroup({ title, companies, onOpen }: { title: string; companies: 
                   <span className="h-1.5 w-1.5 rounded-full bg-white/30" />0 placed
                 </span>
               ) : (
-                <span className="mt-0.5 block text-[11px] text-white/35">{c.offerTypes.filter((t) => t !== "PPO").join(" + ") || "Drive"}</span>
+                <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-amber-300/90">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+                  Result awaited
+                </span>
               )}
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-white/25" />
