@@ -14,6 +14,7 @@ export type PlacementsAction =
   | "tab"
   | "role_open"
   | "jd_open"
+  | "jd_pdf"
   | "portal_link"
   | "ask_ai";
 

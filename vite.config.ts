@@ -22,7 +22,11 @@ export default defineConfig(() => ({
         // Split large vendor libraries out of the main bundle so each chunk
         // stays under the 500 kB warning limit and caches independently.
         manualChunks(id) {
+          // Rollup's shared CommonJS helper: keep it in vendor, or it lands in (and drags in) the lazy pdf.js chunk
+          if (id.includes("commonjsHelpers")) return "vendor";
           if (!id.includes("node_modules")) return;
+          // pdf.js is only imported when a JD PDF is opened, so keep it out of the vendor chunk loaded at start
+          if (/[\\/]node_modules[\\/]pdfjs-dist[\\/]/.test(id)) return "pdfjs";
           if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler|@remix-run)[\\/]/.test(id)) return "react";
           if (/[\\/]node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor)[\\/]/.test(id)) return "charts";
           if (/[\\/]node_modules[\\/](react-markdown|remark-[^\\/]+|rehype-[^\\/]+|micromark[^\\/]*|mdast-[^\\/]+|hast-[^\\/]+|unified|unist-[^\\/]+|vfile[^\\/]*)[\\/]/.test(id)) return "markdown";

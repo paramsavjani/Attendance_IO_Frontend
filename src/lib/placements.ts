@@ -77,9 +77,23 @@ export interface PlacementDrive {
   bond: string | null;
   hasJdFile: boolean;
   /** Text of the drive's job description files (PDF / Word). */
-  jdFiles?: { file: string; text: string; transcribed: boolean }[];
+  jdFiles?: PlacementJdFile[];
   profiles: PlacementProfile[];
   source: string | null;
+}
+
+/** A JD file's text; when `pdf`, the file as sent can be opened from jdPdfUrl(). */
+export interface PlacementJdFile {
+  file: string;
+  text: string;
+  transcribed: boolean;
+  original?: string | null;
+  pdf?: boolean;
+}
+
+/** The JD PDF as the company sent it (DAU students only). */
+export function jdPdfUrl(eventId: number, original: string): string {
+  return `${API_CONFIG.BASE_URL}/api/placements/jd/${eventId}/${encodeURIComponent(original)}`;
 }
 
 export interface PlacementSelection {

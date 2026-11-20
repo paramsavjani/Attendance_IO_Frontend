@@ -20,15 +20,18 @@ import {
   X,
 } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
+import { PdfViewer } from "@/components/placements/PdfViewer";
 import { cn } from "@/lib/utils";
 import {
   fetchPlacementCompany,
   fetchPlacements,
   formatDay,
   formatLpa,
+  jdPdfUrl,
   type PlacementCompany,
   type PlacementCompanyCard,
   type PlacementDrive,
+  type PlacementJdFile,
   type PlacementList,
   type PlacementProfile,
   PlacementsForbiddenError,
@@ -404,7 +407,7 @@ function CompanyView({ id }: { id: string }) {
   }
 
   const c = company;
-  const files = c.drives.flatMap((d) => (d.jdFiles ?? []).map((f) => ({ ...f, drive: d.title })));
+  const files = c.drives.flatMap((d) => (d.jdFiles ?? []).map((f) => ({ ...f, drive: d.title, eventId: d.eventId })));
   const selected = [...c.selections.filter((x) => x.kind === "PPO"), ...c.selections.filter((x) => x.kind !== "PPO")];
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "selected", label: "Selected", count: selected.length },
@@ -638,30 +641,52 @@ function RoleRow({ profile: p, co }: { profile: PlacementProfile; co: Co }) {
   );
 }
 
-function JdFileCard({ file: f, co }: { file: { file: string; text: string; transcribed: boolean; drive: string }; co: Co }) {
+function JdFileCard({ file: f, co }: { file: PlacementJdFile & { drive: string; eventId: number }; co: Co }) {
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
   const long = f.text.length > 1500;
+  const hasText = f.text.trim().length > 0;
+  const canPdf = Boolean(f.pdf && f.original);
+  const openPdf = () => {
+    trackPlacements("jd_pdf", { companyId: co.id, company: co.name, file: f.file });
+    setPdfOpen(true);
+  };
   return (
     <div className={card}>
-      <button
-        type="button"
-        onClick={() => {
-          if (!open) trackPlacements("jd_open", { companyId: co.id, company: co.name, file: f.file });
-          setOpen((o) => !o);
-        }}
-        className="flex w-full items-center gap-3 px-3.5 py-3 text-left active:bg-white/[0.06]"
-      >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
-          <FileText className="h-[18px] w-[18px]" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13.5px] font-semibold">{f.file}</span>
-          <span className="block truncate text-[11.5px] text-white/45">{f.transcribed ? "Transcribed from an image" : `${Math.max(1, Math.round(f.text.split(/\s+/).length / 200))} min read`}</span>
-        </span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-white/30 transition-transform", open && "rotate-180")} />
-      </button>
-      {open && (
+      <div className="flex items-center gap-2 pr-3">
+        <button
+          type="button"
+          onClick={() => {
+            if (!hasText) return openPdf();
+            if (!open) trackPlacements("jd_open", { companyId: co.id, company: co.name, file: f.file });
+            setOpen((o) => !o);
+          }}
+          className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-3.5 text-left active:bg-white/[0.06]"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
+            <FileText className="h-[18px] w-[18px]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13.5px] font-semibold">{f.file}</span>
+            <span className="block truncate text-[11.5px] text-white/45">
+              {!hasText ? "PDF" : f.transcribed ? "Transcribed from an image" : `${Math.max(1, Math.round(f.text.split(/\s+/).length / 200))} min read`}
+            </span>
+          </span>
+          {hasText && <ChevronDown className={cn("h-4 w-4 shrink-0 text-white/30 transition-transform", open && "rotate-180")} />}
+        </button>
+        {canPdf && (
+          <button
+            type="button"
+            onClick={openPdf}
+            className="shrink-0 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-1 text-[11.5px] font-semibold text-sky-200 active:scale-95"
+          >
+            View PDF
+          </button>
+        )}
+      </div>
+      {canPdf && <PdfViewer open={pdfOpen} onOpenChange={setPdfOpen} url={jdPdfUrl(f.eventId, f.original!)} title={f.file} subtitle={co.name} />}
+      {open && hasText && (
         <div className="border-t border-white/[0.05] bg-black/20 px-3.5 py-3">
           <p className="whitespace-pre-line break-words text-[12px] leading-relaxed text-white/65">{long && !full ? `${f.text.slice(0, 1500)}…` : f.text}</p>
           {long && (
