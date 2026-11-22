@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { addDays, format, isAfter, isWeekend, parseISO, startOfDay } from "date-fns";
 import { AlertTriangle, CalendarX2, CheckCircle2, CircleAlert, Loader2, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { API_CONFIG } from "@/lib/api";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { useCloseOnBack } from "@/lib/backOverlay";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { Calendar } from "@/components/ui/calendar";
@@ -68,7 +68,8 @@ export function LeavePlannerSheet({ open, onOpenChange, subjects, timetable, sta
   useEffect(() => {
     if (!open || endDate) return;
     const controller = new AbortController();
-    fetch(API_CONFIG.ENDPOINTS.CLASSES_END_DATE, { signal: controller.signal })
+    // Signed in, so first years get their own (later) last day of classes
+    authenticatedFetch(API_CONFIG.ENDPOINTS.CLASSES_END_DATE, { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => data?.endDate && setEndDate(parseISO(data.endDate)))
       .catch(() => undefined);

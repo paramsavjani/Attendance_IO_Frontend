@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch } from "@/lib/api";
+import { isAfterClassesEnd, useClassesEndDate } from "@/lib/classesEndDate";
 import { Subject, TimetableSlot } from "@/types/attendance";
 
 // Swipe navigation hook
@@ -53,6 +54,7 @@ export default function LabTutorial() {
     const now = new Date();
     const [calendarOpen, setCalendarOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date>(now);
+    const classesEndDate = useClassesEndDate();
 
     // Timetable states (view-only)
     const [labTimetable, setLabTimetable] = useState<TimetableSlot[]>([]);
@@ -238,7 +240,8 @@ export default function LabTutorial() {
     const isPastDate = isBefore(selectedDate, startOfDay(now)) && !isSelectedToday;
 
     const isLoading = isLoadingLab || isLoadingTutorial;
-    const schedule = getScheduleForDate(selectedDate, labTimetable, tutorialTimetable);
+    const isSemesterOver = isAfterClassesEnd(selectedDate, classesEndDate);
+    const schedule = isSemesterOver ? [] : getScheduleForDate(selectedDate, labTimetable, tutorialTimetable);
 
     return (
 
@@ -333,6 +336,13 @@ export default function LabTutorial() {
                         <div className="text-center py-12">
                             <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground">Loading schedule...</p>
+                        </div>
+                    ) : isSemesterOver ? (
+                        <div className="text-center py-12">
+                            <p className="font-medium text-sm text-muted-foreground">Semester's over</p>
+                            <p className="text-xs text-muted-foreground/70 mt-0.5">
+                                {classesEndDate ? `Last lab and tutorial day was ${format(classesEndDate, "MMM d")}.` : ""}
+                            </p>
                         </div>
                     ) : (
                         <div className="relative">

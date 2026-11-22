@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { API_CONFIG, authenticatedFetch, getAppBuildNumber } from "@/lib/api";
+import { isAfterClassesEnd, useClassesEndDate } from "@/lib/classesEndDate";
 import { readCachedJson } from "@/lib/offlineCache";
 import { Subject, TimetableSlot } from "@/types/attendance";
 
@@ -584,6 +585,7 @@ export default function Dashboard() {
   function getScheduleForDate(date: Date, includeLabTutorial: boolean = true) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
+    if (isAfterClassesEnd(date, classesEndDate)) return []; // semester over: no timetable classes
 
     const adjustedDay = dayOfWeek - 1;
     const daySlots = timetable.filter((slot) => slot.day === adjustedDay);
@@ -675,6 +677,7 @@ export default function Dashboard() {
   function getLabTutorialScheduleForDate(date: Date) {
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return [];
+    if (isAfterClassesEnd(date, classesEndDate)) return [];
 
     const adjustedDay = dayOfWeek - 1;
     const labDaySlots = labTimetable.filter((slot) => slot.day === adjustedDay && slot.startTime && slot.endTime && slot.subjectId);
@@ -730,6 +733,7 @@ export default function Dashboard() {
     showingTomorrowByDefault ? addDays(now, 1) : now
   );
   const [classesStartDate, setClassesStartDate] = useState<Date | null>(null);
+  const classesEndDate = useClassesEndDate();
 
   // Fetch classes start date
   useEffect(() => {
@@ -751,7 +755,7 @@ export default function Dashboard() {
     return () => controller.abort();
   }, []);
 
-  const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
+  const schedule = useMemo(() => getScheduleForDate(selectedDate, true), [selectedDate, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, classesEndDate]);
 
   // Today's marks for the widget. The context holds whichever date is on screen, so remember
   // today's while it is showing and keep them when the student looks at another day.
@@ -812,7 +816,7 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
     // getScheduleForDate reads these same inputs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, subjectStatsToday, subjectMinAttendance, todayAttendance, selectedDate]);
+  }, [timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, subjectStatsToday, subjectMinAttendance, todayAttendance, selectedDate, classesEndDate]);
 
   // Adding or removing a widget happens on the home screen, outside the app; count again when the
   // student comes back so the change is reported now rather than on the next data reload.
@@ -839,8 +843,8 @@ export default function Dashboard() {
     const upcoming = today.find((slot) => toMinutes(slot.endTime || slot.startTime) > nowMinutes);
     return (upcoming ?? today[today.length - 1])?.subject?.id ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pollsSheetOpen, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots]);
-  const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects]);
+  }, [pollsSheetOpen, timetable, enrolledSubjects, labTimetable, tutorialTimetable, lectureSlots, classesEndDate]);
+  const labTutorialSchedule = useMemo(() => getLabTutorialScheduleForDate(selectedDate), [selectedDate, labTimetable, tutorialTimetable, enrolledSubjects, classesEndDate]);
   const dateKey = format(selectedDate, "yyyy-MM-dd");
 
   // Fetch tomorrow's attendance when sleep warning targets tomorrow (after 15:00). Refetch when user changes date so we always have fresh data (e.g. after they cancel on tomorrow and swipe back to today).
@@ -1055,6 +1059,7 @@ export default function Dashboard() {
   const isFutureDate = isBefore(startOfDay(now), startOfDay(selectedDate));
   const isPastDate = isBefore(startOfDay(selectedDate), startOfDay(now));
   const isBeforeStartDate = classesStartDate ? isBefore(startOfDay(selectedDate), startOfDay(classesStartDate)) : false;
+  const isSemesterOver = isAfterClassesEnd(selectedDate, classesEndDate);
   const canMarkAttendance = true; // Allow marking for any date
 
   // Calculate if a subject needs attention (below minimum requirement)
@@ -1490,8 +1495,12 @@ export default function Dashboard() {
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
                   <BookOpen className="w-6 h-6 text-muted-foreground/50" />
                 </div>
-                <p className="font-medium text-sm text-muted-foreground">No classes</p>
-                <p className="text-xs text-muted-foreground/70 mt-0.5">Enjoy your day off!</p>
+                <p className="font-medium text-sm text-muted-foreground">{isSemesterOver ? "Semester's over" : "No classes"}</p>
+                <p className="text-xs text-muted-foreground/70 mt-0.5">
+                  {isSemesterOver && classesEndDate
+                    ? `Last class was ${format(classesEndDate, "MMM d")}. All the best for your exams!`
+                    : "Enjoy your day off!"}
+                </p>
               </div>
             )}
 
