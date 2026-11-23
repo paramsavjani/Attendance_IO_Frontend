@@ -134,8 +134,8 @@ function ListView() {
       if (filter !== "all" && filter !== "placed" && !c.programmes.some((p) => (filter === "M.Tech" || filter === "M.Sc" ? p.startsWith(filter) : p === filter))) return false;
       return !q || [c.name, ...c.roles, ...c.offerTypes].join(" ").toLowerCase().includes(q);
     });
-    if (sort === "ctc") return [...list].sort((a, b) => (b.maxCtcLpa ?? -1) - (a.maxCtcLpa ?? -1));
-    if (sort === "selected") return [...list].sort((a, b) => b.selectedCount - a.selectedCount || (b.maxCtcLpa ?? 0) - (a.maxCtcLpa ?? 0));
+    if (sort === "ctc") return [...list].sort((a, b) => (b.minCtcLpa ?? -1) - (a.minCtcLpa ?? -1));
+    if (sort === "selected") return [...list].sort((a, b) => b.selectedCount - a.selectedCount || (b.minCtcLpa ?? 0) - (a.minCtcLpa ?? 0));
     return list;
   }, [data, query, filter, sort]);
 
@@ -177,6 +177,9 @@ function ListView() {
         <section className={cn(card, "relative p-4")}>
           <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-10 h-44 w-44 rounded-full bg-indigo-500/10 blur-3xl" />
+          <p className="relative mb-3.5 inline-flex items-center gap-1.5 rounded-lg border border-violet-400/20 bg-violet-400/[0.1] px-2 py-1 text-[11.5px] font-semibold text-violet-200">
+            <GraduationCap className="h-3.5 w-3.5" /> UG (B.Tech) placements only
+          </p>
           <div className="relative flex items-end justify-between gap-3">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-white/45">Average CTC</p>
@@ -336,7 +339,7 @@ function CompanyGroup({ title, companies, onOpen }: { title: string; companies: 
               </span>
             </span>
             <span className="shrink-0 text-right">
-              <span className="block text-[14px] font-bold tabular-nums">{c.maxCtcLpa != null ? `₹${formatLpa(null, c.maxCtcLpa)}L` : "—"}</span>
+              <span className="block text-[14px] font-bold tabular-nums">{c.minCtcLpa != null ? `₹${formatLpa(c.minCtcLpa, null)}L` : "—"}</span>
               {c.selectedCount > 0 ? (
                 <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-emerald-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -444,7 +447,7 @@ function CompanyView({ id }: { id: string }) {
           </div>
         </div>
         <div className="relative mt-4 grid grid-cols-3 divide-x divide-white/[0.07] rounded-xl bg-black/25 py-2.5">
-          <Metric value={c.maxCtcLpa != null ? `₹${formatLpa(c.minCtcLpa, c.maxCtcLpa)}L` : "—"} label="Package" />
+          <Metric value={c.maxCtcLpa != null ? `₹${formatLpa(c.minCtcLpa, c.maxCtcLpa).replace(" – ", "–")}L` : "—"} label="Package" />
           <Metric value={c.minCpi != null ? String(c.minCpi) : "—"} label="CPI cut-off" />
           <Metric value={c.selectedCount} label="Placed" accent={c.selectedCount > 0} />
         </div>
@@ -729,8 +732,8 @@ function BackButton({ onClick }: { onClick: () => void }) {
 
 function Metric({ value, label: text, accent }: { value: number | string; label: string; accent?: boolean }) {
   return (
-    <div className="min-w-0 px-2 text-center">
-      <p className={cn("truncate text-[17px] font-bold leading-tight tabular-nums", accent && "text-emerald-400")}>{value}</p>
+    <div className="min-w-0 px-1 text-center">
+      <p className={cn("truncate font-bold leading-tight tabular-nums", String(value).length > 9 ? "text-[14px]" : "text-[17px]", accent && "text-emerald-400")}>{value}</p>
       <p className="mt-0.5 truncate text-[10.5px] text-white/45">{text}</p>
     </div>
   );

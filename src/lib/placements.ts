@@ -33,6 +33,7 @@ export interface PlacementCompanyCard {
   programmes: string[];
   roles: string[];
   maxCtcLpa: number | null;
+  /** What the company list shows and sorts by: a range counts at its minimum. */
   minCtcLpa: number | null;
   minCpi: number | null;
   selectedCount: number;
