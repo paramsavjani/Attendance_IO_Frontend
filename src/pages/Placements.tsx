@@ -50,10 +50,6 @@ const FILTERS = [
   { key: "all", label: "All" },
   { key: "placed", label: "With results" },
   { key: "B.Tech", label: "B.Tech" },
-  { key: "B.Tech MnC", label: "MnC" },
-  { key: "M.Tech", label: "M.Tech" },
-  { key: "M.Sc", label: "M.Sc" },
-  { key: "M.Des", label: "M.Des" },
 ] as const;
 
 const SORTS = [
@@ -132,7 +128,7 @@ function ListView() {
     const q = query.trim().toLowerCase();
     const list = data.companies.filter((c) => {
       if (filter === "placed" && c.selectedCount === 0) return false;
-      if (filter !== "all" && filter !== "placed" && !c.programmes.some((p) => (filter === "M.Tech" || filter === "M.Sc" ? p.startsWith(filter) : p === filter))) return false;
+      if (filter !== "all" && filter !== "placed" && !c.programmes.includes(filter)) return false;
       return !q || [c.name, ...c.roles, ...c.offerTypes].join(" ").toLowerCase().includes(q);
     });
     if (sort === "ctc") return [...list].sort((a, b) => (b.minCtcLpa ?? -1) - (a.minCtcLpa ?? -1));
