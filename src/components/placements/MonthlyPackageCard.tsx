@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
-import type { PlacementMonth } from "@/lib/placements";
+import type { PlacementPlacedMonth } from "@/lib/placements";
 
-const COL = 70; // one month's width in the drawing
 const TOP = 28;
 const BASE = 100;
 const HEIGHT = 132;
@@ -10,9 +9,12 @@ const LINE = "#a78bfa";
 /** "2026-07" → "Jul" */
 const monthName = (m: string) => new Date(`${m}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short" }).slice(0, 3);
 
-/** How the average package of the companies that came has moved through the season. */
-export function MonthlyPackageCard({ months, average, className }: { months: PlacementMonth[]; average: number | null | undefined; className?: string }) {
+/** Students placed on campus each month, and how their average package has moved through the season. */
+export function MonthlyPackageCard({ months: all, average, className }: { months: PlacementPlacedMonth[]; average: number | null | undefined; className?: string }) {
+  // A month whose packages are all still unknown has no point to draw
+  const months = all.flatMap((m) => (m.averageCtcLpa == null ? [] : [{ ...m, averageCtcLpa: m.averageCtcLpa }]));
   if (months.length < 2) return null;
+  const COL = months.length > 5 ? 60 : 70; // one month's width in the drawing
   const width = months.length * COL;
   const max = Math.max(...months.map((m) => m.averageCtcLpa));
   const y = (lpa: number) => BASE - ((BASE - TOP) * lpa) / max;
@@ -23,9 +25,9 @@ export function MonthlyPackageCard({ months, average, className }: { months: Pla
 
   return (
     <section className={cn("px-4 pb-2 pt-3", className)}>
-      <h2 className="text-[14.5px] font-semibold leading-snug">Average package of companies by month</h2>
+      <h2 className="text-[14.5px] font-semibold leading-snug">Students placed by month</h2>
       <p className="mt-0.5 text-[11.5px] leading-snug text-white/50">
-        Companies that came each month. PPOs not included.
+        Average package of students placed. PPOs not included.
       </p>
       {/* Fits the card up to six months, then scrolls sideways */}
       <div className="-mx-4 mt-1 overflow-x-auto [scrollbar-width:none]">
@@ -34,7 +36,7 @@ export function MonthlyPackageCard({ months, average, className }: { months: Pla
           className="block w-full"
           style={months.length > 6 ? { minWidth: width } : undefined}
           role="img"
-          aria-label={`Average package of companies by month: ${months.map((m) => `${monthName(m.month)} ${m.averageCtcLpa.toFixed(1)} LPA from ${m.companies} companies`).join(", ")}`}
+          aria-label={`Students placed by month: ${months.map((m) => `${monthName(m.month)} ${m.students} students, average ${m.averageCtcLpa.toFixed(1)} LPA`).join(", ")}`}
         >
           <defs>
             <linearGradient id="monthly-package-fill" x1="0" x2="0" y1="0" y2="1">
@@ -63,7 +65,7 @@ export function MonthlyPackageCard({ months, average, className }: { months: Pla
                 {monthName(p.month)}
               </text>
               <text x={p.x} y={BASE + 28} fontSize="9.5" fill="white" fillOpacity="0.55">
-                {p.companies} {p.companies === 1 ? "company" : "companies"}
+                {p.students} {p.students === 1 ? "student" : "students"}
               </text>
             </g>
           ))}

@@ -23,16 +23,17 @@ export interface PlacementSummary {
   resultsUpTo: string | null;
   updatedAt: string | null;
   topRecruiters: { id: string; name: string; selected: number }[];
-  /** Companies that came each month ("2026-07") and the average of their packages (not per student, no PPOs). */
-  companiesByMonth?: PlacementMonth[];
-  averageCompanyCtcLpa?: number | null;
+  /** Students placed on campus each month ("2026-07", no PPOs) and the average of their packages. */
+  placedByMonth?: PlacementPlacedMonth[];
+  averagePlacedByMonthCtcLpa?: number | null;
   coverage: string;
 }
 
-export interface PlacementMonth {
+export interface PlacementPlacedMonth {
   month: string;
-  companies: number;
-  averageCtcLpa: number;
+  students: number;
+  /** Over the students whose package is known; null when none is. */
+  averageCtcLpa: number | null;
 }
 
 export interface PlacementCompanyCard {

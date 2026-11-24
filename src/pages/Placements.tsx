@@ -175,9 +175,8 @@ function ListView() {
       {error && <EmptyNote>{error}</EmptyNote>}
 
       {s && (
-        <section className={cn(card, "relative px-4 py-3")}>
-          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
-          <div className="relative flex items-center justify-between gap-2">
+        <section className={cn(card, "px-4 py-3")}>
+          <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-white/50">Average CTC</p>
@@ -201,7 +200,7 @@ function ListView() {
             )}
           </div>
           {s.placedPercent != null && s.batchStudents != null && (
-            <div className="relative mt-2.5">
+            <div className="mt-2.5">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-[12px] font-semibold text-white/85">
                   <span className="text-[14px] font-bold tabular-nums text-emerald-300">{s.placedPercent.toFixed(1)}%</span> of B.Tech {s.batchYear} placed
@@ -215,7 +214,7 @@ function ListView() {
               </div>
             </div>
           )}
-          <div className="relative mt-2.5 grid grid-cols-3 divide-x divide-white/[0.07] rounded-lg bg-black/25 py-1.5">
+          <div className="mt-2.5 grid grid-cols-3 divide-x divide-white/[0.07] rounded-lg bg-black/25 py-1.5">
             {[
               [s.studentsSelected, "Students"],
               [s.ppos, "PPOs"],
@@ -230,7 +229,7 @@ function ListView() {
         </section>
       )}
 
-      {s?.companiesByMonth && <MonthlyPackageCard months={s.companiesByMonth} average={s.averageCompanyCtcLpa} className={card} />}
+      {s?.placedByMonth && <MonthlyPackageCard months={s.placedByMonth} average={s.averagePlacedByMonthCtcLpa} className={card} />}
 
       {data && (
         <>
