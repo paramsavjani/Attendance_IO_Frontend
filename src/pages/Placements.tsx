@@ -29,6 +29,8 @@ import {
   formatDay,
   formatLpa,
   jdPdfUrl,
+  matchingStudents,
+  type PlacementCardStudent,
   type PlacementCompany,
   type PlacementCompanyCard,
   type PlacementDrive,
@@ -126,14 +128,16 @@ function ListView() {
   const rows = useMemo(() => {
     if (!data) return [];
     const q = query.trim().toLowerCase();
+    const byName = (c: PlacementCompanyCard) => [c.name, ...c.roles, ...c.offerTypes].join(" ").toLowerCase().includes(q);
     const list = data.companies.filter((c) => {
       if (filter === "placed" && c.selectedCount === 0) return false;
       if (filter !== "all" && filter !== "placed" && !c.programmes.includes(filter)) return false;
-      return !q || [c.name, ...c.roles, ...c.offerTypes].join(" ").toLowerCase().includes(q);
+      return !q || byName(c) || matchingStudents(c.students, q).length > 0;
     });
-    if (sort === "ctc") return [...list].sort((a, b) => (b.minCtcLpa ?? -1) - (a.minCtcLpa ?? -1));
-    if (sort === "selected") return [...list].sort((a, b) => b.selectedCount - a.selectedCount || (b.minCtcLpa ?? 0) - (a.minCtcLpa ?? 0));
-    return list;
+    if (sort === "ctc") list.sort((a, b) => (b.minCtcLpa ?? -1) - (a.minCtcLpa ?? -1));
+    if (sort === "selected") list.sort((a, b) => b.selectedCount - a.selectedCount || (b.minCtcLpa ?? 0) - (a.minCtcLpa ?? 0));
+    // Companies that match by themselves come before the ones found through a student they selected
+    return q ? list.sort((a, b) => Number(byName(b)) - Number(byName(a))) : list;
   }, [data, query, filter, sort]);
 
   // Log what students search for, once they stop typing
@@ -236,7 +240,7 @@ function ListView() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search company or role"
+                  placeholder="Company, role or student"
                   className="h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.035] pl-10 pr-9 text-[14px] text-white outline-none placeholder:text-white/35 focus:border-violet-400/40"
                 />
                 {query && (
@@ -271,8 +275,8 @@ function ListView() {
             </div>
           </div>
 
-          {rows.length > 0 && <CompanyGroup companies={rows} onOpen={(id) => openCompany(id, "list")} />}
-          {rows.length === 0 && <EmptyNote>No company matches that.</EmptyNote>}
+          {rows.length > 0 && <CompanyGroup companies={rows} query={query} onOpen={(id) => openCompany(id, "list")} />}
+          {rows.length === 0 && <EmptyNote>No company or placed student matches that.</EmptyNote>}
 
           <AskAiCard
             title="Ask about placements"
@@ -292,56 +296,79 @@ function ListView() {
   );
 }
 
-function CompanyGroup({ companies, onOpen }: { companies: PlacementCompanyCard[]; onOpen: (id: string) => void }) {
+function CompanyGroup({ companies, query, onOpen }: { companies: PlacementCompanyCard[]; query: string; onOpen: (id: string) => void }) {
   return (
     <section>
       <div className={cn(card, "divide-y divide-white/[0.06]")}>
-        {companies.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => onOpen(c.id)}
-            className="flex min-h-[64px] w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors active:bg-white/[0.06]"
-          >
-            <CompanyMark name={c.name} />
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5">
-                <span className="truncate text-[14px] font-semibold leading-tight">{c.name}</span>
-                {c.ppoCount > 0 && <span className="shrink-0 rounded-md bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-amber-300">PPO</span>}
+        {companies.map((c) => {
+          const found = matchingStudents(c.students, query);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onOpen(c.id)}
+              className="flex min-h-[64px] w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors active:bg-white/[0.06]"
+            >
+              <CompanyMark name={c.name} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-[14px] font-semibold leading-tight">{c.name}</span>
+                  {c.ppoCount > 0 && <span className="shrink-0 rounded-md bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-amber-300">PPO</span>}
+                </span>
+                {found.length > 0 ? (
+                  <StudentMatches students={found} />
+                ) : (
+                  <span className="mt-0.5 block truncate text-[11.5px] text-white/45">
+                    {c.roles.length
+                      ? c.roles.slice(0, 2).join(" · ")
+                      : !c.onPortal
+                        ? c.ppoCount > 0
+                          ? "Pre-placement offers"
+                          : "Off-campus results"
+                        : c.offerTypes.join(" · ")}
+                  </span>
+                )}
               </span>
-              <span className="mt-0.5 block truncate text-[11.5px] text-white/45">
-                {c.roles.length
-                  ? c.roles.slice(0, 2).join(" · ")
-                  : !c.onPortal
-                    ? c.ppoCount > 0
-                      ? "Pre-placement offers"
-                      : "Off-campus results"
-                    : c.offerTypes.join(" · ")}
+              <span className="shrink-0 text-right">
+                <span className="block text-[14px] font-bold tabular-nums">{c.minCtcLpa != null ? `₹${formatLpa(c.minCtcLpa, null)}L` : "—"}</span>
+                {c.selectedCount > 0 ? (
+                  <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    {c.selectedCount} placed
+                  </span>
+                ) : c.resultDeclared ? (
+                  <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-white/45">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white/30" />0 placed
+                  </span>
+                ) : (
+                  <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-amber-300/90">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+                    Result awaited
+                  </span>
+                )}
               </span>
-            </span>
-            <span className="shrink-0 text-right">
-              <span className="block text-[14px] font-bold tabular-nums">{c.minCtcLpa != null ? `₹${formatLpa(c.minCtcLpa, null)}L` : "—"}</span>
-              {c.selectedCount > 0 ? (
-                <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  {c.selectedCount} placed
-                </span>
-              ) : c.resultDeclared ? (
-                <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-white/45">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white/30" />0 placed
-                </span>
-              ) : (
-                <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-amber-300/90">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
-                  Result awaited
-                </span>
-              )}
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-white/25" />
-          </button>
-        ))}
+              <ChevronRight className="h-4 w-4 shrink-0 text-white/25" />
+            </button>
+          );
+        })}
       </div>
     </section>
+  );
+}
+
+/** Who the search found in this company: the first name, then their roll number and how many more. */
+function StudentMatches({ students }: { students: PlacementCardStudent[] }) {
+  const [first] = students;
+  return (
+    <span className="mt-0.5 block text-[11.5px]">
+      <span className="flex items-center gap-1 font-medium text-violet-300">
+        <GraduationCap className="h-3 w-3 shrink-0" />
+        <span className="truncate">{first.name ?? first.id}</span>
+      </span>
+      <span className="block truncate text-white/45">
+        {[first.name && first.id, students.length > 1 && `+${students.length - 1} more`].filter(Boolean).join(" · ")}
+      </span>
+    </span>
   );
 }
 

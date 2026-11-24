@@ -52,6 +52,28 @@ export interface PlacementCompanyCard {
   resultDeclared?: boolean;
   lastActivity: string | null;
   onPortal: boolean;
+  /** Who the company selected (the list can be searched by them). */
+  students?: PlacementCardStudent[];
+}
+
+export interface PlacementCardStudent {
+  id: string | null;
+  name: string | null;
+}
+
+/**
+ * The card's students a search is about: a roll number (from its start, or its last digits) or words that each
+ * start a word of the name ("param", "savjani param"). Under three letters it would match nearly everyone.
+ */
+export function matchingStudents(students: PlacementCardStudent[] | undefined, query: string): PlacementCardStudent[] {
+  const q = query.trim().toLowerCase();
+  if (!students || q.length < 3) return [];
+  if (/^\d+$/.test(q)) return students.filter((s) => s.id && (s.id.startsWith(q) || s.id.endsWith(q)));
+  const words = q.split(/\s+/);
+  return students.filter((s) => {
+    const name = (s.name ?? "").toLowerCase().split(/\s+/);
+    return words.every((w) => name.some((n) => n.startsWith(w)));
+  });
 }
 
 export interface PlacementList {
