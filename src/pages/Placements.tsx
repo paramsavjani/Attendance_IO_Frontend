@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
+import { MonthlyPackageCard } from "@/components/placements/MonthlyPackageCard";
 import { PdfViewer } from "@/components/placements/PdfViewer";
 import { cn } from "@/lib/utils";
 import {
@@ -164,7 +165,7 @@ function ListView() {
   };
 
   return (
-    <div ref={rootRef} className="flex flex-1 flex-col gap-5 pb-8">
+    <div ref={rootRef} className="flex flex-1 flex-col gap-3.5 pb-8">
       <PageHeader
         title="Placements"
         subtitle={data ? `${data.season ?? ""} season${s?.resultsUpTo ? ` · results till ${formatDay(s.resultsUpTo)}` : ""}` : " "}
@@ -174,90 +175,85 @@ function ListView() {
       {error && <EmptyNote>{error}</EmptyNote>}
 
       {s && (
-        <section className={cn(card, "relative p-4")}>
+        <section className={cn(card, "relative px-4 py-3")}>
           <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-10 h-44 w-44 rounded-full bg-indigo-500/10 blur-3xl" />
-          <p className="relative mb-3.5 inline-flex items-center gap-1.5 rounded-lg border border-violet-400/20 bg-violet-400/[0.1] px-2 py-1 text-[11.5px] font-semibold text-violet-200">
-            <GraduationCap className="h-3.5 w-3.5" /> UG (B.Tech) placements only
-          </p>
-          <div className="relative flex items-end justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-white/45">Average CTC</p>
-              <p className="mt-1 text-[34px] font-bold leading-none tracking-tight tabular-nums">
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-white/50">Average CTC</p>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-violet-400/20 bg-violet-400/[0.1] px-1.5 py-0.5 text-[10px] font-semibold text-violet-200">
+                  <GraduationCap className="h-3 w-3" /> UG (B.Tech) only
+                </span>
+              </div>
+              <p className="mt-1 text-[28px] font-bold leading-none tracking-tight tabular-nums">
                 {s.averageCtcLpa != null ? `₹${s.averageCtcLpa.toFixed(1)}` : "—"}
-                <span className="ml-1 text-base font-semibold text-white/50">LPA</span>
+                <span className="ml-1 text-sm font-semibold text-white/50">LPA</span>
               </p>
             </div>
             {s.highestCtcLpa != null && (
-              <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2 text-right">
-                <p className="flex items-center justify-end gap-1 text-[10.5px] font-medium text-amber-200/80">
+              <div className="shrink-0 rounded-xl border border-amber-400/20 bg-amber-400/[0.07] px-2.5 py-1.5 text-right">
+                <p className="flex items-center justify-end gap-1 text-[10px] font-medium text-amber-200/80">
                   <Trophy className="h-3 w-3" /> Highest
                 </p>
-                <p className="text-[17px] font-bold leading-tight tabular-nums text-amber-100">₹{formatLpa(null, s.highestCtcLpa)} LPA</p>
-                {s.highestCtcCompany && <p className="text-[10.5px] text-amber-200/60">{s.highestCtcCompany}</p>}
+                <p className="text-[15px] font-bold leading-tight tabular-nums text-amber-100">₹{formatLpa(null, s.highestCtcLpa)} LPA</p>
+                {s.highestCtcCompany && <p className="text-[10px] leading-tight text-amber-200/60">{s.highestCtcCompany}</p>}
               </div>
             )}
           </div>
           {s.placedPercent != null && s.batchStudents != null && (
-            <div className="relative mt-4">
+            <div className="relative mt-2.5">
               <div className="flex items-baseline justify-between gap-2">
-                <p className="text-[12.5px] font-semibold text-white/85">
-                  <span className="text-[15px] font-bold tabular-nums text-emerald-300">{s.placedPercent.toFixed(1)}%</span> of B.Tech {s.batchYear} placed
+                <p className="text-[12px] font-semibold text-white/85">
+                  <span className="text-[14px] font-bold tabular-nums text-emerald-300">{s.placedPercent.toFixed(1)}%</span> of B.Tech {s.batchYear} placed
                 </p>
                 <p className="text-[11px] tabular-nums text-white/45">
                   {s.batchPlaced} of {s.batchStudents} students
                 </p>
               </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
                 <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300" style={{ width: `${Math.min(100, s.placedPercent)}%` }} />
               </div>
             </div>
           )}
-          <div className="relative mt-4 grid grid-cols-3 divide-x divide-white/[0.07] rounded-xl bg-black/25 py-2.5">
-            <Metric value={s.studentsSelected} label="Students" />
-            <Metric value={s.ppos} label="PPOs" />
-            <Metric value={s.companiesWithSelections} label="Companies" />
+          <div className="relative mt-2.5 grid grid-cols-3 divide-x divide-white/[0.07] rounded-lg bg-black/25 py-1.5">
+            {[
+              [s.studentsSelected, "Students"],
+              [s.ppos, "PPOs"],
+              [s.companiesWithSelections, "Companies"],
+            ].map(([value, text]) => (
+              <p key={text} className="truncate px-1 text-center text-[11px] text-white/50">
+                <span className="mr-1 text-[14px] font-bold tabular-nums text-white">{value}</span>
+                {text}
+              </p>
+            ))}
           </div>
-          {s.topRecruiters.length > 0 && (
-            <div className="relative mt-4">
-              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-white/40">Top recruiters</p>
-              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]">
-                {s.topRecruiters.map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => openCompany(r.id, "top_recruiters")}
-                    className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.04] py-1.5 pl-1.5 pr-3 active:scale-95"
-                  >
-                    <CompanyMark name={r.name} size="sm" />
-                    <span className="text-left">
-                      <span className="block text-[12px] font-semibold leading-tight">{r.name}</span>
-                      <span className="block text-[10.5px] text-white/45">{r.selected} offers</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </section>
       )}
+
+      {s?.companiesByMonth && <MonthlyPackageCard months={s.companiesByMonth} average={s.averageCompanyCtcLpa} className={card} />}
 
       {data && (
         <>
           <div className="space-y-2.5">
-            <div className="relative">
-              <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search company or role, e.g. SDE, quant"
-                className="h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.035] pl-10 pr-9 text-[14px] text-white outline-none placeholder:text-white/35 focus:border-violet-400/40"
-              />
-              {query && (
-                <button type="button" onClick={() => setQuery("")} aria-label="Clear" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-white/45">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+            <div className="flex gap-2">
+              <div className="relative min-w-0 flex-1">
+                <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search company or role"
+                  className="h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.035] pl-10 pr-9 text-[14px] text-white outline-none placeholder:text-white/35 focus:border-violet-400/40"
+                />
+                {query && (
+                  <button type="button" onClick={() => setQuery("")} aria-label="Clear" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-white/45">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={nextSort} aria-label={`Sort: ${SORTS.find((x) => x.key === sort)?.label}`} className="flex h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 text-[12px] font-medium text-white/70 active:scale-95">
+                <ArrowDownWideNarrow className="h-4 w-4" />
+                {SORTS.find((x) => x.key === sort)?.label}
+              </button>
             </div>
             <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]">
               {FILTERS.map((f) => (
@@ -274,22 +270,13 @@ function ListView() {
                   )}
                 >
                   {f.label}
+                  {filter === f.key && <span className="ml-1.5 tabular-nums opacity-50">{rows.length}</span>}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center justify-between px-1">
-            <p className="text-[12px] text-white/45">
-              {rows.length} {rows.length === 1 ? "company" : "companies"}
-            </p>
-            <button type="button" onClick={nextSort} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.035] px-2.5 py-1 text-[11.5px] font-medium text-white/70 active:scale-95">
-              <ArrowDownWideNarrow className="h-3.5 w-3.5" />
-              {SORTS.find((x) => x.key === sort)?.label}
-            </button>
-          </div>
-
-          {rows.length > 0 && <CompanyGroup title={`All companies · ${rows.length}`} companies={rows} onOpen={(id) => openCompany(id, "list")} />}
+          {rows.length > 0 && <CompanyGroup companies={rows} onOpen={(id) => openCompany(id, "list")} />}
           {rows.length === 0 && <EmptyNote>No company matches that.</EmptyNote>}
 
           <AskAiCard
@@ -310,10 +297,9 @@ function ListView() {
   );
 }
 
-function CompanyGroup({ title, companies, onOpen }: { title: string; companies: PlacementCompanyCard[]; onOpen: (id: string) => void }) {
+function CompanyGroup({ companies, onOpen }: { companies: PlacementCompanyCard[]; onOpen: (id: string) => void }) {
   return (
     <section>
-      <h2 className={cn(label, "mb-1.5")}>{title}</h2>
       <div className={cn(card, "divide-y divide-white/[0.06]")}>
         {companies.map((c) => (
           <button
