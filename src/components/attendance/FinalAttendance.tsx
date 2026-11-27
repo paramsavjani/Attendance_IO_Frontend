@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { BadgeCheck, GraduationCap, ShieldCheck, TriangleAlert } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { API_CONFIG, authenticatedFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { Subject } from "@/types/attendance";
 
@@ -16,43 +16,50 @@ interface Row {
   present: number;
   total: number;
   pct: number;
+  avg: number | null;
   min: number;
-  met: boolean;
 }
 
-const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+const one = (v: number) => (Math.round(v * 10) / 10).toFixed(1).replace(/\.0$/, "");
+const signed = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "") + one(Math.abs(v));
+const AVG_CACHE = "finalAttendanceClassAverages";
 
-function Ring({ value, min, color, size = 58, stroke = 5 }: { value: number; min: number; color: string; size?: number; stroke?: number }) {
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const v = Math.max(0, Math.min(100, value));
-  // tick on the ring where this subject's own target sits
-  const a = (min / 100) * 2 * Math.PI - Math.PI / 2;
-  const tx = size / 2 + Math.cos(a) * r;
-  const ty = size / 2 + Math.sin(a) * r;
-  return (
-    <svg width={size} height={size} className="shrink-0" aria-hidden>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="hsl(0 0% 100% / 0.08)" strokeWidth={stroke} />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={c * (1 - v / 100)}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
-      <circle cx={tx} cy={ty} r={1.9} fill="hsl(0 0% 100% / 0.85)" stroke="hsl(0 0% 6%)" strokeWidth={1.2} />
-    </svg>
-  );
+/** Class average per subject id, from the institute's record for everyone in that subject. */
+function useClassAverages(): Record<string, number> {
+  const [avgs, setAvgs] = useState<Record<string, number>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(AVG_CACHE) || "{}");
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    const controller = new AbortController();
+    authenticatedFetch(API_CONFIG.ENDPOINTS.SUBJECT_ANALYSIS, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { subjects?: { subjectId: string; averageAttendancePercentage: number; totalStudents: number }[] } | null) => {
+        if (!data?.subjects) return;
+        const next: Record<string, number> = {};
+        data.subjects.forEach((s) => {
+          if (s.totalStudents > 1) next[s.subjectId] = s.averageAttendancePercentage;
+        });
+        setAvgs(next);
+        try {
+          localStorage.setItem(AVG_CACHE, JSON.stringify(next));
+        } catch {
+          /* storage off */
+        }
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+  return avgs;
 }
 
 /**
- * Shown on the dashboard once classes are over: the institute's official attendance for every subject,
- * judged against the minimum the student set for that subject (not a fixed 75%).
+ * The dashboard once classes are over: the institute's final attendance for each subject, set against that
+ * subject's class average. The headline counts the subjects where the student is below the class average;
+ * a subject under the student's own minimum (their setting, not a fixed 75%) is called out on its row.
  */
 export function FinalAttendance({
   subjects,
@@ -63,119 +70,139 @@ export function FinalAttendance({
   stats: OfficialStat[];
   minFor: (subject: Subject) => number;
 }) {
+  const avgs = useClassAverages();
+
   const rows = useMemo<Row[]>(() => {
     const byId = new Map(stats.map((s) => [s.subjectId, s]));
-    return subjects
-      .flatMap((subject) => {
-        const s = byId.get(subject.id);
-        if (!s || s.total <= 0) return [];
-        const pct = (s.present * 100) / s.total;
-        const min = minFor(subject);
-        return [{ subject, present: s.present, total: s.total, pct, min, met: pct + 1e-9 >= min }];
-      })
-      .sort((a, b) => Number(a.met) - Number(b.met) || a.subject.code.localeCompare(b.subject.code));
-  }, [subjects, stats, minFor]);
+    return subjects.flatMap((subject) => {
+      const s = byId.get(subject.id);
+      if (!s || s.total <= 0) return [];
+      return [
+        {
+          subject,
+          present: s.present,
+          total: s.total,
+          pct: (s.present * 100) / s.total,
+          avg: avgs[subject.id] ?? null,
+          min: minFor(subject),
+        },
+      ];
+    });
+  }, [subjects, stats, avgs, minFor]);
 
   if (rows.length === 0) return null;
 
   const present = rows.reduce((n, r) => n + r.present, 0);
   const total = rows.reduce((n, r) => n + r.total, 0);
   const overall = (present * 100) / total;
-  const below = rows.filter((r) => !r.met).length;
+  const compared = rows.filter((r) => r.avg != null);
+  const below = compared.filter((r) => r.pct < (r.avg as number));
+  const classOverall = compared.length ? compared.reduce((n, r) => n + (r.avg as number), 0) / compared.length : null;
 
   return (
-    <section className="space-y-2.5" aria-label="Final attendance">
-      {/* Summary */}
-      <div
-        className="relative overflow-hidden rounded-2xl border border-white/10 p-4"
-        style={{
-          background:
-            "radial-gradient(120% 100% at 0% 0%, hsl(234 89% 64% / 0.16), transparent 55%), radial-gradient(100% 90% at 100% 100%, hsl(160 70% 45% / 0.10), transparent 60%), hsl(0 0% 7%)",
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <span className="inline-flex items-center gap-1 rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[10.5px] font-semibold text-sky-200">
-              <ShieldCheck className="h-3 w-3" />
-              Institute official
-            </span>
-            <h2 className="mt-2 text-[18px] font-semibold leading-tight">Final attendance</h2>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">Up to the last lecture. Classes are over, so these won&apos;t change.</p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight">
-              {fmt(Math.round(overall * 10) / 10)}
-              <span className="text-[16px] font-semibold text-white/55">%</span>
+    <section aria-label="Final attendance" className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[hsl(0_0%_6.5%)]">
+      {/* Headline */}
+      <div className="px-4 pb-4 pt-3.5">
+        <div className="flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-[0.12em] text-white/40">
+          <span>Final attendance</span>
+          <span className="font-medium normal-case tracking-normal">Institute record</span>
+        </div>
+
+        <div className="mt-3 flex items-end gap-4">
+          <div className="shrink-0">
+            <p className="text-[44px] font-bold leading-[0.9] tracking-[-0.03em] tabular-nums">
+              {one(overall)}
+              <span className="ml-0.5 text-[20px] font-semibold tracking-normal text-white/45">%</span>
             </p>
-            <p className="mt-1 text-[10.5px] text-muted-foreground tabular-nums">
+            <p className="mt-1.5 text-[11.5px] text-white/45 tabular-nums">
               {present} of {total} classes
             </p>
           </div>
-        </div>
-
-        <div className="mt-3.5 flex items-center gap-2 text-[11.5px]">
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-1 font-medium text-emerald-300">
-            <BadgeCheck className="h-3.5 w-3.5" />
-            {rows.length - below} met your target
-          </span>
-          {below > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-400/10 px-2 py-1 font-medium text-rose-300">
-              <TriangleAlert className="h-3.5 w-3.5" />
-              {below} below
-            </span>
-          )}
+          <div className="mb-0.5 min-w-0 border-l border-white/10 pl-4">
+            {compared.length === 0 ? (
+              <p className="text-[13px] leading-snug text-white/70">Up to the last lecture. Classes are over, so this is final.</p>
+            ) : below.length === 0 ? (
+              <p className="text-[14px] font-semibold leading-snug">At or above the class average in every subject</p>
+            ) : (
+              <p className="text-[14px] font-semibold leading-snug">
+                Below the class average in{" "}
+                <span className="text-amber-300 tabular-nums">
+                  {below.length} of {compared.length}
+                </span>{" "}
+                {compared.length === 1 ? "subject" : "subjects"}
+              </p>
+            )}
+            {classOverall != null && (
+              <p className="mt-1 text-[11.5px] text-white/45 tabular-nums">
+                Class average {one(classOverall)}% · you {signed(overall - classOverall)}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* One tile per subject; the ones below target come first */}
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* Column labels */}
+      <div className="flex items-center border-y border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-[10px] font-medium uppercase tracking-[0.1em] text-white/35">
+        <span className="flex-1">Subject</span>
+        <span className="flex items-center gap-3 normal-case tracking-normal">
+          <span className="flex items-center gap-1">
+            <span className="h-1.5 w-3 rounded-full bg-white/75" /> You
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2.5 w-[2px] rounded-full bg-amber-300" /> Class avg
+          </span>
+        </span>
+      </div>
+
+      <ul className="divide-y divide-white/[0.06]">
         {rows.map((r) => {
-          const color = r.met ? `hsl(${r.subject.color})` : "hsl(351 95% 71%)";
-          const gap = r.min - r.pct;
+          const diff = r.avg == null ? null : r.pct - r.avg;
+          const underMin = r.pct < r.min;
           return (
-            <div
-              key={r.subject.id}
-              className={cn(
-                "relative overflow-hidden rounded-2xl border p-3",
-                r.met ? "border-white/[0.08] bg-white/[0.035]" : "border-rose-300/20 bg-rose-400/[0.05]",
-              )}
-            >
-              <div
-                className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full opacity-25 blur-2xl"
-                style={{ backgroundColor: color }}
-              />
-              <div className="relative flex items-center justify-between gap-2">
-                <div className="relative">
-                  <Ring value={r.pct} min={r.min} color={color} />
-                  <span className="absolute inset-0 flex items-center justify-center text-[12.5px] font-bold tabular-nums">
-                    {Math.round(r.pct)}%
-                  </span>
+            <li key={r.subject.id} className="flex gap-3 px-4 py-3">
+              <span className="mt-0.5 w-[3px] shrink-0 self-stretch rounded-full" style={{ backgroundColor: `hsl(${r.subject.color})` }} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="min-w-0 truncate text-[13.5px]">
+                    <span className="font-semibold">{r.subject.code}</span>
+                    <span className="ml-1.5 text-white/45">{r.subject.name}</span>
+                  </p>
+                  <p className="shrink-0 text-[16px] font-bold tabular-nums">
+                    {one(r.pct)}
+                    <span className="text-[11px] font-semibold text-white/45">%</span>
+                  </p>
                 </div>
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
-                    r.met ? "bg-emerald-400/10 text-emerald-300" : "bg-rose-400/10 text-rose-300",
+
+                <div className="relative mt-2 h-[5px] rounded-full bg-white/[0.07]">
+                  <div className="h-full rounded-full bg-white/75" style={{ width: `${Math.min(100, r.pct)}%` }} />
+                  {r.avg != null && (
+                    <span
+                      className="absolute -top-[3px] h-[11px] w-[2px] -translate-x-1/2 rounded-full bg-amber-300 ring-2 ring-[hsl(0_0%_6.5%)]"
+                      style={{ left: `${Math.min(100, r.avg)}%` }}
+                    />
                   )}
-                >
-                  {r.met ? `✓ ${r.min}% met` : `${fmt(Math.round(gap * 10) / 10)}% short`}
-                </span>
+                </div>
+
+                <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] tabular-nums">
+                  <span className="text-white/45">
+                    {r.present}/{r.total} classes
+                    {underMin && <span className="text-rose-300"> · under your {r.min}%</span>}
+                  </span>
+                  {diff != null && (
+                    <span className="text-white/45">
+                      avg {one(r.avg as number)}%{" "}
+                      <span className={cn("font-semibold", diff < 0 ? "text-amber-300" : "text-emerald-300")}>{signed(diff)}</span>
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="relative mt-2.5 text-[13.5px] font-semibold leading-tight">{r.subject.code}</p>
-              <p className="relative truncate text-[11.5px] text-muted-foreground">{r.subject.name}</p>
-              <div className="relative mt-2 flex items-baseline justify-between text-[11px] tabular-nums">
-                <span className="text-white/70">
-                  {r.present}/{r.total} classes
-                </span>
-                <span className="text-white/40">target {r.min}%</span>
-              </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
-      <p className="flex items-center justify-center gap-1.5 pt-1 text-[11.5px] text-muted-foreground">
-        <GraduationCap className="h-3.5 w-3.5" />
-        All the best for your exams!
+      <p className="border-t border-white/[0.06] px-4 py-2.5 text-[11px] text-white/35">
+        Up to the last lecture. All the best for your exams.
       </p>
     </section>
   );
