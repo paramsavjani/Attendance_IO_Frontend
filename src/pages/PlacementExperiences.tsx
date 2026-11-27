@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { ArrowRight, Building2, ChevronRight, Lightbulb, Search as SearchIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackPlacements } from "@/lib/placementsTracking";
+import { seenPercent, useReadTime } from "@/lib/readTime";
 import { fetchExperience, fetchExperiences, PlacementsForbiddenError, type Experience, type ExperienceList, type ExperienceSummary } from "@/lib/placements";
 import { AskAiCard, BackButton, card, CompanyMark, EmptyNote, label, ListSkeleton, Metric, PageHeader } from "@/components/placements/PlacementPieces";
 import { ExperienceCard, experienceKind, VerdictPill } from "@/components/placements/ExperienceCard";
@@ -281,6 +282,13 @@ function ExperienceReader({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [more, setMore] = useState<ExperienceSummary[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
+  const articleRef = useRef<HTMLElement>(null);
+
+  // How long they actually read it and how far they got (admin site: Placements → Interview experiences)
+  useReadTime(e ? e.id : null, () => seenPercent(articleRef.current), (seconds, scrollPct, final) => {
+    if (!e) return;
+    trackPlacements("experience_read", { experienceId: e.id, companyId: e.companyId, company: e.company, seconds, scrollPct, final });
+  });
 
   useEffect(() => {
     setE(undefined);
@@ -385,7 +393,7 @@ function ExperienceReader({ id }: { id: string }) {
         </div>
       )}
 
-      <article className={cn(card, "px-4 pb-4 pt-1")}>
+      <article ref={articleRef} className={cn(card, "px-4 pb-4 pt-1")}>
         <ExperienceMarkdown body={e.body} />
       </article>
 

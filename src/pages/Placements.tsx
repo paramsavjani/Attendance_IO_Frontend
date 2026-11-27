@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
 import { trackPlacements, type PlacementsFrom } from "@/lib/placementsTracking";
+import { seenPercent, useReadTime } from "@/lib/readTime";
 import {
   ArrowDownWideNarrow,
   ArrowRight,
@@ -721,6 +722,11 @@ function JdFileCard({ file: f, co }: { file: PlacementJdFile & { drive: string; 
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+  // Reading time on the PDF or the expanded text, sent when it closes or the app goes to the background
+  useReadTime(pdfOpen ? `pdf:${f.file}` : open ? `text:${f.file}` : null, () => (pdfOpen ? 0 : seenPercent(textRef.current)), (seconds, scrollPct, final) =>
+    trackPlacements("jd_read", { companyId: co.id, company: co.name, file: f.file, mode: pdfOpen ? "pdf" : "text", seconds, scrollPct: pdfOpen ? undefined : scrollPct, final }),
+  );
   const long = f.text.length > 1500;
   const hasText = f.text.trim().length > 0;
   const canPdf = Boolean(f.pdf && f.original);
@@ -763,7 +769,7 @@ function JdFileCard({ file: f, co }: { file: PlacementJdFile & { drive: string; 
       </div>
       {canPdf && <PdfViewer open={pdfOpen} onOpenChange={setPdfOpen} url={jdPdfUrl(f.eventId, f.original!)} title={f.file} subtitle={co.name} />}
       {open && hasText && (
-        <div className="border-t border-white/[0.05] bg-black/20 px-3.5 py-3">
+        <div ref={textRef} className="border-t border-white/[0.05] bg-black/20 px-3.5 py-3">
           <p className="whitespace-pre-line break-words text-[12px] leading-relaxed text-white/65">{long && !full ? `${f.text.slice(0, 1500)}…` : f.text}</p>
           {long && (
             <button type="button" onClick={() => setFull((v) => !v)} className="mt-2.5 text-[12px] font-semibold text-violet-300">
