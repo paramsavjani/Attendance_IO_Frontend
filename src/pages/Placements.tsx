@@ -297,8 +297,6 @@ function ListView() {
               navigate(`/assistant?q=${encodeURIComponent("How is placement going this year? Average, highest and PPOs")}`);
             }}
           />
-
-          {s && <p className="px-1 text-[11px] leading-relaxed text-white/35">{s.coverage}</p>}
         </>
       )}
 
