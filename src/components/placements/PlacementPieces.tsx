@@ -70,7 +70,7 @@ const MARK_TINTS = [
   "from-cyan-500 to-sky-600",
 ];
 
-/** The company's logo on a white tile when we have one (see companyLogos), else its initials on a tinted tile. */
+/** The company's logo, styled for the dark UI (see companyLogos), else its initials on a tinted tile. */
 export function CompanyMark({ name, id, size = "md" }: { name: string; id?: string | null; size?: "sm" | "md" | "lg" }) {
   const logo = companyLogo(id);
   const [broken, setBroken] = useState(false);
@@ -81,9 +81,25 @@ export function CompanyMark({ name, id, size = "md" }: { name: string; id?: stri
     size === "lg" && "h-14 w-14 rounded-2xl text-lg",
   );
   if (logo && !broken) {
+    const pad = size === "lg" ? "p-2.5" : size === "md" ? "p-[7px]" : "p-[5px]";
     return (
-      <span className={cn(box, "bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]", size === "lg" ? "p-2" : size === "md" ? "p-1.5" : "p-1")}>
-        <img src={logo} alt={name} loading="lazy" decoding="async" draggable={false} onError={() => setBroken(true)} className="h-full w-full object-contain" />
+      <span
+        className={cn(
+          box,
+          logo.style === "full" && "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
+          logo.style === "glass" && cn("bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_0_0_1px_rgba(255,255,255,0.08)]", pad),
+          logo.style === "light" && cn("bg-gradient-to-b from-white to-zinc-200 shadow-[inset_0_-1px_0_rgba(0,0,0,0.08)]", pad),
+        )}
+      >
+        <img
+          src={logo.src}
+          alt={name}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onError={() => setBroken(true)}
+          className={cn("h-full w-full", logo.style === "full" ? "object-cover" : "object-contain")}
+        />
       </span>
     );
   }
