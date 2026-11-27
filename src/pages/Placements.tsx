@@ -140,7 +140,14 @@ function ListView() {
       return !q || byName(c) || matchingStudents(c.students, q).length > 0;
     });
     // By the top of the range, then its bottom: "7–30" sorts with the 30s, ahead of a flat 25
-    if (sort === "ctc") list.sort((a, b) => (b.maxCtcLpa ?? -1) - (a.maxCtcLpa ?? -1) || (b.minCtcLpa ?? -1) - (a.minCtcLpa ?? -1));
+    if (sort === "ctc") {
+      // a range like 7–30 LPA sorts at its midpoint, not its top
+      const mid = (c: { minCtcLpa?: number | null; maxCtcLpa?: number | null }) => {
+        const lo = c.minCtcLpa ?? c.maxCtcLpa, hi = c.maxCtcLpa ?? c.minCtcLpa;
+        return lo == null || hi == null ? -1 : (lo + hi) / 2;
+      };
+      list.sort((a, b) => mid(b) - mid(a) || (b.maxCtcLpa ?? -1) - (a.maxCtcLpa ?? -1));
+    }
     if (sort === "selected") list.sort((a, b) => b.selectedCount - a.selectedCount || (b.minCtcLpa ?? 0) - (a.minCtcLpa ?? 0));
     // Companies that match by themselves come before the ones found through a student they selected
     return q ? list.sort((a, b) => Number(byName(b)) - Number(byName(a))) : list;
