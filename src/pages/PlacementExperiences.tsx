@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowRight, Building2, ChevronRight, Lightbulb, Search as SearchIcon, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, Building2, ChevronRight, Lightbulb, Search as SearchIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackPlacements } from "@/lib/placementsTracking";
 import { fetchExperience, fetchExperiences, PlacementsForbiddenError, type Experience, type ExperienceList, type ExperienceSummary } from "@/lib/placements";
@@ -121,7 +121,7 @@ function ExperienceHub() {
               <div className="flex -space-x-2 pb-0.5">
                 {data.companies.slice(0, 5).map((c) => (
                   <span key={c.id} className="rounded-lg ring-2 ring-[#0b0b0f]">
-                    <CompanyMark name={c.name} size="sm" />
+                    <CompanyMark name={c.name} id={c.id} size="sm" />
                   </span>
                 ))}
               </div>
@@ -136,10 +136,6 @@ function ExperienceHub() {
                 rounds covered
               </p>
             </div>
-            <p className="relative mt-2.5 flex items-start gap-1.5 text-[11px] leading-snug text-white/45">
-              <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0 text-emerald-300/70" />
-              Anonymous. Written by seniors after their interviews, with names and roll numbers removed.
-            </p>
           </section>
 
           <div className="space-y-2.5">
@@ -190,7 +186,7 @@ function ExperienceHub() {
           </div>
 
           {groups.map((g) => (
-            <PrepCard key={g.id} name={g.name} inPlacements={g.inPlacements} rows={g.rows} onOpen={open} onCompany={() => navigate(`/placements/${g.id}`, { state: { from: "list" } })} />
+            <PrepCard key={g.id} id={g.id} name={g.name} inPlacements={g.inPlacements} rows={g.rows} onOpen={open} onCompany={() => navigate(`/placements/${g.id}`, { state: { from: "list" } })} />
           ))}
           {rows.length === 0 && <EmptyNote>No experience mentions that yet. Try a company name or a broader topic.</EmptyNote>}
 
@@ -202,10 +198,6 @@ function ExperienceHub() {
               navigate(`/assistant?q=${encodeURIComponent("Which topics come up most in the seniors' interview experiences, company by company?")}`);
             }}
           />
-          <p className="px-1 text-[11px] leading-relaxed text-white/35">
-            From the {data.experiences[0]?.season ?? "2025-26"} season: summer internships for B.Tech 2023 and jobs for B.Tech 2022. Each senior's own account;
-            questions and processes can change from year to year.
-          </p>
         </>
       )}
 
@@ -215,7 +207,7 @@ function ExperienceHub() {
 }
 
 /** One "prep card" per company — what its process looks like and what it asks most, then the experiences. */
-function PrepCard({ name, inPlacements, rows, onOpen, onCompany }: { name: string; inPlacements: boolean; rows: ExperienceSummary[]; onOpen: (id: string) => void; onCompany: () => void }) {
+function PrepCard({ name, id, inPlacements, rows, onOpen, onCompany }: { name: string; id: string; inPlacements: boolean; rows: ExperienceSummary[]; onOpen: (id: string) => void; onCompany: () => void }) {
   const [all, setAll] = useState(false);
   const n = new Map<string, number>();
   for (const e of rows) for (const t of e.topics) n.set(t, (n.get(t) ?? 0) + 1);
@@ -228,7 +220,7 @@ function PrepCard({ name, inPlacements, rows, onOpen, onCompany }: { name: strin
     <section className={cn(card, "relative")}>
       <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-violet-500/10 blur-2xl" />
       <div className="relative flex items-center gap-3 px-3.5 pt-3.5">
-        <CompanyMark name={name} />
+        <CompanyMark name={name} id={id} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-bold leading-tight">{name}</p>
           <p className="mt-0.5 text-[11.5px] text-white/50">
@@ -341,7 +333,7 @@ function ExperienceReader({ id }: { id: string }) {
       <section className={cn(card, "relative p-4")}>
         <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl" />
         <div className="relative flex items-center gap-3.5">
-          <CompanyMark name={e.company} size="lg" />
+          <CompanyMark name={e.company} id={e.companyId} size="lg" />
           <div className="min-w-0 flex-1">
             <h1 className="text-[21px] font-bold leading-tight tracking-tight">{e.company}</h1>
             <p className="mt-0.5 text-[12.5px] leading-snug text-white/55">{experienceKind(e)}</p>
@@ -396,11 +388,6 @@ function ExperienceReader({ id }: { id: string }) {
       <article className={cn(card, "px-4 pb-4 pt-1")}>
         <ExperienceMarkdown body={e.body} />
       </article>
-
-      <p className="flex items-start gap-1.5 px-1 text-[11px] leading-snug text-white/40">
-        <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0 text-emerald-300/70" />
-        Shared by a senior after their interview. Names and roll numbers have been removed, so it stays anonymous.
-      </p>
 
       {e.inPlacements && (
         <button

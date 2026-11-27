@@ -319,7 +319,7 @@ function CompanyGroup({ companies, query, onOpen }: { companies: PlacementCompan
               onClick={() => onOpen(c.id)}
               className="flex min-h-[64px] w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors active:bg-white/[0.06]"
             >
-              <CompanyMark name={c.name} />
+              <CompanyMark name={c.name} id={c.id} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-[14px] font-semibold leading-tight">{c.name}</span>
@@ -486,7 +486,7 @@ function CompanyView({ id }: { id: string }) {
       <section className={cn(card, "relative p-4")}>
         <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl" />
         <div className="relative flex items-center gap-3.5">
-          <CompanyMark name={c.name} size="lg" />
+          <CompanyMark name={c.name} id={c.id} size="lg" />
           <div className="min-w-0 flex-1">
             <h1 className="text-[22px] font-bold leading-tight tracking-tight">{c.name}</h1>
             <div className="mt-1.5 flex flex-wrap gap-1.5">

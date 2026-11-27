@@ -39,7 +39,7 @@ export function ExperienceCard({ e, showCompany, onOpen }: { e: ExperienceSummar
   return (
     <button type="button" onClick={onOpen} className="block w-full px-3.5 py-3 text-left transition-colors active:bg-white/[0.06]">
       <span className="flex items-start gap-3">
-        {showCompany && <CompanyMark name={e.company} size="sm" />}
+        {showCompany && <CompanyMark name={e.company} id={e.companyId} size="sm" />}
         <span className="min-w-0 flex-1">
           <span className="flex items-start justify-between gap-2">
             <span className="min-w-0">

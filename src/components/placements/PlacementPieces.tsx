@@ -1,6 +1,8 @@
 import { ArrowRight, ChevronLeft } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { companyLogo } from "@/lib/companyLogos";
 
 /** Building blocks shared by the placements pages (season list, company page, interview experiences). */
 
@@ -68,19 +70,27 @@ const MARK_TINTS = [
   "from-cyan-500 to-sky-600",
 ];
 
-export function CompanyMark({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
+/** The company's logo on a white tile when we have one (see companyLogos), else its initials on a tinted tile. */
+export function CompanyMark({ name, id, size = "md" }: { name: string; id?: string | null; size?: "sm" | "md" | "lg" }) {
+  const logo = companyLogo(id);
+  const [broken, setBroken] = useState(false);
+  const box = cn(
+    "relative flex shrink-0 items-center justify-center overflow-hidden",
+    size === "sm" && "h-8 w-8 rounded-lg text-[11px]",
+    size === "md" && "h-10 w-10 rounded-xl text-[13px]",
+    size === "lg" && "h-14 w-14 rounded-2xl text-lg",
+  );
+  if (logo && !broken) {
+    return (
+      <span className={cn(box, "bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]", size === "lg" ? "p-2" : size === "md" ? "p-1.5" : "p-1")}>
+        <img src={logo} alt={name} loading="lazy" decoding="async" draggable={false} onError={() => setBroken(true)} className="h-full w-full object-contain" />
+      </span>
+    );
+  }
   const hash = [...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
   const initials = name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   return (
-    <span
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]",
-        MARK_TINTS[hash % MARK_TINTS.length],
-        size === "sm" && "h-8 w-8 rounded-lg text-[11px]",
-        size === "md" && "h-10 w-10 rounded-xl text-[13px]",
-        size === "lg" && "h-14 w-14 rounded-2xl text-lg",
-      )}
-    >
+    <span className={cn(box, "bg-gradient-to-br font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]", MARK_TINTS[hash % MARK_TINTS.length])}>
       {initials || "?"}
     </span>
   );
