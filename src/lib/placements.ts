@@ -42,8 +42,8 @@ export interface PlacementCompanyCard {
   offerTypes: string[];
   programmes: string[];
   roles: string[];
+  /** The B.Tech package range the company list shows: lowest role minimum to highest role maximum. */
   maxCtcLpa: number | null;
-  /** What the company list shows and sorts by: a range counts at its minimum. */
   minCtcLpa: number | null;
   minCpi: number | null;
   selectedCount: number;

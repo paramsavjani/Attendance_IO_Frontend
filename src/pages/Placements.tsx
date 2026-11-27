@@ -134,7 +134,8 @@ function ListView() {
       if (filter !== "all" && filter !== "placed" && !c.programmes.includes(filter)) return false;
       return !q || byName(c) || matchingStudents(c.students, q).length > 0;
     });
-    if (sort === "ctc") list.sort((a, b) => (b.minCtcLpa ?? -1) - (a.minCtcLpa ?? -1));
+    // By the top of the range, then its bottom: "7–30" sorts with the 30s, ahead of a flat 25
+    if (sort === "ctc") list.sort((a, b) => (b.maxCtcLpa ?? -1) - (a.maxCtcLpa ?? -1) || (b.minCtcLpa ?? -1) - (a.minCtcLpa ?? -1));
     if (sort === "selected") list.sort((a, b) => b.selectedCount - a.selectedCount || (b.minCtcLpa ?? 0) - (a.minCtcLpa ?? 0));
     // Companies that match by themselves come before the ones found through a student they selected
     return q ? list.sort((a, b) => Number(byName(b)) - Number(byName(a))) : list;
@@ -330,7 +331,7 @@ function CompanyGroup({ companies, query, onOpen }: { companies: PlacementCompan
                 )}
               </span>
               <span className="shrink-0 text-right">
-                <span className="block text-[14px] font-bold tabular-nums">{c.minCtcLpa != null ? `₹${formatLpa(c.minCtcLpa, null)}L` : "—"}</span>
+                <span className="block text-[14px] font-bold tabular-nums">{c.minCtcLpa != null ? `₹${formatLpa(c.minCtcLpa, c.maxCtcLpa).replace(" – ", "–")}L` : "—"}</span>
                 {c.selectedCount > 0 ? (
                   <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-medium text-emerald-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
