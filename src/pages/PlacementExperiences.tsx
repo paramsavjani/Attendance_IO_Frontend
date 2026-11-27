@@ -190,23 +190,7 @@ function ExperienceHub() {
           </div>
 
           {groups.map((g) => (
-            <section key={g.id}>
-              <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
-                <h2 className={cn(label, "truncate px-0")}>
-                  {g.name} · {g.rows.length}
-                </h2>
-                {g.inPlacements && (
-                  <button type="button" onClick={() => navigate(`/placements/${g.id}`, { state: { from: "list" } })} className="flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-violet-300/80">
-                    Company <ChevronRight className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-              <div className={cn(card, "divide-y divide-white/[0.06]")}>
-                {g.rows.map((e) => (
-                  <ExperienceCard key={e.id} e={e} showCompany={false} onOpen={() => open(e.id)} />
-                ))}
-              </div>
-            </section>
+            <PrepCard key={g.id} name={g.name} inPlacements={g.inPlacements} rows={g.rows} onOpen={open} onCompany={() => navigate(`/placements/${g.id}`, { state: { from: "list" } })} />
           ))}
           {rows.length === 0 && <EmptyNote>No experience mentions that yet. Try a company name or a broader topic.</EmptyNote>}
 
@@ -227,6 +211,73 @@ function ExperienceHub() {
 
       {!data && !error && <ListSkeleton />}
     </div>
+  );
+}
+
+/** One "prep card" per company — what its process looks like and what it asks most, then the experiences. */
+function PrepCard({ name, inPlacements, rows, onOpen, onCompany }: { name: string; inPlacements: boolean; rows: ExperienceSummary[]; onOpen: (id: string) => void; onCompany: () => void }) {
+  const [all, setAll] = useState(false);
+  const n = new Map<string, number>();
+  for (const e of rows) for (const t of e.topics) n.set(t, (n.get(t) ?? 0) + 1);
+  const top = [...n.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const rounds = rows.map((e) => e.rounds.length);
+  const lo = Math.min(...rounds), hi = Math.max(...rounds);
+  const selected = rows.filter((e) => e.verdict === "Selected").length;
+  const shown = all ? rows : rows.slice(0, 3);
+  return (
+    <section className={cn(card, "relative")}>
+      <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-violet-500/10 blur-2xl" />
+      <div className="relative flex items-center gap-3 px-3.5 pt-3.5">
+        <CompanyMark name={name} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-bold leading-tight">{name}</p>
+          <p className="mt-0.5 text-[11.5px] text-white/50">
+            {rows.length} {rows.length === 1 ? "experience" : "experiences"}
+            {selected > 0 && <span className="text-emerald-300"> · {selected} selected</span>} · {lo === hi ? lo : `${lo}–${hi}`} rounds
+          </p>
+        </div>
+        {inPlacements && (
+          <button type="button" onClick={onCompany} aria-label={`${name} company page`} className="shrink-0 rounded-lg border border-white/[0.08] bg-white/[0.04] p-1.5 text-white/50">
+            <Building2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {top.length > 0 && (
+        <div className="relative mx-3.5 mt-3 rounded-xl bg-black/25 px-3 py-2.5">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">Asked most</p>
+          <div className="space-y-1.5">
+            {top.map(([t, c]) => (
+              <div key={t} className="flex items-center gap-2">
+                <span className="w-[38%] shrink-0 truncate text-[11.5px] text-white/75">{t}</span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.07]">
+                  <span className="block h-full rounded-full bg-gradient-to-r from-violet-500 to-sky-400" style={{ width: `${(c / rows.length) * 100}%` }} />
+                </span>
+                <span className="w-8 shrink-0 text-right text-[10.5px] tabular-nums text-white/45">{c}/{rows.length}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="relative mt-2 divide-y divide-white/[0.06] border-t border-white/[0.06]">
+        {shown.map((e) => (
+          <button key={e.id} type="button" onClick={() => onOpen(e.id)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left active:bg-white/[0.06]">
+            <span className={cn("h-2 w-2 shrink-0 rounded-full", e.verdict === "Selected" ? "bg-emerald-400" : e.verdict === "Not selected" ? "bg-rose-300/70" : "bg-white/25")} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[12.5px] font-medium text-white/85">{e.summary}</span>
+              <span className="block truncate text-[10.5px] text-white/40">
+                {e.verdict === "Selected" ? "Selected" : e.verdict === "Not selected" ? "Not selected" : "Result not shared"} · {e.rounds.length} rounds · {e.readMinutes} min
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-white/25" />
+          </button>
+        ))}
+      </div>
+      {rows.length > 3 && (
+        <button type="button" onClick={() => setAll((v) => !v)} className="relative w-full border-t border-white/[0.06] py-2.5 text-[12px] font-semibold text-violet-300">
+          {all ? "Show less" : `Show all ${rows.length}`}
+        </button>
+      )}
+    </section>
   );
 }
 

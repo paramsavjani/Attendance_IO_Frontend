@@ -28,7 +28,7 @@ import { PopupYearChart } from "@/components/PopupYearChart";
 import { PopupPollPreview } from "@/components/polls/PopupPollPreview";
 
 /** Features this web bundle ships; sent with the popups request. Add a name when a popup needs it. */
-const SUPPORTED_FEATURES = ["polls", "placements"];
+const SUPPORTED_FEATURES = ["polls", "placements", "experiences"];
 import confetti from "canvas-confetti";
 
 /**
@@ -337,7 +337,7 @@ export function ServerPopup() {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         // Tell the backend which features this bundle has, so it never shows a popup for a
         // feature an older bundle is missing (popups list them in "requires").
-        const supports = SUPPORTED_FEATURES.filter((f) => f !== "placements" || !isDemoRef.current);
+        const supports = SUPPORTED_FEATURES.filter((f) => (f !== "placements" && f !== "experiences") || !isDemoRef.current);
         const response = await fetch(`${API_CONFIG.ENDPOINTS.POPUPS}?supports=${supports.join(",")}`, {
           signal: controller.signal,
         });
