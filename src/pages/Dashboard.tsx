@@ -5,6 +5,7 @@ import { useAttendance } from "@/contexts/AttendanceContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { format, addDays, subDays, isToday, isBefore, startOfDay, isTomorrow, parseISO, setHours, setMinutes } from "date-fns";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
+import { FinalAttendance } from "@/components/attendance/FinalAttendance";
 import {
   ChevronLeft,
   ChevronRight,
@@ -1165,7 +1166,9 @@ export default function Dashboard() {
   const [isLoadingOfficial, setIsLoadingOfficial] = useState(false);
 
   useEffect(() => {
-    if (activeTab !== "subjects" || subjectsAttendanceView !== "official") return;
+    // The Subjects tab's "Official" view, and the dashboard once classes are over (final attendance)
+    const wantsOfficial = (activeTab === "subjects" && subjectsAttendanceView === "official") || isSemesterOver;
+    if (!wantsOfficial) return;
     const controller = new AbortController();
     const fetchOfficial = async () => {
       setIsLoadingOfficial(true);
@@ -1189,7 +1192,7 @@ export default function Dashboard() {
     };
     fetchOfficial();
     return () => controller.abort();
-  }, [activeTab, subjectsAttendanceView]);
+  }, [activeTab, subjectsAttendanceView, isSemesterOver]);
 
   const officialBySubjectId = useMemo(() => {
     const m = new Map<string, (typeof officialStats)[number]>();
@@ -1490,7 +1493,11 @@ export default function Dashboard() {
               </div>
             )}
 
-            {!isBeforeStartDate && fullSchedule.length === 0 && (
+            {!isBeforeStartDate && fullSchedule.length === 0 && isSemesterOver && officialStats.length > 0 && (
+              <FinalAttendance subjects={enrolledSubjects} stats={officialStats} minFor={minimumFor} />
+            )}
+
+            {!isBeforeStartDate && fullSchedule.length === 0 && !(isSemesterOver && officialStats.length > 0) && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
                   <BookOpen className="w-6 h-6 text-muted-foreground/50" />
