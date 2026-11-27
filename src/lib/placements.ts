@@ -54,6 +54,8 @@ export interface PlacementCompanyCard {
   onPortal: boolean;
   /** Who the company selected (the list can be searched by them). */
   students?: PlacementCardStudent[];
+  /** Seniors' interview experiences for this company. */
+  experienceCount?: number;
 }
 
 export interface PlacementCardStudent {
@@ -172,6 +174,65 @@ export async function fetchPlacementCompany(id: string): Promise<PlacementCompan
   if (res.status === 404) return null;
   if (res.status === 403) throw new PlacementsForbiddenError("forbidden");
   if (!res.ok) throw new Error(`Placement company failed: ${res.status}`);
+  return res.json();
+}
+
+// ── Interview experiences ────────────────────────────────────────────────────
+
+export type ExperienceVerdict = "Selected" | "Not selected" | "Not shared";
+
+/** One senior's interview experience at a company, without its text. Anonymous: no names or roll numbers. */
+export interface ExperienceSummary {
+  id: string;
+  companyId: string;
+  company: string;
+  /** The company has a page in this season's list. */
+  inPlacements: boolean;
+  season: string | null;
+  offerType: string;
+  role: string | null;
+  batch: string | null;
+  verdict: ExperienceVerdict | string;
+  rounds: string[];
+  topics: string[];
+  summary: string;
+  readMinutes: number;
+}
+
+export interface Experience extends ExperienceSummary {
+  /** The experience, as Markdown. */
+  body: string;
+  words: number;
+  drive: { role?: string | null; stipend?: string | null; ctc?: string | null; selects?: string | null; location?: string | null; process?: string[] } | null;
+}
+
+export interface ExperienceList {
+  total: number;
+  companies: { id: string; name: string; inPlacements: boolean; count: number; selected: number }[];
+  experiences: ExperienceSummary[];
+}
+
+/** The list is small and only changes on a re-import, so it's kept for the app session. */
+let experienceListCache: Promise<ExperienceList> | null = null;
+
+export function fetchExperiences(): Promise<ExperienceList> {
+  if (!experienceListCache) {
+    experienceListCache = (async () => {
+      const res = await authenticatedFetch(`${API_CONFIG.BASE_URL}/api/placements/experiences`);
+      if (res.status === 403) throw new PlacementsForbiddenError("forbidden");
+      if (!res.ok) throw new Error(`Experiences failed: ${res.status}`);
+      return res.json();
+    })();
+    experienceListCache.catch(() => (experienceListCache = null));
+  }
+  return experienceListCache;
+}
+
+export async function fetchExperience(id: string): Promise<Experience | null> {
+  const res = await authenticatedFetch(`${API_CONFIG.BASE_URL}/api/placements/experiences/${encodeURIComponent(id)}`);
+  if (res.status === 404) return null;
+  if (res.status === 403) throw new PlacementsForbiddenError("forbidden");
+  if (!res.ok) throw new Error(`Experience failed: ${res.status}`);
   return res.json();
 }
 

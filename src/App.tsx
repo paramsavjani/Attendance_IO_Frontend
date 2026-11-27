@@ -20,6 +20,7 @@ import Search from "./pages/Search";
 import Analytics from "./pages/Analytics";
 import MyFeedback from "./pages/MyFeedback";
 import Placements from "./pages/Placements";
+import PlacementExperiences from "./pages/PlacementExperiences";
 import SubjectAnalysisDetail from "./pages/SubjectAnalysisDetail";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
 import Intro from "./pages/Intro";
@@ -523,6 +524,22 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <Placements />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/placements/experiences"
+            element={
+              <ProtectedRoute>
+                <PlacementExperiences />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/placements/experiences/:expId"
+            element={
+              <ProtectedRoute>
+                <PlacementExperiences />
               </ProtectedRoute>
             }
           />

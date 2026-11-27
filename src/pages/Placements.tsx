@@ -15,16 +15,22 @@ import {
   GraduationCap,
   Mail,
   MapPin,
+  MessagesSquare,
   Search as SearchIcon,
   Trophy,
   X,
 } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { MonthlyPackageCard } from "@/components/placements/MonthlyPackageCard";
+import { ExperienceCard } from "@/components/placements/ExperienceCard";
+import { AskAiCard, BackButton, card, CompanyMark, EmptyNote, Initials, label, ListSkeleton, Metric, PageHeader } from "@/components/placements/PlacementPieces";
 import { PdfViewer } from "@/components/placements/PdfViewer";
 import { cn } from "@/lib/utils";
 import {
+  fetchExperiences,
   fetchPlacementCompany,
+  type ExperienceList,
+  type ExperienceSummary,
   fetchPlacements,
   formatDay,
   formatLpa,
@@ -61,8 +67,6 @@ const SORTS = [
 ] as const;
 type SortKey = (typeof SORTS)[number]["key"];
 
-const card = "overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.035]";
-const label = "px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40";
 
 /** /placements is the season; /placements/:id is one company. */
 export default function Placements() {
@@ -232,6 +236,11 @@ function ListView() {
 
       {s?.placedByMonth && <MonthlyPackageCard months={s.placedByMonth} average={s.averagePlacedByMonthCtcLpa} className={card} />}
 
+      {data && <ExperiencesEntry onOpen={() => {
+        Object.assign(listMemory, { query, filter, sort, scrollTop: scrollParent(rootRef.current)?.scrollTop ?? 0 });
+        navigate("/placements/experiences", { state: { from: "list" } });
+      }} />}
+
       {data && (
         <>
           <div className="space-y-2.5">
@@ -315,6 +324,12 @@ function CompanyGroup({ companies, query, onOpen }: { companies: PlacementCompan
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-[14px] font-semibold leading-tight">{c.name}</span>
                   {c.ppoCount > 0 && <span className="shrink-0 rounded-md bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-amber-300">PPO</span>}
+                  {(c.experienceCount ?? 0) > 0 && (
+                    <span aria-label={`${c.experienceCount} interview experiences`} className="flex shrink-0 items-center gap-0.5 rounded-md bg-violet-400/15 px-1.5 py-px text-[9.5px] font-bold tabular-nums text-violet-200">
+                      <MessagesSquare className="h-2.5 w-2.5" />
+                      {c.experienceCount}
+                    </span>
+                  )}
                 </span>
                 {found.length > 0 ? (
                   <StudentMatches students={found} />
@@ -373,9 +388,35 @@ function StudentMatches({ students }: { students: PlacementCardStudent[] }) {
   );
 }
 
+/** The way into the seniors' interview experiences, between the season numbers and the company list. */
+function ExperiencesEntry({ onOpen }: { onOpen: () => void }) {
+  const [list, setList] = useState<ExperienceList | null>(null);
+  useEffect(() => {
+    fetchExperiences().then(setList).catch(() => setList(null));
+  }, []);
+  if (!list || list.total === 0) return null;
+  const names = list.companies.slice(0, 3).map((c) => c.name);
+  return (
+    <button type="button" onClick={onOpen} className={cn(card, "relative flex items-center gap-3 px-3.5 py-3 text-left active:bg-white/[0.06]")}>
+      <div className="pointer-events-none absolute -left-10 -top-12 h-28 w-28 rounded-full bg-violet-500/15 blur-2xl" />
+      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/30 to-sky-500/20 text-violet-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+        <MessagesSquare className="h-5 w-5" />
+      </span>
+      <span className="relative min-w-0 flex-1">
+        <span className="block text-[14px] font-semibold leading-tight">Interview experiences</span>
+        <span className="mt-0.5 block truncate text-[11.5px] text-white/50">
+          {list.total} from seniors · {names.join(", ")}
+          {list.companies.length > 3 ? ` +${list.companies.length - 3}` : ""}
+        </span>
+      </span>
+      <ChevronRight className="relative h-4 w-4 shrink-0 text-white/30" />
+    </button>
+  );
+}
+
 // ── One company ──────────────────────────────────────────────────────────────
 
-type Tab = "roles" | "selected" | "files";
+type Tab = "roles" | "selected" | "interviews" | "files";
 
 function CompanyView({ id }: { id: string }) {
   const navigate = useNavigate();
@@ -383,6 +424,13 @@ function CompanyView({ id }: { id: string }) {
   const [company, setCompany] = useState<PlacementCompany | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("selected");
+  const [experiences, setExperiences] = useState<ExperienceSummary[]>([]);
+
+  useEffect(() => {
+    fetchExperiences()
+      .then((l) => setExperiences(l.experiences.filter((e) => e.companyId === id)))
+      .catch(() => setExperiences([]));
+  }, [id]);
 
   useEffect(() => {
     setCompany(undefined);
@@ -424,6 +472,7 @@ function CompanyView({ id }: { id: string }) {
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "selected", label: "Selected", count: selected.length },
     { key: "roles", label: "Roles" },
+    ...(experiences.length ? [{ key: "interviews" as Tab, label: "Interviews", count: experiences.length }] : []),
     ...(files.length ? [{ key: "files" as Tab, label: "JD files", count: files.length }] : []),
   ];
 
@@ -557,6 +606,21 @@ function CompanyView({ id }: { id: string }) {
             </div>
           </section>
         ))}
+
+      {tab === "interviews" && (
+        <section>
+          <h2 className={cn(label, "mb-1.5")}>
+            {experiences.length} {experiences.length === 1 ? "senior" : "seniors"} shared their interview
+            {experiences.some((e) => e.verdict === "Selected") ? ` · ${experiences.filter((e) => e.verdict === "Selected").length} selected` : ""}
+          </h2>
+          <div className={cn(card, "divide-y divide-white/[0.06]")}>
+            {experiences.map((e) => (
+              <ExperienceCard key={e.id} e={e} showCompany={false} onOpen={() => navigate(`/placements/experiences/${e.id}`)} />
+            ))}
+          </div>
+          <p className="mt-2 px-1 text-[11px] leading-relaxed text-white/35">Anonymous: names and roll numbers removed. From the {experiences[0]?.season ?? "2025-26"} season.</p>
+        </section>
+      )}
 
       {tab === "files" && (
         <section className="space-y-2">
@@ -708,108 +772,6 @@ function JdFileCard({ file: f, co }: { file: PlacementJdFile & { drive: string; 
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-// ── Pieces ───────────────────────────────────────────────────────────────────
-
-function PageHeader({ title, subtitle, onBack }: { title: string; subtitle?: string; onBack: () => void }) {
-  return (
-    <div className="flex items-center gap-3">
-      <BackButton onClick={onBack} />
-      <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-bold leading-tight">{title}</h1>
-        {subtitle && <p className="truncate text-xs text-white/45">{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
-
-function BackButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Back"
-      className="shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.035] p-2 transition-colors active:bg-white/[0.08]"
-    >
-      <ChevronLeft className="h-5 w-5" />
-    </button>
-  );
-}
-
-function Metric({ value, label: text, accent }: { value: number | string; label: string; accent?: boolean }) {
-  return (
-    <div className="min-w-0 px-1 text-center">
-      <p className={cn("truncate font-bold leading-tight tabular-nums", String(value).length > 9 ? "text-[14px]" : "text-[17px]", accent && "text-emerald-400")}>{value}</p>
-      <p className="mt-0.5 truncate text-[10.5px] text-white/45">{text}</p>
-    </div>
-  );
-}
-
-function AskAiCard({ title, detail, onClick }: { title: string; detail: string; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="gemini-border is-focused w-full text-left active:scale-[0.99]">
-      <div className="gemini-inner flex items-center gap-3 px-3.5 py-3">
-        <span className="liquid-nav flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
-          <SparkIcon className="h-[18px] w-[18px]" gradientId={`ask-${title.length}`} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block bg-gradient-to-r from-[#8ab4f8] via-[#c58af9] to-[#f28b82] bg-clip-text text-[13.5px] font-semibold leading-tight text-transparent">{title}</span>
-          <span className="mt-0.5 block truncate text-[11.5px] text-white/45">{detail}</span>
-        </span>
-        <ArrowRight className="h-4 w-4 shrink-0 text-white/40" />
-      </div>
-    </button>
-  );
-}
-
-const MARK_TINTS = [
-  "from-indigo-500 to-violet-600",
-  "from-sky-500 to-blue-600",
-  "from-emerald-500 to-teal-600",
-  "from-amber-500 to-orange-600",
-  "from-rose-500 to-pink-600",
-  "from-fuchsia-500 to-purple-600",
-  "from-cyan-500 to-sky-600",
-];
-
-function CompanyMark({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
-  const hash = [...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
-  const initials = name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  return (
-    <span
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]",
-        MARK_TINTS[hash % MARK_TINTS.length],
-        size === "sm" && "h-8 w-8 rounded-lg text-[11px]",
-        size === "md" && "h-10 w-10 rounded-xl text-[13px]",
-        size === "lg" && "h-14 w-14 rounded-2xl text-lg",
-      )}
-    >
-      {initials || "?"}
-    </span>
-  );
-}
-
-function Initials({ name }: { name: string }) {
-  const parts = name.trim().split(/\s+/);
-  const text = ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
-  return <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[12px] font-semibold text-white/75">{text || "?"}</span>;
-}
-
-function EmptyNote({ children }: { children: React.ReactNode }) {
-  return <div className={cn(card, "px-4 py-6 text-center text-[13px] leading-relaxed text-white/50")}>{children}</div>;
-}
-
-function ListSkeleton() {
-  return (
-    <div className="space-y-3">
-      <div className="h-[180px] animate-pulse rounded-2xl bg-white/[0.04]" />
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="h-[64px] animate-pulse rounded-2xl bg-white/[0.04]" />
-      ))}
     </div>
   );
 }

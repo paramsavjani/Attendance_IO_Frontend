@@ -3,7 +3,8 @@ import { trackAppEvent } from "@/contexts/AuthContext";
 /**
  * Everything students do on the placements page goes to the events table as one `placements` event
  * type, with `metadata.action` saying what happened (open_list, search, filter, sort, view_company,
- * tab, role_open, jd_open, portal_link, ask_ai). The admin site's Placements page reads these.
+ * tab, role_open, jd_open, portal_link, ask_ai, experiences_open, experiences_search, experience_view). The admin
+ * site's Placements page reads these.
  */
 export type PlacementsAction =
   | "open_list"
@@ -16,7 +17,10 @@ export type PlacementsAction =
   | "jd_open"
   | "jd_pdf"
   | "portal_link"
-  | "ask_ai";
+  | "ask_ai"
+  | "experiences_open"
+  | "experiences_search"
+  | "experience_view";
 
 export function trackPlacements(action: PlacementsAction, meta: Record<string, unknown> = {}) {
   void trackAppEvent("placements", { action, ...meta });
