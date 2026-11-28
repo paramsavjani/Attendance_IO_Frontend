@@ -8,6 +8,8 @@ import { trackPlacements } from "@/lib/placementsTracking";
 import { seenPercent, useReadTime } from "@/lib/readTime";
 import { fetchExperience, fetchExperiences, PlacementsForbiddenError, type Experience, type ExperienceList, type ExperienceSummary } from "@/lib/placements";
 import { AskAiCard, BackButton, card, CompanyMark, EmptyNote, label, ListSkeleton, Metric, PageHeader } from "@/components/placements/PlacementPieces";
+import { LogoStack } from "@/components/placements/SearchPlacementCards";
+import { companyLogo } from "@/lib/companyLogos";
 import { ExperienceCard, experienceKind, VerdictPill } from "@/components/placements/ExperienceCard";
 
 const FORBIDDEN = "Interview experiences are only for DAU students. Sign in with your @dau.ac.in account to read them.";
@@ -111,22 +113,19 @@ function ExperienceHub() {
 
       {data && (
         <>
-          <section className={cn(card, "relative px-4 py-3.5")}>
-            <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-violet-500/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-sky-500/10 blur-3xl" />
-            <div className="relative flex items-end justify-between gap-3">
-              <div>
-                <p className="text-[32px] font-bold leading-none tracking-tight tabular-nums">{data.total}</p>
-                <p className="mt-1 text-[12.5px] font-medium text-white/60">experiences from {data.companies.length} companies</p>
-              </div>
-              <div className="flex -space-x-2 pb-0.5">
-                {data.companies.slice(0, 5).map((c) => (
-                  <span key={c.id} className="rounded-lg ring-2 ring-[#0b0b0f]">
-                    <CompanyMark name={c.name} id={c.id} size="sm" />
-                  </span>
-                ))}
-              </div>
+          <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[hsl(0_0%_6.5%)] px-4 py-3.5">
+            {/* A soft neutral light from the top edge, no coloured blobs */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-40 w-[85%] rounded-full bg-white/[0.08] blur-3xl" />
+            <div className="relative flex items-center justify-between gap-3">
+              <p className="text-[32px] font-bold leading-none tracking-tight tabular-nums">{data.total}</p>
+              <LogoStack
+                large
+                companies={data.companies.filter((c) => companyLogo(c.id)).slice(0, 5)}
+                extra={Math.max(0, data.companies.length - Math.min(5, data.companies.filter((c) => companyLogo(c.id)).length))}
+              />
             </div>
+            <p className="relative mt-1.5 text-[12.5px] font-medium text-white/60">experiences from {data.companies.length} companies</p>
             <div className="relative mt-3 grid grid-cols-2 divide-x divide-white/[0.07] rounded-lg bg-black/25 py-1.5">
               <p className="px-1 text-center text-[11px] text-white/50">
                 <span className="mr-1 text-[14px] font-bold tabular-nums text-emerald-300">{selectedCount}</span>

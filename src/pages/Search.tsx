@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, ChevronLeft, ChevronDown, ChevronRight, X, Trash2, ArrowRight, Briefcase } from "lucide-react";
+import { Search as SearchIcon, ChevronLeft, ChevronDown, ChevronRight, X, Trash2, ArrowRight, Briefcase, Loader2 } from "lucide-react";
 import { SparkIcon } from "@/components/assistant/AssistantFab";
 import { useAuth } from "@/contexts/AuthContext";
 import { originOf, revealFrom, type RevealOrigin } from "@/lib/revealTransition";
@@ -93,6 +93,11 @@ export default function Search() {
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  // Infinite scroll: the next 10 load when the end of the list comes into view
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const searchedQuery = useRef("");
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const [attendanceData, setAttendanceData] = useState<StudentAttendanceData | null>(null);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   // A profile opens on the institute's official attendance; "Student Marked" is one tap away
@@ -327,15 +332,20 @@ export default function Search() {
 
   // ── Live search with debounce ────────────────────────────────────────────────
 
+  const PAGE_SIZE = 10;
+
   useEffect(() => {
     const searchStudents = async () => {
       if (query.trim().length === 0) {
+        searchedQuery.current = "";
         setStudents([]);
+        setHasMore(false);
         return;
       }
       if (query.trim().length < 2) return;
 
       setIsSearching(true);
+      searchedQuery.current = query;
       try {
         const response = await authenticatedFetch(
           `${API_CONFIG.ENDPOINTS.SEARCH_STUDENTS}?query=${encodeURIComponent(query)}`,
@@ -343,8 +353,10 @@ export default function Search() {
         );
 
         if (response.ok) {
-          const data = await response.json();
+          const data: Student[] = await response.json();
+          if (searchedQuery.current !== query) return;
           setStudents(data);
+          setHasMore(data.length >= PAGE_SIZE);
           trackAppEvent("search_performed", {
             query: query.trim(),
             resultsCount: data.length,
@@ -363,6 +375,39 @@ export default function Search() {
     const id = setTimeout(searchStudents, 300);
     return () => clearTimeout(id);
   }, [query]);
+
+  // The next page, appended when the bottom of the list scrolls into view
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || !hasMore || isSearching) return;
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        if (!entries[0]?.isIntersecting || loadingMore) return;
+        const q = searchedQuery.current;
+        setLoadingMore(true);
+        try {
+          const response = await authenticatedFetch(
+            `${API_CONFIG.ENDPOINTS.SEARCH_STUDENTS}?query=${encodeURIComponent(q)}&offset=${students.length}`,
+            { credentials: "include" }
+          );
+          if (!response.ok || searchedQuery.current !== q) return;
+          const data: Student[] = await response.json();
+          const seen = new Set(students.map((s) => s.id));
+          const fresh = data.filter((s) => !seen.has(s.id));
+          setStudents((prev) => [...prev, ...fresh]);
+          // A page with nothing new means the end (or a server that doesn't page yet)
+          setHasMore(data.length >= PAGE_SIZE && fresh.length > 0);
+        } catch {
+          // Leave hasMore as is; scrolling back down tries again
+        } finally {
+          setLoadingMore(false);
+        }
+      },
+      { rootMargin: "240px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, isSearching, loadingMore, students.length]);
 
   // ── Fetch attendance when a student is selected ──────────────────────────────
 
@@ -969,6 +1014,11 @@ export default function Search() {
               )}
             </button>
           ))}
+          {hasMore && (
+            <div ref={loadMoreRef} className="flex items-center justify-center py-4 text-muted-foreground" aria-live="polite">
+              <Loader2 className="h-5 w-5 animate-spin" aria-label="Loading more students" />
+            </div>
+          )}
         </div>
       )}
 

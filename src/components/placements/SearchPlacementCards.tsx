@@ -10,14 +10,15 @@ import { fetchExperiences, fetchPlacements, type ExperienceList, type PlacementL
 const TILE = "relative flex min-w-0 flex-col rounded-2xl border border-white/[0.08] bg-[hsl(0_0%_6.5%)] p-3.5 text-left transition-transform active:scale-[0.98]";
 
 /** One logo in a round, solid chip so overlapping chips never show through each other. */
-function LogoChip({ id, name, z }: { id: string; name: string; z: number }) {
+function LogoChip({ id, name, z, large }: { id: string; name: string; z: number; large?: boolean }) {
   const logo = companyLogo(id);
   const [broken, setBroken] = useState(false);
   if (!logo || broken) return null;
   return (
     <span
       className={cn(
-        "-ml-[11px] flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[hsl(0_0%_6.5%)] first:ml-0",
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[hsl(0_0%_6.5%)] first:ml-0",
+        large ? "-ml-2.5 h-8 w-8" : "-ml-[11px] h-7 w-7",
         logo.style === "full" && "bg-black",
         logo.style === "light" && "bg-white p-1",
         logo.style === "glass" && "bg-[hsl(0_0%_15%)] p-[5px]",
@@ -38,14 +39,14 @@ function LogoChip({ id, name, z }: { id: string; name: string; z: number }) {
 }
 
 /** Up to five company logos overlapping, then a "+N" chip in the same shape. */
-function LogoStack({ companies, extra }: { companies: { id: string; name: string }[]; extra: number }) {
+export function LogoStack({ companies, extra, large }: { companies: { id: string; name: string }[]; extra: number; large?: boolean }) {
   return (
     <span className="flex items-center">
       {companies.map((c, i) => (
-        <LogoChip key={c.id} id={c.id} name={c.name} z={companies.length - i + 1} />
+        <LogoChip key={c.id} id={c.id} name={c.name} z={companies.length - i + 1} large={large} />
       ))}
       {extra > 0 && (
-        <span className="ml-1.5 flex h-[26px] items-center justify-center rounded-full bg-white/[0.06] px-2 text-[10.5px] font-semibold text-white/55 tabular-nums">
+        <span className={cn("ml-1.5 flex items-center justify-center", large ? "h-[30px]" : "h-[26px]", " rounded-full bg-white/[0.06] px-2 text-[10.5px] font-semibold text-white/55 tabular-nums")}>
           +{extra}
         </span>
       )}
