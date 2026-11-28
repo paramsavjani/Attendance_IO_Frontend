@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { originOf, revealFrom, type RevealOrigin } from "@/lib/revealTransition";
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
+import { AttendanceComparison } from "@/components/attendance/FinalAttendance";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
@@ -539,127 +540,63 @@ export default function Search() {
           </div>
         ) : (
           <>
-            {overallAttendance && (
-              <div className="bg-card rounded-lg p-3 md:p-4 border border-border space-y-3">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setViewingPhoto(true);
-                      trackAppEvent("profile_photo_view", {
-                        studentId: selectedStudent.id,
-                        studentName: selectedStudent.name,
-                        source: "search",
-                      }).catch(console.error);
+            <div className="px-0.5">
+              <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingPhoto(true);
+                    trackAppEvent("profile_photo_view", {
+                      studentId: selectedStudent.id,
+                      studentName: selectedStudent.name,
+                      source: "search",
+                    }).catch(console.error);
+                  }}
+                  aria-label={`View ${selectedStudent.name}'s photo`}
+                  className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-primary/10 ring-2 ring-white/10 transition active:scale-95 md:h-14 md:w-14 touch-manipulation"
+                >
+                  <img
+                    src={photoThumb(selectedStudent.pictureUrl) || "/user-icons/user2.png"}
+                    alt={selectedStudent.name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/user-icons/user2.png";
                     }}
-                    aria-label={`View ${selectedStudent.name}'s photo`}
-                    className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-primary/10 ring-2 ring-white/10 transition active:scale-95 md:h-14 md:w-14 touch-manipulation"
-                  >
-                    <img
-                      src={photoThumb(selectedStudent.pictureUrl) || "/user-icons/user2.png"}
-                      alt={selectedStudent.name}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "/user-icons/user2.png";
-                      }}
-                    />
-                  </button>
-                  <PhotoViewer
-                    open={viewingPhoto}
-                    onOpenChange={setViewingPhoto}
-                    src={selectedStudent.pictureUrl}
-                    name={selectedStudent.name}
-                    subtitle={selectedStudent.rollNumber}
                   />
-                  <div className="flex-1 min-w-0">
-                    <h1 className="text-base md:text-lg font-bold truncate">{selectedStudent.name}</h1>
-                    <p className="text-xs text-muted-foreground">{selectedStudent.rollNumber}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-center">
-                    <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Overall Attendance</p>
-                    <p
-                      className={cn(
-                        "text-3xl md:text-4xl font-bold",
-                        overallAttendance.percentage >= 75
-                          ? "text-success"
-                          : overallAttendance.percentage >= 60
-                          ? "text-warning"
-                          : "text-destructive"
-                      )}
-                    >
-                      {overallAttendance.percentage.toFixed(1)}%
-                    </p>
-                  </div>
-
-                  <div>
-                    <div className="relative h-2 md:h-2.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all",
-                          overallAttendance.percentage >= 75
-                            ? "bg-success"
-                            : overallAttendance.percentage >= 60
-                            ? "bg-warning"
-                            : "bg-destructive"
-                        )}
-                        style={{ width: `${Math.min(overallAttendance.percentage, 100)}%` }}
-                      />
-                      <div
-                        className="absolute top-0 w-0.5 h-full bg-foreground/30"
-                        style={{ left: "75%" }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 md:gap-3 pt-1">
-                    <div className="text-center">
-                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Present</p>
-                      <p className="text-lg md:text-xl font-bold text-success">{overallAttendance.present}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Absent</p>
-                      <p className="text-lg md:text-xl font-bold text-destructive">{overallAttendance.absent}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5">Total</p>
-                      <p className="text-lg md:text-xl font-bold text-foreground">{overallAttendance.total}</p>
-                    </div>
-                  </div>
+                </button>
+                <PhotoViewer
+                  open={viewingPhoto}
+                  onOpenChange={setViewingPhoto}
+                  src={selectedStudent.pictureUrl}
+                  name={selectedStudent.name}
+                  subtitle={selectedStudent.rollNumber}
+                />
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-base md:text-lg font-bold truncate">{selectedStudent.name}</h1>
+                  <p className="text-xs text-muted-foreground">{selectedStudent.rollNumber}</p>
                 </div>
               </div>
+            </div>
+
+            {!selectedSemester && currentSemesterData && currentSemesterData.subjects.length > 0 && (
+              <AttendanceComparison
+                rows={currentSemesterData.subjects.map((subject) => ({
+                  id: subject.subjectId,
+                  code: subject.subjectCode ?? subject.subjectName,
+                  name: subject.subjectCode ? subject.subjectName : "",
+                  color: subject.color,
+                  present: subject.present,
+                  total: subject.total,
+                  min: null,
+                }))}
+                label={`${currentSemesterData.semester.type} ${currentSemesterData.semester.year}`}
+                source={attendanceSource === "INSTITUTE" ? "Institute marked" : "Student marked"}
+                who="Student"
+              />
             )}
 
-            {!selectedSemester && currentSemesterData && (
-              <div>
-                <h3 className="font-semibold text-sm mb-2">
-                  Current Semester ({currentSemesterData.semester.type} {currentSemesterData.semester.year})
-                </h3>
-                <div className="space-y-2">
-                  {currentSemesterData.subjects.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No attendance data for current semester
-                    </p>
-                  ) : (
-                    currentSemesterData.subjects.map((subject) => (
-                      <SubjectCard
-                        key={subject.subjectId}
-                        name={subject.subjectName}
-                        code={subject.subjectCode}
-                        color={subject.color}
-                        present={subject.present}
-                        absent={subject.absent}
-                        total={subject.total}
-                        minRequired={70}
-                        hideBunkableInfo={true}
-                        suppressLowAttendanceStyling={true}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
+            {!selectedSemester && currentSemesterData && currentSemesterData.subjects.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">No attendance data for current semester</p>
             )}
 
             {selectedSemester && (
