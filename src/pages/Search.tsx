@@ -10,6 +10,7 @@ import { originOf, revealFrom, type RevealOrigin } from "@/lib/revealTransition"
 import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { AttendanceComparison } from "@/components/attendance/FinalAttendance";
+import { SearchPlacementCards } from "@/components/placements/SearchPlacementCards";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
@@ -30,6 +31,8 @@ interface Student {
   markedLectures?: number;
   presentLectures?: number;
   attendancePercentage?: number | null;
+  /** INSTITUTE: the official record; STUDENT: what they marked in the app (when the institute has none). */
+  attendanceSource?: "INSTITUTE" | "STUDENT" | null;
 }
 
 interface SubjectAttendance {
@@ -873,20 +876,7 @@ export default function Search() {
       {/* Empty state */}
       {query.length === 0 && !historyVisible && !showAllHistory && (
         <div className="space-y-4">
-          {!me?.isDemo && <button
-            type="button"
-            onClick={() => navigate("/placements", { state: { from: "search" } })}
-            className="flex w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-indigo-600/25 via-violet-600/10 to-card p-3.5 text-left transition-transform active:scale-[0.99]"
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow">
-              <Briefcase className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">Placements 2026-27</span>
-              <span className="block truncate text-xs text-muted-foreground">Every company, its roles, CTC and who got selected</span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>}
+          {!me?.isDemo && <SearchPlacementCards />}
           <div className="text-center py-10 text-muted-foreground">
             <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
             <p className="text-sm">Search for any student</p>
@@ -967,12 +957,14 @@ export default function Search() {
                     {Math.round(student.attendancePercentage)}%
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1 whitespace-nowrap">
-                    {student.markedLectures} marked
+                    {student.attendanceSource === "INSTITUTE"
+                      ? `Institute · ${student.markedLectures}`
+                      : `${student.markedLectures} marked`}
                   </p>
                 </div>
               ) : (
                 <span className="shrink-0 text-[10px] text-muted-foreground/70 border border-border/60 rounded-full px-2 py-0.5 whitespace-nowrap">
-                  Not tracking
+                  No data
                 </span>
               )}
             </button>
