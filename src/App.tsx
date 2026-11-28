@@ -21,6 +21,7 @@ import Analytics from "./pages/Analytics";
 import MyFeedback from "./pages/MyFeedback";
 import Placements from "./pages/Placements";
 import PlacementExperiences from "./pages/PlacementExperiences";
+import ShareExperience from "./pages/ShareExperience";
 import SubjectAnalysisDetail from "./pages/SubjectAnalysisDetail";
 import SubjectOnboarding from "./pages/SubjectOnboarding";
 import Intro from "./pages/Intro";
@@ -532,6 +533,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <PlacementExperiences />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/placements/experiences/share"
+            element={
+              <ProtectedRoute>
+                <ShareExperience />
               </ProtectedRoute>
             }
           />

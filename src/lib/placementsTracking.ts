@@ -20,6 +20,8 @@ export type PlacementsAction =
   | "portal_link"
   | "ask_ai"
   | "experiences_open"
+  | "experience_share_open"
+  | "experience_share_sent"
   | "experiences_search"
   | "experience_view"
   | "experience_read"

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowRight, Building2, ChevronRight, Lightbulb, Search as SearchIcon, X } from "lucide-react";
+import { ArrowRight, Building2, ChevronRight, Lightbulb, PenLine, Search as SearchIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackPlacements } from "@/lib/placementsTracking";
 import { seenPercent, useReadTime } from "@/lib/readTime";
@@ -137,6 +137,21 @@ function ExperienceHub() {
               </p>
             </div>
           </section>
+
+          <button
+            type="button"
+            onClick={() => navigate("/placements/experiences/share")}
+            className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[hsl(0_0%_6.5%)] px-3.5 py-3 text-left active:bg-white/[0.05]"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.07]">
+              <PenLine className="h-4 w-4 text-white/80" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13.5px] font-semibold leading-tight">Share your interview experience</span>
+              <span className="mt-0.5 block truncate text-[11.5px] text-white/45">Docs link, text or .md file · published without your name</span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
+          </button>
 
           <div className="space-y-2.5">
             <div className="relative">

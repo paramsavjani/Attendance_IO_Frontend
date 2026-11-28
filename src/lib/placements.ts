@@ -251,3 +251,49 @@ export function formatDay(iso: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
+
+// ── Sending in an experience ─────────────────────────────────────────────────
+
+export type SubmissionFormat = "LINK" | "TEXT" | "FILE";
+
+export interface ExperienceSubmissionInput {
+  company: string;
+  role?: string;
+  offerType: "Placement" | "Internship" | "PPO";
+  verdict: "Selected" | "Not selected" | "Awaiting result";
+  format: SubmissionFormat;
+  link?: string;
+  text?: string;
+  fileName?: string;
+}
+
+export interface ExperienceSubmission {
+  id: number;
+  company: string;
+  role: string | null;
+  offerType: string;
+  verdict: string;
+  format: SubmissionFormat;
+  /** PENDING until checked, then PUBLISHED or REJECTED */
+  status: string;
+  submittedAt: string | null;
+}
+
+/** Sends one experience for review. Throws with the server's message (shown to the student as is). */
+export async function submitExperience(input: ExperienceSubmissionInput): Promise<ExperienceSubmission> {
+  const res = await authenticatedFetch(`${API_CONFIG.BASE_URL}/api/placements/experiences/submissions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (res.status === 403) throw new PlacementsForbiddenError("forbidden");
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error((data && data.error) || "Couldn't send it. Check your connection and try again.");
+  return data;
+}
+
+export async function fetchMySubmissions(): Promise<ExperienceSubmission[]> {
+  const res = await authenticatedFetch(`${API_CONFIG.BASE_URL}/api/placements/experiences/submissions/mine`);
+  if (!res.ok) return [];
+  return res.json();
+}

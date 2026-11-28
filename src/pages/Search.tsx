@@ -11,6 +11,7 @@ import { trackAppEvent } from "@/contexts/AuthContext";
 import { SubjectCard } from "@/components/attendance/SubjectCard";
 import { AttendanceComparison } from "@/components/attendance/FinalAttendance";
 import { SearchPlacementCards } from "@/components/placements/SearchPlacementCards";
+import { companyLogo } from "@/lib/companyLogos";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SemesterSelector, availableSemesters, Semester } from "@/components/filters/SemesterSelector";
@@ -33,6 +34,8 @@ interface Student {
   attendancePercentage?: number | null;
   /** INSTITUTE: the official record; STUDENT: what they marked in the app (when the institute has none). */
   attendanceSource?: "INSTITUTE" | "STUDENT" | null;
+  /** Their best announced offer this season (DAU accounts only); absent = nothing announced yet. */
+  placement?: { companyId: string; company: string; kind: string; ctcLpa: number | null; offers: number } | null;
 }
 
 interface SubjectAttendance {
@@ -986,6 +989,7 @@ export default function Search() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{student.name}</p>
                 <p className="text-xs text-muted-foreground">{student.rollNumber}</p>
+                {student.placement && <PlacementBadge placement={student.placement} />}
               </div>
               {student.markedLectures && student.attendancePercentage != null ? (
                 <div className="shrink-0 text-right">
@@ -1079,5 +1083,33 @@ function AssistantPromo({
         ))}
       </div>
     </div>
+  );
+}
+
+/** A small "placed" chip in a search result: the company's logo (when bundled), its name and the package. */
+function PlacementBadge({ placement }: { placement: NonNullable<Student["placement"]> }) {
+  const logo = companyLogo(placement.companyId);
+  const lpa = placement.ctcLpa != null ? `${Math.round(placement.ctcLpa * 10) / 10} LPA` : null;
+  return (
+    <span className="mt-1.5 flex w-fit max-w-full items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] py-[2px] pl-[3px] pr-2 text-[10.5px] font-medium text-emerald-200">
+      {logo ? (
+        <span
+          className={cn(
+            "flex h-3.5 w-3.5 shrink-0 items-center justify-center overflow-hidden rounded-full",
+            logo.style === "full" ? "bg-black" : logo.style === "light" ? "bg-white p-[1.5px]" : "bg-[hsl(0_0%_15%)] p-[1.5px]",
+          )}
+        >
+          <img src={logo.src} alt="" className={cn("h-full w-full", logo.style === "full" ? "object-cover" : "object-contain")} />
+        </span>
+      ) : (
+        <span className="ml-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" />
+      )}
+      <span className="truncate">
+        {placement.company}
+        {placement.kind === "PPO" ? " · PPO" : ""}
+        {lpa ? ` · ${lpa}` : ""}
+        {placement.offers > 1 ? ` · ${placement.offers} offers` : ""}
+      </span>
+    </span>
   );
 }
